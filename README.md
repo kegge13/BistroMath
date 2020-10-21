@@ -7,3 +7,4 @@ Note that there are several compiler modes. By default FPC will generate very la
 
 Output
 For convenience the executable is written in the output directory.
+
