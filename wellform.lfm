@@ -1,0 +1,3933 @@
+object AnalyseForm: TAnalyseForm
+  Left = 566
+  Height = 538
+  Top = 240
+  Width = 885
+  AllowDropFiles = True
+  AlphaBlendValue = 0
+  Caption = 'AnalyseForm'
+  ClientHeight = 518
+  ClientWidth = 885
+  Color = clScrollBar
+  Constraints.MinHeight = 535
+  Constraints.MinWidth = 885
+  DefaultMonitor = dmMainForm
+  Menu = MainMenu
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnDropFiles = ReadDroppedFile
+  OnKeyDown = FormKeyDown
+  OnKeyPress = FormKeyPress
+  OnKeyUp = FormKeyUp
+  OnResize = FormResize
+  LCLVersion = '2.0.10.0'
+  object PageControl: TPageControl
+    Left = 0
+    Height = 495
+    Top = 0
+    Width = 885
+    HelpContext = 1
+    ActivePage = AnalysisTab
+    Align = alClient
+    ParentFont = False
+    TabIndex = 0
+    TabOrder = 0
+    OnChange = PageControlChange
+    OnChanging = PageControlRequestChange
+    OnExit = SettingsTabExit
+    Options = [nboDoChangeOnSetIndex]
+    object AnalysisTab: TTabSheet
+      AnchorSideBottom.Side = asrBottom
+      HelpContext = 1
+      Caption = 'Analysis'
+      ClientHeight = 467
+      ClientWidth = 877
+      object ResultsPanel: TPanel
+        Left = 0
+        Height = 93
+        Top = 374
+        Width = 877
+        HelpContext = 11
+        Align = alBottom
+        Alignment = taLeftJustify
+        Anchors = []
+        ClientHeight = 93
+        ClientWidth = 877
+        Color = clBtnFace
+        ParentColor = False
+        TabOrder = 0
+        OnMouseEnter = AdjustHelpContext
+        object PositionLabel: TLabel
+          Left = 525
+          Height = 15
+          Top = 73
+          Width = 46
+          Alignment = taRightJustify
+          AutoSize = False
+          Caption = 'Position:'
+          ParentColor = False
+        end
+        object PositionValue: TLabel
+          Left = 606
+          Height = 15
+          Top = 79
+          Width = 5
+          Caption = '-'
+          ParentColor = False
+        end
+        object MeasNormAdjustEdit: TFloatSpinEditEx
+          Left = 822
+          Height = 17
+          Top = 1
+          Width = 52
+          AutoSize = False
+          Anchors = [akTop, akRight]
+          MaxLength = 0
+          TabOrder = 0
+          OnEditingDone = OnDataRead
+          OnExit = OnDataRead
+          DecimalPlaces = 1
+          MaxValue = 300
+          MinValue = 2
+          Value = 100
+        end
+      end
+      object DataPlot: TChart
+        Left = 0
+        Height = 374
+        Top = 0
+        Width = 877
+        HelpContext = 9
+        AutoFocus = True
+        AxisList = <        
+          item
+            Grid.Color = clMedGray
+            Intervals.Count = 10
+            Intervals.Options = [aipUseCount, aipUseMaxLength, aipUseMinLength, aipUseNiceSteps]
+            Marks.LabelBrush.Style = bsClear
+            Minors = <>
+            Range.UseMin = True
+            Title.LabelFont.Orientation = 900
+            Title.LabelBrush.Style = bsClear
+            Transformations = L_AxisTransforms
+          end        
+          item
+            Grid.Color = clMedGray
+            Intervals.MinLength = 0
+            Intervals.Options = [aipUseCount, aipUseMinLength, aipUseNiceSteps]
+            Alignment = calBottom
+            AxisPen.Color = clMedGray
+            AxisPen.Width = 2
+            AxisPen.Visible = True
+            Marks.LabelBrush.Style = bsClear
+            Minors = <            
+              item
+                Grid.Visible = False
+                Intervals.Count = 9
+                Intervals.MinLength = 0
+                Intervals.Options = [aipUseCount, aipUseNiceSteps]
+                TickColor = clMedGray
+                TickInnerLength = 2
+                TickLength = 3
+                Marks.Frame.Cosmetic = False
+                Marks.Frame.Visible = False
+                Marks.LabelBrush.Style = bsClear
+              end>
+            Title.Alignment = taCenter
+            Title.LabelFont.Pitch = fpVariable
+            Title.LabelFont.Quality = fqCleartype
+            Title.LabelFont.Style = [fsBold]
+            Title.Visible = True
+            Title.Caption = 'empty title'
+            Title.LabelBrush.Color = clBtnFace
+          end        
+          item
+            Grid.Visible = False
+            Intervals.Count = 10
+            Intervals.Options = [aipUseCount, aipUseNiceSteps]
+            Alignment = calRight
+            Marks.Alignment = taRightJustify
+            Marks.LabelFont.Color = clBlue
+            Marks.Format = '%5.1f'
+            Marks.LabelBrush.Style = bsClear
+            Marks.Style = smsCustom
+            Minors = <>
+            Title.LabelFont.Orientation = 2700
+            Title.LabelBrush.Style = bsClear
+            Transformations = R_AxisTransforms
+          end>
+        BackColor = clInactiveBorder
+        Foot.Brush.Color = clBtnFace
+        Foot.Font.Color = clBlue
+        Margins.Left = 0
+        Margins.Top = 2
+        Margins.Right = 0
+        Margins.Bottom = 0
+        Title.Brush.Color = clBtnFace
+        Title.Font.Color = clBlue
+        Title.Text.Strings = (
+          'TAChart'
+        )
+        Align = alClient
+        Color = clInactiveBorder
+        object ErrorSeries: TLineSeries
+          Active = False
+          Marks.AutoMargins = False
+          AxisIndexX = 1
+          AxisIndexY = 2
+          LinePen.Style = psClear
+          LinePen.Width = 0
+          LineType = ltNone
+          Pointer.Brush.Color = clMedGray
+          Pointer.HorizSize = 1
+          Pointer.Pen.Color = clSkyBlue
+          Pointer.Pen.Cosmetic = False
+          Pointer.Pen.Style = psClear
+          Pointer.Pen.Visible = False
+          Pointer.VertSize = 1
+          Pointer.Visible = True
+          ShowPoints = True
+        end
+        object TopModelSeries: TFuncSeries
+          Active = False
+          ZPosition = 2
+          AxisIndexX = 1
+          AxisIndexY = 0
+          Pen.Color = clActiveCaption
+          Pen.Width = 2
+          OnCalculate = TopModelFunction
+        end
+      end
+    end
+    object HistogramTab: TTabSheet
+      HelpContext = 17
+      Caption = 'Histogram'
+      ClientHeight = 467
+      ClientWidth = 877
+      object HistogramPlot: TChart
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 17
+        AutoFocus = True
+        AxisList = <        
+          item
+            MarginsForMarks = False
+            Marks.LabelBrush.Style = bsClear
+            Marks.Range.UseMin = True
+            Minors = <>
+            Title.LabelFont.Orientation = 900
+            Title.Visible = True
+            Title.LabelBrush.Style = bsClear
+          end        
+          item
+            Intervals.Count = 9
+            Intervals.MinLength = 0
+            Intervals.Options = [aipUseCount, aipUseNiceSteps]
+            Alignment = calBottom
+            Marks.LabelBrush.Style = bsClear
+            Minors = <            
+              item
+                Grid.Visible = False
+                Intervals.MinLength = 5
+                Intervals.Options = [aipUseCount, aipUseMinLength]
+                TickLength = 3
+                Marks.LabelBrush.Style = bsClear
+              end>
+            Range.UseMax = True
+            Range.UseMin = True
+            Title.LabelFont.Height = -20
+            Title.LabelFont.Style = [fsBold]
+            Title.Visible = True
+            Title.LabelBrush.Style = bsClear
+          end>
+        BackColor = clWhite
+        Foot.Brush.Color = clScrollBar
+        Foot.Font.Color = clBlue
+        Margins.Left = 0
+        Margins.Top = 5
+        Margins.Right = 0
+        Margins.Bottom = 0
+        Title.Brush.Color = clScrollBar
+        Title.Font.Color = clBlue
+        Title.Text.Strings = (
+          'TDBChart'
+        )
+        Align = alClient
+        object Histogram: TBarSeries
+          Marks.Visible = False
+          Title = 'Histogram'
+          BarBrush.Color = clRed
+          BarWidthPercent = 100
+          MarkPositionCentered = True
+        end
+      end
+    end
+    object FitResultsTab: TTabSheet
+      HelpContext = 20
+      Caption = 'Fit Results'
+      ClientHeight = 467
+      ClientWidth = 877
+      object FitResultsPanel: TPanel
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 220
+        Align = alClient
+        ClientHeight = 467
+        ClientWidth = 877
+        Color = clBtnFace
+        ParentColor = False
+        TabOrder = 0
+        object FitResultsGrid: TStringGrid
+          Left = 1
+          Height = 313
+          Hint = 'Click on column for copy to clipboard'
+          Top = 1
+          Width = 875
+          HelpContext = 220
+          Align = alTop
+          ColCount = 2
+          DefaultColWidth = 100
+          DefaultRowHeight = 20
+          FixedColor = clSkyBlue
+          FixedCols = 0
+          RowCount = 2
+          TabOrder = 0
+          OnClick = FitResultsGridClick
+        end
+        object FitresultsLabel: TLabel
+          Left = 32
+          Height = 13
+          Top = 331
+          Width = 116
+          Caption = 'Data normalised to dmax'
+          Font.Color = clWindowText
+          Font.Height = -8
+          Font.Name = 'MS Sans Serif'
+          ParentColor = False
+          ParentFont = False
+        end
+        object FitResultsAllCheckBox: TCheckBox
+          Left = 33
+          Height = 19
+          Top = 355
+          Width = 89
+          AllowGrayed = True
+          Caption = 'Copy all data'
+          TabOrder = 1
+        end
+        object FitResultsHeaderCheckBox: TCheckBox
+          Left = 33
+          Height = 19
+          Top = 379
+          Width = 98
+          Caption = 'Include header'
+          Checked = True
+          State = cbChecked
+          TabOrder = 2
+        end
+        object FitResultsLabelsCheckBox: TCheckBox
+          Left = 33
+          Height = 19
+          Top = 403
+          Width = 92
+          Caption = 'Include labels'
+          TabOrder = 3
+        end
+      end
+    end
+    object AliasTab: TTabSheet
+      HelpContext = 20
+      Caption = 'Alias'
+      ClientHeight = 467
+      ClientWidth = 877
+      OnExit = AliasTabExit
+      object AliasListEditor: TValueListEditor
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 20
+        Align = alClient
+        FixedCols = 0
+        ParentFont = False
+        PopupMenu = AliasPopupMenu
+        RowCount = 2
+        TabOrder = 0
+        OnEnter = EditEnter
+        OnExit = UImodeChange
+        OnPrepareCanvas = AliasListPrepareCanvas
+        KeyOptions = [keyEdit, keyAdd, keyDelete, keyUnique]
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goEditing, goAutoAddRows, goAlwaysShowEditor, goThumbTracking]
+        ColWidths = (
+          150
+          706
+        )
+      end
+    end
+    object FieldTypesTab: TTabSheet
+      HelpContext = 23
+      Caption = 'Field Types'
+      ClientHeight = 467
+      ClientWidth = 877
+      OnExit = SetWellhoferValues
+      object FieldTypesPanel: TPanel
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 23
+        Align = alClient
+        ClientHeight = 467
+        ClientWidth = 877
+        Color = clBtnFace
+        ParentColor = False
+        TabOrder = 0
+        object Ft_EdgePrimaryLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 135
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Primary border/edge definition'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 0
+        end
+        object Ft_EdgeFallBackLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 165
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Fallback border/edge definition'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 1
+        end
+        object Ft_MeasSymCorrLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 55
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Measurement symmetry correction'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 2
+        end
+        object Ft_RefSymCorrLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 80
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Reference symmetry correction'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 3
+        end
+        object Ft_CoFLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 195
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Center of field definition'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 4
+        end
+        object Ft_NormLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 225
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Normalisation definition'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 5
+        end
+        object Ft_DetectLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 30
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Detect'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 6
+        end
+        object EdgeDetectionGroupBox: TGroupBox
+          Left = 296
+          Height = 144
+          Top = 309
+          Width = 558
+          HelpContext = 23
+          Caption = 'Edge detection and related parameters'
+          ClientHeight = 126
+          ClientWidth = 554
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          ParentFont = False
+          TabOrder = 7
+          object EdgeDetectionCheckBox: TCheckBox
+            Left = 9
+            Height = 19
+            Hint = 'Use edge detection value when difference too large'
+            Top = 5
+            Width = 113
+            HelpContext = 130
+            Caption = 'Edge fallback (mm):'
+            Checked = True
+            OnClick = UpdateSettings
+            State = cbChecked
+            TabOrder = 0
+          end
+          object EdgeSigmoidRadiusLabel: TStaticText
+            Left = 342
+            Height = 19
+            Top = 8
+            Width = 103
+            HelpContext = 130
+            Align = alCustom
+            Alignment = taRightJustify
+            Anchors = [akTop, akRight]
+            Caption = 'Sigmoid radius (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 1
+          end
+          object EdgeSigmoidRadius_cm: TFloatSpinEditEx
+            Left = 448
+            Height = 21
+            Hint = 'Range for taken data points'
+            Top = 5
+            Width = 90
+            HelpContext = 130
+            AutoSize = False
+            Anchors = [akTop, akRight]
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 2
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 3
+            MinValue = 0.5
+            NullValue = 1
+            NullValueBehaviour = nvbInitialValue
+            Value = 3
+          end
+          object EdgeDetectionError_mm: TFloatSpinEditEx
+            Left = 131
+            Height = 21
+            Hint = 'Maximum allowed distance of 50% level'
+            Top = 5
+            Width = 70
+            HelpContext = 130
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 3
+            DecimalPlaces = 1
+            MaxValue = 30
+            Value = 2
+          end
+          object EdgeSmallFieldWidthLabel: TStaticText
+            Left = 337
+            Height = 19
+            Top = 37
+            Width = 108
+            HelpContext = 130
+            Align = alCustom
+            Alignment = taRightJustify
+            Anchors = [akTop, akRight]
+            Caption = 'Small field width (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 4
+          end
+          object EdgeSmallFieldWidth_cm: TFloatSpinEditEx
+            Left = 448
+            Height = 21
+            Hint = 'Limit for small field detection'
+            Top = 35
+            Width = 90
+            HelpContext = 130
+            AutoSize = False
+            Anchors = [akTop, akRight]
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 5
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 5
+            Value = 2.5
+          end
+          object EdgeWedge90ShiftLabel: TStaticText
+            Left = 304
+            Height = 19
+            Top = 67
+            Width = 141
+            HelpContext = 130
+            Align = alCustom
+            Alignment = taRightJustify
+            Anchors = [akTop, akRight]
+            Caption = 'Wedge 90% level shift factor:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 6
+          end
+          object EdgeWedge90ShiftFactor: TFloatSpinEditEx
+            Left = 448
+            Height = 21
+            Hint = 'Factor*L90% > (L50%+R50%) or Factor*R90% < (L50%+R50%)'
+            Top = 65
+            Width = 90
+            HelpContext = 130
+            AutoSize = False
+            Anchors = [akTop, akRight]
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 7
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 2
+            MinValue = -2
+            NullValue = 1
+            NullValueBehaviour = nvbInitialValue
+            Value = 1
+          end
+          object EdgeMRlinacListLabel: TStaticText
+            Left = 315
+            Height = 19
+            Top = 97
+            Width = 130
+            HelpContext = 130
+            Align = alCustom
+            Alignment = taRightJustify
+            Anchors = [akTop, akRight]
+            Caption = 'MRlinac treatment units:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 8
+          end
+          object EdgeMRlinacTUcsvList: TEdit
+            Left = 448
+            Height = 21
+            Top = 94
+            Width = 90
+            OnMouseEnter = EditEnter
+            TabOrder = 9
+          end
+        end
+        object FFFDetectionGroupBox: TGroupBox
+          Left = 8
+          Height = 144
+          Top = 309
+          Width = 272
+          HelpContext = 23
+          Caption = 'FFF detection and analysis'
+          ClientHeight = 124
+          ClientWidth = 268
+          TabOrder = 8
+          object FFFMinDoseDifLabel: TStaticText
+            Left = 4
+            Height = 19
+            Top = 6
+            Width = 173
+            HelpContext = 23
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Minimal In-Field dose drop (%):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 0
+          end
+          object FFFMinEdgeDifLabel: TStaticText
+            Left = 4
+            Height = 19
+            Top = 35
+            Width = 173
+            HelpContext = 23
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Minimal edge difference (mm):'
+            Color = clBtnFace
+            ParentColor = False
+            TabOrder = 1
+            Transparent = False
+          end
+          object FFFInFieldExtLabel: TStaticText
+            Left = 4
+            Height = 19
+            Top = 65
+            Width = 173
+            HelpContext = 23
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'In-Field area extension (cm):'
+            Color = clBtnFace
+            ParentColor = False
+            TabOrder = 2
+            Transparent = False
+          end
+          object FFFMinDoseDifEdit_perc: TFloatSpinEditEx
+            Left = 185
+            Height = 21
+            Top = 3
+            Width = 59
+            HelpContext = 23
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 3
+            DecimalPlaces = 1
+            Increment = 0.01
+            MaxValue = 50
+            Value = 10
+          end
+          object FFFMinEdgeDif_mm: TFloatSpinEditEx
+            Left = 185
+            Height = 21
+            Top = 33
+            Width = 59
+            HelpContext = 23
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 4
+            DecimalPlaces = 1
+            Increment = 0.01
+            MaxValue = 50
+          end
+          object FFFInFieldExt_cm: TFloatSpinEditEx
+            Left = 185
+            Height = 21
+            Hint = 'Extension of In-Field area'
+            Top = 65
+            Width = 59
+            HelpContext = 23
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 5
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 5
+            MinValue = -1
+            MinRepeatValue = 1
+            Value = 1
+          end
+        end
+        object Ft_CenterModelRadiusLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 255
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Center model radius (cm)'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 9
+        end
+        object Ft_DynPenumbraWidthLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 105
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Dynamic penumbra width'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 10
+        end
+      end
+    end
+    object SettingsTab: TTabSheet
+      HelpContext = 127
+      Caption = 'Settings'
+      ClientHeight = 467
+      ClientWidth = 877
+      OnExit = SettingsTabExit
+      object SettingsPanel: TPanel
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 127
+        Align = alClient
+        ClientHeight = 467
+        ClientWidth = 877
+        Color = clBtnFace
+        ParentColor = False
+        TabOrder = 0
+        TabStop = True
+        object ShiftGroupBox: TGroupBox
+          Left = 285
+          Height = 48
+          Top = 1
+          Width = 583
+          HelpContext = 127
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'Shift settings (cm)'
+          ClientHeight = 28
+          ClientWidth = 579
+          Color = clBtnFace
+          ParentColor = False
+          TabOrder = 1
+          object ShiftStepLabel: TStaticText
+            Left = 407
+            Height = 19
+            Top = 2
+            Width = 94
+            HelpContext = 127
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Manual shift step:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 0
+          end
+          object ManualShiftStep_cm: TFloatSpinEditEx
+            Left = 505
+            Height = 21
+            Hint = 'Step used with "<" and ">"'
+            Top = 0
+            Width = 59
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 1
+            DecimalPlaces = 3
+            Increment = 0.01
+            MaxValue = 30
+            Value = 0.01
+          end
+        end
+        object LinacErrorGroupBox: TGroupBox
+          Left = 285
+          Height = 51
+          Top = 56
+          Width = 583
+          HelpContext = 127
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'Linac symmetry error'
+          ClientHeight = 31
+          ClientWidth = 579
+          TabOrder = 2
+          object LinacErrInvertGTCheckBox: TCheckBox
+            Left = 29
+            Height = 19
+            Top = 1
+            Width = 95
+            HelpContext = 127
+            Alignment = taLeftJustify
+            Caption = 'Invert sign: GT'
+            ParentBidiMode = False
+            TabOrder = 1
+          end
+          object LinacErrInvertABCheckBox: TCheckBox
+            Left = 131
+            Height = 19
+            Top = 1
+            Width = 35
+            HelpContext = 127
+            Alignment = taLeftJustify
+            Caption = 'AB'
+            ParentBidiMode = False
+            TabOrder = 2
+          end
+          object LinacSymLabel: TStaticText
+            Left = 269
+            Height = 19
+            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
+            Top = 4
+            Width = 150
+            HelpContext = 127
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Radius inner/outer (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 0
+          end
+          object LinacSymInner_cm: TFloatSpinEditEx
+            Left = 434
+            Height = 21
+            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
+            Top = 2
+            Width = 59
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 3
+            DecimalPlaces = 1
+            Increment = 0.01
+            MaxValue = 30
+          end
+          object LinacSymOuter_cm: TFloatSpinEditEx
+            Left = 505
+            Height = 21
+            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
+            Top = 2
+            Width = 59
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 4
+            DecimalPlaces = 1
+            Increment = 0.01
+            MaxValue = 30
+          end
+        end
+        object MergeGroupBox: TGroupBox
+          Left = 285
+          Height = 49
+          Top = 114
+          Width = 583
+          HelpContext = 127
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'Merge settings'
+          ClientHeight = 29
+          ClientWidth = 579
+          TabOrder = 3
+          object MergeMatchCheckBox: TCheckBox
+            Left = 391
+            Height = 19
+            Hint = 'Try to match overlap region for profiles'
+            Top = 8
+            Width = 130
+            HelpContext = 127
+            Caption = 'Use profile matching'
+            Checked = True
+            ParentBidiMode = False
+            State = cbChecked
+            TabOrder = 3
+          end
+          object MergeScaleOverlapCheckBox: TCheckBox
+            Left = 391
+            Height = 19
+            Top = -11
+            Width = 114
+            HelpContext = 127
+            Caption = 'Scale overlap area'
+            Checked = True
+            ParentBidiMode = False
+            State = cbChecked
+            TabOrder = 2
+          end
+          object MergeProfShiftLabel: TStaticText
+            Left = 2
+            Height = 19
+            Top = 3
+            Width = 104
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Profile Shift (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 0
+          end
+          object MergePDDShiftLabel: TStaticText
+            Left = 207
+            Height = 19
+            Top = 3
+            Width = 90
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'PDD Shift (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 1
+          end
+          object MergeProfShift_cm: TFloatSpinEditEx
+            Left = 111
+            Height = 21
+            Top = 1
+            Width = 64
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 4
+            MaxValue = 50
+            MinValue = -50
+          end
+          object MergePDDShift_cm: TFloatSpinEditEx
+            Left = 303
+            Height = 21
+            Top = 1
+            Width = 65
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 5
+            MaxValue = 30
+            MinValue = -30
+          end
+        end
+        object GammaSettingsGroupBox: TGroupBox
+          Left = 285
+          Height = 159
+          Top = 171
+          Width = 583
+          HelpContext = 136
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'Gamma analysis settings'
+          ClientHeight = 139
+          ClientWidth = 579
+          TabOrder = 4
+          object GammaLimitAreaLabel: TLabel
+            Left = 11
+            Height = 15
+            Top = 1
+            Width = 115
+            Caption = 'Limit to ''In-Field area'''
+            ParentColor = False
+          end
+          object GammaLocalDoseCheckBox: TCheckBox
+            Left = 306
+            Height = 19
+            Hint = 'percentage based on local reference value'
+            Top = 2
+            Width = 73
+            HelpContext = 136
+            Caption = 'local dose'
+            Checked = True
+            ParentBidiMode = False
+            State = cbChecked
+            TabOrder = 6
+          end
+          object GammaDepthCutoffLabel: TStaticText
+            Left = 335
+            Height = 19
+            Top = 32
+            Width = 141
+            HelpContext = 136
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Depth dose cutoff (mm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 0
+          end
+          object GammaDoseCutoffLabel: TStaticText
+            Left = 390
+            Height = 19
+            Top = 5
+            Width = 86
+            HelpContext = 136
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Dose cutoff (%):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 1
+          end
+          object GammaStepsLabel: TStaticText
+            Left = 381
+            Height = 19
+            Top = 59
+            Width = 95
+            HelpContext = 136
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Search steps/mm:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 2
+          end
+          object GammaSearchFactorLabel: TStaticText
+            Left = 120
+            Height = 19
+            Hint = 'Multiplication factor for initial distance to agreement to stop'
+            Top = 59
+            Width = 118
+            HelpContext = 136
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Search range limit:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 3
+          end
+          object GammaDistNormLabel: TStaticText
+            Left = 111
+            Height = 19
+            Top = 32
+            Width = 127
+            HelpContext = 136
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Distance norm (mm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 4
+          end
+          object GammaDoseNormLabel: TStaticText
+            Left = 134
+            Height = 19
+            Top = 5
+            Width = 104
+            HelpContext = 136
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Dose norm (%):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 5
+          end
+          object GammaDoseNorm_perc: TFloatSpinEditEx
+            Left = 241
+            Height = 21
+            Hint = 'Equivalent distance to agreement for gamma = 1'
+            Top = 2
+            Width = 46
+            HelpContext = 136
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 7
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 50
+            MinValue = 0.1
+            Value = 3
+          end
+          object GammaDistNorm_mm: TFloatSpinEditEx
+            Left = 241
+            Height = 21
+            Hint = 'Equivalent distance to agreement for gamma = 1'
+            Top = 30
+            Width = 46
+            HelpContext = 136
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 8
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 50
+            MinValue = 0.1
+            Value = 3
+          end
+          object GammaSearchMultiplier_num: TFloatSpinEditEx
+            Left = 241
+            Height = 21
+            Hint = 'Multiplication factor on distance norm for initial distance to agreement to stop'
+            Top = 57
+            Width = 46
+            HelpContext = 136
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 9
+            DecimalPlaces = 1
+            MaxValue = 10
+            MinValue = 1
+            Value = 5
+          end
+          object GammaDoseCutoff_perc: TFloatSpinEditEx
+            Left = 480
+            Height = 21
+            Hint = 'Minimal dose for Gamma evaluation'
+            Top = 0
+            Width = 49
+            HelpContext = 136
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 10
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 1000
+            Value = 5
+          end
+          object GammaDepthCutoff_mm: TFloatSpinEditEx
+            Left = 480
+            Height = 21
+            Hint = 'Minimal depth for Gamma evaluation'
+            Top = 30
+            Width = 49
+            HelpContext = 136
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 11
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 50
+            Value = 5
+          end
+          object GammaEdit_Steps_per_mm: TFloatSpinEditEx
+            Left = 480
+            Height = 21
+            Hint = 'Minimal depth for Gamma evaluation'
+            Top = 57
+            Width = 49
+            HelpContext = 136
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 12
+            DecimalPlaces = 1
+            Increment = 0.1
+            MaxValue = 50
+            MinValue = 1
+            Value = 5
+          end
+        end
+        object MayneordGroupBox: TGroupBox
+          Left = 285
+          Height = 109
+          Top = 338
+          Width = 578
+          HelpContext = 127
+          Caption = 'Mayneord settings'
+          ClientHeight = 89
+          ClientWidth = 574
+          TabOrder = 5
+          object MayneordDmaxLabel: TStaticText
+            Left = 22
+            Height = 19
+            Top = 4
+            Width = 66
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Dmax (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 0
+          end
+          object MayneordSSD1Label: TStaticText
+            Left = 11
+            Height = 19
+            Top = 31
+            Width = 77
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'SSD org (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 1
+          end
+          object MayneordSSD2Label: TStaticText
+            Left = 10
+            Height = 19
+            Top = 58
+            Width = 79
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'SSD new (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 2
+          end
+          object MayneordDmax_cm: TFloatSpinEditEx
+            Left = 101
+            Height = 21
+            Top = 1
+            Width = 64
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 3
+            DecimalPlaces = 1
+            MaxValue = 20
+            Value = 1.6
+          end
+          object MayneordSSD1_cm: TFloatSpinEditEx
+            Left = 101
+            Height = 21
+            Top = 28
+            Width = 64
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 4
+            DecimalPlaces = 1
+            MaxValue = 500
+            MinValue = 10
+            Value = 100
+          end
+          object MayneordSSD2_cm: TFloatSpinEditEx
+            Left = 101
+            Height = 21
+            Top = 55
+            Width = 64
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 5
+            DecimalPlaces = 1
+            MaxValue = 500
+            MinValue = 10
+            Value = 100
+          end
+        end
+        object InsertOriginCheckBox: TCheckBox
+          Left = 3
+          Height = 19
+          Hint = 'Take missing origin value from other line (StarCheck maxi)'
+          Top = 311
+          Width = 204
+          HelpContext = 127
+          Alignment = taLeftJustify
+          Caption = 'Assign origin to both 2D array lines'
+          ParentBidiMode = False
+          TabOrder = 0
+        end
+        object FilterWidthLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 10
+          Width = 145
+          Alignment = taRightJustify
+          Caption = 'Filter width (mm):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 6
+        end
+        object CalcWidthLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 40
+          Width = 145
+          HelpContext = 127
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'Calculation width (mm):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 7
+        end
+        object ResampleGridLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 70
+          Width = 145
+          HelpContext = 127
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'Resample grid (mm):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 8
+        end
+        object GlobalNormAdjustLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 100
+          Width = 145
+          Alignment = taRightJustify
+          Caption = 'Normalisation level (%):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 9
+        end
+        object UserBorderDoseLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 130
+          Width = 145
+          HelpContext = 127
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'User Dose Level (%):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 10
+        end
+        object XpenumbraLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 160
+          Width = 145
+          HelpContext = 127
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'X penumbra h/l (%):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 11
+        end
+        object EpenumbraLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 190
+          Width = 145
+          HelpContext = 127
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'E penumbra h/l (%):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 12
+        end
+        object DefaultEnergyLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 220
+          Width = 145
+          HelpContext = 127
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'Default energy [MV/MeV]:'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 13
+        end
+        object DefaultSSDLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 250
+          Width = 145
+          HelpContext = 127
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'Default SSD (cm):'
+          TabOrder = 14
+        end
+        object FilterWidth_mm: TFloatSpinEditEx
+          Left = 173
+          Height = 21
+          Top = 8
+          Width = 75
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 15
+          DecimalPlaces = 1
+          MaxValue = 30
+          Value = 6
+        end
+        object CalcWidth_mm: TFloatSpinEditEx
+          Left = 172
+          Height = 21
+          Hint = 'Range of data points used to calculate a dose level'
+          Top = 38
+          Width = 75
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 16
+          DecimalPlaces = 1
+          MaxValue = 30
+        end
+        object ResampleGrid_mm: TFloatSpinEditEx
+          Left = 172
+          Height = 21
+          Hint = 'Create a fixed sample grid'
+          Top = 68
+          Width = 75
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 17
+          DecimalPlaces = 1
+          MaxValue = 30
+        end
+        object GlobalNormAdjust_perc: TFloatSpinEditEx
+          Left = 173
+          Height = 21
+          Top = 98
+          Width = 75
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 18
+          DecimalPlaces = 1
+          MaxValue = 300
+          MinValue = 2
+          Value = 100
+        end
+        object UserBorderDose_perc: TFloatSpinEditEx
+          Left = 173
+          Height = 21
+          Hint = 'Non-standard dosepercentage for field border definition.'
+          Top = 126
+          Width = 75
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 19
+          DecimalPlaces = 1
+          MaxValue = 300
+          MinValue = 2
+          Value = 50
+        end
+        object XHpenumbra_perc: TFloatSpinEditEx
+          Left = 165
+          Height = 21
+          Hint = 'Upper dose level for penumbra width'
+          Top = 157
+          Width = 59
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 20
+          DecimalPlaces = 1
+          MaxValue = 99
+          MinValue = 2
+          Value = 80
+        end
+        object XLpenumbra_perc: TFloatSpinEditEx
+          Left = 227
+          Height = 21
+          Hint = 'Lower dose level for penumbra width'
+          Top = 158
+          Width = 47
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 21
+          DecimalPlaces = 1
+          MaxValue = 99
+          MinValue = 2
+          Value = 20
+        end
+        object EHpenumbra_perc: TFloatSpinEditEx
+          Left = 166
+          Height = 21
+          Hint = 'Upper dose level for penumbra width'
+          Top = 188
+          Width = 57
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 22
+          DecimalPlaces = 1
+          MaxValue = 99
+          MinValue = 2
+          Value = 90
+        end
+        object ELpenumbra_perc: TFloatSpinEditEx
+          Left = 227
+          Height = 21
+          Hint = 'Upper dose level for penumbra width'
+          Top = 187
+          Width = 47
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 23
+          DecimalPlaces = 1
+          MaxValue = 99
+          MinValue = 2
+          Value = 50
+        end
+        object DefaultEnergy_MeV: TFloatSpinEditEx
+          Left = 167
+          Height = 21
+          Hint = 'Assumed energy when unknown'''
+          Top = 216
+          Width = 57
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 24
+          DecimalPlaces = 1
+          Increment = 0.1
+          MinValue = 0.01
+          Value = 6
+        end
+        object DefaultSSD_cm: TFloatSpinEditEx
+          Left = 167
+          Height = 21
+          Hint = 'SSD when not known'
+          Top = 248
+          Width = 57
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 25
+          DecimalPlaces = 1
+          Increment = 10
+          MaxValue = 500
+          MinValue = 10
+          Value = 100
+        end
+        object HistogramLimitLabel: TStaticText
+          Left = 10
+          Height = 19
+          Top = 281
+          Width = 145
+          HelpContext = 129
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'Histogram/Gamma range:'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 26
+        end
+        object HistogramLimit_num: TFloatSpinEditEx
+          Left = 167
+          Height = 21
+          Hint = 'Position of first (negative) and last bin'
+          Top = 279
+          Width = 57
+          HelpContext = 129
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 27
+          MaxValue = 30
+          MinValue = 0.05
+          NullValue = 2
+          NullValueBehaviour = nvbInitialValue
+          Value = 2
+        end
+      end
+    end
+    object AdvancedSettingsTab: TTabSheet
+      HelpContext = 129
+      Caption = 'Advanced Settings'
+      ClientHeight = 467
+      ClientWidth = 877
+      OnExit = AdvancedSettingsTabExit
+      object AdvancedSettingsPanel: TPanel
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 129
+        Align = alClient
+        ClientHeight = 467
+        ClientWidth = 877
+        Color = clBtnFace
+        ParentColor = False
+        TabOrder = 0
+        object AddDateTimeCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Hint = 'Add date and time to file name'
+          Top = 7
+          Width = 184
+          HelpContext = 129
+          Caption = 'Add date and time to file name'
+          Checked = True
+          ParentBidiMode = False
+          State = cbChecked
+          TabOrder = 0
+        end
+        object ShowWarningCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Hint = 'show warnings from analysis process'
+          Top = 67
+          Width = 177
+          HelpContext = 129
+          Caption = 'Show warnings         Log level:'
+          ParentBidiMode = False
+          TabOrder = 1
+        end
+        object AdvancedModeStartCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Hint = 'When checked, the program will start in Advanced Mode'
+          Top = 37
+          Width = 164
+          HelpContext = 129
+          Caption = 'Advanced Mode on startup'
+          ParentBidiMode = False
+          TabOrder = 2
+        end
+        object ForceMatchingCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Hint = 'Use matching as primary strategy'
+          Top = 149
+          Width = 243
+          HelpContext = 129
+          Caption = 'Use always matching for profile alignment'
+          ParentBidiMode = False
+          TabOrder = 3
+        end
+        object OutlierFilterStatsCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Hint = 'use statistical methods to find outliers'
+          Top = 209
+          Width = 174
+          HelpContext = 129
+          Caption = 'Filter outlier analysis (points):'
+          Checked = True
+          ParentBidiMode = False
+          State = cbChecked
+          TabOrder = 4
+        end
+        object AxisViewGroupBox: TGroupBox
+          Left = 258
+          Height = 93
+          Top = 0
+          Width = 560
+          HelpContext = 129
+          Caption = 'Axis title settings'
+          ClientHeight = 75
+          ClientWidth = 556
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          ParentFont = False
+          TabOrder = 5
+          object AxisViewDetLengthLabel: TLabel
+            Left = 373
+            Height = 19
+            Top = 4
+            Width = 80
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Anchors = [akTop, akRight]
+            AutoSize = False
+            Caption = 'Maximum length:'
+            ParentColor = False
+          end
+          object AxisViewComLengthLabel: TLabel
+            Left = 373
+            Height = 19
+            Top = 29
+            Width = 80
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Anchors = [akTop, akRight]
+            AutoSize = False
+            Caption = 'Maximum length:'
+            ParentColor = False
+          end
+          object AxisViewFileTypeCheckBox: TCheckBox
+            Left = 18
+            Height = 19
+            Hint = 'Show file tye description'
+            Top = 1
+            Width = 113
+            HelpContext = 129
+            Caption = 'File type description'
+            TabOrder = 0
+          end
+          object AxisViewDetNameCheckBox: TCheckBox
+            Left = 278
+            Height = 19
+            Hint = 'Show detector name'
+            Top = 1
+            Width = 90
+            HelpContext = 129
+            Caption = 'Detector name'
+            Checked = True
+            State = cbChecked
+            TabOrder = 1
+          end
+          object AxisViewCollAngleCheckBox: TCheckBox
+            Left = 18
+            Height = 19
+            Hint = 'Show collimator angle'
+            Top = 26
+            Width = 94
+            HelpContext = 129
+            Caption = 'Collimator angle'
+            TabOrder = 2
+          end
+          object AxisViewCommentsCheckBox: TCheckBox
+            Left = 279
+            Height = 19
+            Top = 26
+            Width = 69
+            HelpContext = 129
+            Caption = 'Comments'
+            TabOrder = 4
+          end
+          object AxisViewSSDCheckBox: TCheckBox
+            Left = 19
+            Height = 19
+            Hint = 'Show SSD'
+            Top = 51
+            Width = 65
+            HelpContext = 129
+            Caption = 'SSD (cm)'
+            TabOrder = 3
+          end
+          object AxisViewFieldTypeCheckBox: TCheckBox
+            Left = 160
+            Height = 19
+            Hint = 'Show file tye description'
+            Top = 2
+            Width = 65
+            HelpContext = 129
+            Caption = 'Field type'
+            TabOrder = 5
+          end
+          object AxisViewDetLength_num: TSpinEditEx
+            Left = 458
+            Height = 21
+            Hint = 'Maximum length of detector name'
+            Top = 1
+            Width = 75
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 6
+            MaxValue = 30
+            Value = 30
+          end
+          object AxisViewComLength_num: TSpinEditEx
+            Left = 458
+            Height = 21
+            Hint = 'Maximum length of comments'
+            Top = 26
+            Width = 75
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 7
+            MaxValue = 30
+            Value = 30
+          end
+        end
+        object ColorsBox: TGroupBox
+          Left = 258
+          Height = 50
+          Top = 102
+          Width = 560
+          HelpContext = 129
+          Caption = 'Colors'
+          ClientHeight = 32
+          ClientWidth = 556
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          ParentFont = False
+          TabOrder = 6
+          object PlotColorPanel: TPanel
+            Left = 18
+            Height = 22
+            Top = 3
+            Width = 145
+            HelpContext = 129
+            Caption = 'Graph panel background'
+            Color = 16448250
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'MS Sans Serif'
+            ParentColor = False
+            ParentFont = False
+            TabOrder = 0
+            OnClick = ColorPanelClick
+          end
+          object UIColorPanel: TPanel
+            Left = 378
+            Height = 22
+            Top = 3
+            Width = 145
+            HelpContext = 129
+            Caption = 'User interface background'
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'MS Sans Serif'
+            ParentFont = False
+            TabOrder = 1
+            OnClick = ColorPanelClick
+          end
+          object GridColorPanel: TPanel
+            Left = 200
+            Height = 22
+            Top = 3
+            Width = 145
+            HelpContext = 129
+            Caption = 'Graph grid color'
+            Color = 6381921
+            Font.Color = clWindowText
+            Font.Height = -11
+            Font.Name = 'MS Sans Serif'
+            ParentColor = False
+            ParentFont = False
+            TabOrder = 2
+            OnClick = ColorPanelClick
+          end
+        end
+        object MatchGroupBox: TGroupBox
+          Left = 258
+          Height = 87
+          Top = 220
+          Width = 560
+          HelpContext = 129
+          Caption = 'Match settings'
+          ClientHeight = 69
+          ClientWidth = 556
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          ParentFont = False
+          TabOrder = 7
+          object MatchRangeDividerLabel: TLabel
+            Left = 18
+            Height = 19
+            Top = 11
+            Width = 74
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            AutoSize = False
+            Caption = 'Range divider:'
+            ParentColor = False
+          end
+          object MatchStepFactorLabel: TLabel
+            Left = 18
+            Height = 19
+            Top = 39
+            Width = 74
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            AutoSize = False
+            Caption = 'Step number:'
+            ParentColor = False
+          end
+          object MatchNormPercLabel: TLabel
+            Left = 295
+            Height = 19
+            Top = 11
+            Width = 158
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            AutoSize = False
+            Caption = 'Normalisation range fraction (%):'
+            ParentColor = False
+          end
+          object MatchInclusionLabel: TLabel
+            Left = 295
+            Height = 19
+            Top = 39
+            Width = 158
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            AutoSize = False
+            Caption = 'Inclusion lower limit (%):'
+            ParentColor = False
+          end
+          object MatchRangeDivider_num: TSpinEditEx
+            Left = 103
+            Height = 21
+            Hint = 'Divider for range reduction after each cycle.'
+            Top = 9
+            Width = 75
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 0
+            MaxValue = 10
+            MinValue = 2
+            Value = 2
+          end
+          object MatchSteps_num: TSpinEditEx
+            Left = 103
+            Height = 21
+            Hint = 'The number of steps in each iteration cycle.'
+            Top = 37
+            Width = 75
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 1
+            MaxValue = 50
+            MinValue = 2
+            Value = 6
+          end
+          object MatchNormDelta_perc: TFloatSpinEditEx
+            Left = 458
+            Height = 21
+            Hint = 'Range for taken data points'
+            Top = 9
+            Width = 75
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 2
+            DecimalPlaces = 1
+            MaxValue = 20
+            Value = 2
+          end
+          object MatchInclusionLimit_perc: TFloatSpinEditEx
+            Left = 458
+            Height = 21
+            Hint = 'Range for taken data points'
+            Top = 37
+            Width = 75
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 3
+            DecimalPlaces = 1
+            MaxValue = 90
+            Value = 5
+          end
+        end
+        object MeasRemappingBox: TGroupBox
+          Left = 258
+          Height = 50
+          Top = 161
+          Width = 560
+          HelpContext = 129
+          Caption = 'Axis remapping'
+          ClientHeight = 32
+          ClientWidth = 556
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          ParentFont = False
+          TabOrder = 8
+          object MeasReMappingString: TComboBox
+            Left = 18
+            Height = 21
+            Hint = 'Set alternative axis mapping for data'
+            Top = 5
+            Width = 169
+            HelpContext = 129
+            CharCase = ecUppercase
+            DropDownCount = 6
+            ItemHeight = 13
+            OnChange = MeasReMappingStringChange
+            TabOrder = 0
+          end
+        end
+        object BadPenumbraLabel: TStaticText
+          Left = 18
+          Height = 19
+          Top = 239
+          Width = 125
+          HelpContext = 129
+          Align = alCustom
+          Caption = 'Bad penumbra (cm):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 9
+        end
+        object OriginMinLevelLabel: TStaticText
+          Left = 16
+          Height = 19
+          Top = 269
+          Width = 125
+          HelpContext = 129
+          Align = alCustom
+          Caption = 'Origin min. level (%):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 10
+        end
+        object PipsPixelSizeLabel: TStaticText
+          Left = 18
+          Height = 19
+          Top = 299
+          Width = 125
+          HelpContext = 129
+          Align = alCustom
+          Caption = 'Pips pixel size (mm):'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 11
+        end
+        object LogLevelEdit: TSpinEditEx
+          Left = 192
+          Height = 21
+          Top = 65
+          Width = 51
+          HelpContext = 129
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 12
+          MaxValue = 4
+          Value = 4
+        end
+        object PipsPixelSize_cm: TFloatSpinEditEx
+          Left = 192
+          Height = 21
+          Hint = 'Pixel size at isoc level'
+          Top = 297
+          Width = 50
+          HelpContext = 129
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 13
+          MaxValue = 30
+        end
+        object OriginMinLevel_perc: TFloatSpinEditEx
+          Left = 192
+          Height = 21
+          Hint = 'Minimum percentage of maximum for normalisation purposes.'
+          Top = 267
+          Width = 50
+          HelpContext = 129
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 14
+          MaxValue = 1000
+          NullValue = 95
+          NullValueBehaviour = nvbInitialValue
+          Value = 95
+        end
+        object BadPenumbraWidth_cm: TFloatSpinEditEx
+          Left = 192
+          Height = 21
+          Hint = 'Limit for acceptable penumbra'
+          Top = 237
+          Width = 50
+          HelpContext = 129
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 15
+          DecimalPlaces = 1
+          MaxValue = 30
+          Value = 2
+        end
+        object PDDfitGroupBox: TGroupBox
+          Left = 257
+          Height = 140
+          Top = 315
+          Width = 560
+          HelpContext = 129
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'PDD fit'
+          ClientHeight = 120
+          ClientWidth = 556
+          TabOrder = 16
+          object PDDfitCheckBox: TCheckBox
+            Left = 37
+            Height = 19
+            Top = 1
+            Width = 108
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'Fit PDD to buffer'
+            ParentBidiMode = False
+            TabOrder = 11
+          end
+          object FitMu3CheckBox: TCheckBox
+            Left = 294
+            Height = 19
+            Top = 29
+            Width = 44
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'mu3'
+            TabOrder = 0
+          end
+          object FitMu4CheckBox: TCheckBox
+            Left = 294
+            Height = 19
+            Top = 48
+            Width = 44
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'mu4'
+            TabOrder = 1
+          end
+          object FitMx2CheckBox: TCheckBox
+            Left = 296
+            Height = 19
+            Top = 67
+            Width = 43
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'mx2'
+            TabOrder = 2
+          end
+          object FitMubPowerFixedCheckBox: TCheckBox
+            Left = 211
+            Height = 19
+            Top = 57
+            Width = 46
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'fixed'
+            TabOrder = 3
+          end
+          object FitENRweigthedCheckBox: TCheckBox
+            Left = 215
+            Height = 19
+            Top = 85
+            Width = 42
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'ENR'
+            TabOrder = 4
+          end
+          object FitZWeightLabel: TStaticText
+            Left = 6
+            Height = 19
+            Top = 31
+            Width = 119
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Z-weighting power:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 5
+          end
+          object FitMubPowerLabel: TStaticText
+            Left = 6
+            Height = 19
+            Top = 60
+            Width = 119
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'mub power (buildup):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 6
+          end
+          object FitENRLabel: TStaticText
+            Left = 6
+            Height = 19
+            Top = 88
+            Width = 119
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Error to Noise Ratio:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 7
+          end
+          object FitMaxTimeLabel: TStaticText
+            Left = 349
+            Height = 19
+            Top = 88
+            Width = 119
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Max. time (sec):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 8
+          end
+          object FitRestartsLabel: TStaticText
+            Left = 412
+            Height = 13
+            Top = 60
+            Width = 51
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Restarts:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 9
+          end
+          object FitCyclesLabel: TStaticText
+            Left = 420
+            Height = 13
+            Top = 31
+            Width = 43
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Cycles:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 10
+          end
+          object FitZWeight_val: TFloatSpinEditEx
+            Left = 131
+            Height = 21
+            Hint = 'Power value for Z weighting'
+            Top = 29
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 12
+            Increment = 0.01
+            MaxValue = 2
+          end
+          object FitMubPower_exp: TFloatSpinEditEx
+            Left = 131
+            Height = 21
+            Hint = 'Upper limit for Error to Noise Ratio'
+            Top = 57
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 13
+            Increment = 0.01
+            MaxValue = 10
+            MinValue = 0.5
+            Value = 1.15
+          end
+          object FitENRlimit_ratio: TFloatSpinEditEx
+            Left = 131
+            Height = 21
+            Hint = 'Upper limit for Error to Noise Ratio'
+            Top = 85
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 14
+            MaxValue = 50
+            Value = 2
+          end
+          object FitMaxTime_sec: TFloatSpinEditEx
+            Left = 474
+            Height = 21
+            Top = 85
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 15
+            MaxValue = 50
+          end
+          object FitCycles_num: TSpinEditEx
+            Left = 475
+            Height = 21
+            Top = 29
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 16
+            MaxValue = 50
+          end
+          object FitRestarts_num: TSpinEditEx
+            Left = 475
+            Height = 21
+            Top = 57
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            NumbersOnly = True
+            TabOrder = 17
+            MaxValue = 50
+          end
+        end
+        object HistoryListCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Top = 97
+          Width = 175
+          HelpContext = 129
+          Caption = 'Use history list              length:'
+          OnClick = HistoryListSizeClick
+          ParentBidiMode = False
+          TabOrder = 17
+        end
+        object HistoryListSize_num: TSpinEditEx
+          Left = 193
+          Height = 21
+          Top = 95
+          Width = 50
+          HelpContext = 129
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 18
+          OnChange = HistoryListSizeClick
+          MaxValue = 99
+          MinValue = 1
+          NullValue = 1
+          Value = 10
+        end
+        object OutlierMaxPoints_num: TSpinEditEx
+          Left = 192
+          Height = 21
+          Hint = 'Upper points limit for statistical analysis'
+          Top = 207
+          Width = 50
+          HelpContext = 129
+          AutoSize = False
+          MaxLength = 0
+          NumbersOnly = True
+          TabOrder = 19
+          Increment = 2
+          MaxValue = 21
+          MinValue = 3
+          NullValue = 3
+          Value = 7
+        end
+        object HistoryListFreezeCheckBox: TCheckBox
+          Left = 27
+          Height = 19
+          Hint = 'All data will stay untouched'
+          Top = 119
+          Width = 180
+          HelpContext = 129
+          Caption = 'Put history data in frozen state'
+          ParentBidiMode = False
+          TabOrder = 20
+        end
+        object AutoSetDecPointCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Hint = 'Use matching as primary strategy'
+          Top = 179
+          Width = 182
+          HelpContext = 129
+          Caption = 'Auto set decimal separator for:'
+          ParentBidiMode = False
+          TabOrder = 21
+        end
+        object AutoDecPointList: TEdit
+          Left = 192
+          Height = 21
+          Top = 177
+          Width = 33
+          HelpContext = 97
+          AutoSize = False
+          OnExit = FileConvStartCheck
+          OnKeyPress = FileConvNameMaskKeyPress
+          TabOrder = 22
+          Text = '.,'
+        end
+      end
+    end
+    object ConfigurationTab: TTabSheet
+      HelpContext = 240
+      Caption = 'Configuration'
+      ClientHeight = 467
+      ClientWidth = 877
+      object ConfigurationPanel: TPanel
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 240
+        Align = alClient
+        ClientHeight = 467
+        ClientWidth = 877
+        Color = clBtnFace
+        ParentColor = False
+        TabOrder = 0
+        object ModListGrid: TStringGrid
+          Left = 1
+          Height = 465
+          Top = 1
+          Width = 497
+          HelpContext = 240
+          Align = alLeft
+          ColCount = 8
+          DefaultColWidth = 60
+          DefaultRowHeight = 20
+          FixedCols = 0
+          FixedRows = 0
+          Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSizing, goColSizing, goEditing, goRowSelect]
+          RowCount = 1
+          TabOrder = 0
+          OnEnter = EditEnter
+          OnExit = UImodeChange
+          OnSelectCell = ModListGridSelectCell
+        end
+        object ModListAddButton: TButton
+          Left = 523
+          Height = 25
+          Top = 32
+          Width = 50
+          HelpContext = 240
+          Caption = 'Add'
+          OnClick = ModListAddClick
+          TabOrder = 1
+        end
+        object ModListEditButton: TButton
+          Left = 523
+          Height = 25
+          Top = 72
+          Width = 50
+          HelpContext = 240
+          Caption = 'Edit'
+          OnClick = ModListEditClick
+          TabOrder = 2
+        end
+        object ModListDelButton: TButton
+          Left = 523
+          Height = 25
+          Top = 112
+          Width = 50
+          HelpContext = 240
+          Caption = 'Delete'
+          OnClick = ModListDelClick
+          TabOrder = 3
+        end
+        object ModListNormRadioButton: TRadioButton
+          Left = 513
+          Height = 19
+          Top = 184
+          Width = 156
+          HelpContext = 240
+          Caption = 'Depth dose normalisation'
+          Checked = True
+          OnClick = ModListRadioButtonClick
+          TabOrder = 4
+          TabStop = True
+        end
+        object ModListFilmRadioButton: TRadioButton
+          Left = 513
+          Height = 19
+          Top = 210
+          Width = 79
+          HelpContext = 240
+          Caption = 'OD to dose'
+          OnClick = ModListRadioButtonClick
+          TabOrder = 5
+        end
+        object ModListBeamRadioButton: TRadioButton
+          Left = 513
+          Height = 19
+          Top = 237
+          Width = 117
+          HelpContext = 240
+          Caption = 'Generic references'
+          OnClick = ModListRadioButtonClick
+          TabOrder = 6
+        end
+      end
+    end
+    object LogTab: TTabSheet
+      HelpContext = 300
+      Caption = 'Messages'
+      ClientHeight = 467
+      ClientWidth = 877
+      object LogTabMemo: TMemo
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 300
+        Align = alClient
+        Color = 13158592
+        ScrollBars = ssAutoVertical
+        TabOrder = 0
+        WordWrap = False
+      end
+    end
+    object EditorTab: TTabSheet
+      HelpContext = 3
+      Caption = 'Raw data'
+      ClientHeight = 467
+      ClientWidth = 877
+      object DataEditor: TMemo
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 3
+        Align = alClient
+        Color = 14737632
+        Lines.Strings = (
+          'Editor'
+        )
+        OnEnter = EditEnter
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
+        WordWrap = False
+      end
+    end
+    object InventoryTab: TTabSheet
+      HelpContext = 95
+      Caption = 'Files'
+      ClientHeight = 467
+      ClientWidth = 877
+      object InventoryGrid: TStringGrid
+        AnchorSideLeft.Side = asrBottom
+        Left = 178
+        Height = 481
+        Top = -8
+        Width = 703
+        HelpContext = 95
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        BorderSpacing.Left = 2
+        DefaultColWidth = 30
+        DefaultRowHeight = 15
+        FixedCols = 0
+        FixedRows = 0
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goColSizing, goRowSelect]
+        PopupMenu = InventoryPopupMenu
+        RowCount = 1
+        TabOrder = 0
+        OnAfterSelection = OnInventorySelect
+        OnPrepareCanvas = InventoryPrepareCanvas
+        ColWidths = (
+          133
+          133
+          133
+          133
+          137
+        )
+      end
+      object InventoryRadioRef: TRadioButton
+        Left = 7
+        Height = 19
+        Top = 4
+        Width = 77
+        HelpContext = 95
+        Caption = 'References'
+        OnClick = InventoryDirBoxChange
+        TabOrder = 1
+      end
+      object InventoryRadioData: TRadioButton
+        Left = 7
+        Height = 19
+        Top = 25
+        Width = 44
+        HelpContext = 95
+        Caption = 'Data'
+        Checked = True
+        OnClick = InventoryDirBoxChange
+        TabOrder = 2
+        TabStop = True
+      end
+      object InventoryRadioSelf: TRadioButton
+        Left = 7
+        Height = 19
+        Top = 46
+        Width = 63
+        HelpContext = 95
+        Caption = 'Selftests'
+        OnClick = InventoryDirBoxChange
+        TabOrder = 3
+      end
+      object InventoryAltAxisCheckBox: TCheckBox
+        Left = 8
+        Height = 19
+        Top = 69
+        Width = 132
+        HelpContext = 95
+        Caption = 'Alternative axis setup'
+        TabOrder = 4
+      end
+      object InventorySetRefDirButton: TButton
+        Left = 94
+        Height = 25
+        Top = 0
+        Width = 73
+        HelpContext = 95
+        Caption = '-> set path'
+        Enabled = False
+        OnClick = InventorySetRefDirClick
+        TabOrder = 5
+      end
+      object InventoryDirBox: TDirectoryEdit
+        Left = 8
+        Height = 23
+        Top = 107
+        Width = 168
+        HelpContext = 95
+        OnAcceptDirectory = InventoryDirBoxAccept
+        ShowHidden = False
+        ButtonWidth = 23
+        NumGlyphs = 1
+        AutoSize = False
+        MaxLength = 0
+        TabOrder = 6
+        OnEditingDone = InventoryDirBoxChange
+        OnEnter = EditEnter
+        OnExit = UImodeChange
+      end
+    end
+    object FileConversionTab: TTabSheet
+      HelpContext = 97
+      Caption = 'Conversion'
+      ClientHeight = 467
+      ClientWidth = 877
+      object FileConversionPanel: TPanel
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 97
+        Align = alClient
+        Caption = 'FileConversionPanel'
+        ClientHeight = 467
+        ClientWidth = 877
+        Color = clBtnFace
+        ParentColor = False
+        TabOrder = 0
+        object FileConvStartButton: TButton
+          Left = 5
+          Height = 25
+          Top = 170
+          Width = 75
+          HelpContext = 97
+          Caption = 'Start'
+          OnClick = FileConvStartClick
+          TabOrder = 0
+        end
+        object FileConvList: TMemo
+          Left = 5
+          Height = 253
+          Top = 207
+          Width = 771
+          HelpContext = 97
+          Anchors = [akTop, akLeft, akBottom]
+          ScrollBars = ssVertical
+          TabOrder = 1
+        end
+        object FileConvOverWrite: TCheckBox
+          Left = 190
+          Height = 19
+          Top = 172
+          Width = 139
+          HelpContext = 97
+          Caption = 'Overwrite existing files'
+          TabOrder = 2
+        end
+        object FileConvLowerCase: TCheckBox
+          Left = 190
+          Height = 19
+          Top = 139
+          Width = 108
+          HelpContext = 97
+          Caption = 'Lowercase name'
+          OnClick = FileConvStartCheck
+          OnExit = FileConvStartCheck
+          TabOrder = 3
+        end
+        object FileConvSamePath: TCheckBox
+          Left = 5
+          Height = 19
+          Top = 139
+          Width = 129
+          HelpContext = 97
+          Caption = 'Same Path as Source'
+          OnClick = FileConvStartCheck
+          OnExit = FileConvStartCheck
+          TabOrder = 4
+        end
+        object FileConvMakeFileName: TCheckBox
+          Left = 375
+          Height = 19
+          Top = 139
+          Width = 119
+          HelpContext = 97
+          Caption = 'Generate file name'
+          OnClick = FileConvNameMaskEnter
+          TabOrder = 5
+        end
+        object FileConvNameMask: TEdit
+          Left = 375
+          Height = 23
+          Top = 170
+          Width = 155
+          HelpContext = 97
+          AutoSize = False
+          OnExit = FileConvStartCheck
+          OnKeyPress = FileConvNameMaskKeyPress
+          TabOrder = 6
+        end
+        object FileConvDestinationListBox: TListBox
+          Left = 599
+          Height = 76
+          Top = 117
+          Width = 177
+          HelpContext = 97
+          ItemHeight = 0
+          OnClick = FileConvStartCheck
+          OnExit = FileConvStartCheck
+          TabOrder = 7
+        end
+        object FileConvSourceListBox: TListBox
+          Left = 599
+          Height = 76
+          Top = 16
+          Width = 177
+          HelpContext = 97
+          ItemHeight = 0
+          OnClick = FileConvStartCheck
+          OnExit = FileConvStartCheck
+          TabOrder = 8
+        end
+        object FileConvSourceRecursive: TCheckBox
+          Left = 5
+          Height = 19
+          Top = 43
+          Width = 107
+          HelpContext = 97
+          Caption = 'Recursive search'
+          TabOrder = 9
+        end
+        object FileConvIon2DoseCheckBox: TCheckBox
+          Left = 190
+          Height = 19
+          Top = 43
+          Width = 250
+          HelpContext = 97
+          Caption = 'Apply Ionisation to Dose conversion to PDD'
+          OnClick = FileConvStartCheck
+          OnExit = FileConvStartCheck
+          TabOrder = 10
+        end
+        object FileConvSourcePath: TDirectoryEdit
+          Left = 5
+          Height = 23
+          Top = 16
+          Width = 525
+          HelpContext = 97
+          ShowHidden = False
+          ButtonWidth = 23
+          NumGlyphs = 1
+          AutoSize = False
+          MaxLength = 0
+          TabOrder = 11
+          OnEnter = EditEnter
+          OnExit = FileConvStartCheck
+        end
+        object FileConvDestinationPath: TDirectoryEdit
+          Left = 5
+          Height = 23
+          Top = 114
+          Width = 525
+          HelpContext = 97
+          ShowHidden = False
+          ButtonWidth = 23
+          NumGlyphs = 1
+          AutoSize = False
+          MaxLength = 0
+          TabOrder = 12
+          OnEnter = EditEnter
+          OnExit = FileConvStartCheck
+        end
+        object FileConvSourceLabel: TStaticText
+          Left = 5
+          Height = 13
+          Top = 1
+          Width = 115
+          Caption = 'Source Directory:'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 13
+        end
+        object FileConvSourceTypeLabel: TStaticText
+          Left = 599
+          Height = 13
+          Top = 1
+          Width = 115
+          Caption = 'Source File Type:'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 14
+        end
+        object FileConvDestinationTypeLabel: TStaticText
+          Left = 599
+          Height = 13
+          Top = 99
+          Width = 115
+          Caption = 'Output File Type:'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 15
+        end
+        object FileConvDestinationLabel: TStaticText
+          Left = 5
+          Height = 13
+          Top = 99
+          Width = 115
+          Caption = 'Output Directory:'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 16
+        end
+      end
+    end
+    object ODconvTab: TTabSheet
+      HelpContext = 230
+      Caption = 'Signal Adapt'
+      ClientHeight = 467
+      ClientWidth = 877
+      object ODConversionPanel: TPanel
+        Left = 0
+        Height = 467
+        Top = 0
+        Width = 877
+        HelpContext = 230
+        Align = alClient
+        ClientHeight = 467
+        ClientWidth = 877
+        Color = clCream
+        ParentColor = False
+        TabOrder = 0
+        object UseBackGroundBox: TGroupBox
+          Left = 3
+          Height = 451
+          Top = 0
+          Width = 462
+          HelpContext = 230
+          Anchors = [akTop, akLeft, akBottom]
+          Caption = 'Dose conversion and Background'
+          ClientHeight = 433
+          ClientWidth = 458
+          Color = clWhite
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          ParentColor = False
+          ParentFont = False
+          TabOrder = 0
+          object UseDoseConvLabel: TStaticText
+            Left = 5
+            Height = 13
+            Top = 19
+            Width = 90
+            Align = alCustom
+            Caption = 'Dose conversion'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 0
+          end
+          object UseDoseModalityLabel: TStaticText
+            Left = 120
+            Height = 13
+            Top = 19
+            Width = 60
+            Align = alCustom
+            Caption = 'Modality'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 1
+          end
+          object UseDoseFilmTypeLabel: TStaticText
+            Left = 195
+            Height = 13
+            Top = 19
+            Width = 50
+            Align = alCustom
+            Caption = 'Filmtype'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 2
+          end
+          object UseSubtractLabel: TStaticText
+            Left = 270
+            Height = 13
+            Top = 19
+            Width = 80
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Background'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 3
+          end
+          object UseBackgroundValueLabel: TStaticText
+            Left = 357
+            Height = 13
+            Top = 19
+            Width = 90
+            Align = alCustom
+            Caption = 'absolute value'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 4
+          end
+        end
+        object UseDoseDelButton: TButton
+          Left = 486
+          Height = 25
+          Top = 48
+          Width = 50
+          HelpContext = 230
+          Caption = 'Delete'
+          OnClick = UseDoseDelButtonClick
+          TabOrder = 1
+        end
+        object UseDoseAddButton: TButton
+          Left = 486
+          Height = 25
+          Top = 8
+          Width = 50
+          HelpContext = 230
+          Caption = 'Add'
+          OnClick = UseDoseAddButtonClick
+          TabOrder = 2
+        end
+      end
+    end
+  end
+  object StatusBar: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 495
+    Width = 885
+    HelpContext = 21
+    Panels = <    
+      item
+        Width = 50
+      end    
+      item
+        Width = 51
+      end>
+    SimplePanel = False
+  end
+  object ApplicationProperties: TApplicationProperties
+    Left = 440
+    Top = 472
+  end
+  object FileOpenDialog: TOpenDialog
+    Options = [ofShowHelp, ofAllowMultiSelect, ofPathMustExist, ofFileMustExist, ofEnableSizing, ofViewDetail]
+    Left = 136
+    Top = 472
+  end
+  object FileSaveDialog: TSaveDialog
+    DefaultExt = '.wtx'
+    Filter = 'all|*.*|OmniPro wtx|*.wtx|OmniPro v6|*.txt|OmniPro ascii|*.asc|PTW|*.mcc|OmniPro wda|*.wda'
+    Left = 24
+    Top = 472
+  end
+  object InventoryPopupMenu: TPopupMenu
+    Left = 704
+    Top = 472
+    object InventoryPopExpandItem: TMenuItem
+      Caption = 'Expand'
+      OnClick = InventoryGridDblClick
+    end
+    object InventoryPopOpenItem: TMenuItem
+      Caption = 'Open'
+      OnClick = InventoryGridDblClick
+    end
+    object InventoryPopDelItem: TMenuItem
+      Caption = 'Delete file'
+      OnClick = InventoryGridDblClick
+    end
+    object InventoryPopReturnItem: TMenuItem
+      Caption = 'Return'
+      OnClick = InventoryDirBoxChange
+    end
+  end
+  object MainMenu: TMainMenu
+    Left = 224
+    Top = 472
+    object FileMenu: TMenuItem
+      Caption = '&File'
+      object FileOpenItem: TMenuItem
+        Caption = '&Open...'
+        HelpContext = 101
+        Hint = 'Open a text file of a curve'
+        ShortCut = 16463
+        OnClick = FileOpenClick
+      end
+      object FileOpenTempRefItem: TMenuItem
+        Caption = 'Open Temporary Reference...'
+        GroupIndex = 1
+        ShortCut = 49231
+        OnClick = FileOpenTempRefClick
+      end
+      object FileLoadDataItem: TMenuItem
+        Caption = '&Load current data'
+        GroupIndex = 1
+        Hint = 'reprocess all from raw data'
+        ShortCut = 16460
+        OnClick = Reload
+      end
+      object FileSaveMeasurementItem: TMenuItem
+        Caption = '&Save Measurement as...'
+        GroupIndex = 1
+        ShortCut = 16467
+        OnClick = FileSaveClick
+      end
+      object FileSaveFilteredItem: TMenuItem
+        Caption = 'Save Selected &Filtered Curve as...'
+        ShortCut = 49235
+        OnClick = FileSaveClick
+      end
+      object FileSaveItem: TMenuItem
+        Caption = 'Save Selected Curve &as...'
+        GroupIndex = 1
+        ShortCut = 16449
+        OnClick = FileSaveClick
+      end
+      object FileIgnoreClipboardItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Ignore Clipboard'
+        GroupIndex = 1
+        HelpContext = 106
+        ShortCut = 16457
+        OnClick = UImodeChange
+      end
+      object FileSaveAsReferenceItem: TMenuItem
+        Caption = 'Save as &Reference'
+        GroupIndex = 1
+        Hint = 'save the current curve as a reference profile'
+        ShortCut = 16466
+        OnClick = OnMenu
+      end
+      object FileLockCriticalItems: TMenuItem
+        AutoCheck = True
+        Caption = 'Lock critical options'
+        Checked = True
+        GroupIndex = 1
+        HelpContext = 104
+        ShortCut = 49234
+        OnClick = UImodeChange
+      end
+      object FileHistoryItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Use History list'
+        ShortCut = 16456
+        OnClick = HistoryListSizeClick
+      end
+      object FileExitItem: TMenuItem
+        Caption = '&Exit'
+        GroupIndex = 1
+        ShortCut = 32883
+        OnClick = OnMenu
+      end
+    end
+    object ProcessingMenu: TMenuItem
+      Caption = 'Processing'
+      HelpContext = 70
+      object ProcessAutoscalingItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Autoscaling'
+        Checked = True
+        GroupIndex = 71
+        ShortCut = 49217
+        OnClick = Reload
+      end
+      object ProcessSigmoid2BufferItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Apply sigmoid model on Buffer'
+        GroupIndex = 71
+        ShortCut = 16450
+        OnClick = OnDataRead
+      end
+      object ProcessReprocessItem: TMenuItem
+        Caption = 'Re&process current data'
+        GroupIndex = 71
+        HelpContext = 70
+        Hint = 'Process the current data with other settings'
+        ShortCut = 16464
+        OnClick = OnDataRead
+      end
+      object ProcessResetFitItem: TMenuItem
+        Caption = 'Reset Nelder-Mead fit'
+        GroupIndex = 71
+        HelpContext = 127
+        Hint = 'Set the best fit to default values'
+        ShortCut = 16474
+        OnClick = ProcessResetFitClick
+      end
+      object ProcessingDivisor1: TMenuItem
+        Caption = '-'
+        GroupIndex = 71
+      end
+      object ProcessMergeItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Merge Source with measurement'
+        Enabled = False
+        GroupIndex = 71
+        ShortCut = 16465
+        OnClick = OnDataRead
+      end
+      object ProcessSetMergeSourceItem: TMenuItem
+        Caption = 'Set measurement as Merge Source'
+        GroupIndex = 71
+        ShortCut = 49233
+        OnClick = ProcessMergeSourceClick
+      end
+      object ProcessClearMergeItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Clear Merge source'
+        Enabled = False
+        GroupIndex = 71
+        ShortCut = 24657
+        OnClick = ProcessMergeSourceClick
+      end
+      object ProcessingDivisor2: TMenuItem
+        Caption = '-'
+        GroupIndex = 71
+      end
+      object ProcessMirrorMeasRefItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Mirrored measurement as Reference'
+        GroupIndex = 71
+        ShortCut = 16472
+      end
+      object ProcessSyntheticProfile: TMenuItem
+        AutoCheck = True
+        Caption = 'Make synthetic profile'
+        GroupIndex = 71
+        HelpContext = 74
+        Hint = 'recalculate all for current data'
+        ShortCut = 16454
+        OnClick = Reload
+      end
+      object ProcessingDivisor3: TMenuItem
+        Caption = '-'
+        GroupIndex = 71
+      end
+      object ProcessSetTempRefItem: TMenuItem
+        Caption = 'Set as &Temporary reference'
+        GroupIndex = 71
+        ShortCut = 16468
+        OnClick = ProcessSetTempRefClick
+      end
+      object ProcessUnsetTempRefItem: TMenuItem
+        Caption = 'Clear Temporary Reference'
+        Checked = True
+        GroupIndex = 71
+        HelpContext = 71
+        Hint = 'Switch off temporary reference.'
+        ShortCut = 24660
+        OnClick = ProcessUnsetTempRefClick
+      end
+      object ProcessIgnoreTUnameItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Ignore name of Treatment &Unit'
+        GroupIndex = 71
+        ShortCut = 16469
+        OnClick = ProcessUpdateDataRead
+      end
+      object ProcessCheckTempTypeItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Check Temporary Scan t&ype'
+        Checked = True
+        Enabled = False
+        GroupIndex = 71
+        ShortCut = 16473
+        OnClick = ProcessUpdateDataRead
+      end
+    end
+    object ViewMenu: TMenuItem
+      Caption = '&View'
+      HelpContext = 110
+      Hint = 'visible objects'
+      object ViewMeasuredItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Measured'
+        Checked = True
+        HelpContext = 110
+        Hint = 'show the measurement curve'
+        ShortCut = 77
+        OnClick = Viewitems
+      end
+      object ViewPointsItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Points'
+        ShortCut = 80
+        OnClick = Viewitems
+      end
+      object ViewCalculatedItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Calculated'
+        Checked = True
+        HelpContext = 110
+        Hint = 'show the calculated curve'
+        ShortCut = 67
+        OnClick = OnDataRead
+      end
+      object ViewReferenceItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Reference'
+        Checked = True
+        HelpContext = 110
+        Hint = 'show the reference curve'
+        ShortCut = 82
+        OnClick = Viewitems
+      end
+      object ViewBufferItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Buffer'
+        HelpContext = 110
+        Hint = 'view the buffer curve'
+        ShortCut = 66
+        OnClick = Viewitems
+      end
+      object ViewIndicatorsItem: TMenuItem
+        AutoCheck = True
+        Caption = '&In-Field Aarea indicators'
+        Checked = True
+        HelpContext = 110
+        Hint = 'show the in-field area delimiters'
+        ShortCut = 73
+        OnClick = Viewitems
+      end
+      object ViewPenumbraItem: TMenuItem
+        AutoCheck = True
+        Caption = 'P&enumbra sigmoid model'
+        ShortCut = 69
+        OnClick = Viewitems
+      end
+      object ViewFFFIndicatorsItem: TMenuItem
+        AutoCheck = True
+        Caption = '&FFF indicators'
+        Checked = True
+        ShortCut = 70
+        OnClick = Viewitems
+      end
+      object ViewValuesItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Values'
+        HelpContext = 110
+        Hint = 'Show values at cursor| <Left arrow>, <Right arrow> and (any combination of) accelerator keys <shift>, <ctrl> and <alt>'
+        ShortCut = 86
+        OnClick = Viewitems
+      end
+      object ViewHighResValItem: TMenuItem
+        AutoCheck = True
+        Caption = '&High resolution values'
+        ShortCut = 72
+        OnClick = OnDataRead
+      end
+      object ViewMeasNormAdjustMode: TMenuItem
+        AutoCheck = True
+        Caption = 'Measurement Norm Adjust mode'
+        ShortCut = 78
+        OnClick = OnDataRead
+      end
+      object ViewStandardPanelsetup: TMenuItem
+        AutoCheck = True
+        Caption = 'Standard Panel setup'
+        Checked = True
+        ShortCut = 45
+        OnClick = SetDefaultPanel
+      end
+      object ViewDivisor1: TMenuItem
+        Caption = '-'
+      end
+      object ViewZoomItem: TMenuItem
+        Caption = '&Zoom profiles'
+        Checked = True
+        HelpContext = 110
+        Hint = 'Select 100% area'
+        ShortCut = 90
+        OnClick = ActivateZoom
+      end
+      object ViewUnZoomItem: TMenuItem
+        Caption = '&Unzoom'
+        HelpContext = 110
+        Hint = 'Show all data'
+        ShortCut = 85
+        OnClick = ActivateUnZoom
+      end
+      object ViewAutoUnzoomFFFitem: TMenuItem
+        AutoCheck = True
+        Caption = 'Unzoom FFF profile automatically'
+        Checked = True
+        ShortCut = 87
+        OnClick = Viewitems
+      end
+      object ViewAutoUnzoomPDDitem: TMenuItem
+        AutoCheck = True
+        Caption = 'Unzoom PDD automatically'
+        Checked = True
+        ShortCut = 89
+        OnClick = Viewitems
+      end
+      object ViewLeftAxisLowZeroItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Left Axis lower limit is zero'
+        Checked = True
+        ShortCut = 75
+        OnClick = Viewitems
+      end
+      object ViewRightAxisToGridItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Right axis linked &to grid'
+        Checked = True
+        Hint = 'keep labels linked to grid while using <kUp> and <kDown>'
+        ShortCut = 84
+        OnClick = RightAxisToGridClick
+      end
+      object ViewScaleElectronPDDrange: TMenuItem
+        AutoCheck = True
+        Caption = '&Smart scale electron PDD range'
+        ShortCut = 83
+        OnClick = Viewitems
+      end
+      object ViewMillimetersItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Positions in mm'
+        ShortCut = 88
+        OnClick = OnDataRead
+      end
+      object ViewClearItem: TMenuItem
+        Caption = 'C&lear'
+        ShortCut = 35
+        OnClick = ClearScreen
+      end
+      object ViewDivisor2: TMenuItem
+        Caption = '-'
+      end
+      object ViewSwapGTItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Swap &GT indicators'
+        HelpContext = 110
+        Hint = 'Mirror axis'
+        ShortCut = 71
+        OnClick = OnDataRead
+      end
+      object ViewSwapABItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Swap &AB indicators'
+        HelpContext = 110
+        Hint = 'Mirror axis'
+        ShortCut = 65
+        OnClick = OnDataRead
+      end
+      object ViewSwapUDItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Swap &Depth indicators'
+        HelpContext = 110
+        Hint = 'Mirror axis'
+        ShortCut = 68
+        OnClick = OnDataRead
+      end
+      object ViewSwapLRItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Swap &LR indicators'
+        Hint = 'Mirror axis'
+        ShortCut = 76
+        OnClick = OnDataRead
+      end
+      object ViewDivisor3: TMenuItem
+        Caption = '-'
+      end
+      object ViewBottomAxisAlwaysBlack: TMenuItem
+        AutoCheck = True
+        Caption = 'Bottom axis always black'
+        OnClick = OnDataRead
+      end
+      object ViewDivisor4: TMenuItem
+        Caption = '-'
+      end
+      object ViewNoDefaultAnnotationItem: TMenuItem
+        AutoCheck = True
+        Caption = 'No default Edge annotation'
+        Hint = 'When the edge is set at default value, no annotation is shown'
+        ShortCut = 79
+        OnClick = UImodeChange
+      end
+    end
+    object MeasMenu: TMenuItem
+      Caption = '&Measurement'
+      HelpContext = 120
+      object MeasSymCorrectItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Symmetry correction'
+        HelpContext = 120
+        Hint = 'correct slope of measurement'
+        ShortCut = 8275
+        OnClick = SymCorrectClick
+      end
+      object MeasMove2OriginItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Move profile to &Origin'
+        HelpContext = 120
+        ShortCut = 8271
+        OnClick = Reload
+      end
+      object MeasMirrorItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Mirror profile'
+        HelpContext = 120
+        ShortCut = 8276
+        OnClick = ReadEditor
+      end
+      object MeasResampleItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Resample data'
+        HelpContext = 120
+        ShortCut = 8274
+        OnClick = Reload
+      end
+      object MeasMayneordItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Mayneord transformation'
+        ShortCut = 8269
+        OnClick = Reload
+      end
+      object MeasDivisor1: TMenuItem
+        Caption = '-'
+      end
+      object MeasExtSymSubMenu: TMenuItem
+        Caption = 'measextsymsub'
+      end
+      object MeasUserDoseItem: TMenuItem
+        AutoCheck = True
+        Caption = '&User Dose Level'
+        HelpContext = 120
+        ShortCut = 8277
+        OnClick = OnDataRead
+      end
+      object MeasUseFitModelItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Use &PDD-fit results'
+        HelpContext = 127
+        ShortCut = 8272
+        OnClick = OnDataRead
+      end
+      object MeasDivisor2: TMenuItem
+        Caption = '-'
+      end
+      object MeasPeakFFFSubMenu: TMenuItem
+        Caption = 'MeasFFFpeak'
+      end
+      object MeasDivisor5: TMenuItem
+        Caption = '-'
+      end
+      object MeasMirrorToBufferItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Mirror to Buff&er'
+        HelpContext = 120
+        ShortCut = 8261
+        OnClick = Viewitems
+      end
+      object MeasLocalPeakItem: TMenuItem
+        Caption = '&Local Peak Analysis at Cursor'
+        HelpContext = 126
+        ShortCut = 8268
+        OnClick = LocalPeakClick
+      end
+      object MeasMoveLeftItem: TMenuItem
+        Caption = '< Shift to left'
+        ShortCut = 8380
+        OnClick = MeasMoveClick
+      end
+      object MeasMoveRightItem: TMenuItem
+        Caption = 'Shift to right >'
+        ShortCut = 8382
+        OnClick = MeasMoveClick
+      end
+      object MeasDivisor4: TMenuItem
+        Caption = '-'
+      end
+      object MeasGenStrategySubMenu: TMenuItem
+        Caption = 'General detection strategy...'
+        object MeasDetectDiagItem: TMenuItem
+          AutoCheck = True
+          Caption = '&Detect diagonals'
+          Checked = True
+          HelpContext = 120
+          Hint = 'Check wether actual field size is larger than registered'
+          ShortCut = 8260
+          OnClick = Reload
+        end
+        object MeasBadPenumbraItem: TMenuItem
+          AutoCheck = True
+          Caption = '&Accept bad penumbra''s'
+          Checked = True
+          HelpContext = 120
+          ShortCut = 8257
+          OnClick = Reload
+        end
+        object MeasMissingPenumbraItem: TMenuItem
+          AutoCheck = True
+          Caption = 'Accept m&issing penumbra''s'
+          HelpContext = 120
+          ShortCut = 8265
+          OnClick = OnDataRead
+        end
+        object MeasZeroStepsItem: TMenuItem
+          AutoCheck = True
+          Caption = 'Accept &zero steps'
+          HelpContext = 120
+          ShortCut = 8282
+          OnClick = OnMenu
+        end
+        object MeasGenericToPDDItem: TMenuItem
+          AutoCheck = True
+          Caption = '&Generic to PDD'
+          HelpContext = 120
+          Hint = 'Interpreted untyped data as PDD'
+          ShortCut = 8263
+          OnClick = Reload
+        end
+        object MeasGenericToElectronItem: TMenuItem
+          AutoCheck = True
+          Caption = 'Generic to Electron'
+          ShortCut = 8379
+          OnClick = Reload
+        end
+      end
+      object MeasSSDsubmenu: TMenuItem
+        Caption = 'SSD scaling...'
+        object MeasSDD2SSDItem: TMenuItem
+          AutoCheck = True
+          Caption = 'Profiles s&caled from SDD to SSD'
+          HelpContext = 120
+          Hint = 'Rescale positions to SDD-distance'
+          ShortCut = 8259
+          OnClick = Reload
+        end
+        object MeasScale2defaultSSDitem: TMenuItem
+          AutoCheck = True
+          Caption = 'Profiles scaled to default SSD'
+          ShortCut = 8264
+          OnClick = ReadEditor
+        end
+      end
+      object MeasSignalSubMenu: TMenuItem
+        Caption = 'Signal correction...'
+        object MeasBackgroundCorrItem: TMenuItem
+          AutoCheck = True
+          Caption = '&Background correction'
+          HelpContext = 120
+          ShortCut = 8258
+          OnClick = Reload
+        end
+        object MeasOD2DoseConvItem: TMenuItem
+          AutoCheck = True
+          Caption = 'OD to Dose &conversion'
+          HelpContext = 120
+          ShortCut = 8270
+          OnClick = ReadEditor
+        end
+        object MeasIon2DoseItem: TMenuItem
+          Caption = 'Ionisation to Dose conversion'
+          HelpContext = 120
+          Hint = 'Convert electron beam ionisation data to dose'
+          ShortCut = 8281
+          OnClick = Ionisation2DoseClick
+        end
+        object MeasReNormaliseDataItem: TMenuItem
+          AutoCheck = True
+          Caption = 'Renormalise source data'
+          Hint = 'Apply the current normalisation to the source data'
+          ShortCut = 8279
+          OnClick = ReadEditor
+        end
+      end
+      object MeasAxisSubMenu: TMenuItem
+        Caption = 'Axis manipulation...'
+        object MeasInvertGTitem: TMenuItem
+          AutoCheck = True
+          Caption = 'Invert GT axis'
+          HelpContext = 120
+          Hint = 'invert position values'
+          ShortCut = 8241
+          OnClick = ReadEditor
+        end
+        object MeasInvertABitem: TMenuItem
+          AutoCheck = True
+          Caption = 'Invert AB axis'
+          HelpContext = 120
+          Hint = 'invert position values'
+          ShortCut = 8242
+          OnClick = ReadEditor
+        end
+        object MeasInvertUDitem: TMenuItem
+          AutoCheck = True
+          Caption = 'Invert PDD axis'
+          HelpContext = 120
+          Hint = 'invert position values'
+          ShortCut = 8243
+          OnClick = ReadEditor
+        end
+        object MeasRemapCoordinates: TMenuItem
+          AutoCheck = True
+          Caption = 'Alternative a&xis setup'
+          ShortCut = 8280
+          OnClick = ReadEditor
+        end
+        object MeasPreserveDataItem: TMenuItem
+          AutoCheck = True
+          Caption = 'Preserve original data on export'
+          Checked = True
+          Enabled = False
+          OnClick = SetWellhoferValues
+        end
+      end
+    end
+    object ReferenceMenu: TMenuItem
+      Caption = '&Reference'
+      HelpContext = 135
+      object RefAutoLoadItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Automatic &Load of Reference'
+        Checked = True
+        HelpContext = 132
+        Hint = 'as found in the references directory'
+        ShortCut = 32844
+        OnClick = Viewitems
+      end
+      object RefDeviceSpecificItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Dev&ice specific Reference '
+        Hint = 'Support for multi-line arrays'
+        ShortCut = 32841
+        OnClick = ReferenceDevSpecClick
+      end
+      object RefGenericBeamItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Reference from Generic Beam List'
+        Hint = 'Take reference from linac as specified'
+        ShortCut = 32850
+        OnClick = ReferenceGenericBeamClick
+      end
+      object RefMakeIndexItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Inde&x multi reference'
+        Checked = True
+        ShortCut = 32856
+        OnClick = Reload
+      end
+      object RefAtDefaultSSDItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Reference at default SSD'
+        ShortCut = 32840
+        OnClick = ReadEditor
+      end
+      object RefBackgroundCorrItem: TMenuItem
+        Caption = 'Background correction'
+        ShortCut = 32834
+        OnClick = OnDataRead
+      end
+      object RefSymCorrectItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Symmetry correction of Reference'
+        Checked = True
+        HelpContext = 131
+        Hint = 'correct slope of reference profile'
+        ShortCut = 32851
+        OnClick = SymCorrectClick
+      end
+      object RefAlignItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Align with &measurement'
+        Checked = True
+        HelpContext = 134
+        Hint = 'move center towards center of measurement'
+        ShortCut = 32845
+        OnClick = Reload
+      end
+      object RefAlignTopforFFF: TMenuItem
+        AutoCheck = True
+        Caption = 'Align on Top for FFF'
+        ShortCut = 32838
+        OnClick = Reload
+      end
+      object RefNormaliseItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Normalise reference'
+        Checked = True
+        ShortCut = 32846
+        OnClick = OnDataRead
+      end
+      object RefCalcSubMenu: TMenuItem
+        Caption = '&Calculation is ...'
+        object RefUseDivideByItem: TMenuItem
+          Caption = '&Divide by Reference'
+          Checked = True
+          GroupIndex = 135
+          HelpContext = 133
+          Hint = 'Calculation is Measured/Reference'
+          RadioItem = True
+          ShortCut = 32836
+          OnClick = CalcSubMenuClick
+        end
+        object RefUseGammaItem: TMenuItem
+          Caption = '&Gamma analysis'
+          GroupIndex = 135
+          HelpContext = 136
+          Hint = 'Calculation is Gamma analysis'
+          RadioItem = True
+          ShortCut = 32839
+          OnClick = CalcSubMenuClick
+        end
+        object RefUseAddToItem: TMenuItem
+          Caption = '&Addition with reference'
+          GroupIndex = 135
+          HelpContext = 136
+          Hint = 'Calculation is addition of measurement and reference'
+          RadioItem = True
+          ShortCut = 32833
+          OnClick = CalcSubMenuClick
+        end
+        object RefUseUnrelatedToItem: TMenuItem
+          Caption = '&Unrelated to Reference'
+          GroupIndex = 135
+          RadioItem = True
+          ShortCut = 32853
+          OnClick = CalcSubMenuClick
+        end
+      end
+    end
+    object CalculationMenu: TMenuItem
+      Caption = '&Calculation'
+      object CalcPostFilterItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Post filter'
+        OnClick = OnDataRead
+      end
+    end
+    object OptionsMenu: TMenuItem
+      Caption = '&Options'
+      HelpContext = 140
+      ShortCut = 16449
+      OnClick = PresetsMenuEnter
+      object AdvancedModeItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Advanced &Mode'
+        GroupIndex = 1
+        ShortCut = 16461
+        OnClick = UImodeChange
+      end
+      object SimpleModeItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Simple Mode'
+        GroupIndex = 1
+        ShortCut = 16571
+        OnClick = UImodeChange
+      end
+      object ConfigLoadItem: TMenuItem
+        Caption = 'Load config...'
+        GroupIndex = 1
+        OnClick = SelectConfig
+      end
+      object ConfigReadItem: TMenuItem
+        Caption = '&Load config'
+        GroupIndex = 1
+        OnClick = ConfigLoad
+      end
+      object ConfigSaveItem: TMenuItem
+        Caption = '&Save config'
+        GroupIndex = 1
+        OnClick = ConfigSave
+      end
+      object ConfigSaveAsItem: TMenuItem
+        Caption = 'Save config &as...'
+        GroupIndex = 1
+        OnClick = ConfigSaveAsItemClick
+      end
+      object ConfigAutoSaveItem: TMenuItem
+        AutoCheck = True
+        Caption = '&Write config on Exit'
+        GroupIndex = 1
+        OnClick = Viewitems
+      end
+    end
+    object PresetsMenu: TMenuItem
+      Caption = '&Presets'
+      HelpContext = 180
+      OnClick = PresetsMenuEnter
+      object ConfigSavePresetAs: TMenuItem
+        Caption = 'Save &Preset as...'
+        GroupIndex = 1
+        OnClick = ConfigSaveAsItemClick
+      end
+    end
+    object HelpMenu: TMenuItem
+      Caption = '&Help'
+      object AboutItem: TMenuItem
+        Caption = '&About'
+        OnClick = OnMenu
+      end
+      object HelpItem: TMenuItem
+        Caption = '&Help'
+        HelpContext = 1
+        ShortCut = 112
+        OnClick = OnMenu
+      end
+    end
+  end
+  object AliasPopupMenu: TPopupMenu
+    Left = 376
+    Top = 472
+    object AliasListDelete: TMenuItem
+      Caption = 'Delete'
+      OnClick = AliasListDeleteClick
+    end
+    object AliasListInsert: TMenuItem
+      Caption = 'Insert'
+      OnClick = AliasListInsertClick
+    end
+  end
+  object L_AxisTransforms: TChartAxisTransformations
+    Left = 824
+    Top = 472
+    object L_AxisTransform_AutoScale: TAutoScaleAxisTransform
+      Enabled = False
+    end
+  end
+  object R_AxisTransforms: TChartAxisTransformations
+    Left = 560
+    Top = 472
+    object R_AxisTransform_AutoScale: TAutoScaleAxisTransform
+    end
+  end
+  object ColorDialog: TColorDialog
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 304
+    Top = 472
+  end
+end

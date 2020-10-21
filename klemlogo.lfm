@@ -1,0 +1,113 @@
+object AboutBox: TAboutBox
+  Left = 1096
+  Height = 494
+  Top = 223
+  Width = 671
+  AlphaBlend = True
+  Caption = 'about BistroMath'
+  ClientHeight = 494
+  ClientWidth = 671
+  Color = clInactiveBorder
+  OnMouseMove = FormMouseMove
+  LCLVersion = '2.0.10.0'
+  object Panel: TPanel
+    AnchorSideBottom.Control = OKButton
+    Left = 0
+    Height = 464
+    Top = 0
+    Width = 671
+    Align = alClient
+    BorderSpacing.Bottom = 30
+    BevelInner = bvRaised
+    BevelOuter = bvLowered
+    ClientHeight = 464
+    ClientWidth = 671
+    Color = clMenu
+    Font.Color = clBlack
+    ParentColor = False
+    ParentFont = False
+    TabOrder = 0
+    OnMouseMove = FormMouseMove
+    object Comments: TMemo
+      AnchorSideTop.Side = asrBottom
+      Left = 87
+      Height = 357
+      Top = 85
+      Width = 497
+      Align = alBottom
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Left = 85
+      BorderSpacing.Top = 10
+      BorderSpacing.Right = 85
+      BorderSpacing.Bottom = 20
+      BorderStyle = bsNone
+      Color = 16252927
+      Enabled = False
+      Font.Color = clBlack
+      Lines.Strings = (
+        '   "It requires a very unusual mind to undertake the analysis of the obvious."  '
+        '           Alfred North Whitehead (1861 - 1947)'
+        ''
+      )
+      OnKeyDown = CommentsKeyDown
+      OnKeyPress = FormKeyPress
+      OnMouseMove = FormMouseMove
+      ParentFont = False
+      ReadOnly = True
+      ScrollBars = ssAutoVertical
+      TabOrder = 0
+    end
+    object ProductName: TStaticText
+      Left = 103
+      Height = 24
+      Top = 11
+      Width = 98
+      Caption = 'BistroMath'
+      Color = clMenu
+      Font.Color = clRed
+      Font.Height = -19
+      Font.Name = 'MS Sans Serif'
+      Font.Style = [fsBold]
+      ParentFont = False
+      ParentColor = False
+      TabOrder = 1
+      Transparent = False
+    end
+    object Copyright: TLabel
+      Left = 103
+      Height = 15
+      Top = 60
+      Width = 6
+      Caption = 'c'
+      ParentColor = False
+    end
+    object Version: TLabel
+      Left = 103
+      Height = 15
+      Top = 40
+      Width = 6
+      Caption = 'v'
+      ParentColor = False
+      ParentShowHint = False
+      ShowHint = True
+    end
+  end
+  object OKButton: TButton
+    Left = 578
+    Height = 25
+    Top = 466
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    OnKeyPress = FormKeyPress
+    TabOrder = 1
+  end
+  object Timer: TTimer
+    Interval = 100
+    OnTimer = TimerFade
+    Left = 96
+    Top = 624
+  end
+end
