@@ -1,2 +1,10 @@
+#I maintain a help file
 help/**
+
+#my running environment
 output/**
+
+#lazarus files
+lib/**
+backup/**
+TOunits/backup/**
