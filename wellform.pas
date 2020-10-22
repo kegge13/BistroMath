@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 21/10/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 22/10/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -5511,8 +5511,7 @@ else
   else if PageControl.ActivePage<>LogTab then
     begin
     FillCheckListCombo;
-    GetWellhoferValues;
-    //MessageBar:= 'dose= a + b*OD/f + c*(OD/f)^2 + d*(OD/f)^3 + e*(OD/f)^4';
+    GetWellhoferValues;        //MessageBar:= 'dose= a + b*OD/f + c*(OD/f)^2 + d*(OD/f)^3 + e*(OD/f)^4';
     end;
   end;
 PrevTab:= PageControl.ActivePage;
@@ -6919,9 +6918,10 @@ This function is called through several routes:
 -FileOpenClick (File menu -> File open)
 -ReadDroppedFile (AnalyseForm.OnDropFiles event)
 It relies completely on the underlying TWellhoferdata object.
--first it checks on possibly binary data, here the data are read into e memorystream.
--when binary: read the data and export them in text format to the editor
--otherwise:
+The fact that TWellhoferData itself handles all currently known binary types can be exploited here:
+-first it checks on possibly binary data; the data are read into a memorystream.
+-when binary: read the data and export them in text format to the editor but don not rely on these data
+-otherwise: push to editor and go from there through the parsing structures
 *)
 {12/08/2015 CenterProfiles option removed in Wellhofer.AdvReadData, see UpdateSettings}
 {13/08/2015 UpdateSettings added here}
@@ -6936,6 +6936,7 @@ It relies completely on the underlying TWellhoferdata object.
 {18/09/2020 unfreeze}
 {13/10/2020 set wMultiScanNr to 1}
 {19/10/2020 BinStream was held in memory but ascii data were read from the file again; now there is a direct transfer}
+{22/20/2020 SourceAxisSync more early}
 function TAnalyseForm.DataFileOpen(AFile         :String;
                                    ResetMultiScan:Boolean=True): Boolean;
 {$IFNDEF PRELOAD}
@@ -6948,6 +6949,7 @@ if Result then
   UsedEngine:= AddEngine;
   with Engines[UsedEngine] do
     begin
+    SourceAxisSync;
     ClearScreen(Self);
     UpdateSettings(Self);
     DataEditor.Clear;
@@ -6962,7 +6964,6 @@ if Result then
       begin                                                                     //binary
       ClipBoardLock   := True;
       DetectedFileType:= BinStreamType;
-      SourceAxisSync;
       if ResetMultiScan then
         ResetMultiScanCounters;
       Result:= AdvStreamData(nil,

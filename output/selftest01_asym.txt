@@ -1,0 +1,82 @@
+Clinic:	Radiotherapie UMC Utrecht
+Address:	Heidelberglaan 100, Utrecht
+Telephone:	030-2507209
+Email:	radiotherapy@azu.nl
+
+Beam Description:
+
+Radiation device	generic
+Energy	6 MV Photon
+Wedge:	 0 °
+Gantry	0 °(0°up, CW)
+Collimator	0 °
+SSD, SAD [cm]:	100	100
+Applicator:	No Applicator
+Field size [cm x cm]:	40 x 40
+Field position inline (min, max) [cm]:	-20	20
+Field position crossline (min, max) [cm]:	-20	20
+Medium:	Water
+
+CurveType: 	Inline Profile
+
+Curve Description:
+
+Measurement Time:	2011-01-19 10:00:00
+Modification Time:	2011-01-19 10:00:00
+Operator:	
+Measurement comment:	
+Setup comment:	
+Renormalise factor:	-
+Curve offset [cm]:	-
+
+Detector
+Quantity:	Relative Dose
+Detector Type:	IC15 no correction	Ion Chamber (Cylindrical)	Offset to P eff [cm]: 0	Radius:68cm
+Can be used for CA24 calibration:	No
+
+Electrometer
+Electrometer type:	CU500E
+Measurement mode:	Continuous
+Reference division:	-
+Reference (avg, min, max):	1220	1209	1230
+Measurements per point:	-
+Sampling time [ms]:	0
+HV type:	-
+Normalisation value, field and reference:	995	1056
+Dark current, field and reference:	-2	-3
+High voltage, field and reference [V]:	300	300
+Gain, field and reference:	18	18
+Range, field and reference:	HIGH	HIGH
+
+Servo
+Servo type:	Blue 48 48 41
+Scan Speed [mm/s]:	15
+Water surface correction [cm]:	9.4
+Water offset correction [cm]:	0
+Origin [X, Y, Z] [cm]:	0.08	0.51	8.34
+Servo axis [I, C, D]:	-Y	X	-Z
+Isocentre [I, C, D] [cm]:	0	0	0
+Normalisation [I, C, D] [cm]:	0	0	5
+
+Position A [I, C, D] [cm]:	0.51	-0.08	8.38
+Position B [I, C, D] [cm]:	0.51	-0.08	8.38
+Position C [I, C, D] [cm]:	0.51	-0.08	8.38
+Position D [I, C, D] [cm]:	0.51	-0.08	8.38
+Number Of Points:	13
+Start Point [I,C,D] [cm]:	-23	-0.02	5
+End Point [I,C,D] [cm]:	23	-0.02	5
+Points [cm]:	Inline	Crossline	Depth	Relative Dose
+	-23	-0.02	5	0
+	-22	-0.02	5	5
+	-20	-0.02	5	0
+	-20	-0.02	5	102
+	-18	-0.02	5	101.8
+	-17	-0.02	5	101.7
+	-16	-0.02	5	101.6
+	13	-0.02	5	98.7
+	19	-0.02	5	98.2
+	20	-0.02	5	49.0
+	21	-0.02	5	0
+	22	-0.02	5	0
+	23	-0.02	5	0
+Scan Angle:	90

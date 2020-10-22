@@ -1,0 +1,458 @@
+001	30/04/2020	real48utils									completed
+There were several patches published on this unit. All included now. Tested.
+
+
+002	30/04/2020	graphics									resolved
+002_selftest04.png: extra red line -> related to inplane direction
+-TAnalyseForm.OnDataRead
+ removed  BottomAxis.AxisPen.Color:= ifthen(b,clRed,LeftAxis.AxisPen.Color);
+
+
+003	30/04/2020	graphics									resolved
+-003_selftest04.png: partial data displayed with local peak analysis
+-smar set bottom axis range
+
+
+004	30/04/2020	clipboard									resolved
+clipboard accepted with small amount of text
+-MinClipBoardBytes not initialised in FormCreate
+-MinClipBoardBytes missing in configload
+
+
+005 	30/04/2020	.wda format									resolved
+both dragging and file open of .wda failed
+-improvements in several GetFileType functions
+-wrong filetype information was passed in Wellform
+
+
+006	01/05/2020	FBinStream									completed
+-FBinStream is passed to all opened dataobjects, testen in Delphi7, v3.30.16
+
+
+007	02/05/2020	Background correction not applied to filtered version				resolved
+-TWellhoferData.SubtractBackground, TWellhoferData.OD2doseConversion:
+  if ASource in twcFilterSources then
+    wSource[twcCoupledSources[ASource]].twValid:= False;
+
+
+008	02/05/2020	Mirror measurement item not functional						resolved
+-procedure TAnalyseForm.OnDataRead(Sender:TObject);
+    if MeasMirrorItem.Checked and (ScanType in twcHoriScans) then
+      Mirror(dsMeasured,dsMeasured,wSource[dsMeasured].twCenterPosCm);
+
+      with UseDoseConvTable[i] do
+        if (DCDoseBox.Checked or DCBgBox.Checked) and 
+           ((DCModalityBox.Text='') or (DCModalityBox.Text=Br)) then
+          DoseConvTableNr:= i;
+
+009	04/05/2020	no immediate response to ViewBufferItem change (at startup)			resolved
+-ViewBufferItem was set in TAnalyseForm.SettingsTabExit (through ConfigLoad) when PDDfitCheckBox was true
+ moved to OnDataRead when twFittedData is true
+
+
+010	04/05/2020	 “EOSError 1400 - Invalid window handle” in Delphi				resolved
+For not understood reasons I got a “Invalid window handle” error on exit in Delphi.
+This was traced back to transferring the input (text) data from the Wellhofer.Parser 
+to the Wellform.DataEditor in a separate thread. 
+When the same is done from the main thread everything is ok.
+The now abandoned construct is hidden with a {$IFDEF PRELOADTRANSFER}
+The time gain is marginal anyway.
+Extra time can be won with only transferring when viewed or needed for saveing to file. (implemented)
+
+
+011	05/05/2020	 wSource[dsMeasFiltered].twValid false in selftest				resolved
+-TAnalyseForm.OnDataRead: if not wSource[dsMeasFiltered].twValid then QuadFilter(0,dsMeasured,dsMeasFiltered)
+
+
+012	05/05/2020	colors	UIColorPanel,PlotColorPanel,PlotGridColor				completed
+-added colordialog
+-added UIColorPanel,PlotGridColor
+-added TAnalyseForm.ColorPanelClick
+-onclick UIColorPanel,PlotColorPanel,PlotGridColor
+-implementation in TAnalyseForm.AdvancedSettingsTabExit
+-inserted UIColorPanel in PresetLoad/ConfigSave
+
+
+013	05/05/2020	Fit Results									tested
+	selftestx6d10_ssd100.txt
+I1	109.054712073
+mu1	4.31762963683
+mu2	-6.34850851414
+mu3	14.8217911515
+mu4	-10.5764049479
+Ib	57.8237179285
+mub	297.767675533
+b_pwr	1.07018570088
+	
+dmax	1.553
+
+014	06/05/2020	version number not found							resolved
+Just don't forget to enable version info in the first place (project->project options->version info and check "include version info in executable").
+
+
+015	10/05/2020	resizing settings tab								resolved
+-parentfont for tab disabled
+
+016	12/05/2020	reading rfb files fails								resolved, tested
+-found difference with Delphi version (stupid change)
+
+
+017	14/05/2020	going to advanced settings disables Options menu				resolved
+- TAnalyseForm.OptionModeClick: EnableMenu(OptionsMenu,PageControl.ActivePage=AnalysisTab)}
+
+
+018	14/05/2020	OD Conversion tab Add-button disfunctional					resolved, tested
+-events added to Add en Delete button
+-UseDoseDelButtonClick imported from Delphi
+
+019	14/05/2020	Marks labels alignment right axis						resolved
+-use OnMarkToText event and link this to rightaxis only (in FormCreate); add extra space for value<100
+
+020	14/05/2020	expanding multi scan files in Files tab (new feature)				resolved, tested
+
+
+
+021	14/05/2020	define and check specifications for advandedmode and simple mode		te be decided later
+
+
+022	14/05/2020	specify and test key shortcuts							open
+
+
+023	14/05/2020	colors read from ini file are not assigned					resolved
+-due to left-over temporary code
+
+
+024	21/05/2020	file save as.. “name.*.txt”							resolved
+-default name set in TAnalyseForm.FileSave
+
+
+025	21/05/2020	limited resolution of doubles							resolved
+-80 bits extended not available in FreePascal
+-support for x87 and 80 bit extended deprecated in Windows10/64bit
+-largest differences in penumbra of QuadFit
+-QuadFilter internals set as TExtendedX87: no solution
+-Fundamental problem which arises when StrToFloat is used to convert from text to double
+-“9.1” is truncated to 9.09999999999996, other values might be slightly above
+-StepFilter therefore gives other comparison result when based on doubles
+-Now discretisation is built into both D7 and FPC for StepFilter in QuadFilter and Derive.
+-Results are exactly identical again.
+
+026	04/06/2020	Normalisation shown with advancedmode off/simplemode on				resolved
+027	04/06/2020	Too many tab visible/active with advancedmode off/simplemode on			resolved
+-same reason: simplemodeitem not read in presetload
+
+028	04/06/2020	SwapGT not converted to ViewSwapGt						resolved
+-ReadSectionValues gets "key=value" lines, not values only
+
+
+029	04/06/2020	DefaultSSDEdit_mm was 500 after read of config					resolved
+-max was 500, default 100 (cm!)
+
+
+030	05/06/2020	width changes when using H							resolved
+-also in D7
+-happens in combination with SpecialMode2 AND asking for ‘u’ (border at user’s level) with FindDoselevel
+-DoSpecialMode2 is called AFTER PublishResults
+->this will set twUsedEdgeLevel to dUser
+->pressing H does NOT force any new analysis
+->1 twUsedEdgeLevel is not reset
+->2 twLevelPos[d50] holds wrong values now
+->3 this goes undetected
++add “origin of border level” to panelelement  record (ResultsInfoRecord: Ylevel)
++in EvaluateInfoRecord info from TWellhofer or user choices must be fed into Ylevel
++in EvaluateInfoRecord only set center and normalisation from user level if intended by user (TWellhoferData.FindLevelPos)
++with annotations in TAnalyseForm.PublishResults take value of Ylevel into account (RunPanelElements)
++in RunPanelElements the call to EvaluateInfoRecord(PCRxrecord) must be before the annotation rules
+
+
+031	05/06/2020	zooming/moving in graph with mouse disfuntional					repaired
+-went back to previous versions rebuild every time, 
+-occured first at 2/6/2020 but no changes in graph related code.
+-there seemed to be a relation with replacing BistroMath.res, not understood
+
+
+032	05/06/2020	changing log level blocks all messages						repaired
+
+
+033	08/06/2020	Generic to PDD fails								resolved
+[issue] #13
+[date] 8/6/2020
+[Title] Generic PDD can only be imported as profile.
+[Description]
+Import of generic PDD via <Copy> or "File, Open" fails when "Measurement, Detection Strategy, Generic to PDD" is enabled with message "Length of scan 0.0 cm; at least 1.0 cm required". When "Generic to PDD" is disabled PDD is imported but as profile. Also D7 version.
+[Steps to reproduce]
+Make sure "Measurement, Detection Strategy, Generic to PDD" is enabled.
+Copy a generic PDD from a spreadsheet or editor or open a text file.
+PDD is not displayed
+Disable "Generic to PDD"
+PDD is displayed as profile.
+->The effect of option GenericToPDD should change the TankMapping in ImportHdfProfile (TankMapping:= ifthen(ScanType=snPDD,'DCI','CDI')) otherwise the coordinate data get lost in translation...
+
+
+034	08/06/2020	Generic to PDD fails								resolved
+[issue] #14
+[date] 8/6/2020
+[Title] Blank line at end of large generic PDD causes import to fail.
+[Description]
+Import of a large (1665 points) PDD fails when there is a blank line at the end. Deleting the blank line allows the PDD to be imported. Blank lines at the end of smaller generic PDDs do not affect import. Also D7 version.
+[Steps to reproduce]
+Make sure "Measurement, Detection Strategy, Generic to PDD" is enabled. (see issue #13)
+Open "6MV.txt" in an editor. Do "Select All" and "Copy" alternatively do "File, Open". Import fails.
+Delete the blank line at the end of the file.
+Do "Select All" and "Copy" alternatively do "File, Open". Import succeeds.
+In THDFdata.Parsedata:
+->skip too short lines
+->accept to end with no conversionresult (for last line)
+
+
+035	09/06/2020	histogram seemed to mirrored							resolved
+-reviewed scaling factor F, now different for profiles and pdd’s
+
+
+036	09/06/2020	minor display problem with synthetic profile					resolved
+-right side of viewing range limited to second scan
+->AutoZoom: maximise horizontal scale when syntheticmade
+
+
+037	09/06/2020	Change of Meayneord ssd not reflected in menu					solved
+-no settingstabexit called, now added as event onexit; also for advancedsettingstab
+
+
+038	16/06/2020	ZoomRect not undone with new data						solved
+- if DataPlot.IsZoomed then DataPlot.LogicalExtent:= DataPlot.GetFullExtent;  //reset zooming of chart itself; see https://wiki.freepascal.org/TAChart_documentation#Extents_and_margins
+
+
+039	17/06/2020	using “i” in panel rule displayed as “b53”					solved
+- twEdgeUseType =(dUseBorder,dUseDerivative,dUseSigmoid,dUseOrigin,dUseMax,dUseFFFtop,dUseFFFslopes,dUseUndefined,dUseConfigured); {TAnalyseForm relies on order}
+- The formal analysis concludes that the borders are based on 50% (=dUseBorder) in twEdgeDefUse.
+- RunPanelElements looked only in twEdgeDefUse
+- Asking explicit for inflection points breaks the relation: the result is not “b” and is now messed up as “b” + 53 (for users level)
+->in ResultsInfoRecord the element Xedge is introduced with default value dUseUndefined
+->in TAnalyseForm.EvaluateInfoRecord Xedge is set to twEdgeDefUse but changed when apropriate
+->RunPanelElements looks at Xedge now
+
+
+040	29/06/2020	panel rules ‘p’ and ‘q’ both evaluate as slope, but presented as penumbra	solved
+-D7 implementation in EvaluateInfoRecord was different (and correct but not perfect)
+-Xedge is now used in EvaluateInfoRecord to differentiate the actual applied result
+-in RunPanelElements ‘q’-implementatoion was lost
+
+
+041	03/07/2020	Ignore Clipboard was unckecked after loading profile				solved
+-TAnalyseForm.DataFileOpen set FileClipBoardIgnoreItem.checked to SavedIgnoreState, which was set in FormCreate and never changed.
+-Every link to SavedIgnoreState removed, vaiable removed.
+-In TAnalyseForm.WMDRAWCLIPBOARD exchanged ordering of test on locking with length test to get better info
+
+
+042	09/07/2020	multiple annotation problems with fff, see 20200709_varian.gif			solved
+-added Usource to ResultsInfoRecord, applied in EvaluateInfoRecord
+-changed FindLevelPos: keep correct twEdgeDefUse
+-ApplySigmoidFit sets twComposite true
+-RunPanelElements: various changes
+-EvaluateInfoRecord: various changes
+-parts of FindLevelPos as new function FindEdge
+
+
+043	13/07/2020	sigmoid fails for one side for 0.5x0.5 field					solved
+-sigmoids overlap: twSigmoidOffsetCM needs to have (possibly) separate value for both sides
+-initial slope vale far too high
+-compiler option to take initial valaue as fit result
+
+
+044	11/08/2020	wellhofer wants to keep single ref on changeover to identical array scan	solved
+-TWellhoferData.SetArrayScanRefOk fills wSource[ASource].twFileIDString when FArrayScanRefOk=True
+-TWellhoferData.LoadReference/CheckRefOrg did not check twFileIDString and only compared twcurveIDString
+-therefore only seen when scantype of single scan and first array scan is identical
+-function CheckRefOrg: Boolean;
+  begin
+  Result:= wSource[dsRefOrg].twValid and (not wSource[dsRefOrg].twLocked)                         and
+           ( ((not wCheckRefCurveString) and wTakeCurrentRefSource) or ReferenceValid(dsRefOrg) ) and
+           ( ((not ArrayScanRefOk) and (wSource[dsRefOrg].twCurveIDstring=wSource[dsMeasured].twCurveIDstring))   //or changed to and
+              or
+             (ArrayScanRefOk       and (wSource[dsRefOrg].twFileIDstring=wSource[dsMeasured].twFileIDstring)) );  //last line is added
+
+
+045	13/08/2020	unlinking to grid of right axis not functional					solved
+-just no response until next profile; no coding errors
+-made separate event procedure for this menu item
+
+
+046	13/08/2020	symmetry missing one decimal from expected					solved
+-in EvaluateInfoRecord Y_mm was set to Units_in_numerator at start for efficiency reasons, and overridden when needed
+-returned to old coding per item
+
+
+047	13/08/2020	onclick functionality missing for results panel elements			solved
+-missing in ported initiasation code, added OnClick value
+
+
+048	14/08/2020	MeasNormAdjustEdit stays visible when toggling ProcessAutoscalingItem		solved
+-PlotCursor: add (not ProcessAutoscalingItem.Checked) for visibility.
+-Reload: when ProcessAutoscalingItem.Checked: MeasNormAdjustEdit.Value:= 100
+
+
+049	18/08/2020	FFF-detection overrides new MRlinac-detection					solved
+-most detection in Wellhofer.FastScan
+-FFF detction in Wellhofer.Analyse only when still fcStandard type
+
+
+050	18/08/2020	FFF-profile without reference not reported as FFF				solved
+-TAnalyseForm.OnDataRead asked result too early
+
+
+051	28/08/2020	<Ins> does not reset results panel						avoided, not really solved
+-only three lines with '-' show
+
+
+052	01/09/2020	when an alias is added, it is never applied					solved
+-added alias not transferred to Wellhofer
+-aliastabexit not implemented
+
+
+053	04/09/2020	derivative peak off for sparse data						solved
+-minimum number of points for stepfilter increased to 3 and made symmetrical
+-no peak modelling when less than 3 points in peak
+
+
+054	07/09/2020	Files tab does not show references						solved
+-[fiPath] not in iterator options
+-onclick event missing
+-set reference dir button onclick missing
+-set reference dir button implented wrongly
+-added if statement for entered path matching neither of three radio buttons
+-added path accept event for pathedit field
+
+
+055	08/09/2020	Conv tab keep looping on BeamAdjust-mcc file					solved
+-loop checks only last valid scan number and therefore never reaches laast scan number
+-also file name does nor support multiple scans
+
+
+056	08/09/2020	autoloop (Ctrl-PgDown) ends with no data when invalid				solved
+-last valid data is preferred
+-both Reload and ReadEditor do ClearScreen for robustness
+-added DoClearScreen option which is false for autoloop; otherwise always true
+
+version 4.02
+057	29/09/2020	temporary reference not loaded when history on					solved
+-with history off: works as expected
+	-load selftest02_real.txt
+	-set TempRef
+	-load selftest02_real.txt again with file open or drop file: measured equals ref as expexted
+-with history on:
+	-load selftest02_real.txt
+	-set TempRef
+	-load selftest02_real.txt again with file open or drop file: no reference at all	
+To reproduce my testing:
+Processing->Ignore Treatmenu Unit name checked
+History: on
+Reference->Device specific Reference checked
+Reference->Check Tempory Scan type checked
+Reference->Index multi reference checked
+
+1) Open comm_u2.rfb
+Set as Tempref: indexing starts
+new : this takes a while; progress is noted on the statusbar
+new : reference is immediately applied against source (itself)
+
+2) Use <PageDown> to page through this file.
+A fitting reference is taken from the indexed file
+new : message on statusbar
+note: "fitting" implies that not always scan n is compared with scan n.
+
+3) Open u02x6c40_ssd100_d050m.txt
+(this is actually extracted from comm_u2.rfb)
+-A fitting reference is found through the index.
+
+4) Open selftest02_real.txt
+-a fitting U02 reference is found (TU name ignored)
+
+5) Open BeamCheck
+-set TempRef
+
+6) Open BeamCheck again
+-comparison works for all scans in this data set 
+
+
+version 4.03
+058	12/10/2020	large peak in dsMeasFiltered					solved
+-pdd ends suddenly with multiple zero-value points
+-now chopped off in PrepareProfile
+
+
+version 4.04
+059	19/10/2020	extremely slow response when User Dose Level is selected	solved
+-matching was used (??)
+-dUser field width not presented but L+R border available and presented
+-because dUser was not evaluated at due time
+-now dUser is evaluated whatsoever
+
+060	19/10/2020	FBinsStream filled always but unused for ascii files		solved
+-stringstream was filled by opening file a second time
+-BinStream remained filled, but unused
+-design remnant from Delphi
+-now a byte copy is done from binstream to stringstream, then binstream is emptied
+
+
+version 4.05
+061	22/10/2020	output\PTW\varian_X06FFF_40_d30.mcc failed to open		solved
+-failed only on first attempt (??)
+-in PrepareProfile shows to be -1,0,0 (??)
+-wUserAxisSign in TWellhoferdata.SetDefaults was recently initialised with FreePascal Default function
+-now reverted to FillChar(wUserAxisSign,SizeOf(wUserAxisSign),1,)
+-SourceAxisSync called earlier in WellForm.DataFileOpen
+
+======tested=======
+29/05/2020	unlocking critical options
+-enables ProcessAutoscalingItem
+-enables ViewMeasNormAdjustMode when ProcessAutoscalingItem is unchecked
+
+16/06/2020
+-file conversion
+-SelfTest
+
+
+record TWARRAYLIMITREC {  LEVEL = 50.010200000000026,   PENUMBRA = {  {  CALC = -18.913475171650227,   NEAREST = 29,   VALID = true},   {  CALC = 22.953036800506794,   NEAREST = 590,   VALID = true}}}
+wellhofer.wsource[tsource].twlevelpos[d50],r
+(Level:49.918141202; Penumbra:((Calc:-18.913699678; Nearest:29; Valid:True), (Calc:22.953462915; Nearest:590; Valid:True)))
+<TWARRAYLIMITREC> = {  LEVEL = 49.918139803635114,   PENUMBRA = {  {  CALC = -18.913705954156601,   NEAREST = 29,   VALID = true},   {  CALC = 22.95348218612736,   NEAREST = 590,   VALID = true}}}
+
+
+wellhofer.wSource[dsmeasfiltered].twLevelPos[d20]
+<TWARRAYLIMITREC> = {  LEVEL = 19.967255921454047,   PENUMBRA = {  {  CALC = -19.335566158628218,   NEAREST = 23,   VALID = true},   {  CALC = 23.371045833969891,   NEAREST = 596,   VALID = true}}}
+(Level:19.967256481; Penumbra:((Calc:-19.335559019; Nearest:23; Valid:True), (Calc:23.371155851; Nearest:596; Valid:True)))
+wellhofer.wSource[dsmeasfiltered].twLevelPos[d80]
+<TWARRAYLIMITREC> = {  LEVEL = 79.869023685816188,   PENUMBRA = {  {  CALC = -18.590498862209397,   NEAREST = 33,   VALID = true},   {  CALC = 22.625361720921749,   NEAREST = 585,   VALID = true}}}
+(Level:79.869025923; Penumbra:((Calc:-18.590487294; Nearest:33; Valid:True), (Calc:22.625325931; Nearest:585; Valid:True)))
+
+======to be tested=======
+OD conversion
+menu’s
+	Options tested
+
+specialmodes
+1: ok
+2: ok
+3:
+4: removed
+
+
+
+
+https://wiki.lazarus.freepascal.org/Win32/64_Interface#Processing_non-user_messages_in_your_window
+https://wiki.lazarus.freepascal.org/Clipboard
+https://docs.microsoft.com/en-gb/windows/win32/dataxchg/clipboard
+https://www.nldelphi.com/showthread.php?5509-Clipboard-OnChange&highlight=SetClipboardViewer
+
+
+
+Thomas, 
+Dingen die opvielen:
+* Tijdelijke referentie werkt niet als er een symmetries correctie wordt toegepast na het aanzetten van het tijdele referentie profiel
+* Het is erg vervelend dat als ik een stuk tekst/cel kopieer dat Bistromath soms alles leeg gooit, er komt ook geen melding in het messages scherm dan
+* De link right axes to grid knop lijkt niks te doen, het is altijd gematcht
+
+Klein dingetjes:
+* Bij het gebruik van High Resolution Values: de linker as ging van 5% stapgrootte juist naar 10% en de rechter van 5% naar 10%. Niet kunnen reproduceren echter...
+* Als ik clear temp reference doe zou ik graag willen dat de oude referentie automatisch weer wordt ingeladen, nu moet dat handmatig
+* Misschien een indicator in de Alias tab dat een bepaalde Alias actief is op dat moment

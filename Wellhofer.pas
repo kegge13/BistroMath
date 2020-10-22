@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 21/10/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 22/10/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -69,40 +69,148 @@ TWellhoferData=class(TRadthData) is the main object class in this unit. It is in
    d) may be part of an unstructured multi-scan file.
 
  Core functions:
-  function  LoadReference(AFileName              :String      ='';
-                          SetCurrentAsRefSource  :Boolean     =False       ): Boolean;
-  function PrepareProfile                                                   : Boolean;
-  function CalcValue(Lpos,Rpos                   :Integer;
-                     X                           :twFloatType;
-                     ASource                     :twcDataSource=dsMeasured;
-                     InverseCalc                 :Boolean=False            ): twFloatType;
-   function FindCalcRange(CalcPosCm              :twFloatType;
-                          var Lpos,Rpos          :Integer;
-                          ASource                :twcDataSource=dsMeasured ): Boolean;
-   function  NearestPosition(Position            :twFloatType;
-                             ASource             :twcDataSource=dsMeasured;
-                             ForceAlwaysIn       :Boolean=True             ): Integer;
-   function  NextPos(APos                        :twFloatType;
-                     ASource                     :twcDataSource=dsMeasured ): twFloatType;
-   function  ResetValues(ASource                 :twcDataSource=dsMeasured ): Boolean;
-   function  GetInterpolatedValue(Position       :twFloatType;
-                                  ASource        :twcDataSource=dsMeasured;
-                                  DefaultValue   :twFloatType=0            ): twFloatType;
-   function  GetQfittedValue(Position            :twFloatType;
-                             ASource             :twcDataSource=dsMeasured;
-                             DefaultValue        :twFloatType=0            ): twFloatType;
-   function  GetScaledQfValue(Position           :twFloatType;
-                              RelativeToCenter   :Boolean;
-                              Scaling            :twScalingType;
-                              ASource            :twcDataSource=dsMeasured ): twFloatType;
-   function  FindLevelPos(ASource                :twcDataSource=dsMeasured;
-                          ALevel                 :twDoseLevel=d50;
-                          Symmetric              :Boolean=True             ): Boolean;
+  function  LoadReference(AFileName             :String      ='';
+                          SetCurrentAsRefSource :Boolean     =False       ): Boolean;
+  function  PrepareProfile                                                 : Boolean;
+  function  NearestPosition(Position            :twFloatType;
+                            ASource             :twcDataSource=dsMeasured;
+                            ForceAlwaysIn       :Boolean=True             ): Integer;
+  function  GetInterpolatedValue(Position       :twFloatType;
+                                 ASource        :twcDataSource=dsMeasured;
+                                 DefaultValue   :twFloatType=0            ): twFloatType;
+  function  GetQfittedValue(Position            :twFloatType;
+                            ASource             :twcDataSource=dsMeasured;
+                            DefaultValue        :twFloatType=0            ): twFloatType;
+  function  GetScaledQfValue(Position           :twFloatType;
+                             RelativeToCenter   :Boolean;
+                             Scaling            :twScalingType;
+                             ASource            :twcDataSource=dsMeasured ): twFloatType;
+  function  FindLevelPos(ASource                :twcDataSource=dsMeasured;
+                         ALevel                 :twDoseLevel=d50;
+                         Symmetric              :Boolean=True             ): Boolean;
+  function  FindEdge(ASource                    :twcDataSource=dsMeasured ): Boolean;
+  procedure FastScan(ASource                    :twcDataSource=dsMeasured );
+  function  Analyse(ASource                     :twcDataSource=dsMeasured;
+                    AutoCenterProfile           :twAutoCenter=AC_default  ): Boolean;
+---------------------------------------------------------------------------------------
+READING DATA - READING DATA - READING DATA - READING DATA - READING DATA - READING DATA
 
-   procedure FastScan(ASource                    :twcDataSource=dsMeasured );
-   function  Analyse(ASource                     :twcDataSource=dsMeasured;
-                     AutoCenterProfile           :twAutoCenter=AC_default  ): Boolean;
--------------------------------------------------------------------------------------
+Most data types have their objecttype, all derived from TRadthData.
+Also TWellhoferData, the main analysis engine is derived from TRadthData.
+In the TWellhoferData.DualReadData function an object to everry known type is opened as far as needed.
+To be as fast as possible TWellhoferData itself can find out the file type:
+
+  function TWellhoferData.EvaluateFileType(AIndentString:String=''): twcFileType;
+  begin
+  if Length(AIndentString)=0 then
+    AIndentString:= IdentificationStg;
+  if      Pos(rfaID        ,AIndentString)=1 then Result:= twcRFA_ascii
+  else if Pos(eclipseID    ,AIndentString)=4 then Result:= twcEclipse
+  else if Pos(mccID        ,AIndentString)=1 then Result:= twcMccProfile
+  else if Pos(wICPAIdentStg,AIndentString)=1 then Result:= twcICprofilerAscii
+  else if Pos(hdfID        ,AIndentString)=1 then Result:= twcHdfProfile
+  else if Pos(xioID        ,AIndentString)=1 then Result:= twcCmsProfile
+  else if Pos(w2ID         ,AIndentString)>0 then Result:= twcW2CAD
+  else                                            Result:= twcUnknown;
+  end;
+
+
+For completeness each ascendent also must a GetFileType function.
+It is very convenient that the only two known binary data type are handled by TWellhoferData itself.
+Therefore the high level object can sort this out:
+
+
+  function TWellhoferData.IsBinary(AFileName:String=''): Boolean;
+  var t: twcFileType;
+  begin
+  t:= GetFileType(AFileName,True);
+  Result:= (t in [twcWellhoferRfb,twcWDA]);
+  if Result then
+    BinStreamType:= t;
+  end; {~isbinary}
+
+In the user interface (TWellForm.DataFileOpen) this is exploited by first testing on binary types,
+and when not, transferring the data to a TStringStream and go from there.
+
+---
+
+TRadthData.ReadData sets the scene for the reading strategy.
+All in all there is a lot of object context jumping.
+
+  function TRadthData.ReadData(AStream    :TStream;
+                               AFileFormat:twcFileType=twcUnknown): Boolean;
+  begin
+  SetDefaults;
+  FileFormat:= AFileFormat;
+
+  //*************  if stream of base type TStream  ************
+  if not (AStream is TStringStream) then
+
+
+    begin
+    if AStream.Size>0 then
+      BinStream.CopyFrom(AStream,0);
+
+  //*************  ascendants must reintroduce ReadBinData if applicable  ************
+    Result:= ReadBindata;
+
+
+  end
+  else
+    begin
+    if (FLocalParser or (Parser.LineCount=0)) and (AStream is TStringStream) then
+      begin
+      AStream.Position:= 0;
+
+
+  //*************  the stream is copied to a string stream  ************
+      Parser.Assign(TStringStream(AStream));
+
+
+      end;
+
+  //*************  ascendants must reintroduce ParseData if applicable  ************
+    Result:= ParseData;
+
+    end;
+  end; {~readdata}
+
+--
+
+  //*************  ascendants must reintroduce ParseData if applicable and call the inherited function first  ************
+  function TRadthData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
+  begin
+  Result:= CheckData(nil) or CheckFileTypeOnly;
+  if Length(Parser.FileName)>0 then
+    FileName:= Parser.FileName;
+  end; {~parsedata}
+
+--
+
+  //*************  ascendants must reintroduce CheckData if applicable and call the inherited function first  ************
+  function TRadthData.CheckData(AStringList:TStrings): Boolean;
+  var i: Integer;
+  begin
+  if assigned(AStringList) then
+    begin
+    i                := AStringList.Count;
+    IdentificationStg:= AStringList.Strings[0];
+    end
+  else with FParser do
+    begin
+    i:= LineCount;
+    GotoTop(True,False);
+
+  //*************  for most text data types the first line is the needed IdentificationStg  ************
+    IdentificationStg:= CurrentLine;
+
+    end;
+
+  //*************  assuming each point takes a line, we can set a minimum required number of lines  ************
+  Result:= i>=twcDefMinProfilePoints;
+
+  end; {~checkdata}
+
 *)
 
 
@@ -2828,7 +2936,6 @@ type
      function  FindLevelPos(ASource                :twcDataSource =dsMeasured;
                             ALevel                 :twcDoseLevel  =d50;
                             Symmetric              :Boolean       =True       ): Boolean;     //BistroMath core function
-     function  FindEdge(ASource                    :twcDataSource =dsMeasured ): Boolean;     //BistroMath core function
      function  NearestPosition(Position            :twcFloatType;                             //BistroMath core function
                                ASource             :twcDataSource =dsMeasured;
                                ForceAlwaysIn       :Boolean       =True       ): Integer;
@@ -2976,6 +3083,7 @@ type
                          AtFront                   :Boolean       =False      );
      procedure PddFit(ASource                      :twcDataSource =dsMeasured;
                       ADestination                 :twcDataSource =dsCalculated);
+     function  FindEdge(ASource                    :twcDataSource =dsMeasured ): Boolean;     //BistroMath core function
      procedure FastScan(ASource                    :twcDataSource =dsMeasured );              //BistroMath core function
      function  Analyse(ASource                     :twcDataSource =dsMeasured;                //BistroMath core function
                        AutoCenterProfile           :twcAutoCenter =AC_default ): Boolean;
@@ -7992,6 +8100,7 @@ end; {~destroy}
 {24/07/2020 wWedge90ShiftFactor}
 {27/08/2020 wTopModelRadiusCm}
 {13/10/2020 defaults for all fieldtypes set}
+{22/10/2020 initialise wUserAxisSign to 1, not 0}
 constructor TWellhoferData.Create(AModalityNormList:TModNormList =nil;
                                   AModalityFilmList:TModFilmList =nil;
                                   AModalityBeamList:TModTextList =nil;
@@ -8076,7 +8185,7 @@ wWedge90ShiftFactor               :=  1;
 wMRlinacTUlist                    := 'comma separated';
 Fmcc                              := nil;
 FMultiScanList                    := nil;
-wUserAxisSign                     := Default(twcMeasAxisSign);
+FillChar(wUserAxisSign,SizeOf(wUserAxisSign),1);
 for f:= Low(twcFieldClass) to High(twcFieldClass) do
   begin
   wCenterDefinition[f]            := CenterPenumbra;
@@ -10699,15 +10808,15 @@ with wCurveInfo do
     twVector_ICD_cm[Stop ]:= twCoordinates[twDataLast ];
     for mAxis:= Inplane to Beam do                                              //will be used to derive scanangle in OmniPro v6 GTABUD coordinate system
       tmpCoord.m[mAxis]:= twVector_ICD_cm[Stop].m[mAxis]-twVector_ICD_cm[Start].m[mAxis];
-    twSSD_cm              := Max(1,twSSD_cm);
-    twSDD2SSDratio        := ifthen(abs(twVector_ICD_cm[Start].m[Beam]-twVector_ICD_cm[Stop].m[Beam])<0.1,1+twVector_ICD_cm[Start].m[Beam]/Max(10,Abs(twSSD_cm)),1);
-    twPosScaling          := Max(0.1,ifthen(wScaleSDD2SSD,Max(1,twSDD2SSDratio),1)*ifthen(wScale2DefaultSSD,twSSD_cm/Max(10,twcDefaultSSDcm),1));
-    twResampled           := False;
-    twSelf                := dsMeasured;
-    twAlignedTo           := dsMeasured;
-    twConfidenceLimit     := 0;
-    varAxisHex            := 0;
-    twPosCmExportSign     := 1;
+    twSSD_cm         := Max(1,twSSD_cm);
+    twSDD2SSDratio   := ifthen(abs(twVector_ICD_cm[Start].m[Beam]-twVector_ICD_cm[Stop].m[Beam])<0.1,1+twVector_ICD_cm[Start].m[Beam]/Max(10,Abs(twSSD_cm)),1);
+    twPosScaling     := Max(0.1,ifthen(wScaleSDD2SSD,Max(1,twSDD2SSDratio),1)*ifthen(wScale2DefaultSSD,twSSD_cm/Max(10,twcDefaultSSDcm),1));
+    twResampled      := False;
+    twSelf           := dsMeasured;
+    twAlignedTo      := dsMeasured;
+    twConfidenceLimit:= 0;
+    varAxisHex       := 0;
+    twPosCmExportSign:= 1;
     for mAxis:= Inplane to Beam do
       begin                                                                     //set refpoint to first datapoint
       twDesVaryingAxis[mAxis]:= Abs(twVector_ICD_cm[Stop ].m[mAxis]-twVector_ICD_cm[Start].m[mAxis])>0.5;
@@ -12297,12 +12406,12 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
   twDesModTime     := Mcc.MakeTimeString(Mcc.MccModified);
   twDesOperator    := '';
   twDesMeasComment := tmComment;
-  twDeviceName      := tmScanDevice;
+  twDeviceName     := tmScanDevice;
   twDesSetupComment:= tmScan_Setup;
   twDesNormalise   := 1;
   twDesShift       := 0;
   twBASD           := 100;
-  twBFieldHi[fInplane   ]:= (tmFieldOffset_mm[fInplane]+tmField_mm[fInplane   ]/2)/10;
+  twBFieldHi[fInplane   ]:= (tmFieldOffset_mm[fInplane]+tmField_mm[fInplane   ]/2)/10;      //registered field size
   twBFieldHi[fCrossplane]:= (tmFieldOffset_mm[fInplane]+tmField_mm[fCrossplane]/2)/10;
   twBFieldLo[fInplane   ]:= (tmFieldOffset_mm[fInplane]-tmField_mm[fInplane   ]/2)/10;
   twBFieldLo[fCrossplane]:= (tmFieldOffset_mm[fInplane]-tmField_mm[fCrossplane]/2)/10;
@@ -12329,7 +12438,7 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
               Fprojection[Beam      ]:= tmAxisDir.c[tmTankAxis[Beam]];
               end;
    end;
-  Mcc.FScanType    := FSCanType;
+  Mcc.FScanType     := FSCanType;
   twDeviceMappingICD:= tmTankAxis;
   twDeviceDirXYZ    := tmAxisDir;
   for mAxis:= Inplane to Beam do
