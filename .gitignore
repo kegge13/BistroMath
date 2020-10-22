@@ -1,8 +1,7 @@
-#I maintain a help file
+#I maintain a help file in HelpScribble
 help/**
 
-#my running environment
-output/**
+*.exe
 
 #lazarus files
 lib/**

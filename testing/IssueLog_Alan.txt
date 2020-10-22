@@ -1,0 +1,160 @@
+BistroMath issue log
+Windows 7
+Lazarus 2.0.6
+FPC 3.0.4
+
+[issue] #1 FIXED
+[date] 29/4/2020
+Zoom/Unzoom unzooms calculation
+
+[issue] #2 FIXED
+[date] 29/4/2020
+Zoom/Unzoom looses right hand axis scale
+
+[issue] #3 FIXED
+[date] 29/4/2020
+Change calculation type to Gamma causes right hand axis scale to display ##0.0
+
+[issue] #4 FIXED
+[date] 29/4/2020
+Zoom does not work with gamma calculation
+
+[issue] #5 FIXED
+[date] 29/4/2020
+Click on files tab causes thread exception "Project BistroMath raised exception class 'EThread' with message CheckSynchronize called from non-main thread "$247C"
+
+[issue] #6
+[date] 29/4/2020
+"Settings" tab. FFF detection and analysis some parameters cut off.
+
+[issue] #7
+[date] 29/4/2020
+"Advanced Settings" tab. "Match settings" some parameters are cutoff.
+
+[issue] #8 FIXED
+[date] 30/4/2020
+PDD not displayed after copy from myQAAccept. "Load current data" displays it. Raw data displays OK. Update, also profile copy. Changing tabs from Analysis to 'Raw data' also displays profile and PDD.
+
+[issue] #9 FIXED
+[date] 30/4/2020
+Generic PPD copy from OpenOffice not displayed. Using "Load current data" causes exception error 'ERangeError' with message: Range check error, in file real48utils.pas at line 69. Raw data displays OK.
+
+[issue] #10 FIXED
+[date] 30/4/2020
+Copy profile from myQA-Accept gives message 'Clipboard invalid' after previous generic PDD copy. 
+
+[issue] #11 FIXED
+[date] 6/5/2020
+'Save measurement' filename extension incorrect.
+
+[issue] #12 FIXED
+[date] 6/5/2020
+Temporary reference date saved wrongly.
+
+[issue] #13 FIXED
+[date] 8/6/2020
+[Title] Generic PDD can only be imported as profile.
+[Description]
+Import of generic PDD via <Copy> or "File, Open" fails when "Measurement, Detection Strategy, Generic to PDD" is enabled with message "Length of scan 0.0 cm; at least 1.0 cm required". When "Generic to PDD" is disabled PDD is imported but as profile. Also D7 version.
+[Steps to reproduce]
+Make sure "Measurement, Detection Strategy, Generic to PDD" is enabled.
+Copy a generic PDD from a spreadsheet or editor or open a text file.
+PDD is not displayed
+Disable "Generic to PDD"
+PDD is displayed as profile.
+
+[issue] #14 FIXED
+[date] 8/6/2020
+[Title] Blank line at end of large generic PDD causes import to fail.
+[Description]
+Import of a large (1665 points) PDD fails when there is a blank line at the end. Deleting the blank line allows the PDD to be imported. Blank lines at the end of smaller generic PDDs do not affect import. Also D7 version.
+[Steps to reproduce]
+Make sure "Measurement, Detection Strategy, Generic to PDD" is enabled. (see issue #13)
+Open "6MV.txt" in an editor. Do "Select All" and "Copy" alternatively do "File, Open". Import fails.
+Delete the blank line at the end of the file.
+Do "Select All" and "Copy" alternatively do "File, Open". Import succeeds.
+
+BistroMath issue log
+Windows 7 + Fedora 32
+Lazarus 2.0.8
+FPC 3.2.0
+
+[issue] #15
+[date] 23/7/2020
+[title] Right axis missing on startup
+[description]
+The calculation (right) axis is missing on startup and unzooming the profile/calculation. Not sure if this is by design.
+[steps to reproduce]
+Start BistroMath in special mode 1 with file selftest02_real.txt
+Right axis is missing.
+Press Z for Zoom. Right axis appears.
+Press Z again right axis disappears although calculation curve is still zoomed.
+Press U, right axis still not visible.
+-------------------
+Completely following design rules;
+With calculation is division, “Z” will toggle Measured and Reference zoomed state. Calculated stays zoomed and therefor right axis is on in blue color.
+With “U” all curves are unzoomed, right axis unneeded and disappears.
+
+[issue] #16
+[date] 27/7/2020
+[titel] Right axis color not consistent
+[description]
+On opening a PDD with reference the right axis color is black and not blue. Right axis sometimes turns red.
+----------------------
+When Fit pdd to Buffer, the residual error is plotted in black and zoomed: right axis visible in black;
+When no fit and reference available Calculated is used in zoomed state with right axis in blue. 
+Completely as designed.
+
+[issue] #17
+[date] 27/7/2020
+[title] Shift lost when leaving analysis window
+[description]
+PDD and profile loses shift when leaving analysis window.
+-------------------
+When switching between tabs the shift of a curve is preserved; using Load current data in the File menu does not.
+
+[issue] #18
+[date] 27/7/2020
+[title] Gamma max on right axis not consistent
+[description]
+When "Right axis linked to grid" is deselected and selected calculation type is "Gamma analysis" then "Histogram/Gamma range" under "Advanced options" does not set right axis max properly as in Delphi version.
+-------------------
+Problem seems to occur when Gamma range is set to 1: a symmetric scale is set for some reason.
+-Invalid default for Gamma range
+-For Gamma minimum now always 0.
+-Found error in Histogram Sampler when min=max=0 at initialisation.
+
+[issue] #19
+[date] 27/7/2020
+[title] File selection off by one
+[description]
+When selecting a file in the files tab, right clicking and selecting "open" the file below is opened.
+--------------
+Confirmed&resolved, cell row count differs from Delphi
+Also tested for multiscan files
+
+
+[issue] #20
+[date] 27/7/2020
+[title] Nice to have: Gamma analysis parameters on right axis
+[description]
+It would be nice to have the Gamma analysis parameters as a lable on the right hand axis as in the delphi version.
+---------------------
+It was already in the code, but not made visible; Rotation had to be set to 2700
+
+[issue] #21
+[date] 27/7/2020
+[title] generic profiles not displaying
+[description]
+Generic profiles not displaying correctly. See files 6MV-10x10-2.txt and 16MV-10x10-2.txt.
+[steps to reproduce]
+Set "Detection Stategy, Generic to PPD" and "Generic to Electron" off.
+Open file 6MV-10x10-2.txt
+File is not displayed.
+Open file in editor, select all and copy. File is displayed.
+---------------------------
+There are a lot of unprintable characters in in your data:
+“ï»¿-20.743902”
+Both the Delphi and Lcl version stopped on those illegal characters. Now this check is completely abolished. Only two legal numbers (float or integer) must be found.
+
+Ensure that Generic TO PDD is UNchecked. (Shift-G) 
