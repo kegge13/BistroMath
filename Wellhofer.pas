@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 22/10/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 24/10/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -1392,8 +1392,8 @@ $ENOF                 #end of file
 *)
 
 const
+  w2ID             = '$STOM';
   w2NumMeas_ID     = '$NUMS';
-  w2StartOfMeas_ID = '$STOM';
   w2EndOfMeas_ID   = '$ENOM';
   w2EndOfFile_ID   = '$ENOF';
   w2Version_ID     = '%VERSION';
@@ -1412,7 +1412,6 @@ const
   w2Comments_ID    = '# Comment:';
   w2DetectorInfo_ID= '# Detector:';
   w2OperatorInfo_ID= '# Operator:';
-  w2ID             = w2StartOfMeas_ID;
 
 {01/05/2020 added transfer of BinaryData in Create}
 type
@@ -5202,7 +5201,7 @@ if FParseOk and (not CheckFileTypeOnly) and (FileFormat=twcICprofilerAscii) then
         NextLine;
       until Length(FParser.CurrentLine)>1;
     Handled:= False;
-    if FParseOk and not (w2Test(w2StartOfMeas_ID) or w2Test(w2EndOfMeas_ID) or w2Test(w2EndOfFile_ID)) then
+    if FParseOk and not (w2Test(w2ID) or w2Test(w2EndOfMeas_ID) or w2Test(w2EndOfFile_ID)) then
       begin
       w2Fill(wICPATimeStamp             ,icpMeasTime             );    {TimeStamp		8/14/2015 13:48:28}
       w2Fill(wICPADescription           ,icpComment              );    {Description}
@@ -5359,7 +5358,7 @@ if (Result=twcUnknown) and (not BinaryOnly) and LoadBinStream(AFileName) then
   begin
   n:= BinStream.Read(s.Bytes[1],255);
   s.Bytes[0]:= n;
-  if Pos(w2StartOfMeas_ID,s.Stg)>0 then
+  if Pos(w2ID,s.Stg)>0 then
     Result:= twcW2CAD;
   BinStreamType:= Result;
   end;
@@ -5369,7 +5368,7 @@ end; {~getfiletype}
 
 function Tw2CAD_data.CheckData(AStringList:TStrings): Boolean;
 begin
-Result:= (inherited CheckData(AStringList)) and FParser.Search(w2StartOfMeas_ID,False,False,False);
+Result:= (inherited CheckData(AStringList)) and (IdentificationStg=w2ID);  //IdentificationStg is fetched by inherited CheckData
 with FParser do if Result then
   begin
   GotoTop(True);
@@ -5531,7 +5530,7 @@ var i      : Integer;
   Result:= 0;
   FParser.GotoTop;
   repeat
-    FParseOk:= FParser.Search(w2StartOfMeas_ID);
+    FParseOk:= FParser.Search(w2ID);
     if FParseOk then
       Inc(Result);
   until (not FParseOk) or (Result=AScanNr);
@@ -5560,7 +5559,7 @@ if FParseOk and (not CheckFileTypeOnly) and (FileFormat=twcW2CAD) then with FPar
     Handled:= False;
     if LogLevel>2 then
       StatusMessage(Format('Parsing(%s) {%s} ',[FIdentity,FParser.CurrentLine]),True,3);
-    if FParseOk and not (w2Test(w2StartOfMeas_ID) or w2Test(w2EndOfMeas_ID) or w2Test(w2EndOfFile_ID)) then
+    if FParseOk and not (w2Test(w2ID) or w2Test(w2EndOfMeas_ID) or w2Test(w2EndOfFile_ID)) then
       begin
       w2Fill('<'              ,w2Coordinates_mm,w2Values);{<}
       w2Fill(w2Comments_ID    ,w2Comments);               {# Comment:}
@@ -6865,7 +6864,9 @@ FParseOk:= Result or (CheckFileTypeOnly xor (FileFormat in [twcHdfProfile,twcGen
 if (Result and (not CheckFileTypeOnly) and (FileFormat in [twcHdfProfile,twcGenericProfile]) ) then with FParser do
   begin
   if AutoDecimalPoint then
-    FParser.AutoSetDecPoint(AutoDecimalList);
+    FParser.AutoSetDecPoint(AutoDecimalList)
+  else
+     FParser.SetDecPointChars(['.']);
   FParseOk:= GotoTop(True);                                     {# Track:  Crossplane,Depth,Inplane}
   if FileFormat=twcHdfProfile then
     begin
@@ -7023,7 +7024,9 @@ Result:= inherited ParseData(CheckFileTypeOnly) or (CheckFileTypeOnly xor (FileF
 if (Result and (not CheckFileTypeOnly) and (FileFormat=twcCmsProfile)) then with FParser do
   begin
   if AutoDecimalPoint then
-    FParser.AutoSetDecPoint(AutoDecimalList);
+    FParser.AutoSetDecPoint(AutoDecimalList)
+  else
+     FParser.SetDecPointChars(['.']);
   Linac   :='CMS';
   v       := 0;
   FParseOk:= GotoTop(True);
@@ -9010,6 +9013,7 @@ end;
 {01/09/2015 EvaluateFileType}
 {01/05/2020 transfer BinStream}
 {19/08/2020 speed improvement with BinaryOnly}
+{22/10/2020 speed improvement by not ignoring result Inherited GetFileType}
 function TWellhoferData.GetFileType(AFileName :String ='';
                                     BinaryOnly:Boolean=False): twcFileType;
 var Wms     : TWmsData;
@@ -9020,6 +9024,7 @@ var Wms     : TWmsData;
 begin
 s            := '';
 FLastFileType:= twcUnknown;
+FileFormat   := twcUnknown;
 if LoadBinStream(AFileName) then
   begin
   BinStream.Seek(0,soFromBeginning);
@@ -9033,14 +9038,17 @@ if LoadBinStream(AFileName) then
   end;
 if FLastFileType=twcUnknown then
   begin
-  Inherited GetFileType(AFileName,BinaryOnly);
-  Wms          := TWmsData.Create(FParser,FFileName,BinStream,BinStreamFile);
-  FLastFileType:= Wms.GetFileType(AFileName);
-  try
-    FreeAndNil(Wms);
-   except
-    ExceptMessage('WH.GetFileType:Wms!');
-   end;
+  FLastFileType:= Inherited GetFileType(AFileName,BinaryOnly);
+  if FLastFileType=twcUnknown then
+    begin
+    Wms          := TWmsData.Create(FParser,FFileName,BinStream,BinStreamFile);
+    FLastFileType:= Wms.GetFileType(AFileName);
+    try
+      FreeAndNil(Wms);
+     except
+      ExceptMessage('WH.GetFileType:Wms!');
+     end;
+    end;
   if (FLastFileType=twcUnknown) and (not BinaryOnly) then
     begin
     Pips         := TPipsProfileData.Create(wPipsPixelCm,FParser,FFileName,BinStream,BinStreamFile);
@@ -10618,8 +10626,7 @@ var Stg         : String;
     SearchLine('Depth',Depth,False,True);
     SearchLine('Field',FieldSize['X'],FieldSize['Y']);
     SearchLine('Wedge',Stg);
-    if Trim(Stg)='Open Field' then twbWedge:=  0
-    else                           twbWedge:= 60;
+    twbWedge:= ifthen(Stg.Trim.ToLower='open field',0,60);
     SearchLine('ScanId',i);
     b:= True;
     if FParseOk then with FParser do
@@ -10658,7 +10665,9 @@ Inc(FActiveCnt);
 FParseOk:= True;
 FParser.GotoTop;
 if AutoDecimalPoint then
-  FParser.AutoSetDecPoint(AutoDecimalList);
+  FParser.AutoSetDecPoint(AutoDecimalList)
+else
+  FParser.SetDecPointChars(['.']);
 case FileFormat of
   twcWellhoferAscii_v6                     : Wellhofer_ascii_v6;
   twcWellhoferAscii_v7,twcWellhoferAscii_v8: Wellhofer_ascii_v7;
@@ -10707,8 +10716,9 @@ reference is loaded
 {06/10/2020 fundamentals alternative}
 {12/10/2020 chop off zero-value points at the end}
 {13/10/2020 detection of electrons}
+{23/10/2020 chop off only for vertical scans}
 function TWellhoferData.PrepareProfile: Boolean;
-var i          : Integer;
+var i,j        : Integer;
     mAxis      : twcMeasAxis;
     e,vmax     : twcFloatType;
     varAxisHex : Byte;
@@ -10945,12 +10955,19 @@ with wCurveInfo do
       twFilmData:= True;
     if wResampleData then
       Resample(ResampleGridSize,dsMeasured,dsMeasured);
-    i:= twDataLast;
-    while (i>twDataFirst) and (twData[i]=0) and twValid do
+    if ScanType in twcVertScans then
       begin
-      SetNumPoints(dsMeasured,twPoints-1);                                      //chop off zero-value points at the end
-      twValid:= (twPoints>=twcDefMinProfilePoints);
-      Dec(i);
+      i:= twDataLast;
+      j:= 0;
+      while (i>twDataFirst) and (twData[i]=0) and twValid do
+        begin
+        SetNumPoints(dsMeasured,twPoints-1);                                    //chop off zero-value points at the end
+        twValid:= (twPoints>=twcDefMinProfilePoints);                           //introduced for Varian Eclipse pdd's
+        Dec(i);
+        Inc(j);
+        end;
+      if j>0 then
+       StatusMessage(Format('chopped off last zero values (%d point%s)',[j,ifthen(j=1,'','s')]));
       end;
     for i:= twDataFirst to twDataLast do
       if twData[i]>vmax then
@@ -10987,7 +11004,7 @@ with wCurveInfo do
   ClearCurve(dsCalculated,True);
   ClearCurve(dsBuffer    ,True);
   if FAutoLoadRef then
-    LoadReference
+    LoadReference                      //===================LoadReference==============
   else if TakeReferenceOrg then
     TakeReferenceOrg
   else
@@ -14118,7 +14135,7 @@ if (not FFrozen) and wSource[ASource].twValid then
       l            := twLastDataPosCm-twFirstDataPosCm;
       p0           := twFirstDataPosCm;
       for t:= Inplane to Beam do
-        dx.m[t]:= twVector_ICD_cm[Stop ].m[t]-twVector_ICD_cm[Start].m[t];
+        dx.m[t]:= twVector_ICD_cm[Stop ].m[t]-twVector_ICD_cm[Start].m[t];      //obtain travel length on each axis
       end;
     CopyParameters(wSource[ASource],tPtr^);
     CheckSize(tPtr^,Succ(n));
@@ -16305,6 +16322,10 @@ end; {~integrate}
 This function is original work of Theo van Soest.
 output: wSource[ADestination].twLevelPos[dDerivative], and (in most cases)
                                twCenterPosCm, twUsedEdgeLevel
+Calculating a derivative by definition calculates differences, and therefore increases the noise.
+For standard conventional profiles the process could stop there. One clear positive and negative peak aar found.
+For wedges the situation is not obvious. The high dose side will be found without problems,
+the tow side will drown in a huge number of nearly identical signals.
 By using statistics the correct edge can be found. A 'dead band' is created to include the umbra region, also for wedges and FFF.
 The peak in the derivative is modelled with a 2nd order polynomal to find the best possible peak position.
 *)
@@ -16335,13 +16356,17 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
 {04/09/2020 at least 3 points symmetric in StepFilter; peak modelling only when more than 2 points outside dead band}
 {09/09/2020 out of range error repaired: Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-n)],twPosCm[Min(Nearest+n,twScanLast)])}
 {17/09/2020 introduction of FFrozen}
+{23/10/2020 review of peak statistics and peak fitting loops; errors introduced between 2016 en 2018
+ -NumBins was again (a second time) reduced for right side
+ -when WedgeData was true, m for left side was obtained from right peak statistics
+ -loops stopped at k=1 but had exit approval for k=0 situation}
 function TWellhoferData.Derive(cm          :twcFloatType =twcDefaultValue;
                                ASource     :twcDataSource=dsMeasured;
                                ADestination:twcDataSource=dsCalculated;
                                PreFilter   :Boolean     =False): twcFloatType;
 const PeakRatio=2;
 var L                   : TLinFit;
-    i,j,k,n,m,P1,P2,Pc,
+    i,j,k,m,P1,P2,Pc,
     MinArr,MaxArr       : Integer;
     tmpData             : twcFloatArray;
     DataPtr             : twcFloatArrayPtr;
@@ -16514,7 +16539,7 @@ if (not FFrozen) and wSource[ASource].twValid then
       try
         StepFilter;
         if Pc>=0 then
-          twData[Pc]:= L.Linear;                                                //first derivative is calculated here
+          twData[Pc]:= L.Linear;         //======================first derivative is calculated here====================
        except
         twData[Pc]:= 0;
        end;
@@ -16630,55 +16655,51 @@ if (not FFrozen) and wSource[ASource].twValid then
       twMaxPosCm:= twPosCm[twMaxArr];      //for robustness
       with twLevelPos[dDerivative] do      //now set left and right derivative border position
         begin                              //Some extra measures for seriously wedged profiles; the criteria are alleviated
-        try
+        try                    //===================statistics for peaks=========================
           Y:= DataPtr^[twMaxArr]/DataPtr^[twMinArr]; {find range in original data at peaks of derivative}
           if Y<=0 then WedgedData:= False
           else         WedgedData:= Max(Y,1/Y)>4;
          except
           WedgedData:= False;
          end;
-        if WedgedData then                // data ordening assumed; check if band out of lowest 10% and highest 90%
+        if WedgedData then                 // data ordening assumed; check if band out of lowest 10% and highest 90%
            begin
            i:= Max(10,Abs(twMaxArr-twMinArr) div 5);
            j:= twcDeriveStatsBinWDiv;
            Sampler.NumBins:= Sampler.NumBins div 10;
            RunSampler(twMaxArr-i,twMaxArr+i);
-           end
+           end                                                                  //run sampler for wedgeddata left side
         else
            j:= twcDeriveStatsBinDiv;
         Penumbra[twcLeft ].Valid:= (Sampler.LargestBin<(Pred(j)*Sampler.NumBins) div j);
+        m                       := Sampler.CountAbove[Sampler.LargestBin];      //data points above dead band for left side
         if WedgedData then
-           begin
-           Sampler.NumBins:= Sampler.NumBins div 10;
-           RunSampler(twMinArr-i,twMinArr+i);
-           end;
+           RunSampler(twMinArr-i,twMinArr+i);                                   //run sampler again for wedgeddata right side
         Penumbra[twcRight].Valid:= (Sampler.LargestBin>Sampler.NumBins div j);
         if not Penumbra[twcRight].Valid then
           twMinArr:= EnsureRange(twMinArr,Min(twMaxArr+5,twDataLast),twDataLast)
         else if not Penumbra[twcLeft].Valid then
           twMaxArr:= EnsureRange(twMaxArr,twDataFirst,Max(twMinArr-5,twDataFirst));
-        Level:= 0;
+        Level:= 0;              //==========================fit of peaks=========================
         with Penumbra[twcLeft] do if Valid then                                 //left side
           begin
           Nearest:= twMaxArr;
           Valid  := False;
           k      := 2;
-          m      := Sampler.CountAbove[Sampler.LargestBin];                     //data points above dead band
-          while (Nearest<twMinArr) and (not Valid) and (k>0) do
+          while (Nearest<twMinArr) and (not Valid) and (k>=0) do
             begin
             i    := Max(twScanFirst,Nearest-k);
             j    := Nearest+k;
-            Calc := twPosCm[MaxArr];
-            if (k=1) and (i=MaxArr) then
+            Calc := twPosCm[twMaxArr];
+            if (k=0) and (i=twMaxArr) then
               Valid:= True
             else if m>2 then                                                    //enough points available
               begin
               Q.Initialize;
               for Pc:= i to j do
                 Q.Add_XY(twPosCm[Pc],twData[Pc]);
-              n    := Max(1,k div 2);
               Y    := Q.TopX;
-              Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-n)],twPosCm[Min(Nearest+n,twScanLast)]);
+              Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-k)],twPosCm[Min(Nearest+k,twScanLast)]);
               if Valid then
                 Calc:= Y;                                                       //best possible calculation when enough points availabe
               end;
@@ -16696,12 +16717,12 @@ if (not FFrozen) and wSource[ASource].twValid then
           Valid  := False;
           k      := 2;
           m      := Sampler.CountBelow[Sampler.LargestBin];                     //data points below dead band
-          while (Nearest>twMaxArr) and (not Valid) and (k>0) do
+          while (Nearest>twMaxArr) and (not Valid) and (k>=0) do
             begin
             i    := Nearest-k;
             j    := Min(Nearest+k,twScanLast);
             Calc := twPosCm[MinArr];
-            if (k=1) and (j=MinArr) then
+            if (k=0) and (j=MinArr) then
               Valid:= True
             else if m>2 then                                                    //enough points available
               begin
@@ -16709,9 +16730,8 @@ if (not FFrozen) and wSource[ASource].twValid then
               for Pc:= i to j do
                 Q.Add_XY(twPosCm[Pc],twData[Pc]);
               k    := Max(1,k div 2);
-              n    := Max(1,k div 2);
               Y    := Q.TopX;
-              Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-n)],twPosCm[Min(Nearest+n,twScanLast)]);
+              Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-k)],twPosCm[Min(Nearest+k,twScanLast)]);
               if Valid then
                 Calc := Y;                                                      //best possible calculation when enough points availabe
               end;
@@ -17483,6 +17503,78 @@ with wSource[ASource] do
 end; {~getscaledqfvalue}
 
 
+(*
+QfitMaxPos fills the twTopModel with th results of a quadratic fit.
+As default it takes the area around the twMaxArr position. When the fitted Xtop is within 1 cm of the already
+found twMaxPosCm and within the fit range then twMaxPosCM//twMaxValue to Xtop/Ytop
+*)
+{12/08/2015}
+{19/12/2015: large range for FFF}
+{20/12/2015
+   twTopModel
+   support for general hoizontal scans}
+{04/01/2016 split wLinacSymSign}
+{21/07/2020 GetAdjustedFilterWidthCm}
+{27/08/2020 introduced ForceFitCenter; explicit dependency on wTopModelRadiusCm}
+{30/08/2020 set twMaxPosCm/twMaxValue if old value within fitrange and less than 1 cm from model.xtop}
+{01/09/2020 RangeCm=0 -> no fit}
+procedure TWellhoferData.QfitMaxPos(ASource       :twcDataSource=dsMeasured;
+                                    ForceFitCenter:Boolean      =False      );
+var Q                  : TQuadFit;
+    RangeCm,FitCenterCm: twcFloatType;
+    i,j,k,FitCenterArr : Integer;
+begin
+with wSource[ASource] do
+  if twFastScan and ((ScanType in twcHoriScans) or (twMaxPosCm>twcPDDminTopCm)) then
+    begin
+    FitCenterArr:= ifthen(ForceFitCenter,twCenterArr,twMaxArr);
+    FitCenterCm := twPosCm[FitCenterArr];
+    if ScanType in twcHoriScans then
+      begin
+      RangeCm:= Min(wTopModelRadiusCm[twSetFieldType],(twInfieldPosCm[twcRight]-twInfieldPosCm[twcLeft])/2);
+      if RangeCm>0 then
+        k:= Min(FitCenterArr-NearestPosition(FitCenterCm-RangeCm,ASource),NearestPosition(FitCenterCm+RangeCm,ASource)-FitCenterArr)  //k is (half) range of fit
+      else
+        k:= 0;
+      end
+    else if twStepSizeCm>0 then
+      k:= Round(GetAdjustedFilterWidthCm(ASource)/twStepSizeCm) div 2
+    else
+      k:= 2;
+    if k>0 then                                                                 //zero points is defined as 'no fit'
+      begin
+      k:= Max(2,k);
+      Q:= TQuadFit.Create(Succ(2*k));
+      i:= Max(twScanFirst,FitCenterArr-k);                                      //find enough points around maximum
+      j:= Min(FitCenterArr+k ,twDataLast);
+      while (j-i<k) and (i>twDataFirst) do
+        Dec(i);
+      for k:= i to j do
+        Q.Add_XY(twPosCm[k],twData[k]);
+      if InRange(Q.TopX,ifthen(ScanType in twcVertScans,Max(0.001,twFirstDataPosCm),twFirstDataPosCm),twLastDataPosCm) and
+         (Q.TopY>twcMinNormVal) then                                            //calculate maximum
+        begin
+        twTopModel:= Q.Report;
+        with twTopModel do if Valid and (Abs(twMaxPosCm-Xtop)<1) and InRange(twMaxPosCm,Xmin,Xmax) then
+           begin
+           twMaxPosCm:= Xtop;
+           twMaxValue:= Ytop;
+           end;
+        end
+      else
+        twTopModel.Valid:= False;
+      try
+        FreeAndNil(Q);
+       except
+        ExceptMessage('WH.QfitMaxPos!');
+       end;
+      end
+    else
+      twTopModel:= Default(TQuadFitReport);                                     //effectively twTopModel.Valid=false
+    end;
+end; {~qfitmaxpos}
+
+
 //****BistroMath core function****
 function TWellhoferData.FindCalcRange(CalcPosCm    :twcFloatType;
                                       var Lpos,Rpos:Integer;
@@ -17696,6 +17788,11 @@ end; {~findlevelpos}
 {$pop}
 
 
+(*   FindEdge   ****BistroMath core function****
+makes adjustments to twSetFieldType
+calls derviative and sigmoid
+sets edge based values dependent on field class
+*)
 {11/07/2020 taken out of findlevelpos; completely revieuwed}
 {18/07/2020 tSource always defined}
 {19/07/2020 wSmallFielddetection,wSmallFieldLimitCm}
@@ -17761,7 +17858,7 @@ if Result then
       wSource[ASource].twLevelPos[dDerivative]:= wSource[dsBuffer].twLevelPos[dDerivative];
     if not BordersValid(tSource,d50) then
       FindLevelPos(ASource,d50);                                                //the 50% level should be available as basic feature
-    Result:= Result and wEdgeDetect and                                         //further analysis depends on availability of fallback  method and necessarity
+    Result:= Result and wEdgeDetect and                                         //further analysis depends on availability of fallback method and necessarity
             (wEdgeMethod[fcFallBack,FieldClass]<>wEdgeMethod[fcPrimary,FieldClass]) and
             ( (GetLevelDistance(wEdgeMethod[fcFallBack,FieldClass],wEdgeMethod[fcPrimary,FieldClass],twcLeft ,tSource)>wEdgeFallBackCm) or
               (GetLevelDistance(wEdgeMethod[fcFallBack,FieldClass],wEdgeMethod[fcPrimary,FieldClass],twcRight,tSource)>wEdgeFallBackCm)   );
@@ -17923,13 +18020,13 @@ with wSource[ASource] do
               begin
               j   := twScanFirst;
               vmin:= twData[twScanLast          ];
-              vmax:= twData[(j+twScanLast) div 2]-100;
+              vmax:= twData[(j+twScanLast) div 2];
               end
             else
               begin
               j   := Max(twScanFirst,NearestPosition(0,ASource));
               vmin:= twData[twScanLast];
-              vmax:= twData[j         ]-100;
+              vmax:= twData[j         ];
               end;
             twMinArr:= j;
             for i:= twScanFirst to twScanLast do
@@ -18015,7 +18112,7 @@ with wSource[ASource] do
                     FindLevelPos(ASource,d50);
                     FindLevelPos(ASource,d90);
                     FindEdge(ASource);         //-----FindEdge--------uses current field type, sets twUsedEdgeLevel---------------
-                    if not twIsDerivative then
+                    if not (twIsDerivative or twIsRelative or twIsGamma) then
                       begin
                       if wFieldTypeDetection[fcMRlinac] and (Pos(twDevice,wMRlinacTUlist)>0) then
                         twSetFieldType:= fcMRlinac
@@ -18116,78 +18213,6 @@ if (not wSource[ASource].twValid) and (LogLevel>1) then
 {$ENDIF}
 Dec(FActiveCnt);
 end; {~fastscan}
-
-
-(*
-QfitMaxPos fills the twTopModel with th results of a quadratic fit.
-As default it takes the area around the twMaxArr position. When the fitted Xtop is within 1 cm of the already
-found twMaxPosCm and within the fit range then twMaxPosCM//twMaxValue to Xtop/Ytop
-*)
-{12/08/2015}
-{19/12/2015: large range for FFF}
-{20/12/2015
-   twTopModel
-   support for general hoizontal scans}
-{04/01/2016 split wLinacSymSign}
-{21/07/2020 GetAdjustedFilterWidthCm}
-{27/08/2020 introduced ForceFitCenter; explicit dependency on wTopModelRadiusCm}
-{30/08/2020 set twMaxPosCm/twMaxValue if old value within fitrange and less than 1 cm from model.xtop}
-{01/09/2020 RangeCm=0 -> no fit}
-procedure TWellhoferData.QfitMaxPos(ASource       :twcDataSource=dsMeasured;
-                                    ForceFitCenter:Boolean      =False      );
-var Q                  : TQuadFit;
-    RangeCm,FitCenterCm: twcFloatType;
-    i,j,k,FitCenterArr : Integer;
-begin
-with wSource[ASource] do
-  if twFastScan and ((ScanType in twcHoriScans) or (twMaxPosCm>twcPDDminTopCm)) then
-    begin
-    FitCenterArr:= ifthen(ForceFitCenter,twCenterArr,twMaxArr);
-    FitCenterCm := twPosCm[FitCenterArr];
-    if ScanType in twcHoriScans then
-      begin
-      RangeCm:= Min(wTopModelRadiusCm[twSetFieldType],(twInfieldPosCm[twcRight]-twInfieldPosCm[twcLeft])/2);
-      if RangeCm>0 then
-        k:= Min(FitCenterArr-NearestPosition(FitCenterCm-RangeCm,ASource),NearestPosition(FitCenterCm+RangeCm,ASource)-FitCenterArr)  //k is (half) range of fit
-      else
-        k:= 0;
-      end
-    else if twStepSizeCm>0 then
-      k:= Round(GetAdjustedFilterWidthCm(ASource)/twStepSizeCm) div 2
-    else
-      k:= 2;
-    if k>0 then                                                                 //zero points is defined as 'no fit'
-      begin
-      k:= Max(2,k);
-      Q:= TQuadFit.Create(Succ(2*k));
-      i:= Max(twScanFirst,FitCenterArr-k);                                      //find enough points around maximum
-      j:= Min(FitCenterArr+k ,twDataLast);
-      while (j-i<k) and (i>twDataFirst) do
-        Dec(i);
-      for k:= i to j do
-        Q.Add_XY(twPosCm[k],twData[k]);
-      if InRange(Q.TopX,ifthen(ScanType in twcVertScans,Max(0.001,twFirstDataPosCm),twFirstDataPosCm),twLastDataPosCm) and
-         (Q.TopY>twcMinNormVal) then                                            //calculate maximum
-        begin
-        twTopModel:= Q.Report;
-        with twTopModel do if Valid and (Abs(twMaxPosCm-Xtop)<1) and InRange(twMaxPosCm,Xmin,Xmax) then
-           begin
-           twMaxPosCm:= Xtop;
-           twMaxValue:= Ytop;
-           end;
-        end
-      else
-        twTopModel.Valid:= False;
-      try
-        FreeAndNil(Q);
-       except
-        ExceptMessage('WH.QfitMaxPos!');
-       end;
-      end
-    else
-      twTopModel:= Default(TQuadFitReport);                                     //effectively twTopModel.Valid=false
-    end;
-end; {~qfitmaxpos}
 
 
 //****BistroMath core function****
@@ -18311,6 +18336,7 @@ var s: twcDataSource;
           if not twIsRelative then
             begin  {parsedata: twPosScaling:= ifthen(twScaleProfile,twSDD2SSDratio,1)}
             if wEdgeDetect and BordersValid(ASource,dInflection) then lDP:= dInflection
+            else if BordersValid(ASource,twUsedEdgeLevel)        then lDP:= twUsedEdgeLevel
             else if BordersValid(ASource,dDerivative)            then lDP:= dDerivative
             else                                                      lDP:= d50;
             twInFieldAreaOk:= BordersValid(ASource,dDerivative);

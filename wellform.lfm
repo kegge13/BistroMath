@@ -27,10 +27,10 @@ object AnalyseForm: TAnalyseForm
     Top = 0
     Width = 885
     HelpContext = 1
-    ActivePage = AnalysisTab
+    ActivePage = SettingsTab
     Align = alClient
     ParentFont = False
-    TabIndex = 0
+    TabIndex = 5
     TabOrder = 0
     OnChange = PageControlChange
     OnChanging = PageControlRequestChange
@@ -521,7 +521,6 @@ object AnalyseForm: TAnalyseForm
             AutoSize = False
             Anchors = [akTop, akRight]
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 2
             DecimalPlaces = 1
             Increment = 0.1
@@ -540,7 +539,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 130
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 3
             DecimalPlaces = 1
             MaxValue = 30
@@ -570,7 +568,6 @@ object AnalyseForm: TAnalyseForm
             AutoSize = False
             Anchors = [akTop, akRight]
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 5
             DecimalPlaces = 1
             Increment = 0.1
@@ -601,7 +598,6 @@ object AnalyseForm: TAnalyseForm
             AutoSize = False
             Anchors = [akTop, akRight]
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 7
             DecimalPlaces = 1
             Increment = 0.1
@@ -693,7 +689,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 23
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 3
             DecimalPlaces = 1
             Increment = 0.01
@@ -708,7 +703,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 23
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 4
             DecimalPlaces = 1
             Increment = 0.01
@@ -723,7 +717,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 23
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 5
             DecimalPlaces = 1
             Increment = 0.1
@@ -813,7 +806,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 1
             DecimalPlaces = 3
             Increment = 0.01
@@ -877,7 +869,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 3
             DecimalPlaces = 1
             Increment = 0.01
@@ -892,7 +883,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 4
             DecimalPlaces = 1
             Increment = 0.01
@@ -969,7 +959,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 4
             MaxValue = 50
             MinValue = -50
@@ -982,7 +971,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 5
             MaxValue = 30
             MinValue = -30
@@ -1108,7 +1096,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 7
             DecimalPlaces = 1
             Increment = 0.1
@@ -1125,7 +1112,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 8
             DecimalPlaces = 1
             Increment = 0.1
@@ -1142,7 +1128,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 9
             DecimalPlaces = 1
             MaxValue = 10
@@ -1158,7 +1143,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 10
             DecimalPlaces = 1
             Increment = 0.1
@@ -1174,7 +1158,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 11
             DecimalPlaces = 1
             Increment = 0.1
@@ -1190,7 +1173,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 12
             DecimalPlaces = 1
             Increment = 0.1
@@ -1256,7 +1238,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 3
             DecimalPlaces = 1
             MaxValue = 20
@@ -1270,7 +1251,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 4
             DecimalPlaces = 1
             MaxValue = 500
@@ -1285,7 +1265,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 5
             DecimalPlaces = 1
             MaxValue = 500
@@ -1424,7 +1403,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 15
           DecimalPlaces = 1
           MaxValue = 30
@@ -1439,7 +1417,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 16
           DecimalPlaces = 1
           MaxValue = 30
@@ -1453,7 +1430,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 17
           DecimalPlaces = 1
           MaxValue = 30
@@ -1466,7 +1442,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 18
           DecimalPlaces = 1
           MaxValue = 300
@@ -1482,7 +1457,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 19
           DecimalPlaces = 1
           MaxValue = 300
@@ -1498,7 +1472,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 20
           DecimalPlaces = 1
           MaxValue = 99
@@ -1514,7 +1487,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 21
           DecimalPlaces = 1
           MaxValue = 99
@@ -1530,7 +1502,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 22
           DecimalPlaces = 1
           MaxValue = 99
@@ -1546,7 +1517,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 23
           DecimalPlaces = 1
           MaxValue = 99
@@ -1562,7 +1532,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 24
           DecimalPlaces = 1
           Increment = 0.1
@@ -1578,7 +1547,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 25
           DecimalPlaces = 1
           Increment = 10
@@ -1608,7 +1576,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 27
           MaxValue = 30
           MinValue = 0.05
@@ -1805,7 +1772,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 6
             MaxValue = 30
             Value = 30
@@ -1819,7 +1785,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 7
             MaxValue = 30
             Value = 30
@@ -1957,7 +1922,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 0
             MaxValue = 10
             MinValue = 2
@@ -1972,7 +1936,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 1
             MaxValue = 50
             MinValue = 2
@@ -1987,7 +1950,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 2
             DecimalPlaces = 1
             MaxValue = 20
@@ -2002,7 +1964,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 3
             DecimalPlaces = 1
             MaxValue = 90
@@ -2081,7 +2042,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 12
           MaxValue = 4
           Value = 4
@@ -2095,7 +2055,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 13
           MaxValue = 30
         end
@@ -2108,7 +2067,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 14
           MaxValue = 1000
           NullValue = 95
@@ -2124,7 +2082,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 15
           DecimalPlaces = 1
           MaxValue = 30
@@ -2289,7 +2246,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 12
             Increment = 0.01
             MaxValue = 2
@@ -2303,7 +2259,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 13
             Increment = 0.01
             MaxValue = 10
@@ -2319,7 +2274,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 14
             MaxValue = 50
             Value = 2
@@ -2332,7 +2286,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 15
             MaxValue = 50
           end
@@ -2344,7 +2297,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 16
             MaxValue = 50
           end
@@ -2356,7 +2308,6 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            NumbersOnly = True
             TabOrder = 17
             MaxValue = 50
           end
@@ -2380,7 +2331,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 18
           OnChange = HistoryListSizeClick
           MaxValue = 99
@@ -2397,7 +2347,6 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          NumbersOnly = True
           TabOrder = 19
           Increment = 2
           MaxValue = 21

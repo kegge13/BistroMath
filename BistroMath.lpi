@@ -21,7 +21,8 @@
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="4"/>
       <MinorVersionNr Value="5"/>
-      <BuildNr Value="717"/>
+      <RevisionNr Value="1"/>
+      <BuildNr Value="718"/>
       <Language Value="0809"/>
       <StringTable CompanyName="Theo van Soest" ProductName="BistroMath" ProductVersion="4"/>
     </VersionInfo>
@@ -73,7 +74,11 @@
               <ShowUsedFiles Value="True"/>
               <ShowCompProc Value="True"/>
             </Verbosity>
-            <CustomOptions Value="-vwhq"/>
+            <CustomOptions Value="-vwhq
+-dDEBUG"/>
+            <OtherDefines Count="1">
+              <Define0 Value="DEBUG"/>
+            </OtherDefines>
           </Other>
         </CompilerOptions>
       </Item2>

@@ -30,7 +30,7 @@ type
     Xold,Yold  : Integer;
   end;
 
-const twVersionDate='22/10/2020';
+const twVersionDate='24/10/2020';
 
 var AboutBox        : TAboutBox;
     BMBuildNumber   : Integer;
