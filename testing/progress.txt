@@ -402,6 +402,19 @@ version 4.05
 -now reverted to FillChar(wUserAxisSign,SizeOf(wUserAxisSign),1,)
 -SourceAxisSync called earlier in WellForm.DataFileOpen
 
+
+062	23/10/2020	wedge IFA based on 50% borders					solved
+-left derivative invalid
+-several bugs in derivative peak fitting found
+
+
+063	23/10/2020	resample failed in selftest					solved
+-chop off in PrepareData was intended for Varian Eclipse pdd’s but worked on all data
+
+064	23/10/2020	window size reduced when switching tabs				solved
+-in PageControlChange PlaceResultsLabels was called
+
+
 ======tested=======
 29/05/2020	unlocking critical options
 -enables ProcessAutoscalingItem

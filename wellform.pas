@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 22/10/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 23/10/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -2219,6 +2219,7 @@ if NewLineMax>=0 then
   end;
 end; {~initcxblock}
 
+
 //clear all panel display rules
 {16/01/2018 ClearAllCx changed to object procedure}
 {22/01/2018 CxUsedRowMax}
@@ -3307,7 +3308,7 @@ if Visible then
     begin
     with FileConvList do
       begin
-      Width:= FileConversionTab.Width-2*ConvTabMargin;
+      Width := FileConversionTab.Width -2*ConvTabMargin;
       Height:= FileConversionTab.Height-Top-ConvTabMargin;
       end;
     with FileConvSourceListBox do
@@ -5422,6 +5423,7 @@ end; {~pagecontrolrequestchange}
 {04/05/2020 last-moment filling dataeditor}
 {14/08/2020 menus on for fieldtypestab}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{23/10/2020 removed PlaceResultsLabels(ifthen(PageControl.ActivePage=AnalysisTab,0,DefaultFontSize))}
 procedure TAnalyseForm.PageControlChange(Sender:TObject);
 var i: Integer;
     b: Boolean;
@@ -5445,7 +5447,6 @@ var i: Integer;
 
 begin
 ClipBoardLock:= False;
-PlaceResultsLabels(ifthen(PageControl.ActivePage=AnalysisTab,0,DefaultFontSize));
 {$IFDEF PRELOAD}
 PreloadTransfer(Sender);
 {$ENDIF}
@@ -6432,22 +6433,22 @@ if CxUsedLineMax>0 then                                                         
   LabelPlacingActive := True;                                                   //avoid looping through formresize when height is changed
   ASize              := Max(7,Min(ifthen(ASize=0,Round(Width*8/Constraints.MinWidth),ASize),12));
   Font.Size          := ASize;
-  h                  := Round( 13*ASize/8);                                     //height of elements
+  h                  := Round( 13*ASize/DefaultFontSize);                       //height of elements
   l                  := h+2;
-  w                  := Round( 36*ASize/8);                                     //base data width
+  w                  := Round( 36*ASize/DefaultFontSize);                       //base data width
   NumLines           := Succ(Max(Ord(High(PlotItems)),PanelElements.RowMax));   //derive number text lines needed in resultspanel
   i                  := ResultsPanel.Height;
-  ResultsPanel.Height:= Round((NumLines*15+5)*ASize/8);                         //here the resultspanel height is set
+  ResultsPanel.Height:= Round((NumLines*15+5)*ASize/DefaultFontSize);           //here the resultspanel height is set
   Height             := ifthen(ResultsPanel.Height<i,                           //set height of form
-                        Height+ResultsPanel.Height-i,
-                        Max(Height,Constraints.MinHeight+(NumLines-CxDefaultRowCnt)*15));
+                               Height+ResultsPanel.Height-i,
+                               Max(Height,Constraints.MinHeight+Round((NumLines-CxDefaultRowCnt)*15*ASize/DefaultFontSize)));
   p                  := Round(1.65*w);                                          //width value column
-  q                  := Round(125*ASize/8);                                     //width label column
+  q                  := Round(125*ASize/DefaultFontSize);                       //width label column
   for i:= 0 to CxUsedLineMax do
     SetCxResults(CxResults[i],1,q,2,p,4+i*l);
   with CxResults[0][CxMaxCol,CxValue] do
     j:= Left+Width+25;
-  p:= Round(75*ASize/8);
+  p:= Round(75*ASize/DefaultFontSize);
   w:= Round(1.1*w);
   for k:= Low(PlotItems) to High(PlotItems) do
     begin
@@ -9623,35 +9624,41 @@ CheckMenuItem(MeasMove2OriginItem       ,False);
 CheckMenuItem(FileIgnoreClipboardItem   ,False);
 CheckMenuItem(MeasSDD2SSDItem           ,False);
 CheckMenuItem(MeasScale2defaultSSDitem  ,False);
+CheckMenuItem(FileHistoryItem           ,False);
 SyncSetFFFpeak(CenterFFFTopModel);
-OrgNorm                                       := Engines[UsedEngine].wNormalisation[fcStandard];
-Engines[UsedEngine].wNormalisation[fcStandard]:= NormOnCenter;
-Engines[UsedEngine].ShowWarning               := True;
-ViewStandardPanelsetup.Checked                := True;
-SetDefaultPanel(Sender);                                             {some test depend on specific cxblocks}
+OrgNorm                                           := Engines[UsedEngine].wNormalisation[fcStandard];
+Engines[UsedEngine]    .wNormalisation[fcStandard]:= NormOnCenter;
+Engines[UsedEngine]    .ShowWarning               := True;
+ViewStandardPanelsetup .Checked                   := True;
+AutoSetDecPointCheckBox.Checked                   := True;                      //some legacy reference files
+AutoDecPointList       .Text                      := ',.';
+SetDefaultPanel(Sender);                                                        //some test depend on specific cxblocks
 ViewItems(Self);
 AddEmptyTest(2);
 LoadSelftestFile('selftest16_snc.snctxt','Sun Nuclear disk file text format');
 CursorPosCm:= -11;
 PlotCursor(Sender);
-TestResult(Engines[UsedEngine].wSource[dsReference].twValid,'Reference file loaded',1,True);        {3}
-FloatResult(PlotValues[pCalculated].Caption,99.59,0.2,Format('Value at %0.1f cm: ',[CursorPosCm])); {4}
-AddEmptyTest(2);
-CheckMenuItem(MeasZeroStepsItem      ,False);
+TestResult(Engines[UsedEngine].wSource[dsReference].twValid,'Comma separated reference file loaded',1,True);  {1}
+FloatResult(PlotValues[pCalculated].Caption,99.59,0.2,Format('Value at %0.1f cm: ',[CursorPosCm]));           {2}
+AddEmptyTest(1);                                                                                              {3}
+LoadSelftestFile('selftest01_theoretical.txt','should fail on Decimal Separator detection',2);
+AutoSetDecPointCheckBox.Checked:= False;                                        //some legacy reference files
+TestResult(not Engines[UsedEngine].IsValid,'Decimal Separator detection');                                    {4}
 ViewItems(Self);
+CheckMenuItem(MeasZeroStepsItem,False);
 LoadSelftestFile('selftest01_theoretical.txt','should fail on Zero Steps detection',2);
-TestResult(Pos(LeftStr(twForIllegalScan,5),Engines[UsedEngine].LastMessage)>0,'Zero Steps detection');        {6}
+TestResult(Pos(LeftStr(twForIllegalScan,5),Engines[UsedEngine].LastMessage)>0,'Zero Steps detection');        {5}
 PageControl.ActivePage:= ConfigurationTab;
 ModListNormRadioButton.Checked:= True; {excutes event code}
 ModListGridFill(Format('%s,0,100,0,0',[smod]),True);
 i:= LocateModality(smod,'');
-FloatResult(ModListGrid.Cells[Succ(DefDoseGridModCol),i],0,1,'Relative norm position for '+smod);   {7}
+FloatResult(ModListGrid.Cells[Succ(DefDoseGridModCol),i],0,1,'Relative norm position for '+smod);   {6}
 ModListFilmRadioButton.Checked:= True;
 ModListGridFill(Format('%s,%s,0,0.667,0,0,0,10',[smod,sfilm]),True);
 i:= LocateModality(smod,sfilm);
-TestResult(ModListGrid.Cells[DefDoseGridFilmCol,i]=sfilm    ,'Temporary configuration data added'); {8}
+TestResult(ModListGrid.Cells[DefDoseGridFilmCol,i]=sfilm    ,'Temporary configuration data added'); {7}
 PageControl.ActivePage:= AnalysisTab;
-CheckMenuItem(MeasZeroStepsItem ,True );
+CheckMenuItem(MeasZeroStepsItem ,True );                                        //accept zero-steps on
 CheckMenuItem(RefAutoLoadItem   ,True );
 CheckMenuItem(RefUseDivideByItem,False);
 CheckMenuItem(RefUseGammaItem   ,True );
@@ -9659,21 +9666,21 @@ GammaLocalDoseCheckBox.Checked:= True;
 GammaDoseNorm_perc    .Value  := 1;
 GammaDistNorm_mm      .Value  := 1;
 SettingsTabExit(Self);
-if LoadSelftestFile('selftest28_FFF.mcc') then                  {ref selftestx7i30_ssd090_d100m.txt  9}
+if LoadSelftestFile('selftest28_FFF.mcc') then                  {ref selftestx7i30_ssd090_d100m.txt  8}
   begin
   CursorPosCm:= 5;
   PlotCursor(Sender);
-  FloatResult(PlotValues[pCalculated].Caption,1.93,0.5,'Gamma at 5 cm',3);                         {10}
+  FloatResult(PlotValues[pCalculated].Caption,1.93,0.5,'Gamma at 5 cm',3);                          {9}
   end;
 CheckMenuItem(RefUseGammaItem   ,False);
 CheckMenuItem(RefUseDivideByItem,True );
-if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profile in Wellhöfer text format') then {11}
+if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profile in Wellhöfer text format') then {10}
   begin
   CheckMenuItem(ViewMeasuredItem  ,False);
   CheckMenuItem(ViewIndicatorsItem,False);
   ViewItems(Self);
-  TestResult(PlotSeries[pMeasured].Active=False                                       ,'Measured off');   {12}
-  TestResult((InFieldIndicators[twcLeft].Active or InFieldIndicators[twcRight].Active)=False,'Indicators off'); {13}
+  TestResult(PlotSeries[pMeasured].Active=False                                       ,'Measured off');         {11}
+  TestResult((InFieldIndicators[twcLeft].Active or InFieldIndicators[twcRight].Active)=False,'Indicators off'); {12}
   with Engines[UsedEngine] do
     begin
     ResetValues;
@@ -9687,7 +9694,7 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
   ViewItems(Self);
   OnDataRead(Self);
   TestResult(PlotSeries[pCalculated].Active=False,'Calculated off');                               {14}
-  TestResult(PlotSeries[pBuffer    ].Active=True ,'Buffer on');
+  TestResult(PlotSeries[pBuffer    ].Active=True ,'Buffer on');                                    {15}
   CheckMenuItem(ViewBufferItem    ,False);
   CheckMenuItem(ViewCalculatedItem,True );
   CheckMenuItem(ViewIndicatorsItem,True );
@@ -9699,7 +9706,7 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
   FloatResult(CxResults[5][1]                                    ,1.2  ,0.1,'Left 80-20');         {18}
   FloatResult(CxResults[6][1]                                    ,0,0.1,'Right 80-20');            {19}
   TestResult(PlotValues[pMeasured].Caption<>'-'                  ,'Cursor values visible');        {20}
-  if FloatResult(PlotValues[pMeasured].Caption                   ,50,0.001 ,'Left value') then
+  if FloatResult(PlotValues[pMeasured].Caption                   ,50,0.001 ,'Left value') then     {21}
     begin
     PageControl.ActivePage:= SettingsTab;
     AddMessage('Setting Xpenubra High value to 85',0);
@@ -9709,20 +9716,20 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
     XLpenumbra_perc.Value:= 15;
     PageControl.ActivePage:= AnalysisTab;
     ReadEditor(Self);
-    FloatResult(Engines[UsedEngine].GetPenumbraWidth(dsMeasured,twcLeft),1.4,0.0001,'Left 85-15');   {22}
+    FloatResult(Engines[UsedEngine].GetPenumbraWidth(dsMeasured,twcLeft),1.4,0.0001,'Left 85-15'); {22}
     end;
   EdgeDetectionCheckBox.Checked:= False;
   Engines[UsedEngine].ResampleGridSize:= 0.2;
   CheckMenuItem(MeasResampleItem,True);
   ReadEditor(Self);
-  FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50,twcRight),21.08,0.2,'Right, resampled'); {23}
+  FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50,twcRight),21.08,0.2,'Right, resampled');
   CheckMenuItem(MeasResampleItem,False);
   EdgeDetectionCheckBox.Checked:= True;
   end;
 AddEmptyTest(2); {25}
 Engines[UsedEngine].ModalityNormList.FindModData(smod,ModRec);
-TestResult(Assigned(ModRec),'Obtaining modality data for '+smod);                            {26}
-if TestResult(LoadSelftestFile('selftest15_missing_penumbra.txt'),'Missing penumbra') then  {27}
+TestResult(Assigned(ModRec),'Obtaining modality data for '+smod);                                  {26}
+if TestResult(LoadSelftestFile('selftest15_missing_penumbra.txt'),'Missing penumbra') then         {27}
   begin
   Engines[UsedEngine].Parser.CurrentLine:= PlotDates[pReference].Caption;
   if Engines[UsedEngine].Parser.Search(DefAnnotShift,False,True) then
@@ -9740,7 +9747,7 @@ if TestResult(LoadSelftestFile('selftest01_asym.txt'),'Asymmetric') then
   CheckMenuItem(MeasSymCorrectItem,True,0);
   Ft_SymCorrCheckBox[fcStandard,dsMeasured].Checked:= True;
   ReadEditor(Self);
-  FloatResult(CxResults[3][0],0,0.1,'Flatness(%)');                              {36}
+  FloatResult(CxResults[3][0],0,0.1,'Flatness(%)');                             {36}
   end
 else CheckMenuItem(MeasSymCorrectItem,True);
 ViewItems(Self);
@@ -9768,10 +9775,10 @@ if TestResult(LoadSelftestFile(Engines[UsedEngine].ReferenceDirectory+'selftestx
     CheckMenuItem(ViewReferenceItem,False);
     CheckMenuItem(ViewBufferItem   ,True );
     ReadEditor(Self);
-    FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50        ,twcLeft ),-18.91,0.02,'Left, d50'); {45}
+    FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50        ,twcLeft ),-18.91,0.02,'Left, d50');              {45}
     FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,dDerivative,twcLeft ),-18.85,0.02,'Left, Edge, derivative'); {46}
     ReadEditor(Self);
-    FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,dDerivative,twcLeft ),-18.88,0.05,'Left, Edge sigmoïd'); {47}
+    FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,dDerivative,twcLeft ),-18.88,0.05,'Left, Edge sigmoïd');     {47}
     CheckMenuItem(ViewMeasuredItem ,True );
     CheckMenuItem(ViewReferenceItem,True );
     CheckMenuItem(ViewBufferItem   ,False);
@@ -9786,13 +9793,14 @@ if TestResult(LoadSelftestFile('selftest03_pdd_theoretical.txt'),'PDD') then {48
   with Engines[UsedEngine],wSource[dsMeasured].twBeamInfo do
     begin
     FloatResult(CxResults[2][0],104.2,10,'Scaled on maximum');                {49}
-    TestResult(CxResults[3][1,CxTitle].Caption[1]='P','text is PDD20/10');   {50}
+    TestResult(CxResults[3][1,CxTitle].Caption[1]='P','text is PDD20/10');    {50}
     FloatResult(CxResults[3][1],0.582,0.002,'PDD20/10');                      {51}
     end;
 AddMessage('Setting absolute scaling point to 10 cm...',0);
 CheckMenuItem(MeasUseFitModelItem,True);
 ModRec.NormRec.Depth[True]:= 10; {should be set befor file read because analysis is done immediately}
-if TestResult(LoadSelftestFile('selftest03_pdd.txt'),'PDD') then             {52}
+AutoSetDecPointCheckBox.Checked:= True;                                         //some legacy reference files
+if TestResult(LoadSelftestFile('selftest03_pdd.txt'),'PDD') then              {52}
   with Engines[UsedEngine],wSource[dsMeasured].twBeamInfo do
     begin
     Stg:= ' axis maximum';
@@ -9801,12 +9809,12 @@ if TestResult(LoadSelftestFile('selftest03_pdd.txt'),'PDD') then             {52
     AddMessage('Setting relative scaling point to 10 cm...',0);
     ModRec.NormRec.Depth[False]:= 10;
     ReadEditor(Self);
-    FloatResult(DataPlot.LeftAxis.Range.Max  ,156,6,'Left'  +Stg);           {55}
-    FloatResult(DataPlot.BottomAxis.Range.Max, 40,9,'Bottom'+Stg);           {56}
+    FloatResult(DataPlot.LeftAxis.Range.Max  ,156,6,'Left'  +Stg);            {55}
+    FloatResult(DataPlot.BottomAxis.Range.Max, 40,9,'Bottom'+Stg);            {56}
     end;
 AddEmptyTest(2);
 PDDfitCheckBox.Checked:= False;
-TestResult(LoadSelftestFile('selftest08_scanditronic.wda'),'Scanditronix binary format (wda)');  {59}
+TestResult(LoadSelftestFile('selftest08_scanditronic.wda'),'Scanditronix binary format (wda)');      {59}
 AddEmptyTest;
 if TestResult(LoadSelftestFile('selftest10_generic.txt'  ),'Generic profile') then
   begin
@@ -9825,68 +9833,68 @@ if TestResult(LoadSelftestFile('selftest10_generic.txt'  ),'Generic profile') th
   end;
 CheckMenuItem(ViewZoomItem,False,0);
 if TestResult(LoadSelftestFile('selftest04_xio.txt'       ),'XiO profile') then                       {65}
-  FloatResult(CxResults[2][0],110,5,'Toe of wedge on G-side');                                         {66}
+  FloatResult(CxResults[2][0],110,5,'Toe of wedge on G-side');                                        {66}
 if TestResult(LoadSelftestFile('selftest12_xio_pdd.txt'   ),'XiO depth dose') then                    {67}
-  FloatResult(CxResults[0][1],2,1                           ,'Dmax');                                  {68}
+  FloatResult(CxResults[0][1],2,1                           ,'Dmax');                                 {68}
 if TestResult(LoadSelftestFile('selftest13_monaco_pdd.txt'),'Monaco depth dose') then                 {69}
-  FloatResult(CxResults[0][1],2,1                           ,'Dmax');                                  {70}
+  FloatResult(CxResults[0][1],2,1                           ,'Dmax');                                 {70}
 TestResult(LoadSelftestFile('selftest06_pips.txt'      ),'Pips Pro profile');                         {71}
 if TestResult(LoadSelftestFile('selftest07_scanditronic.wtx'),'Scanditronix text format (.wtx)') then {72}
   begin
-  FloatResult(CxResults[0][1],-0.02,0.1,'Center of field');                                            {73}
+  FloatResult(CxResults[0][1],-0.02,0.1,'Center of field');                                           {73}
   CheckMenuItem(MeasMove2OriginItem,True,0);
   ReadEditor(Self);
-  AddEmptyTest;                                                                                     {74}
+  AddEmptyTest;                                                                                       {74}
   CheckMenuItem(MeasMove2OriginItem,False,0);
   end;
-TestResult(LoadSelftestFile('selftest09_schuster.txt'),'Schuster profile');                         {75}
+TestResult(LoadSelftestFile('selftest09_schuster.txt'),'Schuster profile');                           {75}
 with Engines[UsedEngine] do
   begin
-  if TestResult(LoadSelftestFile('selftest05_hdf.txt'),'HDF profile') then                          {76}
+  if TestResult(LoadSelftestFile('selftest05_hdf.txt'),'HDF profile') then                            {76}
     begin
-    AddEmptyTest(2);                                                                                {78}
+    AddEmptyTest(2);                                                                                  {78}
     CursorPosCm:= 24.33;
     PlotCursor(Sender);
-    FloatResult(PlotValues[pMeasured].Caption,20,20,Format('Measured at %0.2f cm',[CursorPosCm]));  {79}
-    FloatResult(CxResults[0][0],1830,20,'Normalisation value');                                      {80}
-    CursorPosCm:= 16.33;
+    FloatResult(PlotValues[pMeasured].Caption,20,20,Format('Measured at %0.2f cm',[CursorPosCm]));    {79}
+    FloatResult(CxResults[0][0],1830,20,'Normalisation value');                                       {80}
+    CursorPosCm:= 15.33;
     PlotCursor(Sender);
     LocalPeakClick(MeasLocalPeakItem);
-    FloatResult(CxResults[0][1],16.71,0.3,'Center local peak');                                      {81}
+    FloatResult(CxResults[0][1],15.39,0.3,'Center local peak');                                       {81}
     end;
   end;
 if TestResult(LoadSelftestFile('selftest11_18MeV.txt'),'Electron depth dose') then
   FloatResult(CxResults[0][1],3.39,0.1,'Dmax');  {83}
 if TestResult(LoadSelftestFile('selftest14_wedge_across.wtx'),'Wedge across profile') then
-  FloatResult(CxResults[3][0],4.9,0.1,'Flatness(%)');                     {85}
+  FloatResult(CxResults[3][0],4.8,0.2,'Flatness(%)');                                                 {85}
 CheckMenuItem(RefAutoLoadItem,True);
 CheckMenuItem(ViewZoomItem   ,True);
 CheckMenuItem(ViewBufferItem ,True);
-if TestResult(LoadSelftestFile('selftest14_wedge.wtx'),'Wedge profile') then    {86}
+if TestResult(LoadSelftestFile('selftest14_wedge.wtx'),'Wedge profile') then                          {86}
   begin
-  Engines[UsedEngine].Derive(0,dsMeasured,dsBuffer);
+//  Engines[UsedEngine].Derive(0,dsMeasured,dsBuffer);
   ViewItems(Self);
   CursorPosCm:= Engines[UsedEngine].wSource[dsMeasured].twLevelPos[dDerivative].Penumbra[twcLeft].Calc;
   PlotCursor(Sender);
   FloatResult(CursorPosCm,-15.77,0.2,'Left edge');
-  FloatResult(PlotValues[pReference].Caption,165,70,Format('Reference at %0.2f cm',[CursorPosCm])); {88}
-  FloatResult(PlotValues[pBuffer   ].Caption,287,90,Format('Derived at %0.2f cm',[CursorPosCm]));   {89}
+  FloatResult(PlotValues[pReference].Caption,165,70,Format('Reference at %0.2f cm',[CursorPosCm]));   {88}
+  FloatResult(PlotValues[pBuffer   ].Caption,150,90,Format('Derived at %0.2f cm',[CursorPosCm]));     {89}
   CursorPosCm:= Engines[UsedEngine].wSource[dsMeasured].twLevelPos[dDerivative].Penumbra[twcRight].Calc;
   PlotCursor(Sender);
-  FloatResult(CursorPosCm,15.65,0.2,'Right edge'); {90}
-  FloatResult(PlotValues[pBuffer].Caption,-19,2,Format('Derived at %0.2f cm',[CursorPosCm]));       {91}
-  AddEmptyTest(1);                                                                                  {92}
+  FloatResult(CursorPosCm,15.65,0.2,'Right edge');                                                    {90}
+  FloatResult(PlotValues[pBuffer].Caption,-7,5,Format('Derived at %0.2f cm',[CursorPosCm]));          {91}
+  AddEmptyTest(1);                                                                                    {92}
   CursorPosCm:= -5;
   PlotCursor(Sender);
-  FloatResult(PlotValues[pMeasured].Caption,141.49,0.5,'Measured at -5 cm');                        {93}
+  FloatResult(PlotValues[pMeasured].Caption,141,5,'Measured at -5 cm');                               {93}
   CheckMenuItem(MeasMirrorItem,True);
   OnDataRead(Sender);
   CursorPosCm:= 5;
   PlotCursor(Sender);
-  FloatResult(PlotValues[pMeasured].Caption,141.59,0.5,'Mirrored at +5 cm');                        {94}
+  FloatResult(PlotValues[pMeasured].Caption,141,5,'Mirrored at +5 cm');                               {94}
   CheckMenuItem(MeasMirrorItem,False);
   end;
-AddEmptyTest(2); {95}
+AddEmptyTest(2);                                                                                      {95}
 CheckMenuItem(RefUseGammaItem,True);
 iX10:= Engines[UsedEngine].ModalityFilmList.FindModData('X10.0','');
 if iX10>0 then
@@ -9896,49 +9904,50 @@ if iX10>0 then
   end
 else
   sX10:= '';
-if TestResult(LoadSelftestFile('selftest16_snc_clipboard_pdd.txt'),'SNC clipboard profile') then    {97}
-  begin  {LoadReference->C:\Theo\Delphi\projects\BistroMath\output\references\selftest9x10d1010_ssd100.txt}
+if TestResult(LoadSelftestFile('selftest16_snc_clipboard_pdd.txt'),'SNC clipboard profile') then      {97}
+  begin  {LoadReference->references\selftest9x10d1010_ssd100.txt}
   OnDataRead(Sender);
   CursorPosCm:= 10;
   PlotCursor(Sender);
-  FloatResult(PlotValues[pCalculated].Caption,0.4,0.5,'Gamma at 10 cm');                            {98}
+  FloatResult(ifthen(Engines[UsedEngine].wSource[dsCalculated].twIsGamma,
+                     PlotValues[pCalculated].Caption,'0'),0.4,0.5,'Gamma at 10 cm');                  {98}
   end;
 if iX10>0 then
   Engines[UsedEngine].ModalityFilmList.AddModData(sX10);
 CheckMenuItem(RefUseGammaItem,False);
 Engines[UsedEngine].wMultiScanNr:= 1;
-if TestResult(LoadSelftestFile('selftest19_PTW.mcc'),'mcc') then                                    {99}
+if TestResult(LoadSelftestFile('selftest19_PTW.mcc'),'mcc') then                                      {99}
   begin
   for i:= 1 to 3 do
     begin
     Inc(Engines[UsedEngine].wMultiScanNr);
     Reload(Sender);
     end;
-  FloatResult(Engines[UsedEngine].wSource[dsMeasured].twWidthCm,14.22,0.2,'Double wegde FWHM');               {100}
+  FloatResult(Engines[UsedEngine].wSource[dsMeasured].twWidthCm,14.22,0.2,'Double wegde FWHM');      {100}
   end;
-TestResult(LoadSelftestFile('selftest17_OmniPro_v7.txt'),'OmniPro-Accept v7x');                     {101}
+TestResult(LoadSelftestFile('selftest17_OmniPro_v7.txt'),'OmniPro-Accept v7x');                      {101}
 TestResult(LoadSelftestFile('selftest18_RFA300.asc'),'RFA300'); {102}
-TestResult(LoadSelftestFile('selftest20_OmniPro_v74.txt'),'OmniPro-Accept v74');                    {103}
-TestResult(LoadSelftestFile('selftest20_OmniPro_v74_pdd.txt'),'OmniPro-Accept v74');                {104}
+TestResult(LoadSelftestFile('selftest20_OmniPro_v74.txt'),'OmniPro-Accept v74');                     {103}
+TestResult(LoadSelftestFile('selftest20_OmniPro_v74_pdd.txt'),'OmniPro-Accept v74');                 {104}
 if TestResult(LoadSelftestFile('selftest20_OmniPro_v74_PM.txt'),'OmniPro-Accept v74 AM/PM notation') then
-  FloatResult(Engines[UsedEngine].wSource[dsMeasured].twMeasDateTime,41292.730718,0.02,'AM/PM notation');     {106}
-TestResult(LoadSelftestFile('selftest25_OmniPro_v6_mm.txt'),'OmniPro-Accept v6, positions in mm');  {107}
-TestResult(LoadSelftestFile('selftest26_w2CAD.asc'),'Varian w2CAD format');                         {108}
+  FloatResult(Engines[UsedEngine].wSource[dsMeasured].twMeasDateTime,41292.730718,0.02,'AM/PM notation');
+TestResult(LoadSelftestFile('selftest25_OmniPro_v6_mm.txt'),'OmniPro-Accept v6, positions in mm');   {107}
+TestResult(LoadSelftestFile('selftest26_w2CAD.asc'),'Varian w2CAD format');                          {108}
 AddEmptyTest(2);
 CheckMenuItem(MeasGenericToPDDItem,True);
 Stg:= ' as pdd interpreted';
 if LoadSelftestFile('selftest21_freescan.txt') then
-  TestResult(CxResults[0][1,CxTitle].Caption=DefLabelDmax+':','Freescan'+Stg);                      {111}
+  TestResult(CxResults[0][1,CxTitle].Caption=DefLabelDmax+':','Freescan'+Stg);                       {111}
 if LoadSelftestFile('selftest22_fanline.txt') then
-  TestResult(CxResults[0][1,CxTitle].Caption=DefLabelDmax+':','Fanline'+Stg);                       {112}
+  TestResult(CxResults[0][1,CxTitle].Caption=DefLabelDmax+':','Fanline'+Stg);                        {112}
 CheckMenuItem(MeasGenericToPDDItem,False);
-TestResult(LoadSelftestFile('selftest22_fanline.txt'),'Fanline');                                   {113}
+TestResult(LoadSelftestFile('selftest22_fanline.txt'),'Fanline');                                    {113}
 EdgeDetectionCheckbox.Checked:= True;
 if LoadSelftestFile('selftest23_GirafTool.txt') then
   FloatResult(CxResults[2][1],7.5,0.5,'Width of filmdata');                                          {114}
 if LoadSelftestFile('selftest24_ScanAngle135.txt') then
   begin
-  TestResult(Pos('135°',DataPlot.BottomAxis.Title.Caption)>0,'Scan angle = 135°');                  {115}
+  TestResult(Pos('135°',DataPlot.BottomAxis.Title.Caption)>0,'Scan angle = 135°');                   {115}
   Stg:= 'selftestx6d135_40d_ssd100_d016m.txt';
   AddEmptyTest;
   end;
@@ -9952,7 +9961,7 @@ if LoadSelftestFile('selftest27_ssd90.txt') then
   begin
   Stg:= 'selftestx10c40_ssd100_d050m.txt';  {rescaled to ssd100}
   AddEmptyTest;
-  FloatResult(CxResults[2][1],42.37,0.5,'Width');                                           {119}
+  FloatResult(CxResults[2][1],42.37,0.5,'Width');                                                    {119}
   end;
 AddEmptyTest(8);
 CheckMenuItem(ViewBufferItem,False);
@@ -9963,10 +9972,10 @@ Engines[UsedEngine].wNormalisation[fcStandard]:= OrgNorm;
 Engines[UsedEngine].ShowWarning               := ShowWarningCheckBox.Checked;
 ModListGridFill(sbase ,True);
 ModListGridFill(scombi,True);
-AddEmptyTest;                                                                            {128}
+AddEmptyTest;                                                                                        {128}
 {$IFDEF Windows}
 if TestResult(FileExists(Application.HelpFile) and Executehelp(SelfTestItem.HelpContext),
-              Format('Help file (%s) available',[Application.HelpFile])) then            {129}
+              Format('Help file (%s) available',[Application.HelpFile])) then                        {129}
   begin
   WaitLoop(100);
   LoadSelftestFile('selftest01_theoretical.txt');
@@ -10047,6 +10056,7 @@ inherited;
 end; {~formclose}
 {$pop}
 {$ENDIF}
+
 
 {01/08/2015 tempreffile buiten gebruik gesteld}
 {12/02/2016 preloadstream, preloadtransfer}
