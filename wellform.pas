@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 23/10/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 29/10/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -4109,6 +4109,7 @@ Fills graph and triggers display of analysis results.
 {17/09/2020 Freeze}
 {06/10/2020 fundamentals alternative}
 {15/10/2020 set FieldType name in axis title as is, without brackect or lowercase}
+{29/10/2020 ReportDifferences added for failing reference}
 procedure TAnalyseForm.OnDataRead(Sender:TObject);
 var i                           : Integer;
     m                           : twcMeasAxis;
@@ -4379,12 +4380,12 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
       DoCorrections(dsReference,RefBackgroundCorrItem.Checked);
     if SpecialMode[3].Mpar.Checked {$IFDEF SelfTest}and (SelfTestLevel=0){$ENDIF} then
       DoSpecialMode3;
-    Analyse;                                                                                            //final check if analysis is completed
-    if not wSource[dsMeasFiltered].twValid then                                                         //publishresults relies on filtered version, should be ok
+    Analyse;                                                                             //final check if analysis is completed
+    if not wSource[dsMeasFiltered].twValid then                                          //publishresults relies on filtered version, should be ok
       QuadFilter(0,dsMeasured,dsMeasFiltered,True);
     if not ViewReferenceItem.Enabled then
       CopyCurve(dsMeasFiltered,dsCalculated);
-    if Engines[UsedEngine].ScanType=snAngle then                                                                  //This is based on the OmniPro v6 definition of the scanangle and axis directions
+    if Engines[UsedEngine].ScanType=snAngle then                                         //This is based on the OmniPro v6 definition of the scanangle and axis directions
       SwapAxis:= False
     else
       case ScanLeftSide[1] of
@@ -4395,7 +4396,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
        end;
     with wSource[dsMeasured],twBeamInfo do
       begin
-      if not DataFromEditor               then Tr:= FileName                                            //from wellhofer-object
+      if not DataFromEditor               then Tr:= FileName                             //from wellhofer-object
       else if EditorFileName<>DefaultName then Tr:= EditorFileName
            else
              try
@@ -4407,11 +4408,11 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
               except
                Tr:= '';
               end;
-      Set_F;                                                                                            //set scaling for measured
+      Set_F;                                                                             //set scaling for measured
       with DataPlot do
         begin
         b:= False;
-        if not ViewBottomAxisAlwaysBlack.Checked then                                                   //wUserAxisSign is applied in Prepareprofile}
+        if not ViewBottomAxisAlwaysBlack.Checked then                                    //wUserAxisSign is applied in Prepareprofile}
           for m:= Inplane to Beam do b:= b or ((wUserAxisSign[m]<0) and twDesVaryingAxis[m]);
         if (Round(FieldGT_cm)=FieldGT_cm) and (Round(FieldAB_cm)=FieldAB_cm) then i:= 0
         else                                                                      i:= 1;
@@ -4540,13 +4541,13 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         end {referencegammaitem}
       else if RefUseAddToItem.Checked then
         begin
-        Engines[UsedEngine].Add(dsMeasured,dsReference,dsCalculated,
-                                ifthen(RefNormaliseItem.Checked,
-                                wSource[dsMeasured].twAppliedNormVal/
-                                ifthen(wSource[dsReference].twAppliedNormVal>0,
-                                       wSource[dsReference].twAppliedNormVal,
-                                       Math.Max(1,wSource[dsMeasured].twAppliedNormVal)),
-                                1));
+        Add(dsMeasured,dsReference,dsCalculated,
+                       ifthen(RefNormaliseItem.Checked,
+                              wSource[dsMeasured].twAppliedNormVal/
+                              ifthen(wSource[dsReference].twAppliedNormVal>0,
+                                     wSource[dsReference].twAppliedNormVal,
+                                     Math.Max(1,wSource[dsMeasured].twAppliedNormVal)),
+                       1));
         HistogramTab.TabVisible:= True;
         end {refuseaddtoitem}
       end; {not syntheticmade}
@@ -4640,7 +4641,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         FillPlotSeries(pBuffer,dsBuffer,F);
         end;
     {$IFDEF THREAD_PLOT}
-    for p:= pMeasured to pBuffer do                                                                     //wait for any running threads
+    for p:= pMeasured to pBuffer do                                                               //wait for any running threads
       if assigned(PlotFillThread[p]) then
         begin
         PlotFillThread[p].WaitFor;
@@ -4651,12 +4652,18 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
          end;
         end;
     {$ENDIF THREAD_PLOT}
-    if (not ViewReferenceItem.Enabled) and wSource[dsReference].twValid then
+    if (not ViewReferenceItem.Enabled) and wSource[dsReference].twValid then                      //valid files that fail as ref are made invisible
+      begin
+      if LogLevelEdit.Value<=1 then
+        SetMessageBar('Increase loglevel to get more details.')
+      else
+        ReportDifferences(dsMeasured,dsReference);
       SetMessageBar(Format(CurveStringsDif,[CompressedFilename(wSource[dsReference].twFileName),
                                             GetCurveIDString(dsReference),
                                             GetCurveIDString]));
+      end;
     end; {isvalid}
-  if Sender=nil then                                //the sender is nilled for calls through clipboard
+  if Sender=nil then                                                                              //the sender is nilled for calls through clipboard
     begin
     if Enabled then
       SetFocus;

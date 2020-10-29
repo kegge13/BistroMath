@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 24/10/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 29/10/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -9441,7 +9441,7 @@ if Result then
       end
     else
       FRefOrgSrc.Size:= 0;
-    FRefOrgSrc.CopyFrom(AWellhofer.BinStream,0);                               //zero length copies complete stream!
+    FRefOrgSrc.CopyFrom(AWellhofer.BinStream,0);                                //zero length copies complete stream!
     FrefOrgSrcType:= AWellhofer.BinStreamType;
     end {binary}
   else
@@ -9467,7 +9467,7 @@ if Result then
     FMultiScanList:= Copy(AWellhofer.FMultiScanList);
   {$ENDIF}
   end;
-if FRefOrgSrcType=twcMccProfile then
+if FRefOrgSrcType=twcMccProfile then                                            //take also this extra information from AWellhofer
   FRefOrg2D_OriVal:= AWellhofer.Fmcc.MccOriginValue;
 end; {~setreferenceorg}
 
@@ -13289,6 +13289,7 @@ end; {~referencevalid}
 {20/11/2016}
 {22/11/2016 added boolean compare twIsDiagonal}
 {02/01/2018 added zero unexpected}
+{29/10/2020 removed zero unexpected}
 procedure TWellhoferData.ReportDifferences(ASource   :twcDataSource=dsMeasured;
                                            AReference:twcDataSource=dsRefOrg);
 
@@ -13301,11 +13302,9 @@ procedure TWellhoferData.ReportDifferences(ASource   :twcDataSource=dsMeasured;
   end;
 
   function CompareValues(Description  :String;
-                         Value1,Value2:twcFloatType;
-                         ReportZero   :Boolean=False): Boolean;  overload;
+                         Value1,Value2:twcFloatType): Boolean;  overload;
   begin
-  Result:= CompareValues(Description,Num2Stg(Value1,0,2),Num2Stg(Value2,0,2),
-                         ifthen(ReportZero and (Value1=0),'unexpected','<>'));
+  Result:= CompareValues(Description,Num2Stg(Value1,0,2),Num2Stg(Value2,0,2));
   end;
 
   function CompareValues(Description  :String;
@@ -13325,13 +13324,13 @@ if wSource[ASource].twValid then
   CompareValues('Energy'          ,wSource[ASource].twBeamInfo.twBEnergy  ,wSource[AReference].twBeamInfo.twBEnergy  );
   CompareValues('Linac'           ,wSource[ASource].twScanTypeString      ,wSource[AReference].twScanTypeString);
   CompareValues('SSD'             ,wSource[ASource].twSSD_cm              ,wSource[AReference].twSSD_cm      );
-  CompareValues('field GT'        ,GetFieldSize(ASource,fInplane)         ,GetFieldSize(AReference,fInplane   ),True);
-  CompareValues('field AB'        ,GetFieldSize(ASource,fCrossplane)      ,GetFieldSize(AReference,fCrossplane),True);
+  CompareValues('field GT'        ,GetFieldSize(ASource,fInplane)         ,GetFieldSize(AReference,fInplane   ));
+  CompareValues('field AB'        ,GetFieldSize(ASource,fCrossplane)      ,GetFieldSize(AReference,fCrossplane));
   CompareValues('Scan angle'      ,wSource[ASource].twScanAngle           ,wSource[AReference].twScanAngle);
   CompareValues('Wedge angle'     ,wSource[ASource].twBeamInfo.twBWedge   ,wSource[AReference].twBeamInfo.twBWedge);
   if ScanType in twcHoriScans then
     CompareValues('depth'         ,wSource[ASource   ].twVector_ICD_cm[Start].m[Beam],
-                                   wSource[AReference].twVector_ICD_cm[Start].m[Beam],True);
+                                   wSource[AReference].twVector_ICD_cm[Start].m[Beam]);
   CompareValues('Diagonal status' ,wSource[ASource].twIsDiagonal          ,wSource[AReference].twIsDiagonal);
   end;
 end; {~reportdifferences}
