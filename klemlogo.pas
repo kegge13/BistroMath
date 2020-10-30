@@ -30,8 +30,6 @@ type
     Xold,Yold  : Integer;
   end;
 
-const twVersionDate='24/10/2020';
-
 var AboutBox        : TAboutBox;
     BMBuildNumber   : Integer;
 
@@ -39,7 +37,7 @@ implementation
 
 uses StrUtils,
      Math,
-     TObaseDef,TOtools;
+     TObaseDef,TOtools,TOnumparser;
 
 {$R *.lfm}
 
@@ -71,15 +69,24 @@ var LogoStrings: array[1..15] of String=(
     LogoCnt,InsertPos: Integer;
 
 
+{30/10/2020 auto insertion of date}
 constructor TAboutBox.Create(AOwner: TComponent);
+var dt: TDateTime;
+    p : toTNumParser;
+    s : String;
 begin
 inherited;
-LogoCnt             := Length(LogoStrings);
-InsertPos           := Comments.Lines.Count;
-Comments .ParentFont:= False;
-Comments .Font.Color:= clBlack;    //why isn't this working???
-Version  .Caption   := Format('version %s (build %d)   %s',[GetAppVersionString(False),BMBuildNumber,twVersionDate]);
-CopyRight.Caption   := '© Theo van Soest, 2005 - '+RightStr(CharSetTrimAll(csComplete-csNumeric,twVersionDate),4);
+LogoCnt              := Length(LogoStrings);
+InsertPos            := Comments.Lines.Count;
+Comments .ParentFont := False;
+Comments .Font.Color := clBlack;                                                //why isn't this working???
+p                    := toTNumParser.Create;
+p        .CurrentLine:= {$I %DATE%};
+dt                   := p.NextDate;                                             //this procedure gives maximum flexibility
+s                    := FormatDateTime('DD/MM/YYYY',dt);
+Version  .Caption    := Format('version %s (build %d)   %s',[GetAppVersionString(False),BMBuildNumber,s]);
+CopyRight.Caption    := '© Theo van Soest, 2005 - '+RightStr(CharSetTrimAll(csComplete-csNumeric,s),4);
+p.Free;
 end; {~init}
 
 

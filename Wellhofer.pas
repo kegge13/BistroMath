@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 29/10/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 30/10/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -6351,11 +6351,12 @@ var i,s,LastLine: Integer;
 
   {01/06/2018}
   {10/02/2020 if twcMccInsertOrigin AND (MccOriginValue > 0) then}
+  {30/10/2020 ... AND (tmTaskName='DOSE'), also do nothing at all if not twcMccInsertOrigin}
   procedure InsertOrigin;
   var i,j,n: Integer;
   begin
   with MccData do
-    if tmScanDevice='STARCHECKMAXI' then                                        //current implementation only for StarCheckMaxi
+    if (tmScanDevice='STARCHECKMAXI') and twcMccInsertOrigin and (tmTaskName='DOSE') then //current implementation only for StarCheckMaxi, unreliable in DOSERATE mode
       begin
       n:= GetNumPoints;
       if  n>20 then
@@ -6368,7 +6369,7 @@ var i,s,LastLine: Integer;
           MccOriginValue:= tmData[i]                                            //and store that value
         else if tmPos_mm[Succ(i)]=0 then
           MccOriginValue:= tmData[Succ(i)]
-        else if twcMccInsertOrigin and (MccOriginValue>0) then                  //there is no origin, create it if there is a originvalue available
+        else if MccOriginValue>0 then                                           //there is no origin, create it if there is a originvalue available
           begin
           SetNumPoints(Succ(n));
           Inc(i);
@@ -6416,7 +6417,7 @@ if (FParseOk and (not CheckFileTypeOnly) and (FileFormat=twcMccProfile)) then wi
           NextLine;                                                             //tmRefField must be handled first because of conflict with FIELD_INPLANE
         LastLine:= FParser.CurrentLineNumber;
         MccFill(mccREF_                          ,tmRefField);                          {REF_FIELD_DEPTH=100.00}
-        MccFill(mccTASK_NAME                     ,tmTaskName);                          {TASK_NAME=tba PDD Profiles}
+        MccFill(mccTASK_NAME                     ,tmTaskName);                          {TASK_NAME=tba PDD Profiles; for StarCheck: DOSE | DOSERATE}
         MccFill(mccGROUP_NAME                    ,tmGroupName);                         {GROUP_NAME=TG_4.0}
         MccFill(mccPROGRAM                       ,tmProgram);                           {PROGRAM=tbaScan}
         MccFill(mccCOMMENT                       ,tmComment);                           {COMMENT=FFF Acceptance - 7 MV}
