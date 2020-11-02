@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 30/10/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 02/11/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -17576,6 +17576,7 @@ end; {~qfitmaxpos}
 
 
 //****BistroMath core function****
+{02/11/2020 Lpos not intitialised}
 function TWellhoferData.FindCalcRange(CalcPosCm    :twcFloatType;
                                       var Lpos,Rpos:Integer;
                                       ASource      :twcDataSource=dsMeasured): Boolean;
@@ -17587,13 +17588,18 @@ with wSource[ASource] do
   if Result then
     begin
     X:= CalcPosCm-CalcWidth_cm/2;
-    if not (InRange(Lpos,twDataFirst,twDataLast) and (twPosCm[Lpos]<X)) then
+    try
+      Lpos:= Max(0,Trunc((X-twPosCm[twDataFirst])/twStepSizeCm))+twDataFirst;   //preliminary estimation
+     except
       Lpos:= twDataFirst;
-    while (Lpos<=twDataLast) and (twPosCm[Lpos]<X) do
+     end;
+    while (Lpos>twDataFirst) and (twPosCm[Lpos-1]>=X) do                        //failsave for variable stepsize
+      Dec(Lpos);
+    while (Lpos<twDataLast) and (twPosCm[Lpos]<X) do                            //failsave for variable stepsize
       Inc(Lpos);
     X   := X+CalcWidth_cm;
-    Rpos:= Lpos;
-    while (Succ(Rpos)<=twDataLast) and (twPosCm[Succ(Rpos)]<=X) do
+    Rpos:= Min(Succ(Lpos),twDataLast);
+    while (Rpos<twDataLast) and (twPosCm[Rpos]<=X) do
       Inc(Rpos);
     end;
   end;
@@ -18510,7 +18516,7 @@ var s: twcDataSource;
                 if lMin=0 then lTmp1:= 0
                 else           lTmp1:= GetQfittedValue(twPosCm[i],ASource,twData[i])/lMin;            //ltmp1=ratio
                 if InRange(lTmp1,0.1,1) then
-                 lTmp1:= 1/lTmp1;                                                                     //if smaller than 1 then invert
+                  lTmp1:= 1/lTmp1;                                                                    //if smaller than 1 then invert
                except
                 ltmp1:= 0;
                end; {try}
