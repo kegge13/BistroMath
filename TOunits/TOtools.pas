@@ -1,4 +1,4 @@
-unit TOtools; {© Theo van Soest, Lazarus 2.0.10/FPC 3.2.0: 2019 - 06/10/2020}
+unit TOtools; {© Theo van Soest, Lazarus 2.0.10/FPC 3.2.0: 2019 - 30/10/2020}
 {$mode objfpc}{$h+}
 {$BOOLEVAL OFF,WARN SYMBOL_PLATFORM OFF}
 
@@ -60,6 +60,8 @@ function CharSetToString(ACharSet                 :CharSet             ): String
 function CountChars(AString,CharList              :String              ): Integer;  overload;
 function CountChars(AString                       :String;
                     ACharSet                      :CharSet             ): Integer;  overload;
+function MostCommonChar(AString,CharList          :String              ): Char;
+
 {$IFDEF Windows}
 procedure ShowTaskBar  (bShow                     :Boolean =True       );
 procedure EnableTaskBar(bShow                     :Boolean =True       );
@@ -268,6 +270,27 @@ Result:= '';
 for c:= #0 to #255 do
   if c in ACharSet then
     Result:= Result+c;
+end;
+
+
+function MostCommonChar(AString,CharList:String): Char;
+var l,n,m: Integer;
+    c    : Char;
+begin
+Result:= chNull;
+l     := Length(CharList);
+m     := 0;
+while l>0 do
+  begin
+  c:= CharList[l];
+  n:= CountChars(AString,c);
+  if n>m then
+    begin
+    m     := n;
+    Result:= c;
+    end;
+  Dec(l);
+  end;
 end;
 
 
