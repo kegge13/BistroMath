@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 02/11/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 06/11/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -17054,7 +17054,6 @@ var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
   y:= 0;
   with Q,wSource[fReference] do
     begin
-    Lpos:= j-Ceil(CalcWidth_cm/Min(1,wSource[fSource].twStepSizeCm));
     if FindCalcRange(x,Lpos,Rpos,fReference) then
       try
         Initialize;
@@ -17352,8 +17351,42 @@ end; {~nextpos}
 
 
 //****BistroMath core function****
+{02/11/2020 Lpos not intitialised}
+{05/11/2020 Lpos wrong adjustment rule for dec; force at least three points}
+function TWellhoferData.FindCalcRange(CalcPosCm    :twcFloatType;
+                                      var Lpos,Rpos:Integer;
+                                      ASource      :twcDataSource=dsMeasured): Boolean;
+var X,c: twcFloatType;
+begin
+with wSource[ASource] do
+  begin
+  Result:= twValid and InRange(CalcPosCm,twFirstDataPosCm,twLastDataPosCm);
+  if Result then
+    begin
+    X:= CalcPosCm-CalcWidth_cm/2;
+    c:= CalcWidth_cm/2;
+    try
+      Lpos:= Max(0,Trunc((X-twPosCm[twDataFirst])/twStepSizeCm))+twDataFirst;    //preliminary estimation
+     except
+      Lpos:= twDataFirst;
+     end;
+    while (Lpos>twDataFirst) and (twPosCm[Lpos]>=X) and (X-twPosCm[Lpos-1]<c) do //failsave for variable stepsize
+      Dec(Lpos);
+    while (Lpos<twDataLast) and (twPosCm[Lpos+1]<X) do                           //failsave for variable stepsize
+      Inc(Lpos);
+    X   := X+CalcWidth_cm;
+    Rpos:= Min(Succ(Lpos),twDataLast);
+    while (Rpos<twDataLast) and (twPosCm[Rpos]<=X) and (twPosCm[Rpos+1]-X<c) do
+      Inc(Rpos);
+    end;
+  end;
+end; {~findcalcrange}
+
+
+//****BistroMath core function****
 //this version performs well for inverted data with vertical slopes
 {26/10/2018 force use of linear fit for less than three points}
+{05/11/2020 did not accept two points, this is now handled by tquadfit anyway}
 function TWellhoferData.CalcValue(Lpos,Rpos  :Integer;
                                   X          :twcFloatType;
                                   ASource    :twcDataSource=dsMeasured;
@@ -17376,42 +17409,33 @@ with wSource[ASource] do
       Q:= TQuadFit.Create(Rpos-Lpos+2);
       try
         Result:= Yarr[CentralPos];
-        if Rpos-Lpos=1 then
-          begin
-          if Xarr[Lpos]=Xarr[Rpos] then
-            Result:= (Yarr[Lpos]+Yarr[Rpos])/2
-          else if Yarr[Lpos]=Yarr[Rpos] then
-            Result:= Yarr[Lpos]
-          end
-        else if Rpos=Lpos then
-          begin                                                                 //interpolation between points
-          if Lpos=twScanFirst then
-            begin
-            Lpos:= Succ(Lpos);
-            Rpos:= Lpos;
-            end
-          else if Rpos=twScanLast  then
-            begin
-            Lpos:= Pred(Rpos);
-            Rpos:= Lpos;
-            end;
-          if Xarr[Lpos]>=X then
-            begin
-            if Xarr[Pred(Lpos)]<X then Dec(Lpos)
-            else                       Inc(Rpos);
-            end
-          else
-            begin
-            if Xarr[Pred(Lpos)]>=X then Dec(Lpos)
-            else                        Inc(Rpos);
-            end;
-          for i:= Lpos to Rpos do
-            Q.Add_XY(Xarr[i],Yarr[i]);
-          if Q.FitValid then Result:=
-           Q.FitLin(X);
-          end
+        if Xarr[Lpos]=Xarr[Rpos] then                                           //avoid vertical lines
+          Result:= (Yarr[Lpos]+Yarr[Rpos])/2
         else
-          begin
+          begin                                                                 //interpolation between points
+          if Lpos=Rpos then
+            begin
+            if Lpos=twScanFirst then
+              begin
+              Lpos:= Succ(Lpos);
+              Rpos:= Lpos;
+              end
+            else if Rpos=twScanLast  then
+              begin
+              Lpos:= Pred(Rpos);
+              Rpos:= Lpos;
+              end;
+            if Xarr[Lpos]>=X then
+              begin
+              if Xarr[Pred(Lpos)]<X then Dec(Lpos)
+              else                       Inc(Rpos);
+              end
+            else
+              begin
+              if Xarr[Pred(Lpos)]>=X then Dec(Lpos)
+              else                        Inc(Rpos);
+              end;
+            end;
           for i:= Lpos to Rpos do
             Q.Add_XY(Xarr[i],Yarr[i]);
           if Q.FitValid then
@@ -17576,37 +17600,6 @@ end; {~qfitmaxpos}
 
 
 //****BistroMath core function****
-{02/11/2020 Lpos not intitialised}
-function TWellhoferData.FindCalcRange(CalcPosCm    :twcFloatType;
-                                      var Lpos,Rpos:Integer;
-                                      ASource      :twcDataSource=dsMeasured): Boolean;
-var X: twcFloatType;
-begin
-with wSource[ASource] do
-  begin
-  Result:= twValid and InRange(CalcPosCm,twFirstDataPosCm,twLastDataPosCm);
-  if Result then
-    begin
-    X:= CalcPosCm-CalcWidth_cm/2;
-    try
-      Lpos:= Max(0,Trunc((X-twPosCm[twDataFirst])/twStepSizeCm))+twDataFirst;   //preliminary estimation
-     except
-      Lpos:= twDataFirst;
-     end;
-    while (Lpos>twDataFirst) and (twPosCm[Lpos-1]>=X) do                        //failsave for variable stepsize
-      Dec(Lpos);
-    while (Lpos<twDataLast) and (twPosCm[Lpos]<X) do                            //failsave for variable stepsize
-      Inc(Lpos);
-    X   := X+CalcWidth_cm;
-    Rpos:= Min(Succ(Lpos),twDataLast);
-    while (Rpos<twDataLast) and (twPosCm[Rpos]<=X) do
-      Inc(Rpos);
-    end;
-  end;
-end; {~findcalcrange}
-
-
-//****BistroMath core function****
 {$push}{$warn 5057 off}
 //This function is original work of Theo van Soest.
 {16/01/2011 this version starts at maximum looking outward}
@@ -17720,8 +17713,6 @@ with wSource[ASource] do
         Result:= Valid;
         if Valid then
           begin
-          Lpos:= Nearest-Ceil(CalcWidth_cm/Min(1,twStepSizeCm));
-          Rpos:= Lpos;
           FindCalcRange(twPosCm[Nearest],Lpos,Rpos,ASource);
           Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
           end
@@ -17773,7 +17764,6 @@ with wSource[ASource] do
         Result:= Result and Valid;                                              //result is true when both borders are valid
         if Valid then
           begin
-          Lpos:= Nearest-Ceil(CalcWidth_cm/Min(1,twStepSizeCm));
           FindCalcRange(twPosCm[Nearest],Lpos,Rpos,ASource);
           Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
           end
