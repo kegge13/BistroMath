@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 29/10/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 10/11/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -8266,6 +8266,7 @@ end; {~autozoom}
 {18/08/2020 changed IndicatorsOk}
 {26/09/2020 PenumbraSigmoids}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{10/11/2020 twFitnormalisation*RawLogisticFunction}
 procedure TAnalyseForm.PlotIndicators;
 var F,Y1,Y2,PosL,PosR,PosM,tmpX: twcFloatType;
     InFieldColor               : TColor;
@@ -8313,7 +8314,7 @@ with Engines[UsedEngine],wSource[FFFdataSource] do
            PosL:= twFitLowCm;
            PosR:= twFitHighCm;
            repeat
-             PenumbraSigmoids[side].AddXY(tmpX*PosL,LogisticFunction(twNMReport.BestVertex,PosL,twFitOffsetCm)*F);
+             PenumbraSigmoids[side].AddXY(tmpX*PosL,twFitNormalisation*RawLogisticFunction(twNMReport.BestVertex,PosL,twFitOffsetCm)*F);
              PosL:= PosL+PosM;
            until PosL>=PosR;
            end;
