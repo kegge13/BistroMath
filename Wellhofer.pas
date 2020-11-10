@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 06/11/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 10/11/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2578,7 +2578,10 @@ type
 
   twCurveDataPtr=^twCurveDataRec;
 
-//------wellhofer-------------------------------------------
+(*------TWellhoferData-------------------------------------------
+Note that all scan data on import or direct read are stored in the scan direction conventions
+of the OmniPro v6 format: G-T, A-B, U-D
+*)
 const
      rfbString1='Version:';
      rfbString2='CBeam';
@@ -3002,17 +3005,17 @@ type
      function  SigmoidPenumbraFit(ASource          :twcDataSource =dsMeasured;
                                   ApplyModel       :Boolean       =False;
                                   ADestination     :twcDataSource =dsMeasured ): Boolean;
+     function  RawLogisticFunction(const a         :TaFunctionVertex;
+                                   const cm        :TaVertexDataType;
+                                   const shiftCm   :twcFloatType  =0          ): TaVertexDataType;  //needs multiplication with twFitNormalisation to represent twData
      function  GetNormalisedRevLogistic(ASide      :twcSides;
                                         ASource    :twcDataSource =dsMeasured;
                                         Apercentage:twcFloatType  =50         ):twcFloatType;
-     function  RevLogisticFunction(const a         :TaFunctionVertex;
-                                   const Fx        :TaVertexDataType;
-                                   const shift_cm  :twcFloatType=0            ): TaVertexDataType;
+     function  RevRawLogisticFunction(const a      :TaFunctionVertex;
+                                      const FxRaw  :TaVertexDataType;
+                                      const shiftCm:twcFloatType=0            ): TaVertexDataType; //expects FxRaw scaled down with twFitNormalisation to match RawLogisticFunction
      function  GetNormalisedSigmoidLevel(cm        :twcFloatType;
                                          ASource   :twcDataSource =dsMeasured ): twcFloatType; //autoselect side
-     function  LogisticFunction(const a            :TaFunctionVertex;
-                                const cm           :TaVertexDataType;
-                                const shift_cm     :twcFloatType  =0          ): TaVertexDataType;
      function  SigmoidFitAvailable(ASource         :twcDataSource =dsMeasured ): Boolean;
      function  ApplySigmoidPenumbraFit(ASource     :twcDataSource =dsMeasured;
                                        ADestination:twcDataSource =dsMeasured ): Boolean;
@@ -4011,7 +4014,10 @@ else if ShowWarning and (Pos(AWarning,FWarning)=0) then FWarning:= Warning+#32+A
 end; {~addwarning}
 
 
-//This is based on the OmniPro v6 definition of the scanangle and axis directions
+(*   GetScanDirection
+This is based on the OmniPro v6 definition of the scanangle and axis directions
+Note that the user interface might swap the letters as needed.
+*)
 {11/09/2018 swapped relation between scanangle 45/135 and GA/TA}
 function TRadthData.GetScanDirection(ASide:twcSides): twcMeasAxisStg;
 var Stg: String[4];
@@ -15766,7 +15772,7 @@ if (not FFrozen) and wSource[ASource].twValid then
       end
     else
       begin
-      CopyCurve(ASource,ADestination); {kopieer parameters}
+      CopyCurve(ASource,ADestination);                                          //copy parameters
       DataPtr:= @wSource[ASource].twData;
       end;
     with wSource[ADestination] do
@@ -15783,7 +15789,7 @@ if (not FFrozen) and wSource[ASource].twValid then
         SetLength(MedianList,MedianCnt);
         for i:= twDataFirst to twDataLast do
           begin
-          MedianCnt:= 0;  {now mediancnt holds track of actually filled data in filter}
+          MedianCnt:= 0;                                                        //now mediancnt holds track of actually filled data in filter
           for j:= i-Mmid to i+Mmid do
             AddFilter(DataPtr^[Max(twDataFirst,Min(j,twDataLast))]);
           twData[i]:= MedianList[Mmid];
@@ -15801,13 +15807,16 @@ if (not FFrozen) and wSource[ASource].twValid then
     else if ResetBorderValues then
       InitBorders(ADestination,False);
     end {filtered}
-  else if (ADestination<>ASource) then {nothing to do, just copy}
-    CopyCurve(ASource,ADestination);  {make copy if needed}
+  else if (ADestination<>ASource) then                                          //nothing to do, just copy
+    CopyCurve(ASource,ADestination);                                            //make copy if needed
   end;
 end; {~medianfilter}
 {$pop}
 
-{08/07/2020 wrap-around for logistic function, autoselect of side, applies twSigmoidOffsetCm}
+(*  --GetNormalisedSigmoidLevel--
+ wrap-around for logistic function, autoselect of side, applies twSigmoidOffsetCm and twFitNormalisation
+*)
+{08/07/2020}
 {13/07/2020 twFitOffsetCm}
 function TWellhoferData.GetNormalisedSigmoidLevel(cm     :twcFloatType;
                                                   ASource:twcDataSource=dsMeasured): twcFloatType;
@@ -15822,17 +15831,18 @@ with wSource[ASource] do if BordersValid(ASource,dInflection) then
     s:= twcLeft
   else
     s:= twcRight;
-  Result:= 100*LogisticFunction(twSigmoidFitData[s].twNMReport.BestVertex,cm,twSigmoidFitData[s].twFitOffsetCm)/twAppliedNormVal;
+  Result:= 100*twSigmoidFitData[s].twFitNormalisation*RawLogisticFunction(twSigmoidFitData[s].twNMReport.BestVertex,cm,twSigmoidFitData[s].twFitOffsetCm)/twAppliedNormVal;
   end
 else
   Result:= 0;
 end; {~getnormalisedsigmoidlevel}
 
 
-{27/11/2015
+(*   --RawLogisticFunction--
 https://en.wikipedia.org/wiki/Generalised_logistic_function
 https://www.myassays.com/four-parameter-logistic-regression.html
 https://www.mathworks.com/matlabcentral/fileexchange/38122-four-parameters-logistic-regression-there-and-back-again
+
 The following is the 4PL model equation where x is the concentration (in the case of ELISA analysis)
 or the independent value and F(x) would be the response value (e.g. absorbance, OD, response value) or dependent value.
 F(x) = ((D-A)/(1+((x/B)^C))) + A
@@ -15860,11 +15870,15 @@ F(x) = A + (D/(1+(X/B)^C)^E)
     D is the MFI/RLU value for the maximum asymptote
     E is the asymmetry factor
 The 5-PL model equation has the extra E parameter which the 4-PL model lacks and when E = 1 the 5-PL equation is identical to the 4-PL equation.
-}
+
+The output is the fit result on twData/twFitNormalisation.
+*)
+{27/11/2015}
 {14/01/2017 avoid pos=0}
-function TWellhoferData.LogisticFunction(const a       :TaFunctionVertex;
-                                         const cm      :TaVertexDataType;
-                                         const shift_cm:twcFloatType=0): TaVertexDataType;
+{10/11/2020 introduce twFitnormalisation}
+function TWellhoferData.RawLogisticFunction(const a      :TaFunctionVertex;
+                                            const cm     :TaVertexDataType;
+                                            const shiftCm:twcFloatType=0): TaVertexDataType;
 begin
 if (not Assigned(a)) then
   Result:= fitCalcErrorDef
@@ -15872,22 +15886,23 @@ else
   if Length(a)=SigmoidDim then
     try  {F(x) =  (D-A)/(1+((x/B)^C)) + A}
       if cm=0 then
-        Result:=   a[sigmoid_HighVal]
+        Result:= a[sigmoid_HighVal]
       else
-        Result:= ((a[sigmoid_HighVal]-a[sigmoid_LowVal])/(1+Power((cm-shift_cm)/a[sigmoid_InflectionMajor],a[sigmoid_Slope]))) + a[sigmoid_LowVal];
+        Result:= ((a[sigmoid_HighVal]-a[sigmoid_LowVal])/(1+Power((cm-shiftCm)/a[sigmoid_InflectionMajor],a[sigmoid_Slope]))) + a[sigmoid_LowVal];
      except
       Result:= fitCalcErrorDef;
      end
   else
     Result:= 0;
-end; {~logisticfunction}
+end; {~rawlogisticfunction}
 
 
 {18/06/2020 x= InflectionMajor * power((y-High)/(Low-y),1/Slope) WolframAlpha online}
 {19/06/2020 checks}
-function TWellhoferData.RevLogisticFunction(const a        :TaFunctionVertex;
-                                            const Fx       :TaVertexDataType;
-                                            const shift_cm :twcFloatType=0): TaVertexDataType;
+{10/11/2020 introduce twFitnormalisation}
+function TWellhoferData.RevRawLogisticFunction(const a      :TaFunctionVertex;
+                                               const FxRaw  :TaVertexDataType;
+                                               const shiftCm:twcFloatType=0): TaVertexDataType;
 var InflectionLevel: TaVertexDataType;
 begin
 if (not Assigned(a)) then
@@ -15895,10 +15910,10 @@ if (not Assigned(a)) then
 else
   if Length(a)=SigmoidDim then
     try
-      InflectionLevel:= LogisticFunction(a,a[sigmoid_InflectionMajor]);
-      if (Fx/a[sigmoid_LowVal]>1.1) and (Fx/a[sigmoid_HighVal]<0.9) and
-         InRange(Fx/InflectionLevel,1-twcMaxLogisticRange,1+twcMaxLogisticRange) then
-        Result:= a[sigmoid_InflectionMajor]*Power((Fx-a[sigmoid_HighVal])/(a[sigmoid_LowVal]-Fx),1/a[sigmoid_Slope])+shift_cm
+      InflectionLevel:= RawLogisticFunction(a,a[sigmoid_InflectionMajor]);
+      if (FxRaw/a[sigmoid_LowVal]>1.1) and (FxRaw/a[sigmoid_HighVal]<0.9) and
+         InRange(FxRaw/InflectionLevel,1-twcMaxLogisticRange,1+twcMaxLogisticRange) then
+        Result:= a[sigmoid_InflectionMajor]*Power((FxRaw-a[sigmoid_HighVal])/(a[sigmoid_LowVal]-FxRaw),1/a[sigmoid_Slope])+shiftCm
       else
         Result:= fitCalcErrorDef;
      except
@@ -15906,17 +15921,18 @@ else
      end
   else
     Result:= 0;
-end; {~revlogisticfunction}
+end; {~revrawlogisticfunction}
 
 
 {19/06/2020}
 {13/07/2020 twFitOffsetCm}
+{10/11/2020 introduce twFitnormalisation}
 function TWellhoferData.GetNormalisedRevLogistic(ASide      :twcSides;
                                                  ASource    :twcDataSource=dsMeasured;
                                                  Apercentage:twcFloatType =50        ):twcFloatType;
 begin
 with wSource[ASource],twSigmoidFitData[ASide] do
-  Result:= RevLogisticFunction(twNMReport.BestVertex,Apercentage*twFitNormalisation*twAbsNormValue/100,twFitOffsetCm);
+  Result:= RevRawLogisticFunction(twNMReport.BestVertex,(Apercentage/100)*(twAbsNormValue/twFitNormalisation),twFitOffsetCm);
 end; {~getnormalisedrevlogistic}
 
 
@@ -15924,12 +15940,13 @@ end; {~getnormalisedrevlogistic}
 {17/12/2015 check on fitCalcErrorDef made more sensitive}
 {14/01/2017 pos=0}
 {13/07/2020 twFitOffsetCm}
+{10/11/2020 introduce twFitnormalisation}
 function TWellhoferData.SigmoidFitErrorResult(a:TaFunctionVertex): TaVertexDataType;  {callback function for edge fit}
 
-var i    : Integer;
-    r    : TaVertexDataType;
-    p,ofs: twcFloatType;
-    s    : twcSides;
+var i            : Integer;
+    r            : TaVertexDataType;
+    p,ofs,scaling: twcFloatType;
+    s            : twcSides;
 begin
 Result:= 0;
 with wSource[FNMEdgeSource] do if assigned(a) then
@@ -15938,13 +15955,14 @@ with wSource[FNMEdgeSource] do if assigned(a) then
     s:= twcLeft
   else
     s:= twcRight;
-  i  := FNMEdgeFirst;
-  ofs:= twSigmoidFitData[s].twFitOffsetCm;
+  i      := FNMEdgeFirst;
+  ofs    := twSigmoidFitData[s].twFitOffsetCm;
+  scaling:= twSigmoidFitData[s].twFitNormalisation;
   repeat
     p:= twPosCm[i]-ofs;
     if p<>0 then
       try
-        r:= LogisticFunction(a,p);
+        r:= scaling*RawLogisticFunction(a,p);
         if abs(r/fitCalcErrorDef)<0.9 then Result:= Result+Sqr(r-twData[i])
         else                               Result:= r;
        except
@@ -15980,7 +15998,7 @@ end; {~sigmoidfiterrorresult}
  Also experimented with keeping the range symmetrical around the initial inflection point, but this does not influence the result.
  Another complication was the use of one single sigmoid model position offset parameter, usually the center posiiton.
  For tiny fields this introduces again a zero position within fitting range, which must be avoided at all costs. Therefore now
- each side has its individual offset valus. For large enoudgh fields they will be identical.
+ each side has its individual offset valus. For large enough fields they will be identical.
 ----------------------------------------------*)
 {$push}{$warn 5057 off}
 {01/12/2015}
@@ -16012,6 +16030,7 @@ end; {~sigmoidfiterrorresult}
 {13/07/2020 twFitOffsetCm}
 {14/07/2020 several rules added for very small fields when penumbras overlap}
 {17/09/2020 introduction of FFrozen}
+{10/11/2020 set twFitnormalisation to twMaxValue/100 and apply this to fit parameters}
 function TWellhoferData.SigmoidPenumbraFit(ASource     :twcDataSource=dsMeasured;
                                            ApplyModel  :Boolean      =False;
                                            ADestination:twcDataSource=dsMeasured): Boolean;
@@ -16099,15 +16118,15 @@ var s : twcSides;
                        (Abs(twPosCm[FNMEdgeLast]-twPosCm[FNMEdgeFirst])-ARange>twStepSizeCm)) do
                   if Abs(h-twPosCm[FNMEdgeFirst])>Abs(twPosCm[FNMEdgeLast]-h) then Inc(FNMEdgeFirst,i)
                   else                                                             Dec(FNMEdgeLast ,i);
-                BestVertex[sigmoid_LowVal         ]:= Min(twData[FNMEdgeFirst],twData[FNMEdgeLast]);
+                twFitNormalisation                 := twMaxValue/100;
+                BestVertex[sigmoid_LowVal         ]:= Min(twData[FNMEdgeFirst],twData[FNMEdgeLast])/twFitNormalisation;
                 BestVertex[sigmoid_InflectionMajor]:= h-twFitOffsetCm;
-                BestVertex[sigmoid_Slope          ]:= f*Abs((twData[FNMEdgeLast]-twData[FNMEdgeFirst])/(twPosCm[FNMEdgeLast]-twPosCm[FNMEdgeFirst]));
-                BestVertex[sigmoid_HighVal        ]:= Max(twData[FNMEdgeFirst],twData[FNMEdgeLast]);
+                BestVertex[sigmoid_Slope          ]:= f*Abs((twData[FNMEdgeLast]-twData[FNMEdgeFirst])/(twPosCm[FNMEdgeLast]-twPosCm[FNMEdgeFirst]))/twFitNormalisation;
+                BestVertex[sigmoid_HighVal        ]:= Max(twData[FNMEdgeFirst],twData[FNMEdgeLast])/twFitNormalisation;
                 twFitLowCm                         := twPosCm[FNMEdgeFirst];
                 twFitHighCm                        := twPosCm[FNMEdgeLast];
-                twFitNormalisation                 := 1;
                 v                                  := Copy(BestVertex);
-                h                                  := BestVertex[sigmoid_HighVal];
+                h                                  := BestVertex[sigmoid_HighVal]*twFitNormalisation;
                 Result                             := Abs(twFitHighCm-twFitLowCm);
                except
                 twFitValid:= False;
@@ -16133,7 +16152,7 @@ var s : twcSides;
                {$ENDIF}
                 for n:= NMreflection to NMshrinkage do
                   Inc(NMsteps[n],fNMCrawlReport.NMsteps[n]);
-                Restarts  := Restarts+fNMCrawlReport.Restarts; {repeat loop introduces by definition 1 extra restart}
+                Restarts  := Restarts+fNMCrawlReport.Restarts;                  //repeat loop introduces by definition 1 extra restart
                 Seconds   := Seconds +fNMCrawlReport.Seconds;
                 BestScore := fNMCrawlReport.BestScore;
                 twFitValid:= assigned(BestVertex);
@@ -16234,7 +16253,6 @@ end; {~sigmoidfitavailable}
 
 
 {01/12/2015}
-{14/01/2017 }
 {14/01/2017
   avoid pos=0
   introduction twSigmoidOffset}
@@ -16259,7 +16277,7 @@ if Result then
       if twFitValid then
         for i:= NearestPosition(twFitLowCm,ADestination) to NearestPosition(twFitHighCm,ADestination) do
           if twPosCm[i]<>twFitOffsetCm then
-            twData[i]:= LogisticFunction(twNMReport.BestVertex,twPosCm[i],twFitOffsetCm);
+            twData[i]:= twFitNormalisation*RawLogisticFunction(twNMReport.BestVertex,twPosCm[i],twFitOffsetCm);
   end;
 end; {~applysigmoidpenumbrafit}
 
@@ -16388,7 +16406,7 @@ var L                   : TLinFit;
     fSource             : twcDataSource;
 
   {$IFDEF FIXED_DISTANCE_DERIVATIVE}
-   procedure StepFilter;   //fixed distance variant with at least 3 points
+   procedure StepFilter;                                                        //fixed distance variant with at least 3 points
    begin
    with wSource[ASource] do
      begin
@@ -16414,7 +16432,7 @@ var L                   : TLinFit;
      end;
    end;
   {$ELSE}
-   procedure StepFilter;   //fixed number points variant
+   procedure StepFilter;                                                        //fixed number points variant
    var i: Integer;
    begin
    with wSource[ASource],L do
@@ -16433,12 +16451,12 @@ var L                   : TLinFit;
 
   procedure SetGlobalMax(Y:twcFloatType);
   begin
-  if (LocalMax>GlobalMax) and (LocalMax>Y) then {test previous localmax}
+  if (LocalMax>GlobalMax) and (LocalMax>Y) then                                 //test previous localmax
     begin
     wSource[ADestination].twMaxArr:= MaxArr;
     GlobalMax                     := LocalMax;
     end;
-  if (LocalMin<GlobalMin) and (LocalMin<Y) then {test previous localmin}
+  if (LocalMin<GlobalMin) and (LocalMin<Y) then                                 //test previous localmin
     begin
     wSource[ADestination].twMinArr:= MinArr;
     GlobalMin                     := LocalMin;
@@ -16458,7 +16476,7 @@ var L                   : TLinFit;
         if Y>DeadBandHigh then
           begin
           if (Y>LocalMax) and (PeakAtMax or (abs(twPosCm[MinArr]-twPosCm[i])>PeakWidth)) then
-            begin            {find localmax}
+            begin                                                               //find localmax
             LocalMax:= Y;
             MaxArr  := i;
             end;
@@ -16483,7 +16501,7 @@ var L                   : TLinFit;
   begin
   Sampler.Initialize;
   with wSource[ADestination] do
-    repeat {make histogram of values of derivative with largest bin below limit}
+    repeat                                                                      //make histogram of values of derivative with largest bin below limit
       if Sampler.Samples>0 then
         Sampler.NumBins:= Round(1.5*Sampler.NumBins); {implicit initialise}
       for i:= Max(twDataFirst,AStart) to Min(AStop,twDataLast) do
@@ -16510,7 +16528,7 @@ if (not FFrozen) and wSource[ASource].twValid then
     end
   else
     begin
-    CopyCurve(fSource,ADestination); {kopieer parameters}
+    CopyCurve(fSource,ADestination);
     DataPtr:= @wSource[fSource].twData;
     end;
   with wSource[ADestination] do
@@ -16544,7 +16562,7 @@ if (not FFrozen) and wSource[ASource].twValid then
         twData[Pc]:= 0;
        end;
     FreeAndNil(L);
-    Pc:= Max(twDataFirst,Pred(twScanFirst)); {may be local peak}
+    Pc:= Max(twDataFirst,Pred(twScanFirst));                                    //may be local peak
     GlobalMin:= twData[Pc];
     GlobalMax:= GlobalMin;
     while Pc<twScanLast do
@@ -16568,13 +16586,13 @@ if (not FFrozen) and wSource[ASource].twValid then
     if PeakAtMax then
       begin
       if Abs(GlobalMin)<1e-2 then Y:= PeakRatio
-      else                        Y:= abs(GlobalMax/GlobalMin); {div0 safe}
+      else                        Y:= abs(GlobalMax/GlobalMin);                 //div0 safe
       Pc:= MaxArr;
       end
     else
       begin
       if Abs(GlobalMax)<1e-2 then Y:= PeakRatio
-      else                        Y:= abs(GlobalMin/GlobalMax); {div0 safe}
+      else                        Y:= abs(GlobalMin/GlobalMax);                 //div0 safe
       Pc:= MinArr;
       end;
     i := 0;
@@ -16587,7 +16605,7 @@ if (not FFrozen) and wSource[ASource].twValid then
      except
       twDerivativeValid:= False;
      end;
-    if twDerivativeValid then   {create histogram to find most populated band}
+    if twDerivativeValid then                                                   //create histogram to find most populated band
       begin
       Sampler:= THistogramSampler.Create(GlobalMin,GlobalMax,0,twDataLast);
       Q      := TQuadFit.Create;
@@ -16610,7 +16628,7 @@ if (not FFrozen) and wSource[ASource].twValid then
           Inc(i);
         until ((i>j) and (Pc<2)) or (i>P1);
         end; {loglevel}
-      DeadBandLow    := Sampler.LargestBinValue-Sampler.BinSize/2; {define band around largest bin}
+      DeadBandLow    := Sampler.LargestBinValue-Sampler.BinSize/2;              //define band around largest bin
       DeadBandHigh   := DeadBandLow+Sampler.BinSize;
       LocalMin       := DeadBandLow;
       LocalMax       := DeadBandHigh;
@@ -16629,7 +16647,7 @@ if (not FFrozen) and wSource[ASource].twValid then
       else
         while (((twData[P1]>DeadBandLow)  and (not HighPassed) and (twData[P1]>twData[P1+twcDeriveLookAhead])) or
                ((twData[P1]<DeadBandHigh) and (not LowPassed)  and (twData[P1]<twData[P1+twcDeriveLookAhead]))   ) and
-               (P1+twcDeriveLookAhead+1<P2) do {(above bandlow and decreasing) OR (below bandhigh and rising)}
+               (P1+twcDeriveLookAhead+1<P2) do                                  //(above bandlow and decreasing) OR (below bandhigh and rising)
           begin
           if      twData[P1]<DeadBandLow  then LowPassed := True
           else if twData[P1]>DeadBandHigh then HighPassed:= True;
@@ -17352,7 +17370,7 @@ end; {~nextpos}
 
 //****BistroMath core function****
 {02/11/2020 Lpos not intitialised}
-{05/11/2020 Lpos wrong adjustment rule for dec; force at least three points}
+{05/11/2020 Lpos wrong adjustment rule for dec; force at least two points}
 function TWellhoferData.FindCalcRange(CalcPosCm    :twcFloatType;
                                       var Lpos,Rpos:Integer;
                                       ASource      :twcDataSource=dsMeasured): Boolean;
@@ -17410,7 +17428,7 @@ with wSource[ASource] do
       try
         Result:= Yarr[CentralPos];
         if Xarr[Lpos]=Xarr[Rpos] then                                           //avoid vertical lines
-          Result:= (Yarr[Lpos]+Yarr[Rpos])/2
+          Result:= (Yarr[Lpos]+Yarr[Rpos])/2                                    //use average in this case
         else
           begin                                                                 //interpolation between points
           if Lpos=Rpos then
@@ -17601,7 +17619,19 @@ end; {~qfitmaxpos}
 
 //****BistroMath core function****
 {$push}{$warn 5057 off}
-//This function is original work of Theo van Soest.
+(* This function is original work of Theo van Soest.
+For a given level this function searches the left and right position where that level can be found.
+This is stored in the twLevelPos array, indexed with levels described in
+    twcDoseLevel      =(dLow,dHigh,d20,d50,d80,d90,dUser,dDerivative,dInflection,dSigmoid50,dTemp);
+In this structure are stored the doselevel, and for both left and right: nearest position, calculated position, valid status.
+By definition dDerivative,dInflection and dSigmoid50 are not level dependent, and will not be filled through this function.
+This function needs:
+- a from low to high ordered twPosCm array -> PrepareProfile
+- twAbsNormPos, which may vary during the process due to changing normalisation rules -> FastScan, Analyse.
+When twAbsNormPos changes (possibly induced by changing fieldclass), of course dependent levels must be recalulated.
+Therefore this function is used heavily.
+To improve speed, old results are checked to see if a certain actual level is already evaluated.
+*)
 {16/01/2011 this version starts at maximum looking outward}
 {29/04/2011 valid:= ... and (t<=n)}
 {06/05/2011 use derivative if no penumbra is found to calculate centerpos}
@@ -17628,6 +17658,7 @@ end; {~qfitmaxpos}
 {17/06/2020 dTemp as new last element}
 {09/07/2020 twEdgeDefUse:= GetRelatedEdgeType(twUsedEdgeLevel)
             twEdgeDefUse depends no longer on (wCenterDefinition[FieldClass]=CenterPenumbra)}
+{05/11/2020 do not initialise Lpos and Rpos anymore for findcalcrange}
 function TWellhoferData.FindLevelPos(ASource          :twcDataSource=dsMeasured;
                                      ALevel           :twcDoseLevel =d50;
                                      Symmetric        :Boolean     =True): Boolean;
@@ -17642,11 +17673,11 @@ with wSource[ASource] do
   WantedLevel:= twAbsNormValue*DosePoint2Value(ALevel);                         //the actual search level
   Result     := True;                                                           //need for analysis
   b          := True;
-  for p:= dLow to dTemp do                                                      //search if result is already available
-    if b and (p<>ALevel) and (twLevelPos[p].Level=WantedLevel) then
+  for p:= dLow to dTemp do
+    if b and (p<>ALevel) and (twLevelPos[p].Level=WantedLevel) then             //search if result is already available
       begin
       twLevelPos[ALevel]:= twLevelPos[p];
-      b                 := not BordersValid(ASource,ALevel);
+      b                 := not BordersValid(ASource,ALevel);                    //when no valid result is found, further search is needed
       end;
   if (twAbsNormValue>0) and InRange(WantedLevel,0,twAbsNormValue) then
     begin
@@ -17667,8 +17698,8 @@ with wSource[ASource] do
             Dec(tmpR);
           end;
         end;
-      StepOutward:= DosePoint2Value(ALevel)<0.65;
-      with twLevelPos[ALevel].Penumbra[twcLeft] do
+      StepOutward:= DosePoint2Value(ALevel)<0.65;                               //for high levels an outward search is preferred; otherwise: start low
+      with twLevelPos[ALevel].Penumbra[twcLeft] do //lllllllllllllllllllll LEFT side llllllllllllllllllllllllllllllllllllll
         begin
         if StepOutward then
           begin  //-------step outward------
@@ -17681,7 +17712,7 @@ with wSource[ASource] do
             Dec(i);
             CurrentLevel:= twData[i];
             DifLevel    := abs(CurrentLevel-WantedLevel);
-            if (DifLevel<=MinDifLevel) or (CurrentLevel>=WantedLevel) then  //this forces nearest to be lower than searchlevel
+            if (DifLevel<=MinDifLevel) or (CurrentLevel>=WantedLevel) then      //this forces nearest to be lower than searchlevel
               begin
               Nearest    := i;
               MinDifLevel:= DifLevel;
@@ -17713,13 +17744,13 @@ with wSource[ASource] do
         Result:= Valid;
         if Valid then
           begin
-          FindCalcRange(twPosCm[Nearest],Lpos,Rpos,ASource);
+          FindCalcRange(twPosCm[Nearest],Lpos,Rpos,ASource);                    //faster than GetQfittedValue because nearest posiiotn already known
           Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
           end
         else
           Calc:= twPosCm[Nearest];
         end;  {left}
-      with twLevelPos[ALevel].Penumbra[twcRight] do
+      with twLevelPos[ALevel].Penumbra[twcRight] do   //rrrrrrrrrrrrrrrrrrrrrrrrr RIGHT side rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
         begin
         if StepOutward then
           begin  //-------step outward------
@@ -17770,7 +17801,7 @@ with wSource[ASource] do
         else
           Calc:= twPosCm[Nearest];
         end; {right}
-      twLevelPos[ALevel].Level:= ifthen(Result,WantedLevel,0);
+      twLevelPos[ALevel].Level:= ifthen(Result,WantedLevel,0);                  //if not valid the Level is set to zero.
       end; {b}
     end; {inrange}
   if LogLevel>2 then with twLevelPos[ALevel] do
@@ -17906,7 +17937,21 @@ if Result then
 end; {~findedge}
 
 
-//****BistroMath core function****
+(* ****BistroMath core function****
+FastScan locates the position of the profile, nu asumptions are made other than
+twScanFirst and twScanlast which can be used for a local peak search.
+Profiles not crossing the origin at all are accepted, but unsupported in most dosimetry protocols.
+As a pdd can be viewed as a "profile shape" it can follow almost all rules set
+for real profiles.
+The major output results are mostly preliminary and include:
+  twValid (major data fail when false), twFastScan,
+  twMinArr (index), twMaxArr (index),  twMaxPosCm, twMaxValue,
+  twCenterArr, twCenterPosCm, twCenterPosDefUse,
+  twAbsNormPosCm, twCenterPosCm, twlevelPos[d50], twlevelPos[d90], twOriginPosValid,
+  twAppliedNormVal, twRelNormValue;
+  diagonal detection -> twDiagonalFound;
+  wedge detection, based on twlevelPos[d50], twlevelPos[d90] -> twSetFieldType:= fcWedge
+*)
 {11/06/2014}
 {29/05/2015 wWedgeDetection added to speed up when not needed
  14/07/2015 Check on valid results for twCenterPos and twAbsNormVal
@@ -18211,8 +18256,19 @@ Dec(FActiveCnt);
 end; {~fastscan}
 
 
-//****BistroMath core function****
-// fills MeasFiltered curve with analysed quad-filtered copy of measured (when source is measured)
+(* ****BistroMath core function****
+Complete and final analysis of data sets.
+FastScan must be completed succesfully.
+There are a lot of variations:
+-ASource (wSource[ASource])
+-twSetFieldType
+-twIsRelative status
+-horizontal/vertical scan: major difference in analysis
+-for horizontal scans FindEdge is called
+-rules for normalisation and field center
+-AutoCentering may be applied to horizontal scans
+-when ASource in [dsMeasured,dsReference], a filtered, quad-filtered copy of the source is generated
+*)
 {22/10/2014}
 {15/04/2015 For relative vertical scans twAbsNormPos and twRelNormPos are copied from measurement.}
 {22/07/2015 Use quadratic fit to find twMaxPosCm and twMaxValue of vertical scan}
@@ -18251,7 +18307,7 @@ end; {~fastscan}
 {03/09/2020 also keep track which bands the derived data scan has passed with LowPassed and HighPassed}
 {17/09/2020 introduction of FFrozen}
 {19/10/2020 evaluate dUser always}
-{20/10/2020 linac error calculation now based on twSetFieldtype (not fixed on d50 anaymore)}
+{20/10/2020 linac error calculation now based on twSetFieldtype (not fixed on d50 anymore)}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
