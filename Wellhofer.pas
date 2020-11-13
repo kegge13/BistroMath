@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 10/11/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 12/11/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -15941,6 +15941,7 @@ end; {~getnormalisedrevlogistic}
 {14/01/2017 pos=0}
 {13/07/2020 twFitOffsetCm}
 {10/11/2020 introduce twFitnormalisation}
+{12/11/2020 scaled error calculation}
 function TWellhoferData.SigmoidFitErrorResult(a:TaFunctionVertex): TaVertexDataType;  {callback function for edge fit}
 
 var i            : Integer;
@@ -15962,8 +15963,8 @@ with wSource[FNMEdgeSource] do if assigned(a) then
     p:= twPosCm[i]-ofs;
     if p<>0 then
       try
-        r:= scaling*RawLogisticFunction(a,p);
-        if abs(r/fitCalcErrorDef)<0.9 then Result:= Result+Sqr(r-twData[i])
+        r:= RawLogisticFunction(a,p);
+        if abs(r/fitCalcErrorDef)<0.9 then Result:= Result+Sqr(r-twData[i]/scaling)
         else                               Result:= r;
        except
         Result  := fitCalcErrorDef;
@@ -16031,6 +16032,7 @@ end; {~sigmoidfiterrorresult}
 {14/07/2020 several rules added for very small fields when penumbras overlap}
 {17/09/2020 introduction of FFrozen}
 {10/11/2020 set twFitnormalisation to twMaxValue/100 and apply this to fit parameters}
+{12/11/2020 scaled error limit (h)}
 function TWellhoferData.SigmoidPenumbraFit(ASource     :twcDataSource=dsMeasured;
                                            ApplyModel  :Boolean      =False;
                                            ADestination:twcDataSource=dsMeasured): Boolean;
@@ -16126,7 +16128,7 @@ var s : twcSides;
                 twFitLowCm                         := twPosCm[FNMEdgeFirst];
                 twFitHighCm                        := twPosCm[FNMEdgeLast];
                 v                                  := Copy(BestVertex);
-                h                                  := BestVertex[sigmoid_HighVal]*twFitNormalisation;
+                h                                  := BestVertex[sigmoid_HighVal];
                 Result                             := Abs(twFitHighCm-twFitLowCm);
                except
                 twFitValid:= False;
