@@ -4,6 +4,7 @@ help/**
 *.exe
 
 #lazarus files
+*.lps
 lib/**
 backup/**
 TOunits/backup/**
