@@ -415,6 +415,11 @@ version 4.05
 -in PageControlChange PlaceResultsLabels was called
 
 
+version 4.06
+065	19/11/2020	multi-scan w2CAD files fail to read				solved
+-reported by Alan, introduced in 4.05.0(?) according to Alan, more probably already on 19/08/2020
+-checkdata checked only first line, not first 255 bytes as specified
+
 ======tested=======
 29/05/2020	unlocking critical options
 -enables ProcessAutoscalingItem
