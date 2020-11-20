@@ -110,12 +110,12 @@ type
     function    Search(ASearchText       :String;
                        CaseInSensitive   :Boolean=False;
                        FromCurrentLine   :Boolean=False;
-                       NotFoundMessage   :Boolean=True   ): Boolean;        overload;
+                       NotFoundMessage   :Boolean=True   ): Boolean;                 overload;
     function    Search(ASearchText       :String;
                        OptionalText      :String;
                        CaseInSensitive   :Boolean=False;
                        FromCurrentLine   :Boolean=False;
-                       NotFoundMessage   :Boolean=True   ): Boolean;        overload;
+                       NotFoundMessage   :Boolean=True   ): Boolean;                 overload;
     procedure   SetTop(ALineNr           :Integer);
     procedure   ResetTop;
     function    GotoTop(ReadFirstLine    :Boolean=False;
