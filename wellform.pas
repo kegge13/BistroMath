@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 17/11/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 20/11/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -299,8 +299,8 @@ type
   13/10/2020
     added fcElectron as field type
     added AutoSetDecPointCheckBox, AutoDecPointList
-  16/11/2020
-    added FileMultipleInputItem
+  17/11/2020
+    added FileMultipleInputItem,UsedDataTopLine
   }
 
   {=========== TAnalyseForm =====================}
@@ -1412,6 +1412,7 @@ end; {wndcallback}
 {16/09/2020 multiple items for SpecialMode1}
 {26/09/2020 PenumbraSigmoids}
 {29/09/2020 TempRefEngine}
+{17/11/2020 UsedDataTopLine}
 procedure TAnalyseForm.FormCreate(Sender: TObject);
 var k         : PlotItems;
     i,j       : Integer;
@@ -3261,6 +3262,7 @@ end; {~addengine}
 {28/09/2020 setmessagebar}
 {29/09/2020 PassRefOrg}
 {14/10/2020 if not froozen then force reload}
+{17/11/2020 UsedDataTopLine}
 function TAnalyseForm.SelectEngine(aEngine    :Integer;
                                    aShift     :Integer=0;
                                    Synchronise:Boolean=True): Integer;
@@ -3283,7 +3285,7 @@ if Result>0 then
     PrevKey                    := #0;
     FileOpenDialog    .Filename:= Engines[UsedEngine].FileName;
     DetectedFileType           := Engines[UsedEngine].LastDetectedFileType;
-    UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;
+    UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;            //restore full state including starting point for eading
     PassRefOrg(UsedEngine);                                                     //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
     ClearScreen(Self);
     DataEditor.Clear;
@@ -3830,6 +3832,7 @@ end; {~reload}
 {14/08/2020 reset MeasNormAdjustEdit always when ProcessAutoscalingItem.Checked}
 {08/09/2020 added DoClearScreen option}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{17/11/2020 UsedDataTopLine supports all context changes through SelectEngine}
 procedure TAnalyseForm.Reload(Sender       :TObject;
                               DoClearScreen:Boolean);
 var b: Boolean;
@@ -3848,7 +3851,7 @@ if Engines[UsedEngine].wSource[dsMeasured].twOriginalFormat=twcWellhoferRFb then
     ClearScreen(Sender);
   if (Engines[UsedEngine].Freeze and HistoryListCheckBox.Checked) or
      Engines[UsedEngine].AdvStreamData(nil,
-                                       UsedDataTopLine,
+                                       UsedDataTopLine,                         //this is also restored in selectengine
                                        True,
                                        MeasResampleItem           .Checked,
                                        ifthen(MeasRemapCoordinates.Checked,
@@ -3856,7 +3859,7 @@ if Engines[UsedEngine].wSource[dsMeasured].twOriginalFormat=twcWellhoferRFb then
                                               twcMeasAxisStandard),
                                        DetectedFileType,
                                        FileOpenDialog             .FileName) then
-     Engine2Editor;                                                          //includes shift
+     Engine2Editor;                                                             //includes shift
   end
 else
   begin                                                                         //***ascii data***
@@ -3901,12 +3904,12 @@ end; {~wmchangecbchain}
 {15/05/2020 no message if not CF_TEXT}
 {03/07/2020 exchanged ordering of test on locking with length test}
 {14/09/2020 addengine}
-{17/11/2020 support for multiple data sets in single text data set file format}
+{17/11/2020 support automated continous for multiple data sets in single text data set file format}
 {$push}{$warn 5024 off:wellform.pas(860,31) Hint: Parameter "AlParam" not used}
 procedure TAnalyseForm.WMDRAWCLIPBOARD(AwParam:WParam;
                                        AlParam:LParam);
 const InvalidStg='clipboard data invalid';
-var DataTopLine: Integer;
+var LocalDataTopLine: Integer;                                                  //support for automated continous reading in single file format type
 begin
 if (PageControl.ActivePage=AnalysisTab)    and
     Clipboard.HasFormat(CF_TEXT)           and
@@ -3916,10 +3919,10 @@ if (PageControl.ActivePage=AnalysisTab)    and
     begin
     if Length(ClipBoard.AsText)>MinClipBoardBytes then
       begin
-      DataTopLine:= 0;
+      LocalDataTopLine:= 0;                                                     //A new drop: start at top of file
       repeat
         UsedEngine     := AddEngine;                                            //selecting another engine sets UsedDataTopLine
-        UsedDataTopLine:= DataTopLine;                                          //set new UsedDataTopLine
+        UsedDataTopLine:= LocalDataTopLine;                                     //set global UsedDataTopLine from local value
        {$IFDEF PRELOAD}
         Engines[UsedEngine].Parser.PreLoaded:= False;
        {$ENDIF PRELOAD}
@@ -3931,7 +3934,7 @@ if (PageControl.ActivePage=AnalysisTab)    and
         Engines[UsedEngine].FileName:= DefaultName;
         EditorFileName              := DefaultName;
         try
-          if DataTopLine=0 then                                                 //already in editor when DataTopLine>0
+          if LocalDataTopLine=0 then                                            //already in editor when LocalDataTopLine>0
             begin
            {$IFDEF PRELOAD}
             PreloadStream.Size:= 0;
@@ -3953,20 +3956,20 @@ if (PageControl.ActivePage=AnalysisTab)    and
              DataEditor.Modified:= False;
             {$ENDIF}
             end;
-          ReadEditor(nil);                                                      //here the text data are send to engine[usedengine] and analysed
+          ReadEditor(nil);                                                      //here the text data are send to engine[usedengine] and analysed, using UsedDataTopLine
           SetCaption(Engines[UsedEngine].MakeCurveName);
          except
           SetMessageBar(InvalidStg);
          end; {try}
         if FileMultipleInputItem.Checked        and FileMultipleInputItem.Enabled and
           (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then
-          begin
-          DataTopLine:= Engines[UsedEngine].Parser.CurrentLineNumber;
+          begin                                                                 //there are more data in this file, not being of multil-scan type format
+          LocalDataTopLine:= Engines[UsedEngine].Parser.CurrentLineNumber;      //local file pointer is updated from last read line
           WaitLoop(100);                                                        //some delay for multiple data sets in single date set text format file
           end
         else
-          DataTopLine:= 0;
-      until DataTopLine=0;
+          LocalDataTopLine:= 0;                                                 //noting more to read, or not wanting to read it
+      until LocalDataTopLine=0;                                                 //ready when we decide to ignore data or no more dat available
       end {long enough}
     else
       SetMessageBar(InvalidStg);
@@ -3995,6 +3998,7 @@ end; {~readeditor}
 {01/05/2020 check size of data}
 {08/09/2020 added DoClearScreen option}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{17/11/2020 UsedDataTopLine set in WMDRAWCLIPBOARD or DataFileOpen}
 procedure TAnalyseForm.ReadEditor(Sender       :TObject;
                                   DoClearScreen:Boolean);
 var b  : Boolean;
@@ -6992,22 +6996,22 @@ The fact that TWellhoferData itself handles all currently known binary types can
 {13/10/2020 set wMultiScanNr to 1}
 {19/10/2020 BinStream was held in memory but ascii data were read from the file again; now there is a direct transfer}
 {22/20/2020 SourceAxisSync more early}
-{17/11/2020 support for multiple data sets in single text data set file format}
+{17/11/2020 support automated continous for multiple data sets in single text data set file format}
 function TAnalyseForm.DataFileOpen(AFile         :String;
                                    ResetMultiScan:Boolean=True): Boolean;
 var
   {$IFNDEF PRELOAD}
-   S           : TMemoryStream;
+   S              : TMemoryStream;
   {$ENDIF}
-  DataTopLine: Integer;
+  LocalDataTopLine: Integer;                                                    //support for automated continous reading in single file format type
 begin
 Result:= FileExists(AFile) and CheckWellhoferReady;
 if Result then
   begin
-  DataTopLine:= 0;
+  LocalDataTopLine:= 0;                                                         //set local file pointer at top of file
   repeat
     UsedEngine     := AddEngine;                                                //selecting another engine sets UsedDataTopLine
-    UsedDataTopLine:= DataTopLine;                                              //set new UsedDataTopLine
+    UsedDataTopLine:= LocalDataTopLine;                                         //set new UsedDataTopLine from local value
     with Engines[UsedEngine] do
       begin
       SourceAxisSync;
@@ -7070,13 +7074,13 @@ if Result then
       end; {with}
     if FileMultipleInputItem.Checked         and FileMultipleInputItem.Enabled and
        (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then
-      begin
-      DataTopLine:= Engines[UsedEngine].Parser.CurrentLineNumber;
+      begin                                                                     //there are more data in file of single scan format
+      LocalDataTopLine:= Engines[UsedEngine].Parser.CurrentLineNumber;          //update file pointer
       WaitLoop(100);                                                            //some delay for multiple data sets in single date set text format file
       end
     else
-      DataTopLine:= 0;
-  until DataTopLine=0;
+      LocalDataTopLine:= 0;                                                     //not willing to read or no more data available (in file of single scan format)
+  until LocalDataTopLine=0;
   end;
 if Result then
   SetCaption(AFile);
