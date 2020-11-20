@@ -3050,6 +3050,11 @@ object AnalyseForm: TAnalyseForm
         ShortCut = 16457
         OnClick = UImodeChange
       end
+      object FileMultipleInputItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Accept multiple sca&ns (open/drop/clipboard)'
+        ShortCut = 16462
+      end
       object FileSaveAsReferenceItem: TMenuItem
         Caption = 'Save as &Reference'
         GroupIndex = 1

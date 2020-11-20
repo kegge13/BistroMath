@@ -22,7 +22,6 @@
 
 {09/08/2015: THREAD_PLOT and THREAD_FILES added}
 {$IFDEF THREADED}
-  {$I TOunits/TOmath_opt.inc}
   //for development/testing only
   {.DEFINE THREAD_USESTATS}
 

@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 10/11/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 17/11/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -117,11 +117,11 @@ type
                    DCBgBox      : TCheckBox;
                    DCEdit       : TFloatSpinEdit;
                   end;
-  {09/06/2016 replaced boolean Active with tmenuitem Mpar}
+  {09/06/2016 replaced boolean Active with tmenuitem MenuItem}
   SpecModeRec  = record
-                   Mpar       : TMenuItem;
-                   Fpar       : array[1..NumSpecialModePar] of twcFloatType;
-                   Spar       : array[1..NumSpecialModePar] of String;
+                   MenuItem: TMenuItem;
+                   Fpar    : array[1..NumSpecialModePar] of twcFloatType;
+                   Spar    : array[1..NumSpecialModePar] of String;
                   end;
 
   {===================TAnalyseForm====================
@@ -299,6 +299,8 @@ type
   13/10/2020
     added fcElectron as field type
     added AutoSetDecPointCheckBox, AutoDecPointList
+  16/11/2020
+    added FileMultipleInputItem
   }
 
   {=========== TAnalyseForm =====================}
@@ -319,6 +321,7 @@ type
     FileLockCriticalItems       : TMenuItem;  {Ctrl+Alt+R}   //OnClick = OptionModeClick
     FileHistoryItem             : TMenuItem;  {Ctrl+H}       //OnClick = HistoryListSizeClick
     FileExitItem                : TMenuItem;  {Alt+F4}       //OnClick = FileExitAction
+    FileMultipleInputItem       : TMenuItem;
     //processing menu
     ProcessingMenu              : TMenuItem;
     ProcessingDivisor1          : TMenuItem;
@@ -853,6 +856,7 @@ type
     FileConvElectronItems                              : ConvItemList;
     Engines                                            : array of TWellhoferData; //a series of TWellhoferData-objects
     UsedEngine                                         : Integer;                 //engine in foreground
+    UsedDataTopLine                                    : Integer;                 //pass datatop for multiple data sets in single profile data format file
     LoadEngine                                         : Integer;                 //last engine to load new data
     TempRefEngine                                      : Integer;                 //engine to take tempory reference from
     function  FileConvMakeName         (DefaultName    : String      ): String;
@@ -1365,7 +1369,7 @@ end; {wndcallback}
 {06/01/2016 ErrorSeries.Tag set}
 {12/02/2016 preloadstream, preloadtransfer}
 {30/03/2016 different listbox defs for FileConvSourceListBox and FileConvDestinationListBox}
-{09/06/2016 replaced SpecialModes boolean Active with TMenuItem Mpar, incorporated in Processingmenu}
+{09/06/2016 replaced SpecialModes boolean Active with TMenuItem MenuItem, incorporated in Processingmenu}
 {28/06/2016 SelectedFitCol}
 {05/07/2016 added FFFcenter submenu}
 {22/07/2016 added Center of Field submenu}
@@ -1483,6 +1487,7 @@ PreLoadStream      := TStringStream.Create('');
 CommonAppData      := AppendPathDelim(GetCommonAppdataRoot);                    //TOtools.pas
 UsedEngine         :=  0;
 LoadEngine         :=  0;
+UsedDataTopLine    :=  0;
 TempRefEngine      := -1;
 Engines[UsedEngine]:= TWellhoferData.Create;                                    //primary analysis engine
 PanelElements      := TPanelConfig.Create(CxMaxCol,0);                          //the visual results panel elements, created dynamically
@@ -1623,13 +1628,13 @@ HelpMenu.Insert(1,SelfTestItem);
 {$ENDIF}
 for i:= 1 to NumSpecialModes do with SpecialMode[i] do
   begin
-  Mpar:= TMenuItem.Create(ProcessingMenu);
-  Mpar.AutoCheck:= True;
-  Mpar.Caption  := Format('SpecialMode[%d]',[i]);
-  MPar.Name     := Format('SpecialModeItem%d',[i]);
-  Mpar.Checked  := False;
-  Mpar.OnClick  := @SetCaption;
-  ProcessingMenu.Add(Mpar);
+  MenuItem:= TMenuItem.Create(ProcessingMenu);
+  MenuItem.AutoCheck:= True;
+  MenuItem.Caption  := Format('SpecialMode[%d]',[i]);
+  MenuItem.Name     := Format('SpecialModeItem%d',[i]);
+  MenuItem.Checked  := False;
+  MenuItem.OnClick  := @SetCaption;
+  ProcessingMenu.Add(MenuItem);
   end;
 i := 100;                             {------------------------field types tab----------------------}
 j := i+10;
@@ -1932,7 +1937,7 @@ for i:= 1 to ParamCount do                                                      
     begin
     j:= StrToIntDef(Copy(ParamStr(i),Length(DefSpecialMode)+1,1),0);
     if j in [1..NumSpecialModes] then
-      SpecialMode[j].Mpar.Checked:= True;
+      SpecialMode[j].MenuItem.Checked:= True;
     end
   else if ParamStr(i).IndexOf(DefLogLevel)>=0 then
     Engines[UsedEngine].LogLevel:= StrToIntDef(Copy(ParamStr(i),Length(DefLogLevel)+1,1),0)
@@ -2009,7 +2014,7 @@ ReferenceMakeIndexItem.Visible:= False;
 DataEditorOpenFile('selftest03_pdd.txt');
 {$ELSE}
 with SpecialMode[1] do
-  if MPar.Checked then
+  if MenuItem.Checked then
     begin
     i:= 1;
     j:= HistoryListSize_num.Value-1;
@@ -2148,7 +2153,7 @@ end; {~setcaption}
 
 
 {$push}{$warn 5092 off}
-{09/06/2016 replaced SpecialModes boolean Active with tmenuitem Mpar}
+{09/06/2016 replaced SpecialModes boolean Active with tmenuitem MenuItem}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {17/09/2020 Freeze}
 {18/09/2020 display also number of engines in use}
@@ -2164,7 +2169,7 @@ if HistoryListCheckBox.Checked then
   Stg:= Format('%d/%d%s',[Succ(((Length(Engines)-UsedEngine+LoadEngine) mod Length(Engines))),Length(Engines),Stg]);
 Stg:= Format('BistroMath %s --%s',[AppVersionString,Stg]);   //var AppVersionString in wellhofer.pas
 b  := False;
-for i:= 2 to NumSpecialModes do if SpecialMode[i].Mpar.Checked then
+for i:= 2 to NumSpecialModes do if SpecialMode[i].MenuItem.Checked then
   begin
   if not b then Stg:= Stg+' -specialmodes: '
   else          Stg:= Stg+';';
@@ -2376,7 +2381,7 @@ end; {~configload}
 
 {22/07/2015 mayneord-related items}
 {04/08/2015 ViewLeftAxisLowZero}
-{09/06/2016 replaced SpecialModes boolean Active with tmenuitem Mpar}
+{09/06/2016 replaced SpecialModes boolean Active with tmenuitem MenuItem}
 {07/07/2016 added FFFcenterRadius_cm,FFFInFieldExt_cm}
 {24/12/2016 FFFmessageShown}
 {25/10/2018 SpecialModeValues}
@@ -2437,7 +2442,7 @@ with CF do
   ReadControl(Self,SectionName);
   WriteMenuShortCuts:= ReadBool(SectionName,'ShortCuts',False);
   LogTabMemo.Tag    := EnsureRange(ReadInteger(SectionName,DefLogMaxLines,500),20,10000);
-  for i:= 1 to NumSpecialModes do ShortRead(SectionName,SpecialMode[i].Mpar);
+  for i:= 1 to NumSpecialModes do ShortRead(SectionName,SpecialMode[i].MenuItem);
   ReadInteger(SectionName,'MinClipBoardBytes',MinClipBoardBytes);
   ShortRead(SectionName,AdvancedModeStartCheckBox);
   ShortRead(SectionName,HistoryListCheckBox);
@@ -2566,6 +2571,7 @@ end; {~presetload}
 {12/07/2020 EdgeMethodCombo}
 {15/07/2020 GammaInFieldLimits,AppliedEdgeRefNorm}
 {21/07/2020 ReadGroup}
+{16/11/2020 FileMultipleInputItem}
 procedure TAnalyseForm.PresetLoad(CF:TConfigStrings);
 var b: Boolean;
     i: Integer;
@@ -2633,6 +2639,7 @@ with CF do
   ReadColor(PlotColorPanel);
   ReadColor(GridColorPanel);
   ReadColor(UIColorPanel  );
+  ShortRead(SectionName,FileMultipleInputItem);
   Readmenu(ViewMenu);
   Readmenu(MeasMenu);
   Readmenu(ReferenceMenu);
@@ -2715,7 +2722,7 @@ end; {~configsave}
 {04/08/2015 ViewLeftAxisLowZeroItem}
 {15/12/2105 penwidth}
 {18/03/2016 added ProcessIgnoreTUnameItem}
-{09/06/2016 replaced SpecialModes boolean Active with tmenuitem Mpar}
+{09/06/2016 replaced SpecialModes boolean Active with tmenuitem MenuItem}
 {07/07/2016 added FFFcenterRadius_cm,FFFInFieldExt_cm}
 {10/09/2016 try..except}
 {03/02/2017 edgesigmoid added as preset}
@@ -2735,6 +2742,7 @@ end; {~configsave}
 {28/08/2020 removed FFFcenterRadius_cm}
 {11/09/2020 InsertSpecialModesInfo}
 {15/09/2020 HistoryList}
+{16/11/2020 FileMultipleInputItem}
 procedure TAnalyseForm.ConfigSave(AStream    :TStream;
                                   AFileName  :String='';
                                   PresetsOnly:Boolean=False);
@@ -2849,7 +2857,7 @@ with CF do
       WriteGroup(GammaSettingsGroupBox);
       WriteInteger(SectionName,DefLogMaxLines,LogTabMemo.Tag);
       for i:= 1 to NumSpecialModes do
-        ShortWrite(SectionName,SpecialMode[i].Mpar);
+        ShortWrite(SectionName,SpecialMode[i].MenuItem);
       ShortWrite(SectionName,AdvancedModeStartCheckBox);
       ShortWrite(SectionName,HistoryListCheckBox);
       ShortWrite(SectionName,HistoryListFreezeCheckBox);
@@ -2923,6 +2931,7 @@ with CF do
     ShortWrite(SectionName,InsertOriginCheckBox);
     ShortWrite(SectionName,FilterWidth_mm);
     ShortWrite(SectionName,FileIgnoreClipboardItem);
+    ShortWrite(SectionName,FileMultipleInputItem);
     WriteMenu(ViewMenu);
     WriteMenu(MeasMenu);
     WriteMenu(ReferenceMenu);
@@ -3274,6 +3283,7 @@ if Result>0 then
     PrevKey                    := #0;
     FileOpenDialog    .Filename:= Engines[UsedEngine].FileName;
     DetectedFileType           := Engines[UsedEngine].LastDetectedFileType;
+    UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;
     PassRefOrg(UsedEngine);                                                     //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
     ClearScreen(Self);
     DataEditor.Clear;
@@ -3512,6 +3522,7 @@ end; {~viewitems}
 {28/07/2020 Ft_XXXX[twcFieldClass] elements}
 {14/09/2020 Engines}
 {17/09/2020 HistoryListFreezeCheckBox}
+{16/11/2020 FileMultipleInputItem}
 procedure TAnalyseForm.UpdateSettings(Sender:TObject);
 var b: Boolean;
 begin
@@ -3539,6 +3550,7 @@ HistoryListCheckBox      .Checked:= HistoryListCheckBox      .Checked and (Histo
 HistoryListFreezeCheckBox.Enabled:= HistoryListCheckBox      .Checked;
 ProcessResetFitItem      .Enabled:= PDDfitCheckBox           .Checked and AdvancedModeOk;
 CalcPostFilterItem       .Enabled:= RefUseAddToItem          .Checked and b;
+FileMultipleInputItem    .Enabled:= (SpecialMode[2].MenuItem.Checked) or (SpecialMode[3].MenuItem.Checked) or (HistoryListSize_num.Value>1);
 with Engines[UsedEngine] do
   begin
   ProcessIgnoreTUnameItem.Enabled:= wCheckRefCurveString and (not ProcessMirrorMeasRefItem.Checked);
@@ -3560,7 +3572,7 @@ end; {~updatesettings}
 {03/12/2015 edgedetectiongroupboox added}
 {17/12/2015 FFFDetectionGroupBox added
             setting font color}
-{09/06/2016 replaced SpecialModes boolean Active with tmenuitem Mpar}
+{09/06/2016 replaced SpecialModes boolean Active with tmenuitem MenuItem}
 {27/10/2018 EnableMenu(ViewMeasNormAdjustMode,b)}
 {17/12/2019 implementation of SimpleMode}
 {13/04/2020 removed reread of config, replaced by MeasOD2DoseConvItem.Enabled:= a}
@@ -3678,7 +3690,7 @@ SelfTestItem              .Visible   := a;                                      
 {$ENDIF}
 AdvancedModeOk                       := True;
 for i:= 1 to NumSpecialModes do
-  with SpecialMode[i].Mpar do                                                   //verify that it is created when called
+  with SpecialMode[i].MenuItem do                                               //verify that it is created when called
     begin
     Enabled:= a;
     Visible:= a;
@@ -3735,18 +3747,22 @@ end; {~clearscreen}
 
 {22/04/2020 Unlike Delphi7 direct implementation available in Lazarus}
 {16/09/2020 multiple file implementation}
+{15/11/2020 some delay for multiple file drop}
+{16/11/2020 number of files dependent on FileMultipleInputItem}
 procedure TAnalyseForm.ReadDroppedFile(Sender         : TObject;
                                        const FileNames: array of String);
 var i,j,k: Integer;
 begin
 i                       := 0;
 j                       := 0;
-k                       := Length(FileNames);
+k                       := ifthen(FileMultipleInputItem.Checked and FileMultipleInputItem.Enabled,Length(FileNames),1);
 MeasNormAdjustEdit.Value:= 100;                                                 //MeasNormAdjustEdit is intended for temporary use, reset to default
 if CheckWellhoferReady and (k>0) then
       while (i<k) and (j<HistoryListSize_num.Value) do                          //read until whichever limit is reached first
         try
           FileOpenDialog.FileName:= FileNames[i];
+          if j>0 then
+            WaitLoop(100);                                                      //some delay for multiple file drop
           if DataFileOpen(FileNames[i]) then
             Inc(j);
           Inc(i);
@@ -3832,6 +3848,7 @@ if Engines[UsedEngine].wSource[dsMeasured].twOriginalFormat=twcWellhoferRFb then
     ClearScreen(Sender);
   if (Engines[UsedEngine].Freeze and HistoryListCheckBox.Checked) or
      Engines[UsedEngine].AdvStreamData(nil,
+                                       UsedDataTopLine,
                                        True,
                                        MeasResampleItem           .Checked,
                                        ifthen(MeasRemapCoordinates.Checked,
@@ -3884,10 +3901,12 @@ end; {~wmchangecbchain}
 {15/05/2020 no message if not CF_TEXT}
 {03/07/2020 exchanged ordering of test on locking with length test}
 {14/09/2020 addengine}
+{17/11/2020 support for multiple data sets in single text data set file format}
 {$push}{$warn 5024 off:wellform.pas(860,31) Hint: Parameter "AlParam" not used}
 procedure TAnalyseForm.WMDRAWCLIPBOARD(AwParam:WParam;
                                        AlParam:LParam);
 const InvalidStg='clipboard data invalid';
+var DataTopLine: Integer;
 begin
 if (PageControl.ActivePage=AnalysisTab)    and
     Clipboard.HasFormat(CF_TEXT)           and
@@ -3897,32 +3916,57 @@ if (PageControl.ActivePage=AnalysisTab)    and
     begin
     if Length(ClipBoard.AsText)>MinClipBoardBytes then
       begin
-      UsedEngine:= AddEngine;
-     {$IFDEF PRELOAD}
-      Engines[UsedEngine].Parser.PreLoaded:= False;
-     {$ENDIF PRELOAD}
-      DataEditor.Clear;
-      DetectedFileType            := twcUnknown;
-      PrevKey                     := #0;
-      MeasNormAdjustEdit.Value    := 100;                                       {MeasNormAdjustNumEdit is intended for temporary use, reset to default}
-      DataChanged                 := True;
-      Engines[UsedEngine].FileName:= DefaultName;
-      EditorFileName              := DefaultName;
-      try
+      DataTopLine:= 0;
+      repeat
+        UsedEngine     := AddEngine;                                            //selecting another engine sets UsedDataTopLine
+        UsedDataTopLine:= DataTopLine;                                          //set new UsedDataTopLine
        {$IFDEF PRELOAD}
-        PreloadStream.Size:= 0;
-        PreloadStream.WriteString(ClipBoard.AsText);                            {copy clipboard to stream}
+        Engines[UsedEngine].Parser.PreLoaded:= False;
+       {$ENDIF PRELOAD}
+        DataEditor.Clear;
+        DetectedFileType            := twcUnknown;
+        PrevKey                     := #0;
+        MeasNormAdjustEdit.Value    := 100;                                     //MeasNormAdjustNumEdit is intended for temporary use, reset to default
+        DataChanged                 := True;
         Engines[UsedEngine].FileName:= DefaultName;
-        PreloadTransfer(Self);
-       {$ELSE}
-        DataEditor.PasteFromClipboard;
-        DataEditor.Modified:= False;
-       {$ENDIF}
-        ReadEditor(nil);
-        SetCaption(Engines[UsedEngine].MakeCurveName);
-       except
-        SetMessageBar(InvalidStg);
-       end; {trye}
+        EditorFileName              := DefaultName;
+        try
+          if DataTopLine=0 then                                                 //already in editor when DataTopLine>0
+            begin
+           {$IFDEF PRELOAD}
+            PreloadStream.Size:= 0;
+            PreloadStream.WriteString(ClipBoard.AsText);                        //copy clipboard to stream
+            Engines[UsedEngine].FileName:= DefaultName;
+            PreloadTransfer(Self);
+           {$ELSE}
+            DataEditor.PasteFromClipboard;
+            DataEditor.Modified:= False;
+           {$ENDIF}
+            end
+          else
+            begin
+            {$IFDEF PRELOAD}
+             PreloadStream.WriteString(DataEditor.Lines.Text);                  //copy editor to stream
+             Engines[UsedEngine].FileName:= DefaultName;
+             PreloadTransfer(Self);
+            {$ELSE}
+             DataEditor.Modified:= False;
+            {$ENDIF}
+            end;
+          ReadEditor(nil);                                                      //here the text data are send to engine[usedengine] and analysed
+          SetCaption(Engines[UsedEngine].MakeCurveName);
+         except
+          SetMessageBar(InvalidStg);
+         end; {try}
+        if FileMultipleInputItem.Checked        and FileMultipleInputItem.Enabled and
+          (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then
+          begin
+          DataTopLine:= Engines[UsedEngine].Parser.CurrentLineNumber;
+          WaitLoop(100);                                                        //some delay for multiple data sets in single date set text format file
+          end
+        else
+          DataTopLine:= 0;
+      until DataTopLine=0;
       end {long enough}
     else
       SetMessageBar(InvalidStg);
@@ -3930,7 +3974,7 @@ if (PageControl.ActivePage=AnalysisTab)    and
   else
     SetMessageBar('clipboard locked');
   end; {activepage...}
-SendMessage(NextClipboardOwner,WM_DRAWCLIPBOARD,0,0);                             {pass message}
+SendMessage(NextClipboardOwner,WM_DRAWCLIPBOARD,0,0);                           //pass message
 end; {~wmdrawclipboard}
 {$pop}
 {$ENDIF}
@@ -3973,6 +4017,7 @@ if not b then
     DataFromEditor:= False;
     b:= (PreloadStream.Size>MinClipBoardBytes) and
          Engines[UsedEngine].AdvStreamData(PreLoadStream,
+                                           UsedDataTopLine,
                                            True,                                //unfreeze
                                            MeasResampleItem           .Checked,
                                            ifthen(MeasRemapCoordinates.Checked,
@@ -3993,7 +4038,8 @@ if not b then
       end;
     b:= (j>MinClipBoardBytes) and
          Engines[UsedEngine].AdvReadData(DataEditor.Lines,
-                                         True,                                //unfreeze
+                                         UsedDataTopLine,
+                                         True,                                  //unfreeze
                                          MeasResampleItem           .Checked,
                                          ifthen(MeasRemapCoordinates.Checked,
                                                 MeasReMappingString .Text,
@@ -4378,7 +4424,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
     ViewReferenceItem.Enabled:= ReferenceValid;
     if ViewReferenceItem.Enabled then
       DoCorrections(dsReference,RefBackgroundCorrItem.Checked);
-    if SpecialMode[3].Mpar.Checked {$IFDEF SelfTest}and (SelfTestLevel=0){$ENDIF} then
+    if SpecialMode[3].MenuItem.Checked {$IFDEF SelfTest}and (SelfTestLevel=0){$ENDIF} then
       DoSpecialMode3;
     Analyse;                                                                             //final check if analysis is completed
     if not wSource[dsMeasFiltered].twValid then                                          //publishresults relies on filtered version, should be ok
@@ -4462,7 +4508,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         end;
       end; {with measured}
     if PDDfitCheckBox.Enabled and PDDfitCheckBox.Checked and
-      (not SpecialMode[3].Mpar.Checked) and (ScanType in twcVertScans) then  //=========pdd fit==============
+      (not SpecialMode[3].MenuItem.Checked) and (ScanType in twcVertScans) then  //=========pdd fit==============
       begin
       if not NMdone then
         PddFit(dsMeasured,dsBuffer);                                                                    //must be done before publishresults
@@ -4551,7 +4597,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         HistogramTab.TabVisible:= True;
         end {refuseaddtoitem}
       end; {not syntheticmade}
-    if (SpecialMode[2].Mpar.Checked) {$IFDEF SelfTest}and (SelfTestLevel=0){$ENDIF} then
+    if (SpecialMode[2].MenuItem.Checked) {$IFDEF SelfTest}and (SelfTestLevel=0){$ENDIF} then
       DoSpecialMode2;
     with wSource[dsCalculated] do                //================= plot CALCULATED ================================
       if twValid then
@@ -4864,6 +4910,7 @@ end; {~historylistsizeclick}
 
 
 {16/09/2020 multiple file support}
+{17/11/2020 FileMultipleInputItem}
 procedure TAnalyseForm.FileOpenClick(Sender:TObject);
 var i,j,k: Integer;
 begin
@@ -4873,7 +4920,7 @@ with FileOpenDialog do
     begin
     i                       := 0;
     j                       := 0;
-    k                       := Files.Count;
+    k                       := ifthen(FileMultipleInputItem.Checked and FileMultipleInputItem.Enabled,Files.Count,1);
     MeasNormAdjustEdit.Value:= 100;                                             //MeasNormAdjustEdit is intended for temporary use, reset to default
     while (i<k) and (j<HistoryListSize_num.Value) do                            //read until whichever limit is reached first
       try
@@ -5153,7 +5200,7 @@ else if Sender=HelpItem then
   ExecuteHelp(l);
  {$ENDIF}
   end
-else if Sender=FileSaveAsReferenceItem then
+else if Sender=FileSaveAsReferenceItem then                                     //*********save aas reference***************
   with Engines[UsedEngine] do
     begin
     Stg:= ReferenceDirectory+MakeCurveName(ArrayScanRefOk);
@@ -6945,75 +6992,91 @@ The fact that TWellhoferData itself handles all currently known binary types can
 {13/10/2020 set wMultiScanNr to 1}
 {19/10/2020 BinStream was held in memory but ascii data were read from the file again; now there is a direct transfer}
 {22/20/2020 SourceAxisSync more early}
+{17/11/2020 support for multiple data sets in single text data set file format}
 function TAnalyseForm.DataFileOpen(AFile         :String;
                                    ResetMultiScan:Boolean=True): Boolean;
-{$IFNDEF PRELOAD}
-var S: TMemoryStream;
-{$ENDIF}
+var
+  {$IFNDEF PRELOAD}
+   S           : TMemoryStream;
+  {$ENDIF}
+  DataTopLine: Integer;
 begin
 Result:= FileExists(AFile) and CheckWellhoferReady;
 if Result then
   begin
-  UsedEngine:= AddEngine;
-  with Engines[UsedEngine] do
-    begin
-    SourceAxisSync;
-    ClearScreen(Self);
-    UpdateSettings(Self);
-    DataEditor.Clear;
-    DataEditor.Modified     := False;
-    DataFromEditor          := False;
-    MeasNormAdjustEdit.Value:= 100;
-    PrevKey                 := #0;
-    FileTime                := FileDateToDateTime(FileAge(AFile));
-    wMultiScanNr            := 1;
-    SetMessageBar('file: '+AFile);
-    if IsBinary(AFile) then                                                     //stream already loaded here
-      begin                                                                     //binary
-      ClipBoardLock   := True;
-      DetectedFileType:= BinStreamType;
-      if ResetMultiScan then
-        ResetMultiScanCounters;
-      Result:= AdvStreamData(nil,
-                             True,                                              //unfreeze
-                             MeasResampleItem   .Checked,
-                             MeasReMappingString.Text,
-                             DetectedFileType,
-                             AFile);
-      if Result then
-        begin
-        FileOpenDialog.Filename:= AFile;
-        Engine2Editor;
-        end;
-      ClipBoardLock:= False;
-      end
-    else
-      begin                                                                     //text data
-      DetectedFileType  := LastDetectedFileType;
-      FileName          := AFile;
-     {$IFDEF PRELOAD}
-      Parser.Assign(AFile,BinStream);                                           //direct transfer from binary stream to parser parser when possible; clears binstream
-      Parser.PreLoaded  := True;
-      PreloadStream.Size:= 0;
-      Parser.Strings.SaveToStream(PreLoadStream);                               //copy from parser to stringstream
-      PreloadTransfer(Self);
-     {$ELSE} //no preload
-      S:= TMemoryStream.Create;
-      if BinStream.Size>0 then
-        begin
-        S.LoadFromStream(BinStream);
-        BinStream.Size:= 0;
+  DataTopLine:= 0;
+  repeat
+    UsedEngine     := AddEngine;                                                //selecting another engine sets UsedDataTopLine
+    UsedDataTopLine:= DataTopLine;                                              //set new UsedDataTopLine
+    with Engines[UsedEngine] do
+      begin
+      SourceAxisSync;
+      ClearScreen(Self);
+      UpdateSettings(Self);
+      DataEditor.Clear;
+      DataEditor.Modified     := False;
+      DataFromEditor          := False;
+      MeasNormAdjustEdit.Value:= 100;
+      PrevKey                 := #0;
+      FileTime                := FileDateToDateTime(FileAge(AFile));
+      wMultiScanNr            := 1;
+      SetMessageBar('file: '+AFile);
+      if IsBinary(AFile) then                                                   //stream already loaded here
+        begin               //*bin**bin**bin**bin**bin**bin**bin**bin**bin*--binary--*bin**bin**bin**bin**bin**bin**bin*
+        ClipBoardLock   := True;
+        DetectedFileType:= BinStreamType;
+        if ResetMultiScan then
+          ResetMultiScanCounters;
+        Result:= AdvStreamData(nil,
+                               0,                                               //multiple data sets should be structured within file, setting scancount
+                               True,                                            //unfreeze
+                               MeasResampleItem   .Checked,
+                               MeasReMappingString.Text,
+                               DetectedFileType,
+                               AFile);
+        if Result then
+          begin
+          FileOpenDialog.Filename:= AFile;
+          Engine2Editor;
+          end;
+        ClipBoardLock:= False;
         end
       else
-        S.LoadFromFile(AFile);
-      DataEditor.Lines.LoadFromStream(S);
-      S.Free;
-     {$ENDIF PRELOAD}
-      ReadEditor(Self);
-      Result:= Engines[UsedEngine].IsValid;
-      IsFile:= True;
-      end;
-    end;
+        begin                //*asci**asci**asci**asci**asci**asci**asci*--text data--*asci**asci**asci**asci**asci**asci*
+        DetectedFileType  := LastDetectedFileType;
+        FileName          := AFile;
+       {$IFDEF PRELOAD}
+        Parser.Assign(AFile,BinStream);                                         //direct transfer from binary stream to parser parser when possible; clears binstream
+        Parser.PreLoaded  := True;
+        PreloadStream.Size:= 0;
+        Parser.Strings.SaveToStream(PreLoadStream);                             //copy from parser to stringstream
+        PreloadTransfer(Self);
+       {$ELSE} //no preload
+        S:= TMemoryStream.Create;
+        if BinStream.Size>0 then
+          begin
+          S.LoadFromStream(BinStream);
+          BinStream.Size:= 0;
+          end
+        else
+          S.LoadFromFile(AFile);
+        DataEditor.Lines.LoadFromStream(S);
+        S.Free;
+       {$ENDIF PRELOAD}
+        ReadEditor(Self);                                                       //here the text data are send to engine[usedengine] and analysed
+        Result:= Engines[UsedEngine].IsValid;
+        IsFile:= True;
+        end;
+      end; {with}
+    if FileMultipleInputItem.Checked         and FileMultipleInputItem.Enabled and
+       (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then
+      begin
+      DataTopLine:= Engines[UsedEngine].Parser.CurrentLineNumber;
+      WaitLoop(100);                                                            //some delay for multiple data sets in single date set text format file
+      end
+    else
+      DataTopLine:= 0;
+  until DataTopLine=0;
   end;
 if Result then
   SetCaption(AFile);
