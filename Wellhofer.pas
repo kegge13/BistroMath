@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 12/11/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 19/11/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -670,7 +670,7 @@ type
   twcDataSource=twcFirstDataSource..twcLastDataSource;
 
 
-{-----TRadthData profile base class-----------------------------------}
+{======================== TRadthData profile base class =============================}
 {24/08/2015 added ScanAngle}
 {09/12/2015 added sharedparser}
 {29/03/2016 added FRegisteredFiles}
@@ -680,7 +680,8 @@ type
 {16/05/2020 added FMultiScanCapable}
 {13/10/2020 added AutoDecimalPoint,AutoDecimalList}
 {19/10/2020 visibility of BinStream and BinsTreamFile extended to public}
-  TRadthData    =class
+{16/11/2020 added FindMoreData,ADataTopLine: support for multiple complete data sets in one single file intended for one single scan}
+  TRadthData=class
     protected
      FExtraText       : TStringDynArray;
      FRegisteredFiles : String;
@@ -698,8 +699,8 @@ type
      UndefinedInt     : wmsIntType;
      Linac            : String;
      IdentificationStg: String;
-     ScanAngle        : twcFloatType;                                            //CW angle from AB axis
-     ScanNr           : Integer;                                                 //1-based
+     ScanAngle        : twcFloatType;                                           //CW angle from AB axis
+     ScanNr           : Integer;                                                //1-based
      ScanNrOk         : Integer;
      ScanMax          : Integer;
      ShowWarning      : Boolean;
@@ -723,10 +724,13 @@ type
      function    CheckData(AStringList:TStrings              ): Boolean;    virtual;
      function    LoadBinStream(AFileName:String              ): Boolean;
      function    ReadData(AStringList :TStrings;
+                          ADataTopLine:Integer    =0;
                           AFileFormat :twcFileType=twcUnknown): Boolean;    overload; virtual;
      function    ReadData(AStream     :TStream;
+                          ADataTopLine:Integer    =0;
                           AFileFormat :twcFileType=twcUnknown): Boolean;    overload; virtual;
      function    ReadData(AFileName   :String;
+                          ADataTopLine:Integer    =0;
                           AFileFormat :twcFileType=twcUnknown): Boolean;    overload; virtual;
      function    ReadBinData                                  : Boolean;              virtual;
      function    WriteData(AFileName  :String;
@@ -752,10 +756,11 @@ type
      FWarning      : String;
      FFormatOk     : Boolean;
      FLocalParser  : Boolean;
-     function    DualReadData(AStringList:TStrings;
-                              AStream    :TStream;
-                              AFileName  :String;
-                              AFileFormat:twcFileType=twcUnknown     ): Boolean;     virtual;
+     function    DualReadData(AStringList :TStrings;
+                              AStream     :TStream;
+                              AFileName   :String;
+                              ADataTopLine:Integer    =0;
+                              AFileFormat :twcFileType=twcUnknown    ): Boolean;     virtual;
      function    ParseData(CheckFileTypeOnly:Boolean=False           ): Boolean;     virtual;
      function    GetScanDirection(ASide:twcSides                     ): twcMeasAxisStg;
      function    GetLastMessage                                       : string;
@@ -765,8 +770,9 @@ type
      procedure   TransferLastMessage(var AMessage:String             );
      procedure   ExceptMessage(AString           :String             );
     protected
-     FParser     : toTNumParser;
-     FParseOk    : Boolean;
+     FParser       : toTNumParser;
+     FParserTopLine: Integer;
+     FParseOk      : Boolean;
      procedure   SetDefaults;                                               virtual;
      procedure   AddWarning(AWarning:String);                               virtual;
      function    GetFileType(AFileName :String='';
@@ -777,6 +783,7 @@ type
      function    IsBinary(AFileName:String=''              ): Boolean;      virtual;
      function    ReadResults(PostText:String=''            ): Boolean;      virtual;
     public
+     function    FindMoreData(FromCurrentLine:Boolean=False): Boolean;      virtual;
      function    GetDistance(c1,c2:twcCoordinate)           : twcFloatType;
      procedure   ShiftPoint(var p :twcCoordinate;
                             AShift:twcCoordinate           );
@@ -793,6 +800,7 @@ type
      property LogLevel        :word                          read FLogLevel   write SetLogLevel;
      property MultiScanCapable:Boolean                       read FMultiScanCapable;
      property Parser          :toTNumParser                  read FParser;
+     property ParserTopLine   :Integer                       read FParserTopLine;
      property ScanType        :twcScanTypes                  read FScanType;
      property ScanLeftSide    :twcMeasAxisStg index twcLeft  read GetScanDirection;
      property ScanRightSide   :twcMeasAxisStg index twcRight read GetScanDirection;
@@ -2195,6 +2203,7 @@ type
   {09/12/2015 added sharedparser}
   {01/05/2020 added transfer of BinaryData in Create}
   {11/06/2020 added SetLinacFromHeader}
+  {16/11/2020 ADataTopLine}
   TWmsData      =class(TRadthData)
     private
      wmsProfile      : array of wmsProfilePoint;
@@ -2213,38 +2222,39 @@ type
                         BinaryData  :TMemoryStream=nil;
                         BinaryFile  :String       ='';
      			AStatusProc :toExtMsgProc =nil;
-                        AIdentity   :String       ='wms'  );               reintroduce;
+                        AIdentity   :String       ='wms'   );              reintroduce;
      procedure SetDefaults;                                                override;
      procedure Stg2Char(Stg               :string;
-                        var WMS_Char_Array:array of Char  );
+                        var WMS_Char_Array:array of Char   );
      function  Char2Stg(var WMS_Char_Array:array of Char;
-                        ArrayLength       :Byte           ): string;
-     function  IsBinary(AFileName    :String =''          ): Boolean;      override;
+                        ArrayLength       :Byte            ): string;
+     function  IsBinary(AFileName    :String =''           ): Boolean;      override;
      function  GetFileType(AFileName :String ='';
-                           BinaryOnly:Boolean=False       ): twcFileType;  override;
-     function  GetFieldLength                              : twcFloatType; override;
-     function  GetFieldDepth                               : twcFloatType; override;
-     function  GetNumPoints                                : Integer;      override;
-     function  ReadBinData                                 : Boolean;      override;
-     function  ReadData(AFileName  :String;
-                        AFileFormat:twcFileType=twcUnknown): Boolean;     override;
-     function  WriteData(AFileName :String;
-                         Binary    :Boolean      =True;
-                         ASource   :twcDataSource=dsMeasured;
-                         SetExt    :Boolean      =True    ): Boolean;      overload; override;
-     function  WriteData(AFileName :String;
+                           BinaryOnly:Boolean=False        ): twcFileType;  override;
+     function  GetFieldLength                               : twcFloatType; override;
+     function  GetFieldDepth                                : twcFloatType; override;
+     function  GetNumPoints                                 : Integer;      override;
+     function  ReadBinData                                  : Boolean;      override;
+     function  ReadData(AFileName   :String;
+                        ADataTopLine:Integer    =0;
+                        AFileFormat :twcFileType=twcUnknown): Boolean;     override;
+     function  WriteData(AFileName  :String;
+                         Binary     :Boolean      =True;
+                         ASource    :twcDataSource=dsMeasured;
+                         SetExt     :Boolean      =True    ): Boolean;     overload; override;
+     function  WriteData(AFileName  :String;
                          AStringList:TStrings;
                          ASource    :twcDataSource=dsMeasured;
-                         ClearList  :Boolean      =True   ): Boolean;      overload; override;
-     function  WriteData(AFileName :String;
-                         OutPutType:twcFileType;
-                         ASource   :twcDataSource=dsMeasured;
-                         SetExt    :Boolean      =True    ): Boolean;      overload; override;
+                         ClearList  :Boolean      =True    ): Boolean;     overload; override;
+     function  WriteData(AFileName  :String;
+                         OutPutType :twcFileType;
+                         ASource    :twcDataSource=dsMeasured;
+                         SetExt     :Boolean      =True    ): Boolean;     overload; override;
      function  GetProfile(Index            :wmsIntType;
-                          ConvertToAccPos  :Boolean=False ): wmsProfilePoint;
+                          ConvertToAccPos  :Boolean=False  ): wmsProfilePoint;
      procedure PutProfile(Index            :wmsIntType;
                           WmsPoint         :wmsProfilePoint;
-                          ConvertFromAccPos:Boolean=False);
+                          ConvertFromAccPos:Boolean=False  );
      destructor Destroy;                                               override;
     published
      property Energy       :wmsRealType    read  wmsFileHeader.wmsRec06.wmhEnergy;
@@ -2645,6 +2655,7 @@ const
 {30/09/2020 added PassRefOrgData}
 {09/10/2020 added EclipseData}
 {20/10/2020 call to Analyse changed}
+{16/11/2020 ADataTopLine}
 type
   TWellhoferData=class(TRadthData)
     private
@@ -2700,6 +2711,7 @@ type
      function  DualReadData(AStringList               :TStrings;
                            AStream                    :TStream;
                            AFileName                  :String;
+                           ADataTopLine               :Integer      =0;
                            AFileFormat                :twcFileType  =twcUnknown): Boolean; override;
      function  Parse_Wellhofer_SNC_ascii                                        : Boolean;
      function  GetReady                                                         : Boolean;
@@ -2860,24 +2872,30 @@ type
      function  ReadRfb(AFileName                   :String                    ): Boolean;     overload;
      function  ReadRfb(AStream                     :TStream                   ): Boolean;     overload;
      function  ReadData(AStringList                :TStrings;
+                        ADataTopLine               :Integer    =0;
                         AFileFormat                :twcFileType=twcUnknown    ): Boolean;     overload; override;
      function  ReadData(AStream                    :TStream;
+                        ADataTopLine               :Integer    =0;
                         AFileFormat                :twcFileType=twcUnknown    ): Boolean;     overload; override;
      function  ReadData(AFileName                  :String;
+                        ADataTopLine               :Integer    =0;
                         AFileFormat                :twcFileType=twcUnknown    ): Boolean;     overload; override;
      function  AdvReadData(AStringList             :TStrings;
+                           ADataTopLine            :Integer       =0;
                            UnFreeze                :Boolean       =True;
                            ResampleData            :Boolean       =False;
                            CoordinateOrder         :twcMeasAxisStg=twcMeasAxisStandard;
                            AFileFormat             :twcFileType   =twcUnknown;
                            ASourceReference        :String        =''         ): Boolean;    overload;
      function  AdvReadData(AFileName               :String;
+                           ADataTopLine            :Integer       =0;
                            UnFreeze                :Boolean       =True;
                            IsBinaryFile            :Boolean       =False;
                            ResampleData            :Boolean       =False;
                            CoordinateOrder         :twcMeasAxisStg=twcMeasAxisStandard;
                            AFileFormat             :twcFileType   =twcUnknown ): Boolean;   overload;
      function  AdvStreamData(AStream               :TStream;
+                             ADataTopLine          :Integer       =0;
                              UnFreeze              :Boolean       =True;
                              ResampleData          :Boolean       =False;
                              CoordinateOrder       :twcMeasAxisStg=twcMeasAxisStandard;
@@ -3943,6 +3961,7 @@ ObjectCallSign   := 'primary';
 StatusProcedure  := AStatusProc;
 FLocalParser     := (SharedParser=nil);
 FFilename        := ParsedFile;
+FParserTopLine   := 0;
 if FLocalParser then
   begin
   FParser:= toTNumParser.Create;
@@ -4179,6 +4198,23 @@ if Length(Parser.FileName)>0 then
 end; {~parsedata}
 
 
+{16/11/2020 support for multiple complete data sets in one single file intended for one single scan}
+function TRadthData.FindMoreData(FromCurrentLine:Boolean=False): Boolean;
+begin
+if assigned(FParser) then
+  with FParser do
+    begin
+    if not FromCurrentLine then
+      NextLine(True);
+    while (Length(Trim(CurrentLine))=0) and (not EndOfFile) do
+      NextLine(True);
+    Result:= (Length(Trim(CurrentLine))>0) and (not EndOfFile);
+    end
+else
+  Result:= False;
+end; {~findmoredata}
+
+
 function TRadthData.CheckData(AStringList:TStrings): Boolean;
 var i: Integer;
 begin
@@ -4200,21 +4236,23 @@ end; {~checkdata}
 {15/12/2015 AStream}
 {14/02/2016 replaced tmemorystream with tstringstream}
 {27/09/2016 FBinaryAllowed}
-function TRadthData.DualReadData(AStringList:TStrings;
-                                 AStream    :TStream;
-                                 AFileName  :String;
-                                 AFileFormat:twcFileType=twcUnknown): Boolean;
+{16/11/2020 ADataTopLine}
+function TRadthData.DualReadData(AStringList :TStrings;
+                                 AStream     :TStream;
+                                 AFileName   :String;
+                                 ADataTopLine:Integer    =0;
+                                 AFileFormat :twcFileType=twcUnknown): Boolean;
 begin
 IsFile:= (AStringList=nil) and (AStream=nil);
 Result:= (not IsFile) or FileExists(AFileName);
 if Result and CheckBlackList(AFileName) then
   begin
   if IsFile then
-    Result:= ReadData(AFileName  ,AFileFormat)
+    Result:= ReadData(AFileName  ,ADataTopLine,AFileFormat)
   else if (FBinaryAllowed or (not assigned(AStringList))) and assigned(AStream) then
-    Result:= ReadData(AStream    ,AFileFormat)
+    Result:= ReadData(AStream    ,ADataTopLine,AFileFormat)
   else
-   Result:= ReadData(AStringList,AFileFormat);
+   Result:= ReadData(AStringList,ADataTopLine,AFileFormat);
   end;
 end; {~dualreaddata}
 
@@ -4231,8 +4269,10 @@ end; {~readbindata}
 {21/07/2016 more general support for streams}
 {27/09/2016 base level support for bin streams}
 {18/04/2020 In FPC 3.2.0 TStringSream is descendant of TMemoryStream; the latter was completely separate <= FPC 3.0.4}
-function TRadthData.ReadData(AStream    :TStream;
-                             AFileFormat:twcFileType=twcUnknown): Boolean;
+{16/11/2020 ADataTopLine}
+function TRadthData.ReadData(AStream     :TStream;
+                             ADataTopLine:Integer    =0;
+                             AFileFormat :twcFileType=twcUnknown): Boolean;
 begin
 SetDefaults;
 FileFormat:= AFileFormat;
@@ -4249,31 +4289,39 @@ else
     AStream.Position:= 0;
     Parser.Assign(TStringStream(AStream));
     end;
-  Result:= ParseData;
+  FParser.SetTop(ADataTopLine);
+  FParserTopLine:= ADataTopLine;
+  Result        := ParseData;
   end;
 end; {~readdata}
 
 
 {because TStrings is input, the data are in some ascii-format}
-function TRadthData.ReadData(AStringList:TStrings;
-                             AFileFormat:twcFileType=twcUnknown): Boolean;
+{16/11/2020 ADataTopLine}
+function TRadthData.ReadData(AStringList :TStrings;
+                             ADataTopLine:Integer    =0;
+                             AFileFormat :twcFileType=twcUnknown): Boolean;
 begin
 SetDefaults;
-FileFormat:= AFileFormat;
+FileFormat    := AFileFormat;
+FParserTopLine:= ADataTopLine;
 if LogLevel>2 then
   StatusMessage(Format('Reading(%s) {%s} ',[FIdentity,ifthen(assigned(AStringList),AStringList.Strings[0],'')]),True,3);
 with FParser do
   begin
   if FLocalParser or (FParser.LineCount=0) then
     Assign(AStringList,True);
+  SetTop(ADataTopLine);
   Result:= ParseData;
   end;
 end; {~readdata}
 
 
 {$push}{$I-}
-function TRadthData.ReadData(AFileName  :String;
-                             AFileFormat:twcFileType=twcUnknown): Boolean;
+{16/11/2020 ADataTopLine}
+function TRadthData.ReadData(AFileName   :String;
+                             ADataTopLine:Integer    =0;
+                             AFileFormat :twcFileType=twcUnknown): Boolean;
 begin
 SetDefaults;
 FileFormat:= AFileFormat;
@@ -4282,11 +4330,13 @@ if Result then
   begin
   if LogLevel>2 then
     StatusMessage(Format('Reading(%s) %s...',[FIdentity,AFileName]),True,3);
-  FileTime := FileDateToDateTime(FileAge(AFileName));
-  FFileName:= AFileName;
+  FileTime      := FileDateToDateTime(FileAge(AFileName));
+  FFileName     := AFileName;
+  FParserTopLine:= ADataTopLine;
   with FParser do
     begin
     Assign(AFileName);
+    SetTop(ADataTopLine);
     Result:= ParseData;
     end;
   end;
@@ -5372,18 +5422,34 @@ end; {~getfiletype}
 {$pop}
 
 
+{19/11/2020 w2ID is specified to be in first 255 bytes, not first line}
 function Tw2CAD_data.CheckData(AStringList:TStrings): Boolean;
+var i: Integer;
 begin
-Result:= (inherited CheckData(AStringList)) and (IdentificationStg=w2ID);  //IdentificationStg is fetched by inherited CheckData
-with FParser do if Result then
-  begin
-  GotoTop(True);
-  FileFormat:= twcW2CAD;
-  while CurrentLine[1]='#' do
-    NextLine;
-  if Pos(w2NumMeas_ID,CurrentLine)=1 then
-    ScanMax:= NextInteger;
-  end;
+Result:= (inherited CheckData(AStringList));
+if Result then
+  with FParser do
+    begin
+    Result:= (IdentificationStg=w2ID);
+    if not Result then
+      begin
+      i:= IdentificationStg.Length;
+      repeat
+        NextLine;
+        IdentificationStg:= CurrentLine;
+        Result           := (IdentificationStg=w2ID);
+        i                := i+IdentificationStg.Length;
+      until Result or (i>255);
+      end;
+    if Result then
+      begin
+      FileFormat:= twcW2CAD;
+      while CurrentLine[1]='#' do
+        NextLine;
+      if Pos(w2NumMeas_ID,CurrentLine)=1 then
+        ScanMax:= NextInteger;
+      end;
+    end;
 end; {~checkdata}
 
 
@@ -7906,13 +7972,15 @@ end; {~readbindata}
 
 {30/03/2016 fix:transfer AFileName to FFileName for wda}
 {14/08/2016 new implementation based on BinStream}
-function TWmsData.ReadData(AFileName  :String;
-                           AFileFormat:twcFileType=twcUnknown): Boolean;
+{16/11/2020 ADataTopLine}
+function TWmsData.ReadData(AFileName   :String;
+                           ADataTopLine:Integer    =0;
+                           AFileFormat :twcFileType=twcUnknown): Boolean;
 begin
 if AFileFormat=twcUnknown then
   AFileFormat:= GetFileType(AFileName);
 Result:= (AFileFormat=twcWTX) and
-         Inherited ReadData(AFileName,AFileFormat);
+         Inherited ReadData(AFileName,ADataTopLine,AFileFormat);
 if (not Result) and (AFileFormat=twcWDA) then
   begin
   if BinStream.Size=0 then
@@ -9582,7 +9650,7 @@ if WExt then
   W:= TWellhoferData.Create;
   PassSettings(W,'index',False);
   W.AutoLoadReference:= False;
-  W.ReadData(AFileName,twcUnknown);
+  W.ReadData(AFileName,0,twcUnknown);
   end
 else
   W:= Self;
@@ -9607,8 +9675,8 @@ with W do
     repeat
       Inc(wMultiScanNr);
       i:= Max(i,wMultiScanNr);
-      if t in twcBinaryFormats then r:= ReadData(BinStream    ,t)
-      else                          r:= ReadData(Parser.Strings,t);
+      if t in twcBinaryFormats then r:= ReadData(BinStream     ,0,t)
+      else                          r:= ReadData(Parser.Strings,0,t);
       if r then
         begin
         s:= wSource[dsMeasured].twCurveIDString;
@@ -9634,8 +9702,8 @@ with W do
       FAutoLoadRef    := a;
       FArrayScanRefUse:= b;
       wMultiScanNr    := Abs(o);
-      if t in twcBinaryFormats then ReadData(BinStream    ,t)
-      else                          ReadData(Parser.Strings,t);
+      if t in twcBinaryFormats then ReadData(BinStream     ,0,t)
+      else                          ReadData(Parser.Strings,0,t);
       end;
     end
   else
@@ -11054,27 +11122,33 @@ end; {checkdataordering}
 
 //because TStrings is input, the data are in some ascii-format
 {17/09/2020 introduction of FFrozen}
-function TWellhoferData.ReadData(AStringList:TStrings;
-                                 AFileFormat:twcFileType=twcUnknown): Boolean;
+{16/11/2020 ADataTopLine}
+function TWellhoferData.ReadData(AStringList :TStrings;
+                                 ADataTopLine:Integer    =0;
+                                 AFileFormat :twcFileType=twcUnknown): Boolean;
 begin
-Result:= (not FFrozen) and DualReadData(AStringList,nil,FileName,AFileFormat);
+Result:= (not FFrozen) and DualReadData(AStringList,nil,FileName,ADataTopLine,AFileFormat);
 end; {~readdata}
 
 
 {14/02/2016 replaced tmemorystream with tstringstream}
 {17/09/2020 introduction of FFrozen}
-function TWellhoferData.ReadData(AStream    :TStream;
-                                 AFileFormat:twcFileType=twcUnknown): Boolean;
+{16/11/2020 ADataTopLine}
+function TWellhoferData.ReadData(AStream     :TStream;
+                                 ADataTopLine:Integer    =0;
+                                 AFileFormat :twcFileType=twcUnknown): Boolean;
 begin
-Result:= (not FFrozen) and DualReadData(nil,AStream,FileName,AFileFormat);
+Result:= (not FFrozen) and DualReadData(nil,AStream,FileName,ADataTopLine,AFileFormat);
 end; {~readdata}
 
 
 {17/09/2020 introduction of FFrozen}
-function TWellhoferData.ReadData(AFileName  :String;
-                                 AFileFormat:twcFileType=twcUnknown): Boolean;
+{16/11/2020 ADataTopLine}
+function TWellhoferData.ReadData(AFileName   :String;
+                                 ADataTopLine:Integer    =0;
+                                 AFileFormat :twcFileType=twcUnknown): Boolean;
 begin
-Result:= (not FFrozen) and DualReadData(nil,nil,AFileName,AFileFormat);
+Result:= (not FFrozen) and DualReadData(nil,nil,AFileName,ADataTopLine,AFileFormat);
 end; {~readdata}
 
 
@@ -11695,12 +11769,14 @@ import procedure within the twellhoferdata object.
 {10/02/2020 pass FRefOrg2D_OriVal}
 {17/09/2020 introduction of FFrozen}
 {09/10/2020 added Eclipse}
+{16/11/2020 ADataTopLine}
 //User either StringSteam/BinStream or AFileName.
 //wMultiScanNr is used
-function TWellhoferData.DualReadData(AStringList:TStrings;
-                                     AStream    :TStream;
-                                     AFileName  :String;
-                                     AFileFormat:twcFileType=twcUnknown): Boolean;
+function TWellhoferData.DualReadData(AStringList :TStrings;
+                                     AStream     :TStream;
+                                     AFileName   :String;
+                                     ADataTopLine:Integer    =0;
+                                     AFileFormat :twcFileType=twcUnknown): Boolean;
 var Wms     : TWmsData;
     Pips    : TPipsProfiledata;
     Schuster: TSchusterProfiledata;
@@ -11739,11 +11815,11 @@ if FParseOk then
       if IsFile then
         begin  {using dualreaddata here will cause loop with stack overflow}
         if wTryBinaryOnly      then SetDefaults {=> parse_ok:= false, no succes...}
-        else                        FParseOk:= inherited ReadData(AFileName  ,AFileFormat);
+        else                        FParseOk:= inherited ReadData(AFileName  ,ADataTopLine,AFileFormat);
         end
       else
-        if assigned(AStream)   then FParseOk:= inherited ReadData(AStream    ,AFileformat)
-        else                        FParseOk:= inherited ReadData(AStringList,AFileformat);
+        if assigned(AStream)   then FParseOk:= inherited ReadData(AStream    ,ADataTopLine,AFileformat)
+        else                        FParseOk:= inherited ReadData(AStringList,ADataTopLine,AFileformat);
       end;
    if not FParseOk then
      AFileFormat:= FileFormat
@@ -11757,7 +11833,7 @@ if FParseOk then
     begin
     Wms         := TWmsData.Create(FParser);
     Wms.LogLevel:= LogLevel;
-    FParseOk    := Wms.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportWmsProfile(Wms);
+    FParseOk    := Wms.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportWmsProfile(Wms);
     if Wms.FormatOk then
       begin
       AFileFormat:= Wms.FileFormat;
@@ -11785,7 +11861,7 @@ if FParseOk then
     Rfa.LogLevel:= LogLevel;
     i           := -1;
     repeat
-      FParseOk:= Rfa.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportRfaProfile(Rfa);
+      FParseOk:= Rfa.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportRfaProfile(Rfa);
       if (not FParseOk) and wMultiScanLooping then
         begin
         Rfa.ScanNr:= Rfa.ScanNr+wMultiScanStep;
@@ -11819,7 +11895,7 @@ if FParseOk then
     FMcc.LogLevel:= LogLevel;
     i            := -1;
     repeat
-      FParseOk:= FMcc.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportMccProfile(FMcc);
+      FParseOk:= FMcc.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportMccProfile(FMcc);
       if (not FParseOk) and wMultiScanLooping then
         begin
         FMcc.ScanNr:= FMcc.ScanNr+wMultiScanStep;
@@ -11847,7 +11923,7 @@ if FParseOk then
     SNA.LogLevel := LogLevel;
     i            := -1;
     repeat
-      FParseOk:= SNA.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportSNAProfile(SNA);
+      FParseOk:= SNA.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportSNAProfile(SNA);
       if (not FParseOk) and wMultiScanLooping then
         begin
         SNA.ScanNr:= SNA.ScanNr+wMultiScanStep;
@@ -11876,7 +11952,7 @@ if FParseOk then
     begin
     Cms         := TCmsProfileData.Create(FParser);
     Cms.LogLevel:= LogLevel;
-    FParseOk    := Cms.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportHdfProfile(Cms);
+    FParseOk    := Cms.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportHdfProfile(Cms);
     if Cms.FormatOk then
       AFileFormat:= Cms.FileFormat;
     Cms.TransferLastMessage(FLastMessage);
@@ -11900,7 +11976,7 @@ if FParseOk then
     w2CAD.LogLevel:= LogLevel;
     w2CAD.FileTime:= FileTime;
     repeat
-      FParseOk:= w2CAD.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportW2CADProfile(w2CAD);
+      FParseOk:= w2CAD.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportW2CADProfile(w2CAD);
       if not FParseOk then
         w2CAD.ScanNr:= w2CAD.ScanNr+wMultiScanStep;
     until FParseOk or (not w2CAD.FormatOk) or (w2CAD.ScanNr<1) or (w2CAD.ScanNr>w2CAD.ScanMax);
@@ -11923,7 +11999,7 @@ if FParseOk then
     begin
     Hdf         := THdfProfileData.Create(FParser);
     Hdf.LogLevel:= LogLevel;
-    FParseOk     := Hdf.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportHdfProfile(Hdf);
+    FParseOk     := Hdf.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportHdfProfile(Hdf);
     if Hdf.FormatOk then
       AFileFormat:= Hdf.FileFormat;
     try
@@ -11936,7 +12012,7 @@ if FParseOk then
     begin
     Eclipse         := TEclipseData.Create(FParser);
     Eclipse.LogLevel:= LogLevel;
-    FParseOk        := Eclipse.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportEclipse(Eclipse);
+    FParseOk        := Eclipse.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportEclipse(Eclipse);
     if Eclipse.FormatOk then
       AFileFormat:= Eclipse.FileFormat;
     try
@@ -11949,7 +12025,7 @@ if FParseOk then
     begin
     Pips         := TPipsProfileData.Create(wPipsPixelCm,FParser);
     Pips.LogLevel:= LogLevel;
-    FParseOk      := Pips.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportPipsProfile(Pips);
+    FParseOk      := Pips.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportPipsProfile(Pips);
     if Pips.FormatOk then
       AFileFormat:= Pips.FileFormat;
     Pips.TransferLastMessage(FLastMessage);
@@ -11964,7 +12040,7 @@ if FParseOk then
     Schuster         := TSchusterProfileData.Create(FParser);
     Schuster.LogLevel:= LogLevel;
     Schuster.FileTime:= FileTime;
-    FParseOk         := Schuster.DualReadData(AStringList,AStream,AFileName,AFileFormat) and ImportSchusterProfile(Schuster);
+    FParseOk         := Schuster.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportSchusterProfile(Schuster);
     if Schuster.FormatOk then
       AFileFormat:= Schuster.FileFormat;
     Schuster.TransferLastMessage(FLastMessage);
@@ -11986,7 +12062,9 @@ end; {~dualreaddata}
 //because TStrings is input, the data are in some ascii-format
 {17/09/2020 introduction of FFrozen}
 {18/09/2020 UnFreeze}
+{16/11/2020 ADataTopLine}
 function TWellhoferData.AdvReadData(AStringList     :TStrings;
+                                    ADataTopLine    :Integer       =0;
                                     UnFreeze        :Boolean       =True;
                                     ResampleData    :Boolean       =False;
                                     CoordinateOrder :twcMeasAxisStg=twcMeasAxisStandard;
@@ -12001,14 +12079,16 @@ if Result then
   wMeas2TankMapping:= CoordinateOrder;
   FFileName        := ASourceReference;
   StatusMessage(Format('Reading {%s} ',[ifthen(assigned(AStringList),AStringList.Strings[0],'')]),True,3);
-  Result           := ReadData(AStringList,AFileFormat);
+  Result           := ReadData(AStringList,ADataTopLine,AFileFormat);
   end;
 end; {~advreaddata}
 
 
 {17/09/2020 introduction of FFrozen}
 {18/09/2020 UnFreeze}
+{16/11/2020 ADataTopLine}
 function TWellhoferData.AdvReadData(AFileName       :String;
+                                    ADataTopLine    :Integer       =0;
                                     UnFreeze        :Boolean       =True;
                                     IsBinaryFile    :Boolean       =False;
                                     ResampleData    :Boolean       =False;
@@ -12024,7 +12104,7 @@ if Result then
   wResampleData    := ResampleData;
   wMeas2TankMapping:= CoordinateOrder;
   StatusMessage(Format('Reading %s... ',[AFileName]),True,3);
-  Result           := ReadData(AFileName,AFileFormat);
+  Result           := ReadData(AFileName,ADataTopLine,AFileFormat);
   end;
 end; {~advreaddata}
 
@@ -12033,7 +12113,9 @@ end; {~advreaddata}
 {14/02/2016 replaced tmemorystream with tstringstream}
 {17/09/2020 introduction of FFrozen}
 {18/09/2020 UnFreeze}
+{16/11/2020 ADataTopLine}
 function TWellhoferData.AdvStreamData(AStream         :TStream;
+                                      ADataTopLine    :Integer       =0;
                                       UnFreeze        :Boolean       =True;
                                       ResampleData    :Boolean       =False;
                                       CoordinateOrder :twcMeasAxisStg=twcMeasAxisStandard;
@@ -12050,7 +12132,7 @@ if Result then
   wMeas2TankMapping:= CoordinateOrder;
   if Length(ASourceReference)>0 then
     FFileName      := ASourceReference;
-  Result           := ReadData(AStream,AFileFormat);
+  Result           := ReadData(AStream,ADataTopLine,AFileFormat);
   end;
 end; {~advreaddata}
 
@@ -13570,7 +13652,7 @@ if Result then
       StatusMessage(Format('->LoadReference %s [%d/%d]',[CompressedFilename(s),r.wMultiScanNr,r.wMultiScanMax]));
       {$ENDIF}
       try
-        FromDisk:= r.ReadData(FRefOrgSrc,FRefOrgSrcType);                          //read scan from possibly multi-dataset out of saved stream
+        FromDisk:= r.ReadData(FRefOrgSrc,0,FRefOrgSrcType);                        //read scan from possibly multi-dataset out of saved stream
        except
         FromDisk:= False;
        end;

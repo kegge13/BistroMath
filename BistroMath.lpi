@@ -20,9 +20,8 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="4"/>
-      <MinorVersionNr Value="5"/>
-      <RevisionNr Value="7"/>
-      <BuildNr Value="724"/>
+      <MinorVersionNr Value="6"/>
+      <BuildNr Value="725"/>
       <Language Value="0809"/>
       <Attributes pvaPatched="True"/>
       <StringTable CompanyName="Theo van Soest" ProductName="BistroMath" ProductVersion="4"/>
