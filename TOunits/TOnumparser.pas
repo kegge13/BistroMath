@@ -1,4 +1,4 @@
-unit TOnumparser;  {© Theo van Soest 2015-19/10/2020}
+unit TOnumparser;  {© Theo van Soest 2015-16/11/2020}
 {$I TOnumparser_opt.inc}
 {$R-}
 
@@ -40,6 +40,7 @@ type
   {30/03/2017 Tab2Space}
   {17/01/2018 interfaceto delimiter, added delimitercountcheck}
   {13/10/2020 AutoSetDecPoint}
+  {16/11/2020 added FTopLineNr, SetTop, ResetTop}
   toTNumParser=class(TObject)
   private
     FAliasValues     : array of toCharToNumAlias;
@@ -59,6 +60,7 @@ type
     FLine            : String;
     FLineCount       : Integer;
     FLineNr          : Integer;                                                 //1-based; zero-based internal
+    FTopLineNr       : Integer;
     FNegSignSet      : toTCharSet;
     FNumberSet       : toTCharSet;
     FPosSignSet      : toTCharSet;
@@ -114,6 +116,8 @@ type
                        CaseInSensitive   :Boolean=False;
                        FromCurrentLine   :Boolean=False;
                        NotFoundMessage   :Boolean=True   ): Boolean;        overload;
+    procedure   SetTop(ALineNr           :Integer);
+    procedure   ResetTop;
     function    GotoTop(ReadFirstLine    :Boolean=False;
                         Tab2Space        :Boolean=True   ): Boolean;
     function    GotoLeft                                  : Boolean;
@@ -169,7 +173,7 @@ function SelfTest: Boolean;
 implementation
 
 uses SysUtils,StrUtils,DateUtils,
-     TOtools;
+     TOtools,TOmath;
 
 const
      toNumParser_nolines=-1;
@@ -177,11 +181,13 @@ resourcestring
      toNumParser_notfound ='"%s" not found (%s)';
 
 
+{16/11/2020 FTopLineNr}
 constructor toTNumParser.Create(StringList:TStrings=nil);
 begin
 inherited Create;
 FStrings         := TStringList.Create;
 FLineNr          := -1;
+FTopLineNr       := -1;
 FLastLineOkNr    := 0;
 FLine            := '';
 FLineCount       := toNumParser_nolines;
@@ -228,10 +234,12 @@ end; {~setdelimter}
 
 
 {09/12/2015}
+{16/11/2020 FTopLineNr}
 procedure toTNumParser.Clear;
 begin
 if assigned(FStrings) then FStrings.Clear;
 FLineNr   := 0;
+FTopLineNr:= 0;
 FLineCount:= 0;
 FPreLoaded:= False;
 FFileName := '';
@@ -248,7 +256,7 @@ end; {~setpreload}
 {29/09/2016 removed FMemIO}
 procedure toTNumParser.SetLineNr(ANumber:Integer);
 begin
-ANumber:= Max(1,ANumber);
+ANumber:= Max(FTopLineNr,ANumber);
 FLineNr:= Min(Pred(ANumber),Pred(FStrings.Count));
 repeat until (ANumber=FLineNr) or (not NextLine);
 end; {~setlinenr}
@@ -293,10 +301,12 @@ end; {~setcurrentline}
 
 
 {16/12/2015 direct load from stringstream added}
+{16/11/2020 FTopLineNr}
 procedure toTNumParser.Assign(AStream      :TStream;
                               IgnorePreload:Boolean=False);
 begin
-FLineNr:= 0;
+FLineNr   := 0;
+FTopLineNr:= 0;
 if assigned(AStream) and (not (PreLoaded and IgnorePreload and (LineCount=0))) then
   begin
   AStream.Position:= 0;
@@ -308,11 +318,13 @@ end; {~assign}
 
 
 {09/12/2015: ignorepreload}
+{16/11/2020 FTopLineNr}
 procedure toTNumParser.Assign(StringList   :TStrings;
                               IgnorePreload:Boolean=False);
 var AStream: TMemoryStream;
 begin
-FLineNr:= 0;
+FLineNr   := 0;
+FTopLineNr:= 0;
 if assigned(StringList) and (not (PreLoaded and IgnorePreload and (LineCount=0))) then
   begin
   AStream:= TMemoryStream.Create;
@@ -327,10 +339,12 @@ end; {~assign}
 
 
 {29/09/2016 FStream, removed FMemIO}
+{16/11/2020 FTopLineNr}
 procedure toTNumParser.Assign(AFileName:String);
 begin
 Clear;
 FLineNr      := 0;
+FTopLineNr   := 0;
 FLineCount   := toNumParser_nolines;
 FLastLineOkNr:= 0;
 FlastLineOk  := '';
@@ -566,13 +580,30 @@ end; {~search}
 {$pop}
 
 
+{16/11/2020 set "top" at some line number}
+procedure toTNumParser.SetTop(ALineNr:Integer);
+begin
+FTopLineNr:= Clip(ALineNr-1,0,FStrings.Count);
+FLineNr   := Clip(FLineNr,FTopLineNr,FStrings.Count);
+if FLastLineOkNr<>FLineNr then
+  GotoTop;
+end; {~settop}
+
+
+{16/11/2020 set "top" at start of file}
+procedure toTNumParser.ResetTop;
+begin
+SetTop(0);
+end; {~resettop}
+
+
 function toTNumParser.GotoTop(ReadFirstLine:Boolean=False;
                               Tab2Space    :Boolean=True): Boolean;
 begin
-FLineNr      := 0;
+FLineNr      := FTopLineNr;
 FLine        := '';
 FLastLineOk  := '';
-FLastLineOkNr:= 0;
+FLastLineOkNr:= FTopLineNr;
 Result       := (not ReadFirstLine) or NextLine(False,Tab2Space);
 end; {~gototop}
 
@@ -1152,7 +1183,8 @@ if Index in [0..Pred(LineCount)] then
   else
     begin
     Inc(Index);
-    while FLineNr<Index do NextLine;
+    while FLineNr<Index do
+      NextLine;
     Result:= CurrentLine;
     end;
   end
