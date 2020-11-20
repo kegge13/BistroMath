@@ -771,19 +771,19 @@ type
      procedure   ExceptMessage(AString           :String             );
     protected
      FParser       : toTNumParser;
-     FParserTopLine: Integer;
+     FParserTopLine: Integer;                                                   //storage of readdata value, can be asked for by UI to do reread
      FParseOk      : Boolean;
-     procedure   SetDefaults;                                               virtual;
-     procedure   AddWarning(AWarning:String);                               virtual;
+     procedure   SetDefaults;                                                      virtual;
+     procedure   AddWarning(AWarning:String);                                      virtual;
      function    GetFileType(AFileName :String='';
-                             BinaryOnly:Boolean=False      ): twcFileType;  virtual;
-     function    GetFieldLength                             : twcFloatType; virtual;
-     function    GetFieldDepth                              : twcFloatType; virtual;
-     function    GetBeamType                                : twcBeamType;  virtual;
-     function    IsBinary(AFileName:String=''              ): Boolean;      virtual;
-     function    ReadResults(PostText:String=''            ): Boolean;      virtual;
+                             BinaryOnly:Boolean=False      ): twcFileType;         virtual;
+     function    GetFieldLength                             : twcFloatType;        virtual;
+     function    GetFieldDepth                              : twcFloatType;        virtual;
+     function    GetBeamType                                : twcBeamType;         virtual;
+     function    IsBinary(AFileName:String=''              ): Boolean;             virtual;
+     function    ReadResults(PostText:String=''            ): Boolean;             virtual;
     public
-     function    FindMoreData(FromCurrentLine:Boolean=False): Boolean;      virtual;
+     function    FindMoreData(FromCurrentLine:Boolean=False): Boolean;             virtual;
      function    GetDistance(c1,c2:twcCoordinate)           : twcFloatType;
      procedure   ShiftPoint(var p :twcCoordinate;
                             AShift:twcCoordinate           );
