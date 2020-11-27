@@ -1,4 +1,4 @@
-unit TOnumparser;  {© Theo van Soest 2015-16/11/2020}
+unit TOnumparser;  {© Theo van Soest 2015-26/11/2020}
 {$I TOnumparser_opt.inc}
 {$R-}
 
@@ -478,11 +478,13 @@ end; {~setnumberchars}
 
 
 {13/10/2020 new}
+{26/11/2020 r also initialised, just to avoid compiler complaints}
 procedure toTNumParser.AutoSetDecPoint(DecPointChars:toTCharSet=toTDefDecPoint);
 var c,r: Char;
     n,m: Integer;
 begin
 m:= 0;
+r:= '.';
 for c:= Low(toTTestChars) to High(toTTestChars) do
   if c in DecPointChars then
     begin
