@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 20/11/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 26/11/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -127,8 +127,7 @@ type
   {===================TAnalyseForm====================
 
   The analyseform is the graphical user interface of BistroMath and handles all user's choices.
-  A instance of the TWellhoferData object handles all data input, output and analysis.
-  An instance of the TWellhoferData object handles all data input, output and analysis.
+  A series of instances of the TWellhoferData object (engines) handle all data input, output and analysis.
 
   22/07/2015
     Mayneord-related items added.
@@ -758,8 +757,8 @@ type
     procedure SyncSetCenterOfField     (Sender         : TObject);
     procedure SyncSetDetection         (Sender         : TObject);
     procedure SmartScaleElectronPDD    (Sender         : TObject);
-    procedure FileOpenClick            (Sender         : TObject);              //uses DataFileOpen
-    procedure FileOpenTempRefClick     (Sender         : TObject);              //uses TWellhoferData to open
+    procedure FileOpenClick            (Sender         : TObject);                //uses DataFileOpen
+    procedure FileOpenTempRefClick     (Sender         : TObject);                //uses TWellhoferData to open
     procedure FileSaveClick            (Sender         : TObject);
     {$IFDEF form2pdf}
     procedure FilePrintFormClick       (Sender         : TObject);
@@ -787,7 +786,7 @@ type
     procedure PresetsItemClick         (Sender         : TObject);
     procedure UseDoseAddButtonClick    (Sender         : TObject);
     procedure UseDoseDelButtonClick    (Sender         : TObject);
-    procedure PlotLabelClick           (Sender         : TObject);              //selects series
+    procedure PlotLabelClick           (Sender         : TObject);                //selects series
     procedure LabelCopyClick           (Sender         : TObject);
     procedure ConfigSaveAsItemClick    (Sender         : TObject);
     procedure ColorPanelClick          (Sender         : TObject);
@@ -815,7 +814,7 @@ type
                                         const AFileInfo: TFileInfo);
     procedure OnInventorySelect        (Sender         : TObject;
                                         aCol, aRow     : Integer);
-    procedure InventoryGridDblClick    (Sender         : TObject);              //changed also at runtime
+    procedure InventoryGridDblClick    (Sender         : TObject);                //changed also at runtime
     procedure InventorySetRefDirClick  (Sender         : TObject);
     procedure InventoryDirBoxAccept    (Sender         : TObject;
                                         var Value      : String);
@@ -872,7 +871,7 @@ type
     //The series are created as arrays to get well-organised linked sets.
     CursorSeries          : array[PlotItems] of TLineSeries;
     PlotSeries            : array[PlotItems] of TLineSeries;
-    PlotLabels            : array[PlotItems] of TLabel;                 {label  : date     value}
+    PlotLabels            : array[PlotItems] of TLabel;
     PlotDates             : array[PlotItems] of TLabel;
     PlotValues            : array[PlotItems] of TLabel;
     PenumbraSigmoids      : array[twcSides ] of TLineSeries;
@@ -883,7 +882,7 @@ type
     FilePrintSelItem      : TMenuItem;                    {Ctrl+Shift+P}                //OnClick = FilePrintFormClick
     FilePrintAllItem      : TMenuItem;                    {Ctrl+Alt+P}                  //OnClick = FilePrintFormClick
    {$ENDIF}
-    Ft_TypeLabel          : array[twcFieldClass                        ] of TLabel;
+    Ft_TypeLabel          : array[twcFieldClass                        ] of TLabel;     //Ft_xxx: used on FieldTypes tab
     Ft_DetectionCheckbox  : array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection
     Ft_DynPenumbraCheckbox: array[twcFieldClass                        ] of TCheckBox;  //no synchonisation needed
     Ft_SymCorrCheckbox    : array[twcFieldClass,dsMeasured..dsReference] of TCheckBox;  //local sync with menu ondataread
@@ -897,7 +896,7 @@ type
     SpecialMode           : array[1..NumSpecialModes                   ] of SpecModeRec;
     ShiftLabels           : array[twcMeasAxis                          ] of TStaticText;
     ShiftValues_cm        : array[twcMeasAxis                          ] of TFloatSpinEditEx;
-    CxResults             : array of CxLine;                                    //implementation panel display rules; binding to TPanelConfig.FElements; CxUsedRowMax=highest row number; see InitCxBlock, PublishResults
+    CxResults             : array of CxLine;                                    //implementation PANEL DISPLAY RULES; binding to TPanelConfig.FElements; CxUsedRowMax=highest row number; see InitCxBlock, PublishResults
     UseDoseConvTable      : array of OD2dose_Rec;
     NextClipboardOwner    : THandle;
     SelectedPlot          : PlotItems;
@@ -947,7 +946,7 @@ type
     MultiScanList         : Boolean;
     ClipBoardLock         : Boolean;
     LastProfileZoomState  : Boolean;                                            //preserves the zoomstate for profiles when automatically is unzoomd for pdd's
-    ScanListReady         : Boolean;
+    InventoryListReady    : Boolean;                                            //See Files tab
     SelectedFitCol        : Integer;                                            //remember last clicked column in FitResultsTab}
     FFFmessageShown       : Boolean;
     FFFdataSource         : twcDataSource;
@@ -1135,7 +1134,7 @@ const DefAppName           ='BistroMath';
       AliasText            = 'Alias';
       DefaultName          = 'default.txt';
       DefInstituteCfg      = 'institute.ini';
-      DefScanListReady     = 'List completed';
+      DefInventoryListReady= 'List completed';
       DefComments          = 'Comments';
       DefSpecialMode       = '-specialmode';
       DefLogLevel          = '-loglevel';
@@ -1274,6 +1273,7 @@ begin
 Result:= ACaption.Replace('&','',[rfReplaceAll]);
 end; {cleanupcaption}
 
+
 {$IFDEF THREADED}
 //----------THelpThread--------------------------------------------------------
 
@@ -1340,7 +1340,7 @@ end; {~execute}
 {$ENDIF THREADED}
 
 
-{*********************** TAnalyseForm ******************************}
+{****************************** TAnalyseForm ********************************************}
 {$IFDEF Windows}
 function WndCallback(Ahwnd:HWND; uMsg:UINT; wParam:WParam; lParam:LParam): LRESULT; stdcall;
 begin
@@ -1646,7 +1646,7 @@ if (Length(aa)<>Ord(High(twcEdgeClass))+1) or (Length(ab)<>Ord(High(twcFieldClas
   FatalError('wrong number of parameters for EdgeTypes, DefCoFDefaults or DefNormDefaults');
 for f:= Low(twcFieldClass) to High(twcFieldClass) do
   begin
-  Ft_TypeLabel[f]:= TLabel.Create(AnalyseForm);                                 //Ft_Label
+  Ft_TypeLabel[f]:= TLabel.Create(AnalyseForm);                                 //Field types: Ft_Label
   with Ft_TypeLabel[f] do
     begin
     Parent     := FieldTypesPanel;
@@ -1657,7 +1657,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     Caption    := twcFieldClassNames[f];
     Name       := 'Ft_Edge_'+Caption;
     end;
-  Ft_DetectionCheckbox[f]:= TCheckBox.Create(AnalyseForm);                      //Ft_Detect
+  Ft_DetectionCheckbox[f]:= TCheckBox.Create(AnalyseForm);                      //Field types: Ft_Detect
   with Ft_DetectionCheckbox[f] do
     begin
     Parent     := FieldTypesPanel;
@@ -1671,7 +1671,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     end;
   for s:= dsMeasured to dsReference do
     begin
-    Ft_SymCorrCheckbox[f,s]:= TCheckBox.Create(AnalyseForm);                    //Ft_Symmetry
+    Ft_SymCorrCheckbox[f,s]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_Symmetry
     with Ft_SymCorrCheckbox[f,s] do
       begin
       Parent     := FieldTypesPanel;
@@ -1682,7 +1682,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
       Caption    := '';
       end;
     end;
-  Ft_DynPenumbraCheckbox[f]:= TCheckBox.Create(AnalyseForm);                    //Ft_DynPenumbra
+  Ft_DynPenumbraCheckbox[f]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_DynPenumbra
   with Ft_DynPenumbraCheckbox[f] do
     begin
     Parent     := FieldTypesPanel;
@@ -1695,7 +1695,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     end;
   for q:= fcPrimary to fcFallBack do
     begin
-    Ft_EdgeMethodCombo[f,q]:= TComboBox.Create(FieldTypesPanel);                //Ft_EdgeMethodCombo
+    Ft_EdgeMethodCombo[f,q]:= TComboBox.Create(FieldTypesPanel);                //Field types: Ft_EdgeMethodCombo
     with Ft_EdgeMethodCombo[f,q] do
       begin
       Parent       := FieldTypesPanel;
@@ -1712,7 +1712,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
       ItemIndex    := 8;                                                        //dInflection is most used default, see overides below
       end;
     end;
-  Ft_CenterMethodCombo[f]:= TComboBox.Create(AnalyseForm);                      //Ft_Center
+  Ft_CenterMethodCombo[f]:= TComboBox.Create(AnalyseForm);                      //Field types: Ft_Center
   with Ft_CenterMethodCombo[f] do
     begin
     Parent       := FieldTypesPanel;
@@ -1732,7 +1732,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
       end;
     OnChange     := @SyncSetCenterOfField;
     end;
-  Ft_NormMethodCombo[f]:= TComboBox.Create(AnalyseForm);                        //Ft_Norm
+  Ft_NormMethodCombo[f]:= TComboBox.Create(AnalyseForm);                        //Field types: Ft_Norm
   with Ft_NormMethodCombo[f] do
     begin
     Parent       := FieldTypesPanel;
@@ -1752,7 +1752,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
       end;
     OnChange     := @SyncSetNormalisation;
     end;
-  Ft_CenterRadiusEdit_Cm[f]:= TFloatSpinEditEx.Create(AnalyseForm);             //Ft_radius
+  Ft_CenterRadiusEdit_Cm[f]:= TFloatSpinEditEx.Create(AnalyseForm);             //Field types: Ft_radius
   with Ft_CenterRadiusEdit_Cm[f] do
     begin
     Parent     := FieldTypesPanel;
@@ -1820,7 +1820,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do {-------------------GammaSe
     Name       := 'GammaInFieldLimits_'+Caption;
     end;
   end;
-for x:= Inplane to Beam do                         {-------------------ShiftGroupBox labels and values----------------}
+for x:= Inplane to Beam do                           {-------------------ShiftGroupBox labels and values----------------}
   begin
   ShiftLabels[x]:= TStaticText.Create(AnalyseForm);
   with ShiftLabels[x] do
@@ -1866,16 +1866,16 @@ AxisAlignSource           .AxisTo         := DataPlot.AxisList[DefChartAxR];    
 SM2_Infotype                              := 1;
 AppliedFieldClass                         := fcStandard;
 AppliedEdgeRefNorm                        := d50;
-Visible                                   := True;
-MultiScanList                             := False;
-PrevKey                                   := #0;
-AdvancedModeOk                            := True;
-ScanListReady                             := True;
-OnDataReadBusy                            := False;
-FFFmessageShown                           := False;
 PlotPending                               := False;
+OnDataReadBusy                            := False;
 SelectedSeries                            := nil;
 ModMode                                   := ModMNorm;
+Visible                                   := True;
+MultiScanList                             := False;
+PrevKey                                   := #0;                                //keyboard handling
+AdvancedModeOk                            := True;
+InventoryListReady                        := True;                              //see Files tab
+FFFmessageShown                           := False;
 DoseCLastRow                              :=  -1;
 MinClipBoardBytes                         := 100;
 LogLevelEdit              .Value          := 1;                                 //set logging to standard level
@@ -2036,7 +2036,7 @@ with SpecialMode[1] do
 ClipBoardLock:= False;                                                          //finally unlock clipboard
 end; {~formcreate}
 
-
+//Convert a TWellhoferData twcDataSource to the equivalent graphical element (if available)
 function TAnalyseForm.DataSource2PlotItem(aSource:twcDataSource): PlotItems;
 begin
 case aSource of
@@ -2048,6 +2048,7 @@ case aSource of
 end; {~datasource2plotitem}
 
 
+{28/07/2020 Called from FormCreate and SelfTest}
 procedure TAnalyseForm.SetBasicDefaults;
 begin
 Ft_EdgeMethodCombo[fcStandard,fcPrimary  ].ItemIndex:= 3;                       //d50
@@ -2101,9 +2102,9 @@ procedure TAnalyseForm.SetDefaultPanel(Sender:TObject);
                                     [BMBuildNumber,aID,part1,alabel,part2,acol,arow,part3]),@SetMessageBar);
   end;
 
-{AnnotationType=(pa_synthetic=1,pa_symmetric=2,pa_fitted=3,pa_fff=4,pa_normdif=5,pa_ssd=6,pa_centered=7,pa_resampled=8,pa_shifted=9,pa_edge=10,pa_RDD)}
-{linked to DefAnnotTypeString='!sfFnzcrSeR', both lists indexed on 1}
-//  twcDataSource   =(dsMeasured=0,dsMeasFiltered,dsCalculated,dsReference,dsBuffer,dsRefOrg,dsUnrelated); default:-1
+ (* AnnotationType=(pa_synthetic=1,pa_symmetric=2,pa_fitted=3,pa_fff=4,pa_normdif=5,pa_ssd=6,pa_centered=7,pa_resampled=8,pa_shifted=9,pa_edge=10,pa_RDD)
+    linked to DefAnnotTypeString='!sfFnzcrSeR', both lists indexed on 1
+    twcDataSource   =(dsMeasured=0,dsMeasFiltered,dsCalculated,dsReference,dsBuffer,dsRefOrg,dsUnrelated); default:-1 *)
 begin
 if Sender=ViewStandardPanelsetup then
   PanelElements.AddMode:= -1;
@@ -2146,7 +2147,7 @@ ClearAllCx(True);            {this will show all rules per position}
 end; {setdefaultpanel}
 
 
-{10/01/2017}
+{10/01/2017 code path for event}
 procedure TAnalyseForm.SetCaption(Sender:TObject);
 begin
 SetCaption;
@@ -2182,8 +2183,8 @@ end; {~setcaption}
 {$pop}
 
 
-//Create labels for results panel, one per column and line; PanelElements[i] fills the label/value at set Col/Row.
-//Multiple PanelElements migth use the same label. This is both efficient and clean.
+(* Create labels for results panel, one per column and line; PanelElements[i] fills the label/value at set Col/Row.
+  Multiple PanelElements migth use the same label. This is both efficient and clean. *)
 {22/01/2018}
 {13/08/2020 onclick}
 {25/08/2020 CxResults with variable number of lines}
@@ -2264,7 +2265,7 @@ var f,s,i: String;
 begin
 with FileOpenDialog do
   begin
-  s         := Filter;
+  s         := Filter;                                                          //preserve settings of FileOpenDialog
   f         := FileName;
   i         := InitialDir;
   InitialDir:= CommonAppdata;
@@ -2972,6 +2973,7 @@ with CF do
 end; {~configsave}
 
 
+//transfer values from welhofer.pas/engines[usedengine] to GUI
 {12/12/2015 FFF-settings}
 {04/01/2016 split wLinacSymSign}
 {06/01/2016 added FitMubPowerNumEdit}
@@ -3065,6 +3067,7 @@ if not Engines[UsedEngine].FReeze then
 end; {~getwellhofervalues}
 
 
+//transfer values from GUI to welhofer.pas/engines[usedengine]
 {21/09/2015}
 {12/12/2015 DefaultSSD_cm-settings}
 {04/01/2016 split wLinacSymSign}
@@ -3128,6 +3131,7 @@ if Sender is TMenuItem then with Sender as TMenuItem do
 end; {~setwellhofervalues}
 
 
+//transfer engines[usedengine] values to wellhofer.pas/twellhoferdata
 {15/09/2020 added AutoLoadReference for robustness}
 {17/09/2020 Freeze}
 {18/09/2020 MeasSDD2SSDItem,MeasScale2defaultSSDitem}
@@ -3208,7 +3212,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
 end; {~setenginevalues}
 
 
-{29/09/2020 new}
+{29/09/2020 transfer temporary reference between engines}
 function TAnalyseForm.PassRefOrg(ReceivingEngine:Integer): Boolean;
 begin
 Result:= assigned(Engines[ReceivingEngine]) and
@@ -3228,7 +3232,7 @@ if Result then
 end; {~passreforg}
 
 
-{14/09/2020}
+{14/09/2020 will expand the number of engines until the maximum and then resuse the oldest, the index is stored in LoadEngine}
 {17/09/2020 Freeze}
 {29/09/2020 PassRefOrg}
 function TAnalyseForm.AddEngine: Integer;
@@ -3257,7 +3261,7 @@ SetEngineValues(Result);
 end; {~addengine}
 
 
-{16/09/2020}
+{16/09/2020 acitivate engine and update its stae with the current users choices}
 {17/09/2020 make robust for destroy phase; Freeze}
 {28/09/2020 setmessagebar}
 {29/09/2020 PassRefOrg}
@@ -3505,10 +3509,9 @@ end; {~viewitems}
 {=> EdgeDetectionCheckBox, PDDfitCheckBox, LinacErrInvertGTCheckBox, LinacErrInvertABCheckBox, MergeScaleOverlapCheckBox, MergeMatchCheckBox}
 {14/07/2015}
 {30/07/2015 ProcessMirroredMeasRef dependencies}
-{12/08/2015:
-  wRefAtDefaultSSD,wTakeCurrentRefSource,wCheckRefCurveString
-  moved from viewitems
-  wMaxAsCenterPos,wCenterProfiles added}
+{12/08/2015: wRefAtDefaultSSD,wTakeCurrentRefSource,wCheckRefCurveString
+             moved from viewitems
+             wMaxAsCenterPos,wCenterProfiles added}
 {24/12/2015 transfer normalisation to Wellhofer}
 {18/03/2016 added ProcessIgnoreTUnameItem}
 {12/05/2016 MeasPreserverDataItem}
@@ -3707,6 +3710,7 @@ if (Sender=SimpleModeItem) or (Sender=ViewNoDefaultAnnotationItem) then
 end; {~uimodechange}
 
 
+//clear the analysis results and graph
 {11/12/2015 static LeffSeries and ReffSeries replaced with InFieldIndicators}
 {30/01/2018 clearallcx added}
 {15/09/2020 added conditional SetCaption}
@@ -3889,8 +3893,15 @@ else if NextClipboardOwner<>0 then
 end; {~wmchangecbchain}
 {$ENDIF}
 
+
 {$IFDEF Windows}
-//****BistroMath core function****
+(* ****BistroMath core function****
+  A Windows API conformal function to intercept the clipboard.
+  It will accept text formatted data when >MinClipBoardBytes and not FileIgnoreClipboardItem.Checked.
+  In its current design it can continue to read when there are still more data and its not a multi-scan format and FileMultipleInputItem.Checked.
+  This will happen when in OmniPro multiple scans are selected.
+  In that situation the data will be spread over all available engines and/or processed with SpecialMode2/3.
+  This is only meaningful when either more than one engine is available or automated processing is activated. FileMultipleInputItem.Enabled reflects these rules. *)
 {12/02/2016 preloadstream, preloadtransfer}
 {14/02/2016 direct transfer from clipboard to preloadstream}
 {23/01/2018 setmessagebar}
@@ -3904,7 +3915,7 @@ end; {~wmchangecbchain}
 {15/05/2020 no message if not CF_TEXT}
 {03/07/2020 exchanged ordering of test on locking with length test}
 {14/09/2020 addengine}
-{17/11/2020 support automated continous for multiple data sets in single text data set file format}
+{17/11/2020 support automated continuous reading of multiple data sets in single text data set file format}
 {$push}{$warn 5024 off:wellform.pas(860,31) Hint: Parameter "AlParam" not used}
 procedure TAnalyseForm.WMDRAWCLIPBOARD(AwParam:WParam;
                                        AlParam:LParam);
@@ -3989,9 +4000,13 @@ ReadEditor(Sender,True);
 end; {~readeditor}
 
 
-//****BistroMath core function****
-//ascii by definition
-{=> MeasMirrorItem, MeasSDD2SSDItem, MeasScale2defaultSSDitem, MeasResampleItem, MeasUserDoseItem}
+(* ****BistroMath core function****
+The data are read from the editor (raw data) tab. Therefore they are ascii by definition.
+The format can be a known multi-scan format or one or more single scan format data sets.
+See WMDRAWCLIPBOARD for explanation of the latter.
+There are multiple pathways to readeditor: as all processing is done through engines and called in the right order in OnDataRead,
+a lot of times changing users choices will result in rereading raw data.
+=> MeasMirrorItem, MeasSDD2SSDItem, MeasScale2defaultSSDitem, MeasResampleItem, MeasUserDoseItem, DataFileOpen *)
 {12/08/2015 CenterProfiles option removed in Wellhofer.AdvReadData, see UpdateSettings}
 {12/02/2016 preload uses stream}
 {19/03/2020 internal dataeditor}
@@ -4068,9 +4083,12 @@ end; {~readeditor}
     ViewCalculatedItem, ViewHighResValItem, ViewSwapGTItem, ViewSwapABItem, ViewSwapUDItem, ViewSwapLRItem, ViewBottomAxisAlwaysBlack,
     MeasUserDoseItem, MeasUseFitModelItem, MeasMissingPenumbraItem, RefNormaliseItem, CalcPostFilterItem
 
+This truly is the core of the GUI. It handles the consquences of all settings upon a newly read data set.
+It calls a lot of functions from the TWellhoferdata object (engines[usedengine]) to apply these choices.
+Direct access of the data is only used to copy them to the graphical elements.
 Needs properly loaded dataset. A lot of corrections are already done at file read time by TWellhoferData.
 Applies background correction, mirroring, merge, division, pdd fit, histogram analysis, sets extra options for analysis.
-Fills graph and triggers display of analysis results.
+Fills graph and triggers display of analysis results (PublishResults).
 *)
 {02/06/2015 threading rewritten
   Called by ReadEditor (clipboard).
@@ -4922,14 +4940,14 @@ SetCaption;
 with FileOpenDialog do
   if CheckWellhoferReady and Execute then
     begin
-    i                       := 0;
-    j                       := 0;
-    k                       := ifthen(FileMultipleInputItem.Checked and FileMultipleInputItem.Enabled,Files.Count,1);
+    i                       := 0;                                               //number of files read
+    j                       := 0;                                               //number engines used to read data
+    k                       := ifthen(FileMultipleInputItem.Checked and FileMultipleInputItem.Enabled,Files.Count,1); //k= number of files or 1
     MeasNormAdjustEdit.Value:= 100;                                             //MeasNormAdjustEdit is intended for temporary use, reset to default
     while (i<k) and (j<HistoryListSize_num.Value) do                            //read until whichever limit is reached first
       try
         if DataFileOpen(Files[i]) then
-          Inc(j);
+          Inc(j);                                                               //if succesfully read increment j
         Inc(i);
        except
         SetMessageBar('file open failed for '+Files[i]);
@@ -6123,7 +6141,7 @@ with InventoryGrid do
   tp:= ScreenToClient(Mouse.CursorPos);
   MouseToCell(tp.X,tp.Y,j,i);
   end;
-if ScanListReady  and (i=0) then
+if InventoryListReady and (i=0) then
    InventorySort(j)
 else
   begin
@@ -6207,11 +6225,11 @@ end; {~inventorydirboxaccept}
 procedure TAnalyseForm.InventoryDirBoxChange(Sender:TObject);
 var i: integer;
 begin
-if not ScanListReady then
+if not InventoryListReady then
   begin
   {$IFDEF THREAD_FILES}
   i:= 0;
-  while (not ScanListReady) and (i<10) do
+  while (not InventoryListReady) and (i<10) do
     begin
     try
       FileIterator.Cancel;
@@ -6226,7 +6244,7 @@ if not ScanListReady then
   end;
 if InventoryReaderSetup then
   begin
-  ScanListReady             := False;
+  InventoryListReady        := False;
   InventoryGrid  .OnDblClick:= nil;
   RePaint;
   if      Sender=InventoryRadioRef  then InventoryDirBox.Directory:= Engines[UsedEngine].ReferenceDirectory
@@ -6249,7 +6267,7 @@ if InventoryReaderSetup then
     try
       ScanListThread:= THelpEventThread.Create(@InventoryDBChgAction,Sender);
      except
-      ScanListReady:= True;
+      InventoryListReady:= True;
      end
     {$ELSE}
     InventoryDBChgAction(Sender);
@@ -6306,7 +6324,7 @@ InventoryDBChgComplete(Sender);
 end; {~inventorydbchgaction}
 
 
-{31/03/2016 SetMessageBar(DefScanListReady);}
+{31/03/2016 SetMessageBar(DefInventoryListReady);}
 {25/12/2016 InventoryReader}
 {28/09/2017 set InventoryGrid font color to clWindowText}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
@@ -6325,13 +6343,13 @@ InventorySetRefDirButton.Enabled   := InventoryRadioRef .Checked and (not TestPa
 InventoryGrid           .OnDblClick:= @InventoryGridDblClick;
 InventoryGrid           .Font.Color:= clWindowText;
 MultiScanList                      := False;
-ScanListReady                      := True;
+InventoryListReady                 := True;
 OnInventorySelect(Sender,0,1);
 {$IFDEF THREAD_FILES}
 ScanListThread                     := nil;
 InventoryReaderSetup(False);
 {$ENDIF THREAD_FILES}
-SetMessageBar(DefScanListReady);
+SetMessageBar(DefInventoryListReady);
 end; {~inventorydbchgcomplete}
 
 
@@ -6996,7 +7014,7 @@ The fact that TWellhoferData itself handles all currently known binary types can
 {13/10/2020 set wMultiScanNr to 1}
 {19/10/2020 BinStream was held in memory but ascii data were read from the file again; now there is a direct transfer}
 {22/20/2020 SourceAxisSync more early}
-{17/11/2020 support automated continous for multiple data sets in single text data set file format}
+{17/11/2020 support automated continuous reading of multiple data sets in single text data set file format}
 function TAnalyseForm.DataFileOpen(AFile         :String;
                                    ResetMultiScan:Boolean=True): Boolean;
 var
@@ -7180,7 +7198,18 @@ end; {~setmessagebar}
 
 
 {$push}{$warn 5092 off}
-//****BistroMath core function****  evaluate and display all panel rules
+(* PublishResults         ****BistroMath core function****
+PublishResults evaluates and displays all panel rules.
+This function expects at least measured data and the filterd version.
+The local procedure RUNPANELELEMENTS generates values for all panel rules
+(if applicable). For each panel element in one large loop the set conditions in
+a panel element are compared with the choices made in the GUI. If there is a
+match the bare values for that panel element are fetched by EvaluateInfoRecord.
+Then in this loop the bare value are enriched with titles, colors annotations
+and scaling.
+EvaluateInfoRecord is also called by SpecialMode2 to present the very same
+results.
+*)
 {20/07/2015 plotdates[pmeasured] informs on composite results}
 {31/07/2015 getpos reviewed on basis of reviewed wellhofer.fastscan}
 {12/08/2015 MeasMaxAsCenterItem.Checked -> 'm'}
@@ -7193,8 +7222,7 @@ end; {~setmessagebar}
 {29/07/2016 introduction of TopM for DefaultSSD_cm}
 {10/09/2016 try..except}
 {06/12/2016 synthetic profiles, topsource for top position}
-{11/01/2017
-  toepassing EdgeDetectionError_mm verplaatst van GetPos naar Wellhofer.SetLeftRight}
+{11/01/2017 toepassing EdgeDetectionError_mm verplaatst van GetPos naar Wellhofer.SetLeftRight}
 {17/01/2017 DefaultSSD_cm penumbra is sigmoid_slope}
 {05/05/2017 to avoid invalid results added: if twSigmoidFitData[side].twFitValid}
 {08/06/2017 refinement of non-zere shift detection: b:= Abs(Rshift)>0.0001}
@@ -7209,10 +7237,6 @@ end; {~setmessagebar}
 {18/01/2018 changed edge annotation, PCRenergy round to units of DefEnergyUncertainty = 0.01; MeV}
 {19/01/2018 if PCRdefaultsource OR (not Wellhofer.wSource[PCRxrecord.XSource].twValid) then...}
 {19/01/2018 shift annotation for vertical scans special treatment for 'n' and 'N'}
-{23/01/2018 Speedtest on selftest02_real.txt in ms.
-             v3.20   v3.10
-             63.2     7.6 ms  WITH division
-              1.1     0.6 ms  without divison}
 {24/01/2018 BadPenumbraText only for conventional profiles}
 {01/02/2018 ViewMillimetersItem, Ymultiplier, Y_mm}
 {14/02/2018 negative positions in labels were displayed as "--position"}

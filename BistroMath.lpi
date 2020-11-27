@@ -21,7 +21,8 @@
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="4"/>
       <MinorVersionNr Value="6"/>
-      <BuildNr Value="725"/>
+      <RevisionNr Value="1"/>
+      <BuildNr Value="726"/>
       <Language Value="0809"/>
       <Attributes pvaPatched="True"/>
       <StringTable CompanyName="Theo van Soest" ProductName="BistroMath" ProductVersion="4"/>
@@ -59,7 +60,6 @@
             <Debugging>
               <DebugInfoType Value="dsDwarf2Set"/>
               <UseHeaptrc Value="True"/>
-              <TrashVariables Value="True"/>
               <UseExternalDbgSyms Value="True"/>
             </Debugging>
             <Options>

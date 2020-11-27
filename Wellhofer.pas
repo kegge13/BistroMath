@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 19/11/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 27/11/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -8291,6 +8291,7 @@ end; {~create}
 {$push}{$warn 5092 off}
 {29/03/2016}
 {30/03/2016 AddTypes to avoid double entries}
+{27/11/2020 dot should be included in string}
 function TWellhoferData.GetRegisteredFileTypes: String;
 var T: TRadthData;
 
@@ -8304,7 +8305,7 @@ var T: TRadthData;
     begin
     Dec(i);
     if Pos(s[i],FRegisteredFiles)=0 then
-      FRegisteredFiles:= FRegisteredFiles+s[i];
+      FRegisteredFiles:= FRegisteredFiles+'.'+s[i];
     end;
   end;
 
@@ -8363,17 +8364,14 @@ else
 end; {~getregisteredfiletypes}
 {$pop}
 
+
+{$push}{$warn 5092 off}
 {29/03/2016}
 {06/10/2020 fundamentals alternative}
-{$push}{$warn 5092 off}
+{27/11/2020 avoid taking last part by spliiting on pathseparator; just take file extension}
 function TWellhoferData.IsRegisteredFileType(AFileName:String): Boolean;
-var i: Integer;
 begin
-i:= AFileName.LastIndexof(PathSeparator);                                       //zero-based; fail=-1
-if i>=0 then
-  Result:= (Pos(AFilename.Remove(0,i),RegisteredFileTypes)>0)                   //.remove is zero-based
-else
-  Result:= False;
+Result:= (Pos(ExtractFileExt(AFilename),RegisteredFileTypes)>0);                //modified 27/11/2020 acc
 end; {~isregisteredfiletype}
 {$pop}
 
