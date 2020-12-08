@@ -1620,7 +1620,7 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Hint = 'show warnings from analysis process'
-          Top = 67
+          Top = 97
           Width = 177
           HelpContext = 129
           Caption = 'Show warnings         Log level:'
@@ -1642,7 +1642,7 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Hint = 'Use matching as primary strategy'
-          Top = 149
+          Top = 179
           Width = 243
           HelpContext = 129
           Caption = 'Use always matching for profile alignment'
@@ -1653,7 +1653,7 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Hint = 'use statistical methods to find outliers'
-          Top = 209
+          Top = 239
           Width = 174
           HelpContext = 129
           Caption = 'Filter outlier analysis (points):'
@@ -2001,7 +2001,7 @@ object AnalyseForm: TAnalyseForm
         object BadPenumbraLabel: TStaticText
           Left = 18
           Height = 19
-          Top = 239
+          Top = 269
           Width = 125
           HelpContext = 129
           Align = alCustom
@@ -2013,7 +2013,7 @@ object AnalyseForm: TAnalyseForm
         object OriginMinLevelLabel: TStaticText
           Left = 16
           Height = 19
-          Top = 269
+          Top = 299
           Width = 125
           HelpContext = 129
           Align = alCustom
@@ -2025,7 +2025,7 @@ object AnalyseForm: TAnalyseForm
         object PipsPixelSizeLabel: TStaticText
           Left = 18
           Height = 19
-          Top = 299
+          Top = 329
           Width = 125
           HelpContext = 129
           Align = alCustom
@@ -2037,7 +2037,7 @@ object AnalyseForm: TAnalyseForm
         object LogLevelEdit: TSpinEditEx
           Left = 192
           Height = 21
-          Top = 65
+          Top = 95
           Width = 51
           HelpContext = 129
           AutoSize = False
@@ -2050,7 +2050,7 @@ object AnalyseForm: TAnalyseForm
           Left = 192
           Height = 21
           Hint = 'Pixel size at isoc level'
-          Top = 297
+          Top = 327
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2062,7 +2062,7 @@ object AnalyseForm: TAnalyseForm
           Left = 192
           Height = 21
           Hint = 'Minimum percentage of maximum for normalisation purposes.'
-          Top = 267
+          Top = 297
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2077,7 +2077,7 @@ object AnalyseForm: TAnalyseForm
           Left = 192
           Height = 21
           Hint = 'Limit for acceptable penumbra'
-          Top = 237
+          Top = 267
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2315,7 +2315,7 @@ object AnalyseForm: TAnalyseForm
         object HistoryListCheckBox: TCheckBox
           Left = 10
           Height = 19
-          Top = 97
+          Top = 127
           Width = 175
           HelpContext = 129
           Caption = 'Use history list              length:'
@@ -2326,7 +2326,7 @@ object AnalyseForm: TAnalyseForm
         object HistoryListSize_num: TSpinEditEx
           Left = 193
           Height = 21
-          Top = 95
+          Top = 125
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2342,7 +2342,7 @@ object AnalyseForm: TAnalyseForm
           Left = 192
           Height = 21
           Hint = 'Upper points limit for statistical analysis'
-          Top = 207
+          Top = 237
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2358,7 +2358,7 @@ object AnalyseForm: TAnalyseForm
           Left = 27
           Height = 19
           Hint = 'All data will stay untouched'
-          Top = 119
+          Top = 149
           Width = 180
           HelpContext = 129
           Caption = 'Put history data in frozen state'
@@ -2369,7 +2369,7 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Hint = 'Use matching as primary strategy'
-          Top = 179
+          Top = 209
           Width = 182
           HelpContext = 129
           Caption = 'Auto set decimal separator for:'
@@ -2379,7 +2379,7 @@ object AnalyseForm: TAnalyseForm
         object AutoDecPointList: TEdit
           Left = 192
           Height = 21
-          Top = 177
+          Top = 207
           Width = 33
           HelpContext = 97
           AutoSize = False
@@ -2387,6 +2387,17 @@ object AnalyseForm: TAnalyseForm
           OnKeyPress = FileConvNameMaskKeyPress
           TabOrder = 22
           Text = '.,'
+        end
+        object ShowLockItemCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Hint = 'When checked, the File menu item to lock critical actions will be shown'
+          Top = 67
+          Width = 227
+          HelpContext = 129
+          Caption = 'Show "Lock Critical Items" in File menu'
+          ParentBidiMode = False
+          TabOrder = 23
         end
       end
     end
@@ -3056,6 +3067,7 @@ object AnalyseForm: TAnalyseForm
         ShortCut = 16462
       end
       object FileSaveAsReferenceItem: TMenuItem
+        Tag = 4
         Caption = 'Save as &Reference'
         GroupIndex = 1
         Hint = 'save the current curve as a reference profile'
@@ -3063,6 +3075,7 @@ object AnalyseForm: TAnalyseForm
         OnClick = OnMenu
       end
       object FileLockCriticalItems: TMenuItem
+        Tag = 4
         AutoCheck = True
         Caption = 'Lock critical options'
         Checked = True
@@ -3088,6 +3101,7 @@ object AnalyseForm: TAnalyseForm
       Caption = 'Processing'
       HelpContext = 70
       object ProcessAutoscalingItem: TMenuItem
+        Tag = 4
         AutoCheck = True
         Caption = '&Autoscaling'
         Checked = True
@@ -3632,6 +3646,7 @@ object AnalyseForm: TAnalyseForm
           OnClick = ReadEditor
         end
         object MeasPreserveDataItem: TMenuItem
+          Tag = 4
           AutoCheck = True
           Caption = 'Preserve original data on export'
           Checked = True
@@ -3797,6 +3812,7 @@ object AnalyseForm: TAnalyseForm
         OnClick = ConfigSave
       end
       object ConfigSaveAsItem: TMenuItem
+        Tag = 4
         Caption = 'Save config &as...'
         GroupIndex = 1
         OnClick = ConfigSaveAsItemClick

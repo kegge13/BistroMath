@@ -2145,12 +2145,9 @@ with ACrawlReport do
 end; {~addtoreportlist}
 
 
-{Direct access of an shared object through a thread should be avoided.
+(*
+Direct access of an shared object through a thread should be avoided.
 It will lead to memory leaks because of failing memory disposal of the thread-object.
-
-HELP
-Execute
-Provides an abstract or pure virtual method to contain the code which executes when the thread is run.
 
 Delphi syntax:
 procedure Execute; virtual; abstract;
@@ -2163,8 +2160,7 @@ Note:	Do not use the properties and methods of other objects directly in the Exe
 Instead, separate the use of other objects into a separate procedure call, and call that procedure by passing it as a parameter to the Synchronize method.
 
 https://wiki.freepascal.org/User_Changes_2.4.4#TThread.Suspend_and_TThread.Resume_have_been_deprecated
-}
-
+*)
 {12/01/2016 fSavedVertex guarantees a technical valid result}
 {26/06/2017 fAlive must be true (all vectors are valid) to enter the main loop}
 {13/07/2017 limits}
