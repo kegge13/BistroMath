@@ -6135,6 +6135,7 @@ if (Result=twcUnknown) and (not BinaryOnly) and LoadBinStream(AFileName) then
 end; {~getfiletype}
 {$pop}
 
+
 function TMccProfileData.CheckData(AStringList:TStrings): Boolean;
 begin
 Result:= inherited CheckData(AStringList) and (Pos(mccBEGIN+mcc_SCAN_DATA,IdentificationStg)=1);
@@ -6156,6 +6157,7 @@ with MccData do
   SetLength(tmData  ,Npoints);
   end
 end; {~setnumpoints}
+
 
 {01/07/2015
   Hard-coding of ScanMax to 4 for starcheckmaxi removed.}
@@ -7487,6 +7489,7 @@ end; {~stg2char}
 {$pop}
 
 
+//fill wms type character array
 function TWmsData.Char2Stg(var WMS_Char_Array:array of Char;
                            ArrayLength       :Byte           ): string;
 var A: string[Pred(wmsMax_Char)];
@@ -7503,6 +7506,7 @@ Result:= A;
 end; {~char2stg}
 
 
+//wtx conventions
 function TWmsData.GetScanTypeString: string;
 begin
 case wmsFileHeader.wmsRec06.wmhKs of {U/P/D/G/A/L}
@@ -7517,6 +7521,7 @@ case wmsFileHeader.wmsRec06.wmhKs of {U/P/D/G/A/L}
 end; {~getscantypestring}
 
 
+//output is user defined field size in scan direction
 function TWmsData.GetFieldLength: twcFloatType;
 begin
 with wmsFileHeader.wmsRec06 do case ScanType of
@@ -7534,6 +7539,7 @@ else                                         Result:= Electrons;
 end; {~getbeamtype}
 
 
+//only defined for true horizontal scans
 function TWmsData.GetFieldDepth: twcFloatType;
 begin
 with wmsFileHeader.wmsRec06 do case ScanType of
@@ -7543,6 +7549,7 @@ with wmsFileHeader.wmsRec06 do case ScanType of
 end; {~getfielddepth}
 
 
+//conversion of wtx character to twcScanTypes
 function TWmsData.GetScanType: twcScanTypes;
 begin
 case wmsFileHeader.wmsRec06.wmhKs of {U/P/D/G/A/L}
@@ -7556,6 +7563,7 @@ case wmsFileHeader.wmsRec06.wmhKs of {U/P/D/G/A/L}
 end; {~getscantype}
 
 
+//check on binary filetype, needs additional fileopen action
 function TWmsData.IsBinary(AFileName:String): Boolean;
 begin
 Result:= GetFileType(AFileName)=twcWDA;
@@ -12057,6 +12065,17 @@ Dec(FActiveCnt);
 end; {~dualreaddata}
 
 
+(* The general path followed is designed for both files and streams.
+TWellhoferData.AdvReadData
+  TWellhoferData.ReadData
+     TWellhoferData.DualReadData
+       TWellhoferData.ParseData
+         or
+       contributing_object.DualReadData
+        contributing_object.ReadData
+         contributing_object.ParseData
+          contributing_object.CheckDataData
+*)
 //because TStrings is input, the data are in some ascii-format
 {17/09/2020 introduction of FFrozen}
 {18/09/2020 UnFreeze}

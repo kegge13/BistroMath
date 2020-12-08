@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 26/11/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 08/12/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -300,6 +300,8 @@ type
     added AutoSetDecPointCheckBox, AutoDecPointList
   17/11/2020
     added FileMultipleInputItem,UsedDataTopLine
+  08/12/2020
+    added ShowLockItemCheckBox
   }
 
   {=========== TAnalyseForm =====================}
@@ -316,8 +318,8 @@ type
     FileSaveFilteredItem        : TMenuItem;  {Ctrl+Alt+S}
     FileSaveItem                : TMenuItem;  {Ctrl+A}
     FileIgnoreClipboardItem     : TMenuItem;  {Ctrl+I}       //OnClick = FileIgnoreClipboardClick
-    FileSaveAsReferenceItem     : TMenuItem;  {Ctrl+R}       //OnClick = FileSaveAsReferenceAction
-    FileLockCriticalItems       : TMenuItem;  {Ctrl+Alt+R}   //OnClick = OptionModeClick
+    FileSaveAsReferenceItem     : TMenuItem;  {Ctrl+R}       //OnClick = FileSaveAsReferenceAction;  Tag=4
+    FileLockCriticalItems       : TMenuItem;  {Ctrl+Alt+R}   //OnClick = OptionModeClick;            Tag=4
     FileHistoryItem             : TMenuItem;  {Ctrl+H}       //OnClick = HistoryListSizeClick
     FileExitItem                : TMenuItem;  {Alt+F4}       //OnClick = FileExitAction
     FileMultipleInputItem       : TMenuItem;
@@ -326,7 +328,7 @@ type
     ProcessingDivisor1          : TMenuItem;
     ProcessingDivisor2          : TMenuItem;
     ProcessingDivisor3          : TMenuItem;
-    ProcessAutoscalingItem      : TMenuItem;  {none}         //OnClick = Reload
+    ProcessAutoscalingItem      : TMenuItem;  {none}         //OnClick = Reload;                     Tag=4
     ProcessSigmoid2BufferItem   : TMenuItem;  {Ctrl+B}
     ProcessReprocessItem        : TMenuItem;  {Ctrl+R}       //OnClick = OnDataRead
     ProcessResetFitItem         : TMenuItem;  {Ctrl+Z}       //OnClick = ProcessResetFitClick
@@ -415,7 +417,7 @@ type
     MeasInvertABitem            : TMenuItem;  {Shift+2}      //OnClick = ReadEditor
     MeasInvertUDitem            : TMenuItem;  {Shift+3}      //OnClick = ReadEditor
     MeasRemapCoordinates        : TMenuItem;                 //OnClick = ReadEditor
-    MeasPreserveDataItem        : TMenuItem;                 //OnClick = SetWellhoferValues
+    MeasPreserveDataItem        : TMenuItem;                 //OnClick = SetWellhoferValues;   Tag=4
     //reference menu
     ReferenceMenu               : TMenuItem;
     RefAutoLoadItem             : TMenuItem;  {Alt+L}        //OnClick = ViewItems
@@ -444,7 +446,7 @@ type
     ConfigLoadItem              : TMenuItem;                 //OnClick = SelectConfig
     ConfigReadItem              : TMenuItem;                 //OnClick = ConfigLoad
     ConfigSaveItem              : TMenuItem;                 //OnClick = ConfigSave
-    ConfigSaveAsItem            : TMenuItem;                 //OnClick = ConfigSaveAsItemClick
+    ConfigSaveAsItem            : TMenuItem;                 //OnClick = ConfigSaveAsItemClick;   Tag=4
     ConfigAutoSaveItem          : TMenuItem;                 //autocheck only
     //presets menu
     PresetsMenu                 : TMenuItem;
@@ -626,6 +628,7 @@ type
     AdvancedSettingsTab         : TTabSheet;
     AdvancedSettingsPanel       : TPanel;                                       //only used to set background color
     AdvancedModeStartCheckBox   : TCheckBox;
+    ShowLockItemCheckBox        : TCheckBox;
     AddDateTimeCheckBox         : TCheckBox;
     ShowWarningCheckBox         : TCheckBox;
     LogLevelEdit                : TSpinEditEx;
@@ -2392,6 +2395,7 @@ end; {~configload}
 {28/08/2020 removed FFFcenterRadius_cm}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {15/09/2020 HistoryList}
+{08/12/2020 ShowLockItemCheckBox}
 {$push}{$warn 5058 off}
 procedure TAnalyseForm.ConfigLoad(AStream:TStream);
 var CF : TConfigStrings;
@@ -2447,6 +2451,7 @@ with CF do
   for i:= 1 to NumSpecialModes do ShortRead(SectionName,SpecialMode[i].MenuItem);
   ReadInteger(SectionName,'MinClipBoardBytes',MinClipBoardBytes);
   ShortRead(SectionName,AdvancedModeStartCheckBox);
+  ShortRead(SectionName,ShowLockItemCheckBox);
   ShortRead(SectionName,HistoryListCheckBox);
   ShortRead(SectionName,HistoryListFreezeCheckBox);
   ShortRead(SectionName,HistoryListSize_num);
@@ -2745,6 +2750,7 @@ end; {~configsave}
 {11/09/2020 InsertSpecialModesInfo}
 {15/09/2020 HistoryList}
 {16/11/2020 FileMultipleInputItem}
+{08/12/2020 ShowLockItemCheckBox}
 procedure TAnalyseForm.ConfigSave(AStream    :TStream;
                                   AFileName  :String='';
                                   PresetsOnly:Boolean=False);
@@ -2861,6 +2867,7 @@ with CF do
       for i:= 1 to NumSpecialModes do
         ShortWrite(SectionName,SpecialMode[i].MenuItem);
       ShortWrite(SectionName,AdvancedModeStartCheckBox);
+      ShortWrite(SectionName,ShowLockItemCheckBox);
       ShortWrite(SectionName,HistoryListCheckBox);
       ShortWrite(SectionName,HistoryListFreezeCheckBox);
       ShortWrite(SectionName,HistoryListSize_num);
@@ -3588,6 +3595,7 @@ end; {~updatesettings}
 {15/07/2020 ViewNoDefaultAnnotationItem}
 {24/07/2020 MeasCenterSmallSubMenu,MeasNormSmallSubMenu,MeasCenterWedgeSubMenu,MeasNormWedgeSubMenu}
 {28/07/2020 FieldTypesTab}
+{08/12/2020 ShowLockItemCheckBox}
 procedure TAnalyseForm.UImodeChange(Sender:TObject);
 var a,b,c,s: Boolean;
     i      : Integer;
@@ -3633,7 +3641,7 @@ EnableMenu(ProcessResetFitItem     ,a and PDDfitCheckBox.Checked);
 EnableMenu(FileSaveAsReferenceItem ,c);
 EnableMenu(MeasPreserveDataItem    ,c);
 EnableMenu(ProcessAutoscalingItem  ,a and c);
-FileLockCriticalItems     .Visible   := FileSaveAsReferenceItem.Enabled;
+FileLockCriticalItems     .Visible   := FileSaveAsReferenceItem.Enabled or ShowLockItemCheckBox.Checked;
 InventoryTab              .TabVisible:= s;
 FileConversionTab         .TabVisible:= s;
 ODconvTab                 .TabVisible:= s;
@@ -8568,30 +8576,21 @@ end; {~enablemenusystem}
 
 
 {04/04/2020 introduced from TTObaseForm}
+{08/12/2020 changed implementation of Tag value}
 procedure TAnalyseForm.EnableMenu(AMenu   :TMenuItem;
                                   AEnabled:Boolean);
 var i: Integer;
 begin
 with AMenu do
   begin
-  if Assigned(Action) then with Action do
-    begin
-    if Enabled or (Tag=0) then
-      Tag:= ShortCut
-    else if AEnabled then
-      ShortCut:= Tag;
-    if not AEnabled then
-      ShortCut:= 0;
-    Enabled:= AEnabled;
-    end;
-  if Tag=0    then
-    Tag:= ShortCut;
-  if AEnabled then ShortCut:= Tag
-  else             ShortCut:= 0;
+  if Assigned(Action) then
+     with Action do
+       Enabled:= AEnabled;
   Enabled:= AEnabled;
   if Count>0 then
     for i:= 0 to Count-1 do
-      EnableMenu(Items[i],AEnabled);
+      if (Items[i].Tag and 4)=0 then                                            //ignore subitems with special Tag when state of whole menu changes
+        EnableMenu(Items[i],AEnabled);
   end;
 end; {~enablemenu}
 
