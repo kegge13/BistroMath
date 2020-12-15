@@ -420,6 +420,17 @@ version 4.06
 -reported by Alan, introduced in 4.05.0(?) according to Alan, more probably already on 19/08/2020
 -checkdata checked only first line, not first 255 bytes as specified
 
+version 4.06.2
+066	14/12/2020	structured tempref only used for first profile			solved
+-works when Index multi ref is on
+-function CheckRefOrg in LoadReference completely overhauled and clarified (too many patches on patches...) and documented
+-when ignore TU name is set/unset this now will trigger readeditor
+
+
+067	14/12/2020	tempref with “bunch of scans” failed				solved
+-removed strange ...else TakeReferenceOrg the TakeReferenceOrg... from PrepareProfile: should be done only in LoadReference
+
+
 ======tested=======
 29/05/2020	unlocking critical options
 -enables ProcessAutoscalingItem

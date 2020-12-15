@@ -505,6 +505,7 @@ else
 end; {~addelement}
 
 
+{02/01/2018}
 function TPanelConfig.GetCount: Word;
 begin
 Result:= Length(FElements);
@@ -550,6 +551,7 @@ if (k>=0) and (Count>0) then
   end;
 end; {getmaxcolumcount}
 
+
 {09/10/2018}
 function TPanelConfig.IDexists(aID:Integer): Boolean;
 var i: Integer;
@@ -564,6 +566,7 @@ while (i>0) and (not Result) do
 end; {~idexists}
 
 
+{02/01/2018}
 procedure TPanelConfig.ConfigLoad(Sender   :TObject;
                                   AFileName:String);
 var CF: TConfigStrings;
@@ -574,6 +577,7 @@ CF.Free;
 end; {~configload}
 
 
+{02/01/2018}
 procedure TPanelConfig.ConfigSave(Sender   :TObject;
                                   AFileName:String);
 var CF: TConfigStrings;
@@ -584,6 +588,7 @@ CF.Free;
 end; {~configsave}
 
 
+{02/01/2018}
 {17/01/2018 delimiter support}
 {06/10/2020 fundamentals alternative}
 procedure TPanelConfig.ReplaceDelimiter(NewDelimiter:Char);
@@ -599,9 +604,10 @@ if NewDelimiter<>FDelimiter then
     end;
   FDelimiter:= NewDelimiter;
   end;
-end;
+end; {~replacedelimiter}
 
 
+{02/01/2018}
 {17/01/2018 delimiter support}
 procedure TPanelConfig.ConfigSave(CF:TConfigStrings);
 var i: Integer;
@@ -618,6 +624,7 @@ if Length(FElements)>0 then
 end; {~configsave}
 
 
+{02/01/2018}
 {17/01/2018 delimiter support}
 procedure TPanelConfig.ConfigLoad(CF:TConfigStrings);
 var tList: TStringList;
@@ -649,12 +656,14 @@ tList.Free;
 end; {~configload}
 
 
+{02/01/2018}
 procedure TPanelConfig.Clear;
 begin
 Finalize(FElements);
 end; {~clear}
 
 
+{02/01/2018}
 destructor TPanelConfig.Free;
 begin
 Clear;
