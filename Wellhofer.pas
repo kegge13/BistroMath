@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 27/11/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 15/12/2020}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2780,7 +2780,7 @@ type
       wMultiScanMax             : Integer;
       wMultiScanLooping         : Boolean;
       wNormalisation            : array[twcFieldClass] of twcNormalisation;
-      w2D_ArrayRefList          : TStringList;
+      w2D_ArrayRefList          : TStringList;                                  //list of acceptable 2D structured data devices
       wPipsPixelCm              : twcFloatType;
       wOutlierFilter            : Boolean;
       wRefPoint                 : twcCoordinate;
@@ -9493,6 +9493,7 @@ end; {~setautoloadref}
 {01/10/2020 pass FrefOrgSrcType}
 {02/10/2020 accidently always dsMeasured was copied}
 {05/10/2020 copy also to dsReference}
+{14/12/2020 include if MultiRefIndex then...  for MultiscanList}
 function TWellhoferData.SetReferenceOrg(ASource        :twcDataSource =dsMeasured;
                                         KeepAsReference:Boolean       =False;
                                         AWellhofer     :TWellhoferData=nil): Boolean;
@@ -9542,10 +9543,13 @@ if Result then
     FRefOrgSrcType:= AWellhofer.FileFormat;
     end; {text}
   {$IFDEF MULTIREF_INDEX}
-  if AWellhofer=Self then
-    IndexMultiScan(wSource[dsMeasured].twFileName)
-  else if assigned(AWellhofer.FMultiScanList) then
-    FMultiScanList:= Copy(AWellhofer.FMultiScanList);
+  if MultiRefIndex then
+    begin
+    if AWellhofer=Self then
+      IndexMultiScan(wSource[dsMeasured].twFileName)
+    else if assigned(AWellhofer.FMultiScanList) then
+      FMultiScanList:= Copy(AWellhofer.FMultiScanList);
+    end;
   {$ENDIF}
   end;
 if FRefOrgSrcType=twcMccProfile then                                            //take also this extra information from AWellhofer
@@ -10798,6 +10802,9 @@ reference is loaded
 {12/10/2020 chop off zero-value points at the end}
 {13/10/2020 detection of electrons}
 {23/10/2020 chop off only for vertical scans}
+{15/12/2020 removed strange disfunctional statement dating from 2017
+            ...else if TakeReferenceOrg then TakeReferenceOrg... out of ...if FAutoLoadRef then LoadReference...
+            TakeReferenceOrg should be called by LoadReference only}
 function TWellhoferData.PrepareProfile: Boolean;
 var i,j        : Integer;
     mAxis      : twcMeasAxis;
@@ -11086,8 +11093,6 @@ with wCurveInfo do
   ClearCurve(dsBuffer    ,True);
   if FAutoLoadRef then
     LoadReference                      //===================LoadReference==============
-  else if TakeReferenceOrg then
-    TakeReferenceOrg
   else
     ClearCurve(dsReference,True);
   if Warning<>'' then
@@ -13465,7 +13470,7 @@ This procedure tries all in-memory options first and then searches on disk. Disk
   FRefOrgSrc}
 {25/12/2015 for analysis for useorg}
 {19/03/2016 added wCheckRefIgnoreLinac, use of referencevalid}
-{10/05/2016 logmessage added to CompareCurveIDStrings, ErrorState set}
+{10/05/2016 logmessage added to CompareIDs, ErrorState set}
 {30/07/2016 wMultiScanReferences}
 {02/08/2016 makecurvename}
 {03/08/2016 r.makecurvename(false,..) -> r.makecurvename(r.MultiScanRefOk,..)}
@@ -13482,6 +13487,7 @@ This procedure tries all in-memory options first and then searches on disk. Disk
 {29/09/2020 call to PassSettings changed}
 {01/10/2020 use CompareCurveIDStrings in CheckRefOrg}
 {05/10/2020 changed to ((not wCheckRefCurveString) and wTakeCurrentRefSource) or CompareCurveIDStrings)}
+{14/12/2020 review of checkreforg}
 function TWellhoferData.LoadReference(AFileName            :String ='';
                                       SetCurrentAsRefSource:Boolean=False): Boolean;
 var r                                : TWellhoferData;
@@ -13513,7 +13519,7 @@ var r                                : TWellhoferData;
                      (wSource[dsRefOrg].twScanNr=wSource[dsMeasured].twScanNr)) );
   end;
 
-  function CompareCurveIDStrings(MeasStg,RefStg,MeasLinac,RefLinac:String): Boolean;
+  function CompareIDs(MeasStg,RefStg,MeasLinac,RefLinac:String): Boolean;
   begin
   if wCheckRefIgnoreLinac then
     begin
@@ -13523,17 +13529,33 @@ var r                                : TWellhoferData;
       RefStg := Copy(RefStg ,Succ(Length(RefLinac )));
     end;
   Result:= (RefStg=MeasStg);
-  LogMessage('ID check',RefStg,'ok',Result,2);
+  if LogLevel>1 then
+    LogMessage('ID check',RefStg,'ok',Result,2);
   end;
 
+  (*
+  The wanted output should be:
+  general tests:
+  -reforg should be valid
+  -reforg should be unlocked
+  result:
+  -for a single scan (not ArrayScanRefOk): comparison of MeasCurveIDstg,RefOrgCurveIDstg (wCheckRefIgnoreLinac: exclusion of linac name)
+  -for a structured multiref(ArrayScanRefOk): comparison of twFileIDstring               (wCheckRefIgnoreLinac: exclusion of linac name)
+  -true for override of comparison
+  *)
   function CheckRefOrg: Boolean;
+  var NoTest: Boolean;
   begin
-  Result:= (not wCheckRefCurveString) and wTakeCurrentRefSource;
-  Result:= wSource[dsRefOrg].twValid and (not wSource[dsRefOrg].twLocked)                         and
-           ( Result or ReferenceValid(dsRefOrg) ) and
-           ( ((not ArrayScanRefOk) and (Result or CompareCurveIDStrings(MeasCurveIDstg,RefOrgCurveIDstg,wSource[dsMeasured].twDevice,wSource[dsRefOrg].twDevice)))
-              or
-             (ArrayScanRefOk       and (wSource[dsRefOrg].twFileIDstring=wSource[dsMeasured].twFileIDstring)) );
+  NoTest:= (not wCheckRefCurveString) and wTakeCurrentRefSource;
+  Result:= wSource[dsRefOrg].twValid and (not wSource[dsRefOrg].twLocked)
+            and
+          (( NoTest or ReferenceValid(dsRefOrg)                                             ) or
+           ((not ArrayScanRefOk) and
+             CompareIDs(MeasCurveIDstg              ,RefOrgCurveIDstg,
+                         wSource[dsMeasured].twDevice,wSource[dsRefOrg].twDevice)           ) or
+           ( ArrayScanRefOk      and
+             CompareIDs(wSource[dsMeasured].twFileIDstring,wSource[dsRefOrg].twFileIDstring,
+                         wSource[dsMeasured].twDevice      ,wSource[dsRefOrg].twDevice     )) );
   if LogLevel>1 then
     LogMessage('Use Current Ref'+ifthen(ArrayScanRefOk,Format(' scan %d',[wSource[dsMeasured].twScanNr]),''),
                GetCurveIDString(dsRefOrg),'ok',Result);
@@ -13674,7 +13696,7 @@ if Result then
         FromDisk:= False;
        end;
       end;
-    SameID:= r.Analyse and CompareCurveIDStrings(MeasCurveIDstg,r.GetCurveIDString,Linac,r.Linac); //=> prepareprofile => fastscan(measured) => twCenterPosValid
+    SameID:= r.Analyse and CompareIDs(MeasCurveIDstg,r.GetCurveIDString,Linac,r.Linac); //=> prepareprofile => fastscan(measured) => twCenterPosValid
     Result:= FromDisk and ((not wCheckRefCurveString) or SameID);                  //true when file read&analysed and (has the correct id (or can be ignored))
     if Result then
       begin

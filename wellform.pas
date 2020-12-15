@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 08/12/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 14/12/2020}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -2306,8 +2306,7 @@ if  TestFile or (AName='') or (AName<>ConfigName) then
 end; {~setconfigname}
 {$pop}
 
-
-//update renamed visual elements in old inifiles
+//update renamed visual elements in old inifiles based on a repairfile
 {02/06/2020}
 {04/06/2020 added message, ReadSectionValues gets "key=value" lines}
 {15/06/2020 show the number of changed elements}
@@ -2375,7 +2374,8 @@ if b then
   SetConfigName(AFileName);
   S.LoadFromFile(AFileName);
   end;
-if b or ForceInit then ConfigLoad(S);
+if b or ForceInit then
+  ConfigLoad(S);
 try
   S.Free
  except
@@ -2543,9 +2543,9 @@ end; {~configload}
 {$pop}
 
 
+//variant on configload
 procedure TAnalyseForm.PresetLoad(AFileName:String);
 var CF : TConfigStrings;
-
 begin
 AFileName:= NameToPreset(AFileName,True);
 if FileExists(AFileName) then
@@ -2563,7 +2563,7 @@ if FileExists(AFileName) then
   end;
 end; {~presetload}
 
-
+//presetload is also called by configload(cf)
 {21/09/2015 menumessagebar}
 {15/12/2105 penwidth}
 {18/03/2016 added ProcessIgnoreTUnameItem}
@@ -3320,6 +3320,7 @@ if Result>0 then
 end; {~selectengine}
 
 
+//responds both manual and programmed resizing actions
 {13/05/2020 statusbar.panels[1]}
 {29/08/2020 LabelPlacingActive}
 procedure TAnalyseForm.FormResize(Sender: TObject);
@@ -3413,8 +3414,8 @@ SetWellhoferValues(Sender);
 end; {~advancedsettingstabexit}
 
 
-{31/03/2020 Introduced from delphi unit tobaseform}
 {$push}{$warn 5036 off}
+{31/03/2020 Introduced from delphi unit tobaseform}
 procedure TAnalyseForm.ShowMenuItemStatus(Sender:TObject);
 var Stg: String;
     c  : Boolean;
@@ -3428,11 +3429,12 @@ end; {~showmenuitemstatus}
 {$pop}
 
 
-//zie onclick-event van diverse items in mainmenu
-{=> LockCriticalOptionsItem,
-    ViewMeasuredItem, ViewPointsItem, ViewReferenceItem, ViewBufferItem, ViewIndicatorsItem, ViewFFFIndicatorsItem, ViewValuesItem, ViewEditorItem, ViewLeftAxisLowZeroItem,
-    MeasMirrorToBufferItem,
-    RefAutoLoadItem, RefAlignItem}
+(*see onclick-event of multiple items in mainmenu
+=> LockCriticalOptionsItem,
+   ViewMeasuredItem, ViewPointsItem, ViewReferenceItem, ViewBufferItem, ViewIndicatorsItem, ViewFFFIndicatorsItem, ViewValuesItem, ViewEditorItem, ViewLeftAxisLowZeroItem,
+   MeasMirrorToBufferItem,
+   RefAutoLoadItem, RefAlignItem
+*)
 {13/07/2015 autoloadref now depends also on state of tempref to prevent autoloadref before temprefload}
 {01/08/2015 in-memory implementation of tempref}
 {04/08/2015 ViewLeftAxisLowZeroItem}
@@ -3513,7 +3515,7 @@ ShowMenuItemStatus(Sender);
 end; {~viewitems}
 
 
-{=> EdgeDetectionCheckBox, PDDfitCheckBox, LinacErrInvertGTCheckBox, LinacErrInvertABCheckBox, MergeScaleOverlapCheckBox, MergeMatchCheckBox}
+//=> EdgeDetectionCheckBox, PDDfitCheckBox, LinacErrInvertGTCheckBox, LinacErrInvertABCheckBox, MergeScaleOverlapCheckBox, MergeMatchCheckBox
 {14/07/2015}
 {30/07/2015 ProcessMirroredMeasRef dependencies}
 {12/08/2015: wRefAtDefaultSSD,wTakeCurrentRefSource,wCheckRefCurveString
@@ -3580,7 +3582,7 @@ else
 end; {~updatesettings}
 
 
-{=> AdvancedModeItem, SimpleModeItem}
+//=> AdvancedModeItem, SimpleModeItem
 {03/12/2015 edgedetectiongroupboox added}
 {17/12/2015 FFFDetectionGroupBox added
             setting font color}
@@ -3786,8 +3788,8 @@ if CheckWellhoferReady and (k>0) then
 end; {~readdroppedfile}
 
 
-{17/03/2020: from editor.pas}
-{09/06/2016 avoiding memory leak by reading lines into intermediate object localtext}
+{09/06/2016 avoiding memory leak in editor/tmemo by reading lines into intermediate object localtext}
+{17/03/2020 from editor.pas}
 function TAnalyseForm.DataEditorOpenFile(AFileName:String): Boolean;
 var {$IFDEF Windows}
     EventMask: DWORD;
@@ -4091,7 +4093,7 @@ end; {~readeditor}
     ViewCalculatedItem, ViewHighResValItem, ViewSwapGTItem, ViewSwapABItem, ViewSwapUDItem, ViewSwapLRItem, ViewBottomAxisAlwaysBlack,
     MeasUserDoseItem, MeasUseFitModelItem, MeasMissingPenumbraItem, RefNormaliseItem, CalcPostFilterItem
 
-This truly is the core of the GUI. It handles the consquences of all settings upon a newly read data set.
+This truly is the core of the GUI. It handles the consequences of all settings upon a newly read data set.
 It calls a lot of functions from the TWellhoferdata object (engines[usedengine]) to apply these choices.
 Direct access of the data is only used to copy them to the graphical elements.
 Needs properly loaded dataset. A lot of corrections are already done at file read time by TWellhoferData.
@@ -4829,6 +4831,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
 end; {~syncsetnormalisation}
 
 
+//synchronisation of ability to detect the selected field types
 {28/07/2020 Ft_DetectionCheckBox}
 {03/09/2020 Ft_DynPenumbraCheckBox}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
@@ -4840,6 +4843,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
 end; {~syncsetdetection}
 
 
+//synchronisation of CoF definition, originally part of Measurement menu
 {22/07/2016}
 {20/07/2020 field types}
 {21/07/2020 fcWedge}
@@ -4858,6 +4862,7 @@ if Sender is TMenuItem then with Sender as TMenuItem do
 end; {~syncsetcenteroffield}
 
 
+//synchronisation of FFF peak definition
 {05/07/2016}
 {29/07/2016 changed logics to combination of MeasFFFpeakIsCenterItem and FFFcSubItems}
 procedure TAnalyseForm.SyncSetFFFpeak(Sender:TObject);
@@ -5285,7 +5290,7 @@ with Engines[UsedEngine] do
   wCheckRefCurveString          := ProcessCheckTempTypeItem.Checked;
   wCheckRefIgnoreLinac          := ProcessIgnoreTUnameItem .Checked and wCheckRefCurveString;
   end;
-ProcessSetTempRefItem   .Checked:= Engines[UsedEngine].SetReferenceOrg(dsMeasured,True);  //sets  wTakeCurrentRefSource True
+ProcessSetTempRefItem   .Checked:= Engines[UsedEngine].SetReferenceOrg(dsMeasured,True);  //sets wTakeCurrentRefSource True
 ProcessUnsetTempRefItem .Checked:= not ProcessSetTempRefItem.Checked;
 if ProcessSetTempRefItem.Checked then
   begin
@@ -5319,9 +5324,11 @@ end; {~processunsettemprefclick}
 
 {=> ProcessIgnoreTUnameItem, ProcessCheckTempTypeItem}
 {13/08/2015}
+{14/12/2020 call readeditor for reprocessing of reference-loading}
 procedure TAnalyseForm.ProcessUpdateDataRead(Sender: TObject);
 begin
 UpdateSettings(Sender);
+ReadEditor(Sender,True);
 ShowMenuItemStatus(Sender);
 end; {processupdatedataread}
 
@@ -5614,6 +5621,7 @@ inherited;
 end; {~pagecontrolchange}
 
 
+//conversion tab implementation
 {=> FileConvSourceListBox, FileConvDestinationListBox, FileConvSamePath, FileConvSourceRecursive, FileConvLowerCase, FileConvMakeFileName, FileConvIon2DoseCheckBox}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 procedure TAnalyseForm.FileConvStartCheck(Sender:TObject);
@@ -5645,6 +5653,7 @@ UImodeChange(Sender);
 end; {~fileconvstartcheck}
 
 
+//conversion tab implementation
 {$push}{$warn 5091 off: c not initialised}
 function TAnalyseForm.FileConvNameCheck: Boolean;
 var i,j,n: ShortInt;
@@ -5701,6 +5710,7 @@ end; {~fileconvnamecheck}
 {$pop}
 
 
+//conversion tab implementation
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 function TAnalyseForm.FileConvMakeName(DefaultName:string): String;
 var i,j: Integer;
@@ -5760,6 +5770,7 @@ else
 end; {~fileconvmakename}
 
 
+//conversion tab implementation
 {=> FileConvNameMask}
 procedure TAnalyseForm.FileConvNameMaskEnter(Sender:TObject);
 
@@ -5799,6 +5810,7 @@ FileConvStartCheck(Sender);
 end; {~fileconvnamemaskenter}
 
 
+//conversion tab implementation
 {=> FileConvSourcePath, FileConvDestinationPath}
 procedure TAnalyseForm.FileConvPathBtnClick(Sender:TObject);
 var s: string;
@@ -5815,6 +5827,7 @@ with Sender as TEdit do
 end; {~fileconvpathbtnclick}
 
 
+//conversion tab implementation
 {=> FileConvStartButton}
 procedure TAnalyseForm.FileConvStartClick(Sender:TObject);
 var i: byte;
@@ -5849,6 +5862,7 @@ with FileIterator do
 end; {~fileconvstartclick}
 
 
+//conversion tab implementation
 {23/11/2015 multiscan suport}
 {16/06/2016 wMultiScanMax:= 0}
 {09/09/2020 add scan number to file name when wMultisScanMax>1 and filename is not generated}
@@ -5918,6 +5932,7 @@ end; {~fileconvdofile}
 {$pop}
 
 
+//conversion tab implementation
 {16/05/2020 UImodeChange added}
 procedure TAnalyseForm.FileConvIteratorTerminate(Sender:TObject);
 begin
@@ -5932,6 +5947,7 @@ if FileIterator.FoundFiles=0 then
 end; {~fileconviteratorterminate}
 
 
+//conversion tab implementation
 {=> FileConvNameMask}
 procedure TAnalyseForm.FileConvNameMaskKeyPress(Sender :TObject;
                                                 var Key:Char);
@@ -5964,6 +5980,7 @@ Inherited;
 end; {~fileconvnamemaskkeypress}
 
 
+//files tab implementation
 {see PageControlChange for coupling to separate thread}
 {29/03/2016 ignore unregistered files}
 {10/09/2016 try..except}
@@ -5997,6 +6014,7 @@ end; {~inventorydofile}
 {$pop}
 
 
+//files tab implementation
 {called through fileiterator->InventoryDoFile or directly by InventoryDBChgAction}
 {25/12/2016 InventoryReader}
 {17/05/2020 display no contents for unexpanded multiscan file}
@@ -6052,7 +6070,7 @@ if assigned(InventoryReader) then with InventoryReader do
 end; {~inventoryaddfile}
 
 
-//set alignment of of selected columns in inventorygrid
+//files tab implementation: set alignment of selected columns in inventorygrid
 {30/05/2020}
 {$push}{$warn 5024 off}
 procedure TAnalyseForm.InventoryPrepareCanvas(Sender   : TObject;
@@ -6071,6 +6089,7 @@ end; {~inventorypreparecanvas}
 {$pop}
 
 
+//files tab implementation
 //regulate availability of options in inventorypopupmenu
 {30/05/2020}
 {07/09/2020 safety catch}
@@ -6088,6 +6107,7 @@ end; {~inventoryselect}
 {$pop}
 
 
+//files tab implementation
 {$IFDEF THREAD_FILES}
 {$push}{$warn 5024 off:wellform.pas(860,31) Hint: Parameter "Msg" not used}
 {Multithreaded binding of output of file search to InventoryAddFile
@@ -6100,6 +6120,7 @@ end; {~wmaddinventory}
 {$ENDIF THREAD_FILES}
 
 
+//files tab implementation
 {07/09/2020 only for rowcount>1}
 procedure TAnalyseForm.InventorySort(AColumn:Integer=0);
 const Sep= '@';
@@ -6132,6 +6153,7 @@ if n>1 then
 end; {inventorysort}
 
 
+//files tab implementation
 {onclick in dirbox grid}
 {=> InventoryGrid, InventoryPopupMenu, InventoryPopOpenItem, InventoryPopDelItem}
 {25/12/2016 InventoryReader}
@@ -6199,6 +6221,7 @@ else
 end; {~inventorygriddblclick}
 
 
+//files tab implementation
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 procedure TAnalyseForm.InventorySetRefDirClick(Sender:TObject);
 begin
@@ -6211,6 +6234,7 @@ SetMessageBar('Reference='+Engines[UsedEngine].ReferenceDirectory);
 end; {~inventorysetrefdirclick}
 
 (*
+files tab implementation
 Is invoked when on map icon clicked and some path is chosen/entered.
 It seems that is not passed to InventoryDirBox.Directory automatically.}
 *)
@@ -6224,6 +6248,7 @@ InventoryDirBoxChange(Sender);
 end; {~inventorydirboxaccept}
 
 
+//files tab implementation
 {see PageControlChange for initialisation of iterator}
 {=> InventoryDirBox, InventoryRadioRef, InventoryRadioData, InventoryRadioSelf}
 {25/12/2016 InventoryReader}
@@ -6287,6 +6312,7 @@ if InventoryReaderSetup then
 end; {~inventorydirboxchange}
 
 
+//files tab implementation
 {See InventoryDirBoxChange; dirbox update through either main thread or separate thread
  Separate branch for multiscanfiles.}
 {25/12/2016 InventoryReader}
@@ -6332,6 +6358,7 @@ InventoryDBChgComplete(Sender);
 end; {~inventorydbchgaction}
 
 
+//files tab implementation
 {31/03/2016 SetMessageBar(DefInventoryListReady);}
 {25/12/2016 InventoryReader}
 {28/09/2017 set InventoryGrid font color to clWindowText}
@@ -6361,6 +6388,7 @@ SetMessageBar(DefInventoryListReady);
 end; {~inventorydbchgcomplete}
 
 
+//files tab implementation
 {25/12/2016}
 {28/09/2017 set InventoryGrid font color to clGray, set function result}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
@@ -6392,7 +6420,7 @@ else if (not irCreate) and (assigned(InventoryReader)) then
 Result:= not (irCreate xor assigned(InventoryReader));
 end; {~inventoryreadersetup}
 
-
+//for each engine an activity counter is maintained, which should be zero when ready
 {24/01/2018}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 function TAnalyseForm.CheckWellhoferReady: Boolean;
