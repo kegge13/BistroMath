@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 14/12/2020}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 14/01/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -3274,6 +3274,7 @@ end; {~addengine}
 {29/09/2020 PassRefOrg}
 {14/10/2020 if not froozen then force reload}
 {17/11/2020 UsedDataTopLine}
+{14/01/2020 PriorityMessage shown at the very end}
 function TAnalyseForm.SelectEngine(aEngine    :Integer;
                                    aShift     :Integer=0;
                                    Synchronise:Boolean=True): Integer;
@@ -3296,7 +3297,7 @@ if Result>0 then
     PrevKey                    := #0;
     FileOpenDialog    .Filename:= Engines[UsedEngine].FileName;
     DetectedFileType           := Engines[UsedEngine].LastDetectedFileType;
-    UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;            //restore full state including starting point for eading
+    UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;            //restore full state including starting point for reading
     PassRefOrg(UsedEngine);                                                     //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
     ClearScreen(Self);
     DataEditor.Clear;
@@ -3315,7 +3316,9 @@ if Result>0 then
     if not Engines[UsedEngine].Freeze then
       Reload(Self);
     end;
-  SetMessageBar(Format('Field Type: %s',[twcFieldClassNames[AppliedFieldClass]]));
+  with Engines[UsedEngine] do
+    if Freeze or (Length(PriorityMessage)=0) then                               //show type, or priority message when this is not already displayed
+      SetMessageBar(ifthen(Length(PriorityMessage)>0,PriorityMessage,Format('Field Type: %s',[twcFieldClassNames[AppliedFieldClass]])));
   end;
 end; {~selectengine}
 
@@ -4188,6 +4191,7 @@ Fills graph and triggers display of analysis results (PublishResults).
 {06/10/2020 fundamentals alternative}
 {15/10/2020 set FieldType name in axis title as is, without brackect or lowercase}
 {29/10/2020 ReportDifferences added for failing reference}
+{14/01/2020 PriorityMessage shown at the very end}
 procedure TAnalyseForm.OnDataRead(Sender:TObject);
 var i                           : Integer;
     m                           : twcMeasAxis;
@@ -4740,7 +4744,9 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
                                             GetCurveIDString(dsReference),
                                             GetCurveIDString]));
       end;
-    end; {isvalid}
+    if Length(PriorityMessage)>0 then
+      SetMessageBar(PriorityMessage);
+    end; {isvalid, usedengine}
   if Sender=nil then                                                                              //the sender is nilled for calls through clipboard
     begin
     if Enabled then

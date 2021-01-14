@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 15/12/2020}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 14/01/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -681,6 +681,7 @@ type
 {13/10/2020 added AutoDecimalPoint,AutoDecimalList}
 {19/10/2020 visibility of BinStream and BinsTreamFile extended to public}
 {16/11/2020 added FindMoreData,ADataTopLine: support for multiple complete data sets in one single file intended for one single scan}
+{14/01/2020 added PriorityMessage}
   TRadthData=class
     protected
      FExtraText       : TStringDynArray;
@@ -697,6 +698,7 @@ type
      FileFormat       : twcFileType;
      UndefinedVal     : twcFloatType;
      UndefinedInt     : wmsIntType;
+     PriorityMessage  : String;
      Linac            : String;
      IdentificationStg: String;
      ScanAngle        : twcFloatType;                                           //CW angle from AB axis
@@ -718,8 +720,8 @@ type
                         AStatusProc :toExtMsgProc =nil;
                         AIdentity   :String       ='base'    );
      procedure   StatusMessage(AMessage         :String;
-                               UpdateLastMessage:Boolean=True;
-                               MinLevel         :Word   =1   );
+                               UpdateLastMessage:Boolean =True;
+                               MinLevel         :ShortInt=1  );
      function    GetNumPoints                                 : Integer;    virtual;
      function    CheckData(AStringList:TStrings              ): Boolean;    virtual;
      function    LoadBinStream(AFileName:String              ): Boolean;
@@ -3973,6 +3975,7 @@ end; {~create}
 
 
 {10/05/2016 ErrorState added}
+{14/01/2020 prioritymessage}
 procedure TRadthData.SetDefaults;
 begin
 FileFormat       := twcUnknown;
@@ -3987,6 +3990,7 @@ DefaultExtension := '.txt';
 FileTime         := Now;
 IsFile           := False;
 ErrorState       := False;
+PriorityMessage  := '';
 end; {~setdefaults}
 
 
@@ -4165,10 +4169,16 @@ end; {~setstatusprocedure}
 {$push}{$warn 5092 off: Variable does not seem to be initialized}
 {17/06/2020 add loglevel to FStatusProc}
 {20/08/2020 pass only new messages}
+{14/01/2020 prioritymessage}
 procedure TRadthData.StatusMessage(AMessage         :String;
                                    UpdateLastMessage:Boolean=True;
-                                   MinLevel         :Word=1);
+                                   MinLevel         :ShortInt=1);
 begin
+if MinLevel<0 then
+  begin
+  PriorityMessage:= AMessage;
+  MinLevel       := LogLevel;
+  end;
 if (LogLevel>=MinLevel) and ((AMessage<>FLastMessage) or (LogLevel>3)) then
   begin
   if UpdateLastMessage then
@@ -13488,6 +13498,7 @@ This procedure tries all in-memory options first and then searches on disk. Disk
 {01/10/2020 use CompareCurveIDStrings in CheckRefOrg}
 {05/10/2020 changed to ((not wCheckRefCurveString) and wTakeCurrentRefSource) or CompareCurveIDStrings)}
 {14/12/2020 review of checkreforg}
+{14/01/2020 PriorityMessage: LogLevel=-1}
 function TWellhoferData.LoadReference(AFileName            :String ='';
                                       SetCurrentAsRefSource:Boolean=False): Boolean;
 var r                                : TWellhoferData;
@@ -13505,7 +13516,7 @@ var r                                : TWellhoferData;
   if (ALogLevel<=LogLevel) or ((ALogLevel=1) and (not ResultValue)) then
     begin
     ErrorState:= ErrorState or (not ResultValue);
-    StatusMessage(Format('%s: src=%s | ref=%s | %s',[ContextStg,GetCurveIDString,ReferenceStg,ifthen(ResultValue,'','not ')+ResultStg]),True);
+    StatusMessage(Format('%s: src=%s | ref=%s | %s',[ContextStg,GetCurveIDString,ReferenceStg,ifthen(ResultValue,'','not ')+ResultStg]),True,ALogLevel);
     end;
   end;
 
@@ -13580,11 +13591,12 @@ var r                                : TWellhoferData;
     end;
   end;
 
-  function SetDiskFile(AString:String): Boolean;
+  function SetDiskFile(AString    :String;
+                       PriorityMsg:Boolean=False): Boolean;
   begin
   s       := AString;
   Result  := FileExists(AString);
-  LogMessage('Find Ref',CompressedFilename(AString),'found',Result,2);
+  LogMessage('Find Ref',CompressedFilename(AString),'found',Result,ifthen(PriorityMsg and (not Result),-1,1)*2);
   end;
 
   function LocalCurveID(ASource:twcDataSource): String;
@@ -13638,7 +13650,7 @@ if Result then
       end;
     if not (UseOrg or SetCurrentAsRefSource or wTakeCurrentRefSource) then
       begin
-      FromDisk:= SetDiskFile(AFileName) or
+      FromDisk:= SetDiskFile(AFileName,True) or
                  SetDiskFile(ReferenceDirectory+MakeCurveName(FArrayScanRefOk,True,[twiSSD]         )) or //exclude ssd
                  SetDiskFile(ReferenceDirectory+MakeCurveName(FArrayScanRefOk,True,[twiDepth]       )) or //exclude depth
                  SetDiskFile(ReferenceDirectory+MakeCurveName(FArrayScanRefOk,True,[twiDepth,twiSSD]));   //exclude both
@@ -15969,11 +15981,15 @@ or the independent value and F(x) would be the response value (e.g. absorbance, 
 F(x) = ((D-A)/(1+((x/B)^C))) + A
 Note: this function will not respond well to x=0.
 
-Updated 12/10/2013: For those of you who are looking for the back-calculations to solve for x, here is the formula.
+The rearranged equation to solve x is:
+x= B*( (D-A)/(y-A) -1 )^(1/C)
+
+18/06/2020
+x= InflectionMajor * power((y-High)/(Low-y),1/Slope) WolframAlpha online
 
 A = minimum asymptote
     In an ELISA assay where you have a standard curve, this can be thought of as the response value at 0 standard concentration.
-    B = (almost the) inflection point
+B = (almost the) inflection point
 C = Hill slope
     The Hill Slope or slope factor refers to the steepness of the curve.
     It could either be positive or negative. As the absolute value of the Hill slope increases, so does the steepness of the curve.
