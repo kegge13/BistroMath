@@ -168,6 +168,7 @@ object AnalyseForm: TAnalyseForm
         Title.Text.Strings = (
           'TAChart'
         )
+        OnExtentChanged = DataPlotExtentChanged
         Align = alClient
         Color = clInactiveBorder
         object ErrorSeries: TLineSeries

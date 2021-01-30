@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 14/01/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 30/01/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -302,6 +302,8 @@ type
     added FileMultipleInputItem,UsedDataTopLine
   08/12/2020
     added ShowLockItemCheckBox
+  30/01/2021
+    event DataPlotExtentChanged(Sender: TChart);
   }
 
   {=========== TAnalyseForm =====================}
@@ -776,6 +778,7 @@ type
     procedure RightAxisToGridClick     (Sender         : TObject);
     procedure ActivateZoom             (Sender         : TObject);
     procedure ActivateUnZoom           (Sender         : TObject);
+    procedure DataPlotExtentChanged    (Sender         : TChart);
     procedure MeasurementSaveClick     (Sender         : TObject);
     procedure OnMenu                   (Sender         : TObject);
     procedure EditEnter                (Sender         : TObject);
@@ -2038,6 +2041,7 @@ with SpecialMode[1] do
 {$ENDIF}
 ClipBoardLock:= False;                                                          //finally unlock clipboard
 end; {~formcreate}
+
 
 //Convert a TWellhoferData twcDataSource to the equivalent graphical element (if available)
 function TAnalyseForm.DataSource2PlotItem(aSource:twcDataSource): PlotItems;
@@ -4778,18 +4782,6 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
     StatusBar.Panels[1].Text:= Format(' #%d',[Engines[UsedEngine].wMultiScanNr])
   else
     StatusBar.Panels[1].Text:= Format(' %dp',[Engines[UsedEngine].GetNumPoints]);
-  with LogTabMemo do
-   try
-    {$IFDEF MEMO_ALLCLEAR}
-     if Lines.Count>Tag then
-       Lines.Clear;
-    {$ELSE}
-     while Lines.Count>Tag do
-       Lines.Delete(0);
-     {$ENDIF}
-    finally
-     Lines.EndUpdate;
-    end;
   end; {read}
 end; {~ondataread =============================================================}
 
@@ -7232,9 +7224,21 @@ begin
 if ALogLevel<=LoglevelEdit.Value then
   begin
   StatusBar.Panels[0].Text:= Stg;
-  if ALogLevel=0 then
-    Application.ProcessMessages;
-  LogTabMemo.Lines.Add(Stg);
+  Application.ProcessMessages;
+  with LogTabMemo do
+    try
+      Lines.BeginUpdate;
+    {$IFDEF MEMO_ALLCLEAR}
+      if Lines.Count>Tag then
+        Lines.Clear;
+    {$ELSE}
+      while Lines.Count>Max(0,Tag-50) do
+        Lines.Delete(0);
+     {$ENDIF}
+     finally
+      Lines.Add(Stg);
+      Lines.EndUpdate;
+     end;
   end;
 end; {~setmessagebar}
 
@@ -7750,7 +7754,7 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                         else
        standard scaling   Y[side]:= GetPenumbraValue(Xsource,X/twAbsNormVal,side);
 -----
-In the ResultsInfoRecord (see also PanelEelemnts) the result is returned, including the actual applied twEdgeUseType (Wellhofer.pas)
+In the ResultsInfoRecord (see also PanelElements) the result is returned, including the actual applied twEdgeUseType (Wellhofer.pas)
 
 *)
 {27/12/2017 implementation of all EvaluationXtypes}
@@ -8381,7 +8385,7 @@ with DataPlot,AxisList[DefChartAxR] do
       Marks.Source:= nil;
     if not Engines[UsedEngine].wSource[dsCalculated].twIsGamma then
       begin
-      r          := Range.Max-Range.Min;                                       //and nice limits (Marks.Format='%4.1f' in designer)
+      r          := Range.Max-Range.Min;                                        //and nice limits (Marks.Format='%4.1f' in designer)
       r          := RoundDeci(r,ifthen(r>2.5,0,1));
       Range.Min  := Round((Range.Max+Range.Min)/2)-r/2;
       if (not Odd(Round(r))) and (r>3) then
@@ -8393,6 +8397,20 @@ with DataPlot,AxisList[DefChartAxR] do
 PlotIndicators;
 PlotCursor(Self);
 end; {~autozoom}
+
+
+{30/01/2021 smart label format leftaxis}
+procedure TAnalyseForm.DataPlotExtentChanged(Sender: TChart);
+var ex: TDoubleRect;                                                            //requires TAChartUtils in "uses"
+begin
+if Sender is TChart then with Sender as TChart do
+  begin                                                                         //Range.Max/Min does not respond to manual zoom with mouse
+  ex:= CurrentExtent;                                                           //see https://forum.lazarus.freepascal.org/index.php/topic,46381.msg330445.html#msg330445
+  with LeftAxis do                                                              //with autoscaling ex.b.Y and ex.a.Y are in range [0 .. 1.01]
+    Marks.Format:= Format('%%0.%df',[Max(0,2-Round(Log10(ifthen(L_AxisTransform_AutoScale.Enabled,100,1)*Abs(ex.b.Y-ex.a.Y))))]);
+  end;
+//with Dataplot.LeftAxis do SetMessageBar(Format('%0.2f, %0.2f, %0.2f',[ex.b.Y, ex.a.Y,Log10(ifthen(L_AxisTransform_AutoScale.Enabled,100,1)*Abs(ex.b.Y-ex.a.Y))]));
+end; {~dataplotextentchanged}
 
 
 {16/04/2020 LastZoomState replaced with ViewZoomItem.Checked}
