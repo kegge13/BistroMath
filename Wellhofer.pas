@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 14/01/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 30/01/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -6488,7 +6488,7 @@ if (FParseOk and (not CheckFileTypeOnly) and (FileFormat=twcMccProfile)) then wi
     until (not FParseOk) or (i=s) or (s<1);
     if not FParseOk then
       begin
-      FParseOk          := (i>=0);
+      FParseOk         := (i>=0);
       CurrentLineNumber:= LastLineOkNumber;
       end;
     with MccData do
@@ -6888,7 +6888,7 @@ var v,r  : twcFloatType;
   begin
   if FParseOk then with FParser do
     begin
-    FParseOk  := NextLine(True);
+    FParseOk := NextLine(True);
     Remainder:= CurrentLine;
     end;
   Result:= FParseOk;
@@ -18447,6 +18447,7 @@ There are a lot of variations:
 {17/09/2020 introduction of FFrozen}
 {19/10/2020 evaluate dUser always}
 {20/10/2020 linac error calculation now based on twSetFieldtype (not fixed on d50 anymore)}
+{30/01/2021 measured file type as priority message}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -18885,7 +18886,7 @@ with wSource[ASource] do
        end; {result}
     twAnalysed:= Result;
     if (ASource=dsMeasured) or (LogLevel>1) then
-      StatusMessage(Format('%s Field Type: %s',[ObjectCallSign,twcFieldClassNames[twSetFieldType]]));
+      StatusMessage(Format('%s Field Type: %s',[ObjectCallSign,twcFieldClassNames[twSetFieldType]]),False,ifthen(ASource=dsMeasured,-1,LogLevel));
     Dec(FActiveCnt);
     end; {if}
   end; {with}
