@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 30/01/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 11/02/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -3007,9 +3007,9 @@ procedure TAnalyseForm.GetWellhoferValues;
 var q: twcEdgeClass;
     f: twcFieldClass;
 begin
-FitMu3CheckBox           .Checked:= twcNMpar[pddfit_mu3];
-FitMu4CheckBox           .Checked:= twcNMpar[pddfit_mu4];
-FitMx2CheckBox           .Checked:= twcNMpar[pddfit_mx2];
+FitMu3CheckBox           .Checked:= twcPDDpar[pddfit_mu3];
+FitMu4CheckBox           .Checked:= twcPDDpar[pddfit_mu4];
+FitMx2CheckBox           .Checked:= twcPDDpar[pddfit_mx2];
 DefaultEnergy_MeV        .Value  := twcDefaultEnergy_MeV;
 GammaDoseCutoff_perc     .Value  := twcGammaCutoffPercent;
 GammaDepthCutoff_mm      .Value  := twcGammaCutoffDepth       *10;
@@ -3112,9 +3112,9 @@ twcNMrestarts                 := Round(FitRestarts_num         .Value);
 twcFFFInFieldExtCm            := FFFInFieldExt_cm              .Value;
 twcOutlierPointLimit          := Round(Abs(OutlierMaxPoints_num.Value));
 twcOriginMinNormFraction      := OriginMinLevel_perc           .Value/100;
-twcNMpar[pddfit_mu3]          := FitMu3CheckBox                .Checked;
-twcNMpar[pddfit_mu4]          := FitMu4CheckBox                .Checked;
-twcNMpar[pddfit_mx2]          := FitMx2CheckBox                .Checked;
+twcPDDpar[pddfit_mu3]         := FitMu3CheckBox                .Checked;
+twcPDDpar[pddfit_mu4]         := FitMu4CheckBox                .Checked;
+twcPDDpar[pddfit_mx2]         := FitMx2CheckBox                .Checked;
 twcDefaultEnergy_MeV          := DefaultEnergy_MeV             .Value;
 twcDefaultSSDcm               := DefaultSSD_cm                 .Value;
 twcGammaCutoffDepth           := GammaDepthCutoff_mm           .Value/10;
@@ -3194,7 +3194,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     for f:= Low(twcFieldClass) to High(twcFieldClass) do
       begin
       for q:= fcPrimary to fcFallBack do
-        for p:= dLow to dTemp do                                                  //twDoseLevel=(dLow,dHigh,d20,d50,d80,d90,dUser,dDerivative,dInflection,dSigmoid50,dTemp)
+        for p:= dLow to dTemp do                                                //twDoseLevel=(dLow,dHigh,d20,d50,d80,d90,dUser,dDerivative,dInflection,dSigmoid50,dTemp)
           if Ft_EdgeMethodCombo[f,q].Text=twcDoseLevelNames[p] then
             wEdgeMethod[q,f]  := p;
       wTopModelRadiusCm[f]    := Ft_CenterRadiusEdit_Cm[f]      .Value;
@@ -3279,6 +3279,7 @@ end; {~addengine}
 {14/10/2020 if not froozen then force reload}
 {17/11/2020 UsedDataTopLine}
 {14/01/2020 PriorityMessage shown at the very end}
+{11/02/2021 not needed, double work: if not Engines[UsedEngine].Freeze then Reload(Self);}
 function TAnalyseForm.SelectEngine(aEngine    :Integer;
                                    aShift     :Integer=0;
                                    Synchronise:Boolean=True): Integer;
@@ -3316,10 +3317,8 @@ if Result>0 then
         end;
    {$ENDIF}
     SetCaption(FileOpenDialog.Filename);
-    Engine2Editor(dsMeasured,True);
-    if not Engines[UsedEngine].Freeze then
-      Reload(Self);
-    end;
+    Engine2Editor(dsMeasured,True);                                             //reloads reference, calls ondataread
+    end; {result<>usedengine}
   with Engines[UsedEngine] do
     if Freeze or (Length(PriorityMessage)=0) then                               //show type, or priority message when this is not already displayed
       SetMessageBar(ifthen(Length(PriorityMessage)>0,PriorityMessage,Format('Field Type: %s',[twcFieldClassNames[AppliedFieldClass]])));
@@ -4348,31 +4347,31 @@ b:= not ((Sender=MeasNormAdjustEdit) and (x=MeasNormAdjustFactor));             
 o:= MilliSecondOfTheDay(Now);
 for j:= 1 to 20 do
 {$ENDIF ONDATA_SPEEDTEST}
-if b and CheckWellhoferReady and FKeyboardReady then                                                 //check with onkeyup event for keys to be processed
+if b and CheckWellhoferReady and FKeyboardReady then                            //check with onkeyup event for keys to be processed
   begin
   LogTabMemo.Lines.BeginUpdate;
   if Sender is TMenuItem then with Sender as TMenuItem do
     begin
     if RadioItem then
       Checked:= True;
-    UpdateSettings(Sender);                                                                          //this sets also the normalisation of wellhofer
+    UpdateSettings(Sender);                                                     //this sets also the normalisation of wellhofer
     MeasNormAdjustEdit.Visible:= False;
     end;
   {$IFDEF THREAD_PLOT}
-  for p:= pMeasured to pBuffer do PlotFillThread[p]:= nil;                                            //Unlike Delphi7, a nil value is not guaranteed, but is needed later when not used.
+  for p:= pMeasured to pBuffer do PlotFillThread[p]:= nil;                      //Unlike Delphi7, a nil value is not guaranteed, but is needed later when not used.
   {$ENDIF THREAD_PLOT}
   ClearAllCx;
-  ShowMenuItemStatus(Sender);
+  ShowMenuItemStatus(Sender);                                                   //when sender is menuitem its state will be shown on the statusbar
   if DataEditor.Modified then
     DetectedFileType      := twcUnknown;
   PlotScaleMin            :=  0;
   PlotScaleMax            :=  0;
   DoseConvTableNr         := -1;
-  MeasNormAdjustFactor    := x;                                                                       //update actual value of NormAdjustFactor
+  MeasNormAdjustFactor    := x;                                                 //update actual value of NormAdjustFactor
   NMdone                  := False;
   SelectedPlot            := pMeasured;
   SelectPlot              := True;
-  MeasIon2DoseItem.Checked:= False;                                                                   //this item does not autocheck, checking it should be a one-time event
+  MeasIon2DoseItem.Checked:= False;                                             //this item does not autocheck, checking it should be a one-time event
   with Engines[UsedEngine],wCurveInfo do if IsValid and (not OnDataReadBusy) then
     begin
     if not Freeze then
@@ -5388,11 +5387,11 @@ if i>=0 then
   begin
   with UseDoseConvTable[i] do
     try
-      DCDoseBox     .Free;
-      DCBgBox       .Free;
+      DCDoseBox    .Free;
+      DCBgBox      .Free;
       DCFilmTypeBox.Free;
       DCModalityBox.Free;
-      DCEdit        .Free;
+      DCEdit       .Free;
      except
       ExceptMessage('UseDoseDelButtonClick!');
      end;
@@ -7308,6 +7307,7 @@ results.
 {04/09/2020 additional marking for dynamic penumbra width ('p')}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {06/10/2020 fundamentals alternative}
+{09/02/2021 added conditions PCRMRlinac and PCRelectron}
 procedure TAnalyseForm.PublishResults;
 var s                                 : String;
     ZeroShift,L,NotNormCenter         : Boolean;
@@ -7414,10 +7414,12 @@ var s                                 : String;
          except
           tval:= 0;
          end;
-        if CheckCond(AppliedFieldClass=fcStandard      ,PCRconditions[PCRnormal        ]) and
+        if CheckCond(AppliedFieldClass=fcStandard      ,PCRconditions[PCRstandard      ]) and
            CheckCond(AppliedFieldClass=fcFFF           ,PCRconditions[PCRfff           ]) and
-           CheckCond(AppliedFieldClass=fcWedge         ,PCRconditions[PCRwedge         ]) and
            CheckCond(AppliedFieldClass=fcSmall         ,PCRconditions[PCRsmall         ]) and
+           CheckCond(AppliedFieldClass=fcMRlinac       ,PCRconditions[PCRMRlinac       ]) and
+           CheckCond(AppliedFieldClass=fcWedge         ,PCRconditions[PCRwedge         ]) and
+           CheckCond(AppliedFieldClass=fcElectron      ,PCRconditions[PCRelectron      ]) and
            CheckCond(Engines[UsedEngine].ReferenceValid,PCRconditions[PCRrefvalid      ]) and
            CheckCond(RefUseDivideByItem .Checked       ,PCRconditions[PCRisDivision    ]) and
            CheckCond(RefUseGammaItem    .Checked       ,PCRconditions[PCRisGamma       ]) and

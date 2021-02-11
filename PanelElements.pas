@@ -1,4 +1,4 @@
-unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-07/10/2020}
+unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-09/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -24,7 +24,7 @@ const
   DefEnergyUncertainty = 0.01; {MeV}
   DefPanel             = 'PanelElements';
   DefCondTxt           = 'cond:';
-  DefCondTypeString    = 'NFWSrdgus';       {linked to PCRconditionTypes}
+  DefCondTypeString    = 'NFSMWErdgus';     {linked to PCRconditionTypes}
   DefAnnotTxt          = 'annot:';
   DefAnnotTypeString   = '!sfFnzucCrSeT*R'; {linked to AnnotationTypes}
   DefColorTxt          = 'color:';
@@ -147,10 +147,11 @@ type
  TAnlyseForm binds this list to the array CxResults of CxBlocks(=TLabel for result + TLabel for values.
 17/12/2019
  PCRSimpleViewHide, linked to SimpleModeItem
-23/01/2020 FAddMode changed to integer; negative values clear all rules}
+23/01/2020 FAddMode changed to integer; negative values clear all rules
+09/02/2021 PCRconditionTypes:PCRMRlinac added}
 
-PCRconditionTypes =(PCRnormal,PCRfff, PCRwedge, PCRsmall,PCRrefvalid, PCRisDivision, PCRisGamma, PCRisUnrelated, PCRSimpleViewHide); {0 based list}
-{linked to DefCondTypeString='NFWSrdgus';                                                                                             1 based list}
+PCRconditionTypes =(PCRstandard,PCRfff,PCRsmall,PCRMRlinac,PCRwedge,PCRelectron,PCRrefvalid,PCRisDivision, PCRisGamma, PCRisUnrelated, PCRSimpleViewHide); {0 based list}
+{linked to DefCondTypeString='NFSMWErdgus';                                                                                             1 based list}
 PCRfieldSizeArray = array[0..1] of Single;
 
 {30/07/2020 added PCRlabelResult}

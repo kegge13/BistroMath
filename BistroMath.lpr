@@ -5,6 +5,7 @@ program BistroMath;
 uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
+  cmem,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, tachartlazaruspkg, lazcontrols, runtimetypeinfocontrols, WellForm,

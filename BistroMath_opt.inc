@@ -21,6 +21,7 @@
 
 
 {09/08/2015: THREAD_PLOT and THREAD_FILES added}
+{11/02/2021: THREADED_AMOEBE transferred from TOmath}
 {$IFDEF THREADED}
   //for development/testing only
   {.DEFINE THREAD_USESTATS}
@@ -30,6 +31,9 @@
 
   //use thread for filesearch, problematic
   {.DEFINE THREAD_FILES}
+
+  //use multiple threads for pddfit
+  {$DEFINE THREADED_AMOEBE}
 
   //show messages on locked curves
   {.DEFINE LOCKING_MSSG}
@@ -80,12 +84,12 @@
 {$ENDIF}
 
 
+
 //general debug
 {.DEFINE COMPILED_DEBUG}
 {.DEFINE TEST_RULES}
 {.DEFINE READRFB_TEST}
 {.DEFINE WELLHOFER_DUMPDATA}
-{$DEFINE SIGMOID_REPORT}
 {.DEFINE SIGMOID_RANGE_SYMMETRIC}
 {.DEFINE KEEP_SIGMOID_ESTIMATE}
 {$DEFINE SelfTest}
