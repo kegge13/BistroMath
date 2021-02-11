@@ -1,5 +1,4 @@
 {$DEFINE THREADED_AMOEBE}
-
 {21/05/2020}
 {.DEFINE uTExtendedX87}
 

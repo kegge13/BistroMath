@@ -1,6 +1,8 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 30/01/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 09/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
+{$I TOmath_opt.inc}
+
 
 (*
 =================================================================================
@@ -217,7 +219,7 @@ All in all there is a lot of object context jumping.
 interface
 
 uses Types,Classes,Math,
-     TOmath,TOnumparser,TObaseDef,TOconfigStrings;
+     TOmath,TONelderMead,TOnumparser,TObaseDef,TOconfigStrings;
 
 {imported version D7 dd. 20/12/2018 from here}
 
@@ -2731,8 +2733,6 @@ type
      function  TvSpddFitErrorResult(a                 :TaFunctionVertex        ): TaVertexDataType;  {costfunction for pdd fit}
      function  PDDfitMaxErrorResult(cm                :TaFunctionVertex        ): TaVertexDataType;  {costfunction for search of maximum}
      function  GetRegisteredFileTypes                                           : String;
-     procedure LoopReport(LatestScore                 :TaVertexDataType;                            {callback reporting}
-                          LatestVertex                :TaFunctionVertex        );
      procedure CheckDataOrdering(ASource              :twcDataSource=dsMeasured);
      function  SetScanType(AScanType                   :twcScanTypes;
                           ASource                     :twcDataSource=dsMeasured): Boolean;           {if adjusted, result is false}
@@ -2743,7 +2743,8 @@ type
                          var AxisSigns                :twcTankAxisSign         );
      procedure SetFieldGT(ASize                       :twcFloatType            );
      procedure SetFieldAB(ASize                       :twcFloatType            );
-     procedure TimeReport(Seconds                     :TaVertexDataType        );
+     procedure LoopReport(var AReport                 :NMReportRecord          );
+     procedure TimeReport(var AReport                 :NMReportRecord          );
      procedure InitBorders(ASource                    :twcDataSource=dsMeasured;
                            InitFitData                :Boolean      =True      );
     public {when changing this list, also update procedure PassSettings}
@@ -3216,7 +3217,7 @@ const
   twcNMcycles             :Integer     = 0;
   twcNMrestarts           :Integer     = 6;
   twcNMdigits             :Integer     = 9;
-  twcNMpar                :array[pddfit_I1..pddfit_mx2] of Boolean= (True,True,True,True,True,True,True,True,True,True,True,True);
+  twcPDDpar               :array[pddfit_I1..pddfit_mx2] of Boolean= (True,True,True,True,True,True,True,True,True,True,True,True);
   twcDefaultICDstring     :String      ='-YX-Z';
   twcWMSdetInfo           :Integer     = 10;   {-1 or 0..10=ord wmsComments= (wmhG1,wmhG2,wmhP0,wmhP1,wmhP2,wmhP3,wmhP4,wmhU1,wmhU2,wmhU3,wmhU4)}
   twcDeriveMinMax         :twcFloatType= 0.90; {toegestane relatieve waarde van afgeleide in eerste en laatste punt}
@@ -8874,7 +8875,7 @@ with CF do
   twcNMcycles                := Abs(ReadInteger(Section,'NMcycles'             ,twcNMcycles));
   LogLevel                   := EnsureRange(ReadInteger(Section,'LogLevel'     ,LogLevel),1,4);
   for i:= pddfit_I1 to pddfit_mx2 do
-    twcNMpar[i]              := ReadBool(Section   ,pddfitEnames[i]            ,twcNMpar[i]);
+    twcPDDpar[i]             := ReadBool(Section   ,pddfitEnames[i]            ,twcPDDpar[i]);
   ReadModSection(twcDRefBeams,FModBeamList);
   ReadModSection(twcDrefKey  ,FModNormList);
   ReadModSection(twcDrefKey  ,FModFilmList); {patch <3.01}
@@ -8999,7 +9000,7 @@ with CF do
   WriteInteger(Section,'NMdigits'                ,twcNMdigits                            );
   WriteInteger(Section,'NMcycles'                ,twcNMcycles                            );
   for i:= pddfit_I1 to pddfit_mx2 do
-    WriteBool(Section ,pddfitEnames[i]           ,twcNMpar[i]                            );
+    WriteBool(Section ,pddfitEnames[i]           ,twcPDDpar[i]                           );
   if IsLocal then
     begin
     UpdateFile;
@@ -15275,24 +15276,28 @@ with wSource[ASource].twPddFitData[AfitVertex] do
 end; {~nmpddmodelresult}
 
 
-procedure TWellhoferData.LoopReport(LatestScore :TaVertexDataType;
-                                    LatestVertex:TaFunctionVertex);
+{09/02/2021 added amoebeid}
+procedure TWellhoferData.LoopReport(var AReport:NMReportRecord);
 var s: String;
     i: Integer;
 begin
-s:= '';
-for i:= 0 to Pred(Length(LatestVertex)) do
-  s:= s+FloatFormat(LatestVertex[i],twcNMdigits)+', ';
-StatusMessage(s+FloatFormat(LatestScore,twcNMdigits));
+with AReport do
+  begin
+  s:= '';
+  for i:= 0 to Pred(Length(BestVertex)) do
+    s:= s+FloatFormat(BestVertex[i],twcNMdigits)+', ';
+  StatusMessage(Format('id=%d: %d cycles %0.2f s, %s',[AmoebeID,Cycles,Seconds,s+FloatFormat(BestScore,twcNMdigits)]));
+  end;
 end; {~loopreport}
 
 
-procedure TWellhoferData.TimeReport(Seconds:TaVertexDataType);
+procedure TWellhoferData.TimeReport(var AReport:NMReportRecord);
+
 begin
 with wSource[FTimeRepSource] do
   StatusMessage(Format('%s, %s: %s... (%0.1f s)',
                        [GetCurveIDString(FNMPddSource),
-                       FormatDateTime('dd-mmm-yyyy hh:nn',twMeasDateTime),twNMfitStg,Seconds]));
+                       FormatDateTime('dd-mmm-yyyy hh:nn',twMeasDateTime),twNMfitStg,AReport.Seconds]));
 end; {~timereport}
 
 
@@ -15364,11 +15369,13 @@ var i       : Integer;                                              { I1 mu1  mu
     end;
 
   begin
-  FNMobject:= TaNMsimplex.Create(@TvSpddFitErrorResult,cDimension,twNumCPU,False,fitCalcErrorDef);
+  FNMobject:= TaNMsimplex.Create(@TvSpddFitErrorResult,cDimension,{$IFDEF THREADED_AMOEBE}twNumCPU{$ELSE}1{$ENDIF},fitCalcErrorDef);
   CopyCurve(ASource,FNMPddSource);
-  with FNMobject,wSource[FNMPddSource] do
+  with FNMobject,ResultData,wSource[FNMPddSource] do
     begin
     fTimeCallBackObj     := @TimeReport;
+    if (AReport=NM_Primary) and (LogLevel>2) then
+      fLoopCallBackObj   := @LoopReport;
     fCallBackDifference  := 100;
     fCallBack_ms         := 500;
     twFittedData         := True; //(cDimension>fitXdim);
@@ -15382,8 +15389,6 @@ var i       : Integer;                                              { I1 mu1  mu
     fRandomChangeFraction:= 0.7;
     FNMPddFirst          := twScanFirst;
     FNMPddLast           := twScanLast;
-    if (AReport=NM_Primary) and (LogLevel>2) then
-      fLoopCallBackObj:= @LoopReport;
     while (twPosCm[FNMPddFirst]<FitLimit) and (twDataLast-FNMPddFirst>10) do
       Inc(FNMPddFirst);
     with twPddFitData[AReport],twNMReport do
@@ -15421,44 +15426,44 @@ var i       : Integer;                                              { I1 mu1  mu
             repeat
               if AModel=pddElectron then
                 for i:= 0 to Pred(cDimension) do
-                  BestVertex[i]:= CenteredFraction(j)*ifthen(twcNMPar[i],ElectronVertex[i] ,0)
+                  BestVertex[i]:= CenteredFraction(j)*ifthen(twcPDDpar[i],ElectronVertex[i] ,0)
               else if FitLimit=0 then
                 begin
                 fRandomChangeFraction:= 0.3;
                 for i:= 0 to Pred(cDimension) do
-                  BestVertex[i]:= CenteredFraction(j)*ifthen(twcNMPar[i],OrthovoltVertex[i],0);
+                  BestVertex[i]:= CenteredFraction(j)*ifthen(twcPDDpar[i],OrthovoltVertex[i],0);
                 end
               else
                 for i:= 0 to Pred(cDimension) do
-                  BestVertex[i]:= CenteredFraction(j)*ifthen(twcNMPar[i],PhotonVertex[i]   ,0);
+                  BestVertex[i]:= CenteredFraction(j)*ifthen(twcPDDpar[i],PhotonVertex[i]   ,0);
               Inc(j);
             until (TvSpddFitErrorResult(BestVertex)<fitCalcErrorDef) or (j=10);
             end;
           try
-            StartAmoebe(twPddFitData[AReport].twNMReport.BestVertex,twPddFitData[AReport].twNMReport.Seconds);
+            StartAmoebe(twPddFitData[AReport].twNMReport.BestVertex,twPddFitData[AReport].twNMReport.Seconds,1);
            except
-            fNMCrawlReport.FitValid:= False;
+            CrawlReport.FitValid:= False;
            end;
           end;
         if fMaxRestarts>0 then
           fMaxRestarts:= fMaxRestarts-1;
         {$IFDEF X_FIT_TEST}Inc(twDataLast,400);{$ENDIF}
-        twPddFitData[AReport].twNMReport.FitValid:= fNMCrawlReport.FitValid;
+        twPddFitData[AReport].twNMReport.FitValid:= CrawlReport.FitValid;
         with twPddFitData[AReport],twNMReport do
           if FitValid then
             begin
             twFitLowCm        := twPosCm[FNMPddFirst];
             twFitHighCm       := twPosCm[FNMPddLast ];
             twFitNormalisation:= FNMPddScaling;
-            BestVertex        := Copy(fNMCrawlReport.BestVertex);
-            BestScore         := fNMCrawlReport.BestScore;
-            Seconds           := fNMCrawlReport.Seconds;
-            NumCPU            := fNMCrawlReport.NumCPU;
+            BestVertex        := Copy(CrawlReport.BestVertex);
+            BestScore         := CrawlReport.BestScore;
+            AmoebeID          := CrawlReport.AmoebeID;
+            Seconds           := CrawlReport.Seconds;
             e_sum             := 0;
             for p:= NMreflection to NMshrinkage do
-              Inc(NMsteps[p],fNMCrawlReport.NMsteps[p]);
-            Inc(Restarts,fNMCrawlReport.Restarts);         {repeat loop introduces by definition 1 extra restart but starts at -1}
-            Inc(Cycles,fNMCrawlReport.Cycles);
+              Inc(NMsteps[p],CrawlReport.NMsteps[p]);
+            Inc(Restarts,CrawlReport.Restarts);         {repeat loop introduces by definition 1 extra restart but starts at -1}
+            Inc(Cycles,CrawlReport.Cycles);
             if twSNR>0 then                                                                    {twSNR is calculated in QuadFilter}
               begin
               SetLength(model,Succ(FNMPddLast));
@@ -15491,6 +15496,7 @@ var i       : Integer;                                              { I1 mu1  mu
             end
          else
            FNMReset:= True;
+      LoopReport(CrawlReport);
       until (fMaxRestarts<1);
       wSource[Asource].twPddFitData[AReport]:= twPddFitData[AReport];
       end; {fitvalid}
@@ -15601,7 +15607,7 @@ if (not (FFrozen or FIndexingMode)) and Analyse(ASource) then
         fmax:= 100;
       twPddFitData[NM_Extrapolation].twFitMaxScaling:= 100/fmax;
       end;
-    StatusMessage(Format('%s, '+twForNMreport,[Stg,ENR,Cycles,Restarts,ifthen(Restarts=1,'','s'),Seconds,NumCPU,twMaxValue,twFitScalingPointCm]));
+    StatusMessage(Format('%s, '+twForNMreport,[Stg,ENR,Cycles,Restarts,ifthen(Restarts=1,'','s'),Seconds,twNumCPU,twMaxValue,twFitScalingPointCm]));
     //StatusMessage(Format('pdd(%0.2f)=%0.2f%%',[twAbsNormPosCm,TvSpddFunction(BestVertex,twAbsNormPosCm)*twFitNormalisation]));
     end;
   AddExtraText(ASource);
@@ -15668,7 +15674,7 @@ Inc(FActiveCnt);
 FNMPddSource:= ASource;
 FNMPddFit   := AFit;
 FNMobject   := TaNMsimplex.Create(@PDDfitMaxErrorResult,1);
-with FNMobject,wSource[ASource] do
+with FNMobject,ResultData,wSource[ASource] do
   begin
   if (not FFrozen) and twFittedData and (twMaxArr>twScanFirst) then  with twPddFitData[FNMPddFit] do
     try
@@ -15678,7 +15684,7 @@ with FNMobject,wSource[ASource] do
       fMaxRestarts   := 4;
       cm[0]          := twPosCm[twMaxArr];
       StartAmoebe(cm);
-      twMaxPosCm     := fNMCrawlReport.BestVertex[0];
+      twMaxPosCm     := CrawlReport.BestVertex[0];
       twMaxValue     := TvSpddFunction(twNMReport.BestVertex,twMaxPosCm)*twFitNormalisation;
      except
       twMaxValue     := 100;
@@ -16186,20 +16192,13 @@ var s : twcSides;
       v  : TaFunctionVertex;
       i  : Integer;
       Stg: String;
-
-    procedure NMmessage(var AReport:NMReportRecord);
-    begin
-    with AReport do
-      StatusMessage(Format('cycles=%d, restarts=%d, score=%0.7f, L=%0.4f, I=%0.7f, S=%0.5f, H=%0.4f',[Cycles,Restarts,BestScore,BestVertex[sigmoid_LowVal],BestVertex[sigmoid_InflectionMajor]+h,BestVertex[sigmoid_Slope],BestVertex[sigmoid_HighVal]]),False);
-    end;
-
   begin
-  FNMobject    := TaNMsimplex.Create(@SigmoidFitErrorResult,SigmoidDim,1,{$IFDEF SIGMOID_REPORT}LogLevel>2{$ELSE}False{$ENDIF},fitCalcErrorDef);
+  FNMobject    := TaNMsimplex.Create(@SigmoidFitErrorResult,SigmoidDim,1,fitCalcErrorDef);
   FNMEdgeSource:= ASource;
   FNMreset     := True;
   h            := 100;
   Result       := 0;
-  with FNMobject do
+  with FNMobject,ResultData do
     begin
     fMinScoreChange      := 1e-9;
     fMaxSeconds          := 2;
@@ -16218,7 +16217,7 @@ var s : twcSides;
         if twFitValid then
           begin
           repeat
-            if FNMreset or (Length(BestVertex)<>SigmoidDim) then                                             //only initialised when invalid or forced
+            if FNMreset or (Length(BestVertex)<>SigmoidDim) then                //only initialised when invalid or forced
               begin
               FNMreset:= False;
               SetLength(BestVertex,SigmoidDim);
@@ -16272,33 +16271,33 @@ var s : twcSides;
                 Result    := 0;
                end; {except}
              {$IFNDEF KEEP_SIGMOID_ESTIMATE}
-              twFitValid:= (BestVertex[sigmoid_Slope]*wInflectionSigmoidRadiusCm>1);   //put some limitation on bad slopes
+              twFitValid:= (BestVertex[sigmoid_Slope]*wInflectionSigmoidRadiusCm>1);          //put some limitation on bad slopes
              {$ENDIF}
               end; {if fnmreset}
             if twFitValid then
               try
-                StartAmoebe(wSource[ASource].twSigmoidFitData[ASide].twNMReport.BestVertex);
+                StartAmoebe(wSource[ASource].twSigmoidFitData[ASide].twNMReport.BestVertex); //only one cpu is called, no multithreading
                 if fMaxRestarts>0 then
                   fMaxRestarts:= fMaxRestarts-1;
-                BestVertex:= Copy(fNMCrawlReport.BestVertex);
+                BestVertex:= Copy(CrawlReport.BestVertex);
                {$IFDEF KEEP_SIGMOID_ESTIMATE}
                 BestVertex:= Copy(v);
                {$ELSE}
                 if not assigned(BestVertex) then
                   BestVertex:= Copy(v)
                 else
-                  v         := Copy(BestVertex);
+                  v             := Copy(BestVertex);
                {$ENDIF}
-                for n:= NMreflection to NMshrinkage do
-                  Inc(NMsteps[n],fNMCrawlReport.NMsteps[n]);
-                Restarts  := Restarts+fNMCrawlReport.Restarts;                  //repeat loop introduces by definition 1 extra restart
-                Seconds   := Seconds +fNMCrawlReport.Seconds;
-                BestScore := fNMCrawlReport.BestScore;
-                twFitValid:= assigned(BestVertex);
-                Inc(Cycles,fNMCrawlReport.Cycles);
-               except
+               for n:= NMreflection to NMshrinkage do
+                 Inc(NMsteps[n],CrawlReport.NMsteps[n]);
+               Restarts  := Restarts+CrawlReport.Restarts;                   //repeat loop introduces by definition 1 extra restart
+               Seconds   := Seconds +CrawlReport.Seconds;
+               BestScore := CrawlReport.BestScore;
+               twFitValid:= assigned(BestVertex);
+               Inc(Cycles,CrawlReport.Cycles);
+              except
                twFitValid := False;
-               end
+              end
             else
               Inc(Restarts);
           until (fMaxRestarts<1) or (not twFitValid);
@@ -16337,12 +16336,6 @@ var s : twcSides;
            end; {fitvalid}
          end; {with,if}
      try
-      {$IFDEF SIGMOID_REPORT}
-       if LogLevel>1 then
-         NMmessage(wSource[ASource].twSigmoidFitData[ASide].twNMReport);
-       if fCollectAllReports then for i:= 0 to Length(fNMAllReports)-1 do
-         NMmessage(fNMAllReports[i]);
-      {$ENDIF}
       Free
      except
       ExceptMessage('WH.SigmoidFit!');
@@ -19024,7 +19017,7 @@ function TWellhoferData.StopProcessing: Boolean;
 begin
 Result:= assigned(FNMobject);
 if Result then
-  FNMobject.Terminate;
+  FNMobject.StopAmoebe;
 end; {~stopprocessing}
 
 
@@ -19288,4 +19281,5 @@ initialization
 AppVersionString:= GetAppVersionString(False,2,True);                           //TOtools
 twNumCPU        := GetNumCPU;                                                   //TOtools
 end.
+
 
