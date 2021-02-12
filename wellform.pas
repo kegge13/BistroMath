@@ -721,7 +721,7 @@ type
     UseDoseDelButton            : TButton;
     //logging tab
     LogTab                      : TTabSheet;
-    LogTabMemo                  : TMemo;
+    LogTabMemo                  : TMemo;                                        //LogTabMemo.Tag is used for maximum number of lines, initial value 500
     //raw data tab
     EditorTab                   : TTabSheet;
     DataEditor                  : TMemo;
@@ -4204,12 +4204,14 @@ var i                           : Integer;
     CF                          : TConfigStrings;
     d                           : twcDoseLevel;
     {$IFDEF SPEEDTEST}
+    {$IF DEFINED(PANEL_SPEEDTEST) OR DEFINED(DIVIDE_SPEEDTEST) OR DEFINED(GAMMA_SPEEDTEST)}
     k                           : Cardinal;
-    {$ENDIF SPEEDTEST}
+    {$ENDIF}
     {$IFDEF ONDATA_SPEEDTEST}
     o                           : Cardinal;
     j                           : Word;
     {$ENDIF ONDATA_SPEEDTEST}
+    {$ENDIF SPEEDTEST}
     {$IFDEF THREAD_PLOT}
     PlotFillThread              : array[PlotItems] of THelpFillThread;
     p                           : PlotItems;
@@ -7227,10 +7229,10 @@ if ALogLevel<=LoglevelEdit.Value then
   with LogTabMemo do
     try
       Lines.BeginUpdate;
-    {$IFDEF MEMO_ALLCLEAR}
+     {$IFDEF MEMO_ALLCLEAR}
       if Lines.Count>Tag then
         Lines.Clear;
-    {$ELSE}
+     {$ELSE}
       while Lines.Count>Max(0,Tag-50) do
         Lines.Delete(0);
      {$ENDIF}

@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 09/02/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 12/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 {$I TOmath_opt.inc}
@@ -2720,22 +2720,22 @@ type
      function  Parse_Wellhofer_SNC_ascii                                        : Boolean;
      function  GetReady                                                         : Boolean;
      function  PrepareProfile                                                   : Boolean;
-     function  CalcValue(Lpos,Rpos                    :Integer;                                   //BistroMath core function
+     function  CalcValue(Lpos,Rpos                    :Integer;                                      //BistroMath core function
                         X                             :twcFloatType;
                         ASource                       :twcDataSource=dsMeasured;
                         InverseCalc                   :Boolean      =False     ): twcFloatType;
-     function  FindCalcRange(CalcPosCm                :twcFloatType;                               //BistroMath core function
+     function  FindCalcRange(CalcPosCm                :twcFloatType;                                 //BistroMath core function
                              var Lpos,Rpos            :Integer;
                              ASource                  :twcDataSource=dsMeasured): Boolean;
-     function  SigmoidFitErrorResult(a                :TaFunctionVertex        ): TaVertexDataType;  {costfunction for edge fit}
+     function  SigmoidFitErrorResult(var a            :TaFunctionVertex        ): TaVertexDataType;  //costfunction for edge fit
      function  TvSpddFunction(a                       :TaFunctionVertex;
                               cm                      :TaVertexDataType        ): TaVertexDataType;
-     function  TvSpddFitErrorResult(a                 :TaFunctionVertex        ): TaVertexDataType;  {costfunction for pdd fit}
-     function  PDDfitMaxErrorResult(cm                :TaFunctionVertex        ): TaVertexDataType;  {costfunction for search of maximum}
+     function  TvSpddFitErrorResult(var a             :TaFunctionVertex        ): TaVertexDataType;  //costfunction for pdd fit; passing by address is 1.8 µs per call faster
+     function  PDDfitMaxErrorResult(var cm            :TaFunctionVertex        ): TaVertexDataType;  //costfunction for search of maximum
      function  GetRegisteredFileTypes                                           : String;
      procedure CheckDataOrdering(ASource              :twcDataSource=dsMeasured);
      function  SetScanType(AScanType                   :twcScanTypes;
-                          ASource                     :twcDataSource=dsMeasured): Boolean;           {if adjusted, result is false}
+                          ASource                     :twcDataSource=dsMeasured): Boolean;           //if adjusted, result is false
      procedure SetUserLevel(ADoseFraction             :twcFloatType            );
      procedure CopyParameters(var ASource,ADestination:twCurveDataRec          );
      procedure SetAxisID(AxisIDstg                    :String;
@@ -15006,7 +15006,7 @@ end; {~ionisation2dose}
 
 
 {callback function for search of maximum}
-function TWellhoferData.PDDfitMaxErrorResult(cm:TaFunctionVertex): TaVertexDataType;
+function TWellhoferData.PDDfitMaxErrorResult(var cm:TaFunctionVertex): TaVertexDataType;
 begin
 with wSource[FNMPddSource] do
   Result:= 2*twMaxValue-TvSpddFunction(twPddFitData[FNMPddFit].twNMReport.BestVertex,cm[0]);
@@ -15164,7 +15164,7 @@ end; {~tvspddfunction}
 {$IFDEF ENR_WEIGHTED_PDDFIT}
 {12/01/2016 version including ENR}
 {27/07/2017 subtle speed improvements through efficiency}
-function TWellhoferData.TvSpddFitErrorResult(a:TaFunctionVertex): TaVertexDataType;
+function TWellhoferData.TvSpddFitErrorResult(var a:TaFunctionVertex): TaVertexDataType;
 var i,j,k,l: Integer;
     e      : TaVertexDataType;
     halt   : Boolean;
@@ -15226,7 +15226,7 @@ else
 Finalize(model);
 end; {~tvspddfiterrorresult}
 {$ELSE}
-function TWellhoferData.TvSpddFitErrorResult(a:TaFunctionVertex): VertexDataType;
+function TWellhoferData.TvSpddFitErrorResult(var a:TaFunctionVertex): VertexDataType;
 var i: Word;
     r: VertexDataType;
     e: Boolean;
@@ -15286,7 +15286,7 @@ with AReport do
   s:= '';
   for i:= 0 to Pred(Length(BestVertex)) do
     s:= s+FloatFormat(BestVertex[i],twcNMdigits)+', ';
-  StatusMessage(Format('id=%d: %d cycles %0.2f s, %s',[AmoebeID,Cycles,Seconds,s+FloatFormat(BestScore,twcNMdigits)]));
+  StatusMessage(Format('amoebe#%d: %d cycles %0.2f s, %s',[AmoebeID,Cycles,Seconds,s+FloatFormat(BestScore,twcNMdigits)]));
   end;
 end; {~loopreport}
 
@@ -15362,6 +15362,9 @@ var i       : Integer;                                              { I1 mu1  mu
       p      : NelderMeadParam;
       e_sum,e: TaVertexDataType;
       model  : twcFloatArray;
+      {$IFDEF PDDERROR_SPEEDTEST}
+      o      : Cardinal;
+      {$ENDIF PDDERROR_SPEEDTEST}
 
     function CenteredFraction(AStep:Integer): TaVertexDataType;
     begin
@@ -15412,33 +15415,40 @@ var i       : Integer;                                              { I1 mu1  mu
         with twPddFitData[AReport].twNMReport do
           begin
           Inc(Restarts);
-          if FNMreset or (Length(BestVertex)<>cDimension) then {only initialised when invalid or forced}
+          if FNMreset or (Length(BestVertex)<>cDimension) then                  //only initialised when invalid or forced
             begin
             FNMreset:= False;
             j       := 0;
             SetLength(BestVertex,cDimension);
-            VertexSmall[pddfit_I1]:= 1e-6;   {set limits}
+            VertexSmall[pddfit_I1]:= 1e-6;                                      //set limits
             if AModel=pddElectron then
               begin
-              VertexSmall[pddfit_I0]:= 1e-6;   {set limits}
-              VertexLower[pddfit_Ix]:= 1e-6;   {set limits}
+              VertexSmall[pddfit_I0]:= 1e-6;                                    //set limits
+              VertexLower[pddfit_Ix]:= 1e-6;                                    //set limits
               end;
-            repeat
-              if AModel=pddElectron then
+            repeat                                                              //here initial values are set for bestvertex
+              if AModel=pddElectron then                                        //-ElectronVertex-
                 for i:= 0 to Pred(cDimension) do
                   BestVertex[i]:= CenteredFraction(j)*ifthen(twcPDDpar[i],ElectronVertex[i] ,0)
-              else if FitLimit=0 then
+              else if FitLimit=0 then                                           //-OrthovoltVertex-
                 begin
                 fRandomChangeFraction:= 0.3;
                 for i:= 0 to Pred(cDimension) do
                   BestVertex[i]:= CenteredFraction(j)*ifthen(twcPDDpar[i],OrthovoltVertex[i],0);
                 end
-              else
+              else                                                              //-PhotonVertex-
                 for i:= 0 to Pred(cDimension) do
                   BestVertex[i]:= CenteredFraction(j)*ifthen(twcPDDpar[i],PhotonVertex[i]   ,0);
               Inc(j);
             until (TvSpddFitErrorResult(BestVertex)<fitCalcErrorDef) or (j=10);
             end;
+          {$IFDEF PDDERROR_SPEEDTEST}
+          o:= MilliSecondOfTheDay(Now);
+          with twPddFitData[AReport].twNMReport do
+            for i:= 1 to 10000 do TvSpddFitErrorResult(BestVertex);
+          o:= MilliSecondOfTheDay(Now)-o;
+          StatusMessage(Format('%0f ms per error calculation (%d ms per %d)',[o/i,o,i]));
+          {$ENDIF PDDERROR_SPEEDTEST}
           try
             StartAmoebe(twPddFitData[AReport].twNMReport.BestVertex,twPddFitData[AReport].twNMReport.Seconds,1);
            except
@@ -16085,7 +16095,7 @@ end; {~getnormalisedrevlogistic}
 {13/07/2020 twFitOffsetCm}
 {10/11/2020 introduce twFitnormalisation}
 {12/11/2020 scaled error calculation}
-function TWellhoferData.SigmoidFitErrorResult(a:TaFunctionVertex): TaVertexDataType;  {callback function for edge fit}
+function TWellhoferData.SigmoidFitErrorResult(var a:TaFunctionVertex): TaVertexDataType;  {callback function for edge fit}
 
 var i            : Integer;
     r            : TaVertexDataType;

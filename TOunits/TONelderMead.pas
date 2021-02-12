@@ -1,4 +1,4 @@
-unit TONelderMead;   {© Theo van Soest, FPC 3.2.0: 10/02/2021}
+unit TONelderMead;   {© Theo van Soest, FPC 3.2.0: 12/02/2021}
 {$MODE DELPHI}
 
 (*
@@ -36,7 +36,7 @@ unit TONelderMead;   {© Theo van Soest, FPC 3.2.0: 10/02/2021}
 
 
 
-interface      {09/02/2021}
+interface      {12/02/2021}
 
 uses Classes, SysUtils;
 
@@ -50,8 +50,8 @@ type
                             Tag   : Boolean;
                            end;
   TaVertexArray          = array of TaVertexRecord;
-  TaMultParamFunction    = function(a:TaFunctionVertex): TaVertexDataType;
-  TaMultParamObjFunction = function(a:TaFunctionVertex): TaVertexDataType of object;
+  TaMultParamFunction    = function(var a:TaFunctionVertex): TaVertexDataType;  //using passing by address is faster: 1.8 µs per call
+  TaMultParamObjFunction = function(var a:TaFunctionVertex): TaVertexDataType of object;
   NelderMeadParam        = (NMreflection,NMexpansion,NMcontraction,NMshrinkage);
   TaIllegalFunModel      = (illLarge,illSmall,illZero);
 
@@ -509,9 +509,9 @@ var i,j,Dim,LastDim               : Word;
     LastAliveCheck                : Single;
     Simplex                       : TaVertexArray;
 
-    procedure StoreSimplex(Index  :Word;
-                           AScore :TaVertexDataType;
-                           AVertex:TaFunctionVertex);
+    procedure StoreSimplex(Index      : Word;
+                           AScore     : TaVertexDataType;
+                           var AVertex: TaFunctionVertex);
     begin
     with Simplex[Index] do
       begin
@@ -521,9 +521,9 @@ var i,j,Dim,LastDim               : Word;
       end;
     end; {~storesimplex}
 
-    procedure BubbleStore(NewScore     :TaVertexDataType;
-                          var NewVertex:TaFunctionVertex;
-                          Index        :Word=0);
+    procedure BubbleStore(NewScore     : TaVertexDataType;
+                          var NewVertex: TaFunctionVertex;
+                          Index        : Word=0);
     var j,k    : Word;
         StoreOk: Boolean;
 
@@ -917,9 +917,6 @@ with ResultData do
   end;
 SetMaxCycles;
 Adaptive              := True; {sets also defaults for fNM for dead amoebe}
-//SetLength(fNMReportList,0         );
-//SetLength(fLoopReports,fAmoebes);
-//ClearLoopReports;
 end; {~initialize}
 
 
@@ -1245,9 +1242,6 @@ begin
 Result:= ((AValue>Limit1) or (Limit1Inclusive and (AValue=Limit1))) and
          ((AValue<Limit2) or (Limit2Inclusive and (AValue=Limit2)));
 end; {withinrange}
-
-
-
 
 
 end.

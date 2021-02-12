@@ -2508,6 +2508,7 @@ object AnalyseForm: TAnalyseForm
       ClientHeight = 467
       ClientWidth = 877
       object LogTabMemo: TMemo
+        Tag = 500
         Left = 0
         Height = 467
         Top = 0
