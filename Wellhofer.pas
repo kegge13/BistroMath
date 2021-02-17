@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 12/02/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 17/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 {$I TOmath_opt.inc}
@@ -2685,6 +2685,7 @@ type
      FModBeamLocal   : Boolean;
      Fmcc            : TMccProfileData;
      FMultiScanList  : twcMultiScanList;                                        //list of reference file names in multiscan file, element 0 is file itself
+     FPDDfit_simplex : TaNMsimplex;
      FNoPenumbraOk   : Boolean;
      FOrgExtension   : String;
      FPenumbraH      : twcFloatType;
@@ -2707,7 +2708,6 @@ type
      FNMPddLast      : Integer;
      FNMPddFit       : twcNMpddFits;
      FNMpddscaling   : TaVertexDataType;
-     FNMobject       : TaNMsimplex;
      FNMreset        : Boolean;
      FMultiRefIndex  : Boolean;
      FIndexingMode   : Boolean;
@@ -3941,9 +3941,10 @@ constructor TRadthData.Create(SharedParser:toTNumParser =nil;
                               AIdentity   :String       ='base');
 begin
 SetDefaults;
-FRegisteredFiles:= '';
-LogLevel        := 1;
-BinStream      := TMemoryStream.Create;
+FRegisteredFiles := '';
+LogLevel         := 1;
+
+BinStream        := TMemoryStream.Create;
 if BinaryData<>nil then
   begin
   BinStream.CopyFrom(BinaryData,0);
@@ -3951,7 +3952,7 @@ if BinaryData<>nil then
   end;
 FMultiScanCapable:= False;
 BinStreamType    := twcUnknown;
-BinStreamFile   := BinaryFile;
+BinStreamFile    := BinaryFile;
 FBinaryAllowed   := False;
 FIdentity        := AIdentity;
 ShowWarning      := False;
@@ -8198,6 +8199,7 @@ end; {~destroy}
 {27/08/2020 wTopModelRadiusCm}
 {13/10/2020 defaults for all fieldtypes set}
 {22/10/2020 initialise wUserAxisSign to 1, not 0}
+{15/02/2021 initialise FAliasList}
 constructor TWellhoferData.Create(AModalityNormList:TModNormList =nil;
                                   AModalityFilmList:TModFilmList =nil;
                                   AModalityBeamList:TModTextList =nil;
@@ -8282,6 +8284,8 @@ wWedge90ShiftFactor               :=  1;
 wMRlinacTUlist                    := 'comma separated';
 Fmcc                              := nil;
 FMultiScanList                    := nil;
+FAliasList                        := nil;
+FPDDfit_simplex                   := nil;
 FillChar(wUserAxisSign,SizeOf(wUserAxisSign),1);
 for f:= Low(twcFieldClass) to High(twcFieldClass) do
   begin
@@ -15351,7 +15355,6 @@ var i       : Integer;                                              { I1 mu1  mu
   {03/08/2017 check on legality of initial bestvertex}
   {19/02/2018 improved TaNMsimplex object distributes all threads evenly over cpu's}
   {08/01/2020 extra try..except in enr evaluation}
-  {14/01/2020 FNMObject:= nil}
   {26/05/2020 TaNMsimplex.Create}
   {14/07/2020 twFitOffsetCm is now individual per side to handle overlapping penumbras}
   function RunNelderMead(AReport   :twcNMpddFits;
@@ -15372,26 +15375,26 @@ var i       : Integer;                                              { I1 mu1  mu
     end;
 
   begin
-  FNMobject:= TaNMsimplex.Create(@TvSpddFitErrorResult,cDimension,{$IFDEF THREADED_AMOEBE}twNumCPU{$ELSE}1{$ENDIF},fitCalcErrorDef);
+  FPDDfit_simplex:= TaNMsimplex.Create(@TvSpddFitErrorResult,cDimension,{$IFDEF THREADED_AMOEBE}twNumCPU{$ELSE}1{$ENDIF},fitCalcErrorDef);
   CopyCurve(ASource,FNMPddSource);
-  with FNMobject,ResultData,wSource[FNMPddSource] do
+  with FPDDfit_simplex,ResultData,wSource[FNMPddSource] do
     begin
-    fTimeCallBackObj     := @TimeReport;
+    fTimeCallBackObj         := @TimeReport;
     if (AReport=NM_Primary) and (LogLevel>2) then
-      fLoopCallBackObj   := @LoopReport;
-    fCallBackDifference  := 100;
-    fCallBack_ms         := 500;
-    twFittedData         := True; //(cDimension>fitXdim);
-    twFastScan           := False;
-    FNMPddScaling        := twMaxValue/100;
-    fMinScoreChange      := 1e-15;
-    fIllegalErrorFunValue:= fitCalcErrorDef;
-    fMaxSeconds          := twcNMseconds;
-    fMaxRestarts         := Ceil(twcNMrestarts/Max(1,(Amoebes-1)/2));
-    MaxCycles            := twcNMCycles;
-    fRandomChangeFraction:= 0.7;
-    FNMPddFirst          := twScanFirst;
-    FNMPddLast           := twScanLast;
+      fLoopCallBackObj       := @LoopReport;
+    CallBackChangeFraction   := 0.1;
+    CallBack_ms              := 500;
+    twFittedData             := True; //(cDimension>fitXdim);
+    twFastScan               := False;
+    FNMPddScaling            := twMaxValue/100;
+    MinScoreChangeFraction   := 1e-15;
+    IllegalErrorFunctionValue:= fitCalcErrorDef;
+    MaxSeconds               := twcNMseconds;
+    MaxRestarts              := Ceil(twcNMrestarts/Max(1,(Amoebes-1)/2));
+    MaxCycles                := twcNMCycles;
+    RandomChangeFraction     := 0.7;
+    FNMPddFirst              := twScanFirst;
+    FNMPddLast               := twScanLast;
     while (twPosCm[FNMPddFirst]<FitLimit) and (twDataLast-FNMPddFirst>10) do
       Inc(FNMPddFirst);
     with twPddFitData[AReport],twNMReport do
@@ -15432,7 +15435,7 @@ var i       : Integer;                                              { I1 mu1  mu
                   BestVertex[i]:= CenteredFraction(j)*ifthen(twcPDDpar[i],ElectronVertex[i] ,0)
               else if FitLimit=0 then                                           //-OrthovoltVertex-
                 begin
-                fRandomChangeFraction:= 0.3;
+                RandomChangeFraction:= 0.3;
                 for i:= 0 to Pred(cDimension) do
                   BestVertex[i]:= CenteredFraction(j)*ifthen(twcPDDpar[i],OrthovoltVertex[i],0);
                 end
@@ -15510,13 +15513,12 @@ var i       : Integer;                                              { I1 mu1  mu
       until (fMaxRestarts<1);
       wSource[Asource].twPddFitData[AReport]:= twPddFitData[AReport];
       end; {fitvalid}
-    try
-      Free
-     except
-      ExceptMessage('WH.PddFit!');
-     end;
     end; {with}
-  FNMObject:= nil;
+  try
+    FreeAndNil(FPDDfit_simplex);
+   except
+    ExceptMessage('WH.PddFit!');
+   end;
   end; {runneldermead}
   {$pop}
 
@@ -15673,40 +15675,40 @@ end; {~mayneord}
 
 {$push}{$warn 5091 off: cm not initialised}
 {called by: FastScan, PddFit}
-{14/01/2020 FNMObject:= nil}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
+{17/02/2021 singleamoebe}
 procedure TWellhoferData.PDDmaxNMFit(ASource:twcDataSource=dsMeasured;
                                      AFit   :twcNMpddFits=NM_Primary);
 var cm: TaFunctionVertex;
+    NM: TaNMsimplex;
 begin
 Inc(FActiveCnt);
 FNMPddSource:= ASource;
 FNMPddFit   := AFit;
-FNMobject   := TaNMsimplex.Create(@PDDfitMaxErrorResult,1);
-with FNMobject,ResultData,wSource[ASource] do
+NM          := TaNMsimplex.Create(@PDDfitMaxErrorResult,1);
+with NM,ResultData,wSource[ASource] do
   begin
   if (not FFrozen) and twFittedData and (twMaxArr>twScanFirst) then  with twPddFitData[FNMPddFit] do
     try
       Setlength(cm,1);
-      fMinScoreChange:= 1e-5;
-      MaxCycles      := 500;
-      fMaxRestarts   := 4;
-      cm[0]          := twPosCm[twMaxArr];
-      StartAmoebe(cm);
-      twMaxPosCm     := CrawlReport.BestVertex[0];
-      twMaxValue     := TvSpddFunction(twNMReport.BestVertex,twMaxPosCm)*twFitNormalisation;
+      MinScoreChangeFraction:= 1e-5;
+      MaxCycles             := 500;
+      MaxRestarts           := 4;
+      cm[0]                 := twPosCm[twMaxArr];
+      SingleAmoebe(cm);
+      twMaxPosCm            := CrawlReport.BestVertex[0];
+      twMaxValue            := TvSpddFunction(twNMReport.BestVertex,twMaxPosCm)*twFitNormalisation;
      except
-      twMaxValue     := 100;
+      twMaxValue            := 100;
      end;
   Finalize(cm);
-  try
-    Free
-   except
-    ExceptMessage('WH.PddMaxNMfit!');
-   end;
   end;
-FNMObject:= nil;
+try
+  NM.Free;
+ except
+  ExceptMessage('WH.PddMaxNMfit!');
+ end;
 Dec(FActiveCnt);
 end; {~pddmaxnmfit}
 {$pop}
@@ -16169,7 +16171,6 @@ end; {~sigmoidfiterrorresult}
 {03/06/2018 FIndexingMode}
 {08/10/2018 reporting limited to loglevel 2 and higher}
 {08/01/2020 extra try..except in tweede fit}
-{14/01/2020 FNMObject:= nil}
 {09/05/2020 use correctly signed slope as starting value for BestVertex[sigmoid_Slope] (was absolute)}
 {22/05/2020 twSigmoidDone}
 {23/05/2020 improved initial slope value, should always be positive also}
@@ -16186,6 +16187,7 @@ end; {~sigmoidfiterrorresult}
 {17/09/2020 introduction of FFrozen}
 {10/11/2020 set twFitnormalisation to twMaxValue/100 and apply this to fit parameters}
 {12/11/2020 scaled error limit (h)}
+{17/02/2021 singleamoebe}
 function TWellhoferData.SigmoidPenumbraFit(ASource     :twcDataSource=dsMeasured;
                                            ApplyModel  :Boolean      =False;
                                            ADestination:twcDataSource=dsMeasured): Boolean;
@@ -16194,6 +16196,7 @@ var s : twcSides;
     i : Integer;
     m : twcFloatType;
     LM: String;
+    NM: TaNMsimplex;
 
   function RunNelderMead(ASide :twcSides;
                          ARange:twcFloatType): twcFloatType;
@@ -16203,18 +16206,19 @@ var s : twcSides;
       i  : Integer;
       Stg: String;
   begin
-  FNMobject    := TaNMsimplex.Create(@SigmoidFitErrorResult,SigmoidDim,1,fitCalcErrorDef);
+  NM           := TaNMsimplex.Create(@SigmoidFitErrorResult,SigmoidDim,1,fitCalcErrorDef);
   FNMEdgeSource:= ASource;
   FNMreset     := True;
   h            := 100;
   Result       := 0;
-  with FNMobject,ResultData do
+  v            := nil;
+  with NM,ResultData do
     begin
-    fMinScoreChange      := 1e-9;
-    fMaxSeconds          := 2;
-    fMaxRestarts         := 2;
-    fRandomChangeFraction:= 0.7;
-    MaxCycles           := twcNMCycles;
+    MinScoreChangeFraction:= 1e-9;
+    MaxSeconds            := 2;
+    MaxRestarts           := 2;
+    RandomChangeFraction  := 0.7;
+    MaxCycles             := twcNMCycles;
     with wSource[ASource],twSigmoidFitData[ASide],twNMReport do
       if not twFitvalid then
         begin
@@ -16227,7 +16231,7 @@ var s : twcSides;
         if twFitValid then
           begin
           repeat
-            if FNMreset or (Length(BestVertex)<>SigmoidDim) then                //only initialised when invalid or forced
+            if FNMreset or (Length(BestVertex)<>SigmoidDim) then                                             //only initialised when invalid or forced
               begin
               FNMreset:= False;
               SetLength(BestVertex,SigmoidDim);
@@ -16286,7 +16290,7 @@ var s : twcSides;
               end; {if fnmreset}
             if twFitValid then
               try
-                StartAmoebe(wSource[ASource].twSigmoidFitData[ASide].twNMReport.BestVertex); //only one cpu is called, no multithreading
+                SingleAmoebe(wSource[ASource].twSigmoidFitData[ASide].twNMReport.BestVertex); //only one cpu is called, no multithreading
                 if fMaxRestarts>0 then
                   fMaxRestarts:= fMaxRestarts-1;
                 BestVertex:= Copy(CrawlReport.BestVertex);
@@ -16296,7 +16300,7 @@ var s : twcSides;
                 if not assigned(BestVertex) then
                   BestVertex:= Copy(v)
                 else
-                  v             := Copy(BestVertex);
+                  v         := Copy(BestVertex);
                {$ENDIF}
                for n:= NMreflection to NMshrinkage do
                  Inc(NMsteps[n],CrawlReport.NMsteps[n]);
@@ -16345,14 +16349,13 @@ var s : twcSides;
             end; {fitvalid}
            end; {fitvalid}
          end; {with,if}
-     try
-      Free
-     except
-      ExceptMessage('WH.SigmoidFit!');
-     end;
-    Finalize(v);
     end; {with FNMobject}
-  FNMObject:= nil;
+  Finalize(v);
+  try
+    NM.Free;
+   except
+    ExceptMessage('WH.SigmoidFit!');
+   end;
   end; {runneldermead}
 
 begin
@@ -19025,9 +19028,9 @@ end; {~applymodbeamlist}
 
 function TWellhoferData.StopProcessing: Boolean;
 begin
-Result:= assigned(FNMobject);
+Result:= assigned(FPDDfit_simplex);
 if Result then
-  FNMobject.StopAmoebe;
+  FPDDfit_simplex.StopAmoebe;
 end; {~stopprocessing}
 
 

@@ -1,4 +1,4 @@
-unit TONelderMead;   {© Theo van Soest, FPC 3.2.0: 12/02/2021}
+unit TONelderMead;   {© Theo van Soest, FPC 3.2.0: 17/02/2021}
 {$MODE DELPHI}
 
 (*
@@ -77,42 +77,42 @@ type
   TaAmoebeReportProc    = procedure(var AReport:NMReportRecord);
   TaAmoebeReportObjProc = procedure(var AReport:NMReportRecord) of object;
 
-  //The TaNMSimplexShared is a container which is create by the main thread and shared with all t
+  //The TaNMSimplexShared is a container which is created by the main thread and shared with all amoebes
   TaNMSimplexShared=class(TObject)
     private
       fAmoebes             : Word;
       procedure SetAmoebes(NumberOfAmoebes:Word);
       procedure ClearReportLists;
     protected
-      fThreadID            : TThreadID;
-      fActiveCnt           : Integer;
-      fDim                 : Word;
-      fLastDim             : Word;
-      fNMpar               : array[NelderMeadParam] of TaVertexDataType;        //parameters of the Nelder-Mead algorithm
-      fMaxCycles           : LongWord;
-      fSmallLimits         : TaFunctionVertex;
-      fLowerLimits         : TaFunctionVertex;
-      fUpperLimits         : TaFunctionVertex;
-      fErrorFunction       : TaMultParamFunction;
-      fErrorObjFunction    : TaMultParamObjFunction;
-      fIllegalTest         : TaIllegalFunModel;
-      fCumulativeSeconds   : Single;
-      fLoopReports         : array of array of NMReportRecord;                  //one array per amoebe
+     fThreadID              : TThreadID;
+     fActiveCnt             : Integer;
+     fDim                   : Word;
+     fLastDim               : Word;
+     fNMpar                 : array[NelderMeadParam] of TaVertexDataType;       //parameters of the Nelder-Mead algorithm
+     fMaxCycles             : LongWord;
+     fSmallLimits           : TaFunctionVertex;
+     fLowerLimits           : TaFunctionVertex;
+     fUpperLimits           : TaFunctionVertex;
+     fErrorFunction         : TaMultParamFunction;
+     fErrorObjFunction      : TaMultParamObjFunction;
+     fIllegalTest           : TaIllegalFunModel;
+     fCumulativeSeconds     : Single;
+     fLoopReports           : array of array of NMReportRecord;                 //one array per amoebe
     public
-     fAlive               : Boolean;
-     fIllegalErrorFunValue: TaVertexDataType;
-     fRandomChangeFraction: Single;
-     fMaxRestarts         : Word;
-     fMaxSeconds          : Single;
-     fMinScoreChange      : TaVertexDataType;
-     fIllegalErrorRetries : Word;
-     fLoopCallBack        : TaAmoebeReportProc;
-     fLoopCallBackObj     : TaAmoebeReportObjProc;
-     fTimeCallBack        : TaAmoebeReportProc;
-     fTimeCallBackObj     : TaAmoebeReportObjProc;
-     fCallBackDifference  : Single;
-     fCallBack_ms         : LongWord;
-     fCrawlReportList     : array of NMreportRecord;                            //one per amoebe
+     fAlive                 : Boolean;
+     fIllegalErrorFunValue  : TaVertexDataType;
+     fRandomChangeFraction  : Single;
+     fMaxRestarts           : Word;
+     fMaxSeconds            : Single;
+     fMinScoreChangeFraction: TaVertexDataType;
+     fIllegalErrorRetries   : Word;
+     fLoopCallBack          : TaAmoebeReportProc;
+     fLoopCallBackObj       : TaAmoebeReportObjProc;
+     fTimeCallBack          : TaAmoebeReportProc;
+     fTimeCallBackObj       : TaAmoebeReportObjProc;
+     fCallBackChangeFraction: Single;
+     fCallBack_ms           : LongWord;
+     fCrawlReportList       : array of NMreportRecord;                          //one per amoebe
      constructor Create(NumberofAmoebes:Word=1);
      procedure   InitializeCrawlList(InitialVertex  :TaFunctionVertex;
                                      InitialScore   :TaVertexDataType;
@@ -170,11 +170,12 @@ type
   end;
 
   //The TaNMsimplex class is the main object
+  {14/02/2021 expanded the interface}
   TaNMsimplex=class(TObject)
    private
-    fAdaptive       : Boolean;
-    fBestSimplex    : TaVertexRecord;
-    fLocker         : TMultiReadExclusiveWriteSynchronizer;
+    fAdaptive   : Boolean;
+    fBestSimplex: TaVertexRecord;
+    fLocker     : TMultiReadExclusiveWriteSynchronizer;
     function  GetAlive                                            : Boolean;
     procedure SetAlive(AState            :Boolean                );
     procedure SetAdaptive(AdaptiveMode   :Boolean                );
@@ -192,7 +193,15 @@ type
                          AValue          :TaVertexDataType=-1e25 );
     procedure SetNMUpper(Index           :Word;
                          AValue          :TaVertexDataType= 1e25 );
+    procedure SetIllegalValue(AValue     :TaVertexDataType       );
+    procedure SetMaxRetries(Retries      :Word            =10    );
+    procedure SetRandomChange(AFraction  :Single          = 0.3  );
+    procedure SetMinScoreChange(AFraction:Single          = 0    );
+    procedure SetMaxSeconds(Seconds      :Single                 );
     procedure SetMaxCycles(Cycles        :LongWord=0             );
+    procedure SetMaxRestarts(Restarts    :LongWord=1             );
+    procedure SetCallBackChange(AFraction:Single          = 0.01 );
+    procedure SetCallBackTime(ms         :LongWord               );
     function  GetfNM(Index               :NelderMeadParam        ): TaVertexDataType;
     procedure SetfNM(Index               :NelderMeadParam;
                      AValue              :TaVertexDataType=0     );
@@ -219,17 +228,26 @@ type
     procedure   SingleAmoebe(AVertex            :TaFunctionVertex;              //main thread only
                              CumulativeSeconds  :Single     =0;
                              CallBackAmoebes    :Integer    =0    );
-    procedure   AddToReportList(var ACrawlReport:NMReportRecord   );
+    procedure   AddToReportList(var AmoebeReport:NMReportRecord   );
+    procedure   ResetAmoebe(AVertex             :TaFunctionVertex );
     procedure   StopAmoebe;
     destructor  Destroy;                                    override;
     property Adaptive                        : Boolean         read fAdaptive   write SetAdaptive;
-    property Alive                           : Boolean         read GetAlive    write SetAlive;
+    property Live                            : Boolean         read GetAlive    write SetAlive;
     property BestSimplex                     : TaVertexRecord  read fBestSimplex;
     property LoopReportPtr[Amoebe,Index:Word]: NMReportPointer read GetLoopReportPtr;
+    property RandomChangeFraction            : Single                           write SetRandomChange;
+    property IllegalErrorFunctionValue       : TaVertexDataType                 write SetIllegalValue;
+    property MaxIllegalValueRetries          : Word                             write SetMaxRetries;
+    property MinScoreChangeFraction          : Single                           write SetMinScoreChange;
+    property MaxSeconds                      : Single                           write SetMaxSeconds;
     property MaxCycles                       : LongWord                         write SetMaxCycles;
+    property MaxRestarts                     : LongWord                         write SetMaxRestarts;
     property VertexSmall[Index:Word]         : TaVertexDataType                 write SetNMSmall;
     property VertexLower[Index:Word]         : TaVertexDataType                 write SetNMLower;
     property VertexUpper[Index:Word]         : TaVertexDataType                 write SetNMUpper;
+    property CallBackChangeFraction          : Single                           write SetCallBackChange;
+    property CallBack_ms                     : LongWord                         write SetCallBackTime;
    end;
 
 
@@ -254,22 +272,22 @@ SetLength(fSmallLimits,0);
 SetLength(fLowerLimits,0);
 SetLength(fUpperLimits,0);
 SetLength(fCrawlReportList,0);
-fAlive               := False;
-fActiveCnt           := 0;
-fDim                 := 0;
-fLastDim             := 0;
-fMaxCycles           := 0;
-fErrorFunction       := nil;
-fErrorObjFunction    := nil;
-fIllegalErrorFunValue:= 0;
-fCumulativeSeconds   := 0;
-fRandomChangeFraction:= 0;
-fMaxRestarts         := 0;
-fMaxSeconds          := 0;
-fMinScoreChange      := 0;
-fIllegalErrorRetries := 0;
-fThreadID            := GetCurrentThreadID;
-Amoebes              := NumberofAmoebes;
+fAlive                 := False;
+fActiveCnt             := 0;
+fDim                   := 0;
+fLastDim               := 0;
+fMaxCycles             := 0;
+fErrorFunction         := nil;
+fErrorObjFunction      := nil;
+fIllegalErrorFunValue  := 0;
+fCumulativeSeconds     := 0;
+fRandomChangeFraction  := 0;
+fMaxRestarts           := 0;
+fMaxSeconds            := 0;
+fMinScoreChangeFraction:= 0;
+fIllegalErrorRetries   := 0;
+fThreadID              := GetCurrentThreadID;
+Amoebes                := NumberofAmoebes;
 FillChar(fNMpar,SizeOf(fNMpar),0);
 end; {~create}
 
@@ -476,7 +494,7 @@ begin
 with fSharedData do
   begin
   b:= (MilliSecondsBetween(Now,fLastCallBackTime)>fCallBack_ms)     or
-      ((fNMP^.BestScore<>0) and (abs(fLastCallBackScore/fNMP^.BestScore-1)>fCallBackDifference));
+      ((fNMP^.BestScore<>0) and (abs(fLastCallBackScore/fNMP^.BestScore-1)>fCallBackChangeFraction));
   if b then
     begin
     fLastCallBackTime := Now;
@@ -497,6 +515,7 @@ with fSharedData do
 end; {~callback}
 
 
+{$push}{$warn 5091 off: simplex,gravityvertex,reflectedvertex,tmpVertex,SavedVertex,BVertex}
 {09/02/2021 old object into one procedure}
 procedure TaNMSimplexAmoebe.Crawl;
 var i,j,Dim,LastDim               : Word;
@@ -508,6 +527,7 @@ var i,j,Dim,LastDim               : Word;
     Start                         : TDateTime;
     LastAliveCheck                : Single;
     Simplex                       : TaVertexArray;
+    Enabled                       : Boolean;
 
     procedure StoreSimplex(Index      : Word;
                            AScore     : TaVertexDataType;
@@ -678,11 +698,11 @@ if fAmoebeID>=0 then with fSharedData do
   Setlength(BVertex        ,Dim);
   if Length(fNMP^.BestVertex)<>fDim then
     SetLength(fNMP^.BestVertex,Dim);
-  fNMP^.FitValid:= False;
   for i:= 0 to LastDim do
     fNMP^.FitValid:= fNMP^.FitValid or (fNMP^.BestVertex[i]<>0);
   SavedVertex:= Copy(fNMP^.BestVertex);
-  while (fNMP^.Restarts<=fMaxRestarts) and (fNMP^.Seconds<fMaxSeconds) and fNMP^.FitValid do
+  Enabled    := fNMP^.FitValid;
+  while (fNMP^.Restarts<=fMaxRestarts) and (fNMP^.Seconds<fMaxSeconds) and Enabled do
     begin
     for i:= 0 to Dim do with Simplex[i] do                                      //vertex size is fDim+1
       begin
@@ -709,7 +729,7 @@ if fAmoebeID>=0 then with fSharedData do
     fLastCallBackScore := Simplex[0].Score;
     NMCycles           := fNMP^.Cycles;
     CumulativeMaxCycles:= fMaxCycles+NMCycles;
-    while (NMCycles<CumulativeMaxCycles) and (fNMP^.Seconds<fMaxSeconds) and fNMP^.FitValid do
+    while (NMCycles<CumulativeMaxCycles) and (fNMP^.Seconds<fMaxSeconds) and Enabled do
       begin
       fNMP^.BestScore:= Simplex[0].Score;
       for i:= 0 to LastDim do
@@ -764,8 +784,8 @@ if fAmoebeID>=0 then with fSharedData do
       Inc(NMCycles);
       ChangeFraction:= Abs(Simplex[0].Score/ifthen(fNMP^.BestScore=0,1,fNMP^.BestScore)-1);
       fNMP^.Cycles  := NMCycles;
-      fNMP^.FitValid:= (ChangeFraction=0) or (ChangeFraction>fMinScoreChange);
       fNMP^.Seconds := fCumulativeSeconds+Math.Max(1e-8,SecondSpan(Now,Start));
+      Enabled       := (ChangeFraction=0) or (ChangeFraction>fMinScoreChangeFraction);
       if fCallBackMode then
          begin
          fNMP^.BestVertex:= Copy(Simplex[0].Vertex);
@@ -779,8 +799,7 @@ if fAmoebeID>=0 then with fSharedData do
         begin
         LastAliveCheck:= fNMP^.Seconds;
         fLocker.BeginRead;
-        if not fAlive then
-          fNMP^.FitValid:= False;
+        Enabled:= fAlive;
         fLocker.EndRead;
         end;
       end; {while l}
@@ -802,6 +821,7 @@ fLocker.BeginWrite;
 Dec(fSharedData.fActiveCnt);
 fLocker.EndWrite;
 end; {~crawl}
+{$pop}
 
 
 {03/02/2021}
@@ -889,24 +909,24 @@ fLocker   := TMultiReadExclusiveWriteSynchronizer.Create;
 ResultData:= TaNMSimplexShared.Create;
 with ResultData do
   begin
-  fAlive               := False;
-  Amoebes              := Max(1,NumberOfAmoebes);
-  fDim                 := ErrFunParameters;
-  fLastDim             := Max(0,Pred(fDim));
-  fMaxRestarts         := Ceil(fDim div 2);
-  fMaxSeconds          := Power(2,fDim);
-  fErrorFunction       :=  ErrFunction;
-  fErrorObjFunction    := ErrObjFunction;
-  fLoopCallBack        := nil;
-  fLoopCallBackObj     := nil;
-  fTimeCallBack        := nil;
-  fTimeCallBackObj     := nil;
-  fCumulativeSeconds   :=  0;
-  fCallBackDifference  :=  0.01;
-  fIllegalErrorRetries := 10;
-  fMinScoreChange      :=  0;
-  fRandomChangeFraction:=  0.3;
-  fActiveCnt           :=  0;
+  fAlive                 := False;
+  Amoebes                := Max(1,NumberOfAmoebes);
+  fDim                   := ErrFunParameters;
+  fLastDim               := Max(0,Pred(fDim));
+  fMaxRestarts           := Ceil(fDim div 2);
+  fMaxSeconds            := Power(2,fDim);
+  fErrorObjFunction      := ErrObjFunction;
+  fErrorFunction         := ErrFunction;
+  fLoopCallBack          := nil;
+  fLoopCallBackObj       := nil;
+  fTimeCallBack          := nil;
+  fTimeCallBackObj       := nil;
+  fCumulativeSeconds     :=  0;
+  fCallBackChangeFraction:=  0.01;
+  fIllegalErrorRetries   := 10;
+  fMinScoreChangeFraction:=  0;
+  fRandomChangeFraction  :=  0.3;
+  fActiveCnt             :=  0;
   if fIllegalErrorFunValue=MinDouble then
     fIllegalErrorFunValue:= 1e-100
   else if fIllegalErrorFunValue=MaxDouble then
@@ -916,7 +936,7 @@ with ResultData do
   else                                      fIllegalTest:= illLarge;
   end;
 SetMaxCycles;
-Adaptive              := True; {sets also defaults for fNM for dead amoebe}
+Adaptive:= True; {sets also defaults for fNM for dead amoebe}
 end; {~initialize}
 
 
@@ -942,11 +962,77 @@ with ResultData do
 end; {~initlimits}
 
 
+{14/02/2021}
+procedure TaNMSimplex.SetIllegalValue(AValue:TaVertexDataType);
+begin
+if not Live then
+  ResultData.fIllegalErrorFunValue:= AValue;
+end; {~setillegalvalue}
+
+
+{14/02/2021}
+procedure TaNMSimplex.SetMaxRetries(Retries:Word=10);
+begin
+if not Live then
+  ResultData.fIllegalErrorRetries:= Retries;
+end; {~setmaxretries}
+
+
+{14/02/2021}
+procedure TaNMSimplex.SetMaxSeconds(Seconds:Single);
+begin
+if not Live then
+  ResultData.fMaxSeconds:= Seconds;
+end; {~setmaxcycles}
+
+
+{14/02/2021}
 procedure TaNMSimplex.SetMaxCycles(Cycles:LongWord=0);
 begin
 with ResultData do
   fMaxCycles:= ifthen(Cycles=0,100+Round(Power(3,fDim)),Cycles);
 end; {~setmaxcycles}
+
+
+{14/02/2021}
+procedure TaNMSimplex.SetMaxRestarts(Restarts:LongWord=1);
+begin
+if not Live then
+  ResultData.fMaxRestarts:= Restarts;
+end; {~setmaxrestarts}
+
+
+{14/02/2021}
+procedure TaNMSimplex.SetRandomChange(AFraction:Single=0.3);
+begin
+if not Live then
+  ResultData.fRandomChangeFraction:= Max(0,Min(AFraction,1));
+end; {~setrandomchange}
+
+
+{14/02/2021}
+procedure TaNMSimplex.SetMinScoreChange(AFraction:Single=0);
+begin
+if not Live then
+  ResultData.fMinScoreChangeFraction:= Max(0,Min(AFraction,1));
+end; {~setminscorechange}
+
+
+{14/02/2021}
+procedure TaNMSimplex.SetCallBackChange(AFraction:Single=0.01);
+begin
+if not Live then
+  ResultData.fCallBackChangeFraction:= Max(0,Min(AFraction,1));
+end; {~setcallbackchange}
+
+
+{14/02/2021}
+procedure TaNMSimplex.SetCallBackTime(ms:LongWord);
+begin
+if not Live then
+  ResultData.fCallBack_ms:= ms;
+end; {~setcallbacktime}
+
 
 
 {26/05/2020 better default}
@@ -1016,7 +1102,8 @@ end; {~setfnm}
 function TaNMsimplex.GetAlive: Boolean;
 begin
 fLocker.BeginRead;
-Result:= ResultData.fAlive;
+if assigned(ResultData) then Result:= ResultData.fAlive
+else                         Result:= False;
 fLocker.EndRead;
 end; {~getalive}
 
@@ -1055,7 +1142,7 @@ begin
 with ResultData,CrawlReport do
   begin
   FitValid  := Length(AVertex)=fDim;
-  BestVertex:= Copy(AVertex);
+  BestVertex:= AVertex;
   Restarts  := -1;
   Seconds   := 0;
   i         := 10;
@@ -1075,15 +1162,15 @@ end; {~initreport}
 {22/07/2017}
 {12/09/2017 no time reporting here}
 {09/02/2021 added amoebeid}
-procedure TaNMSimplex.AddToReportList(var ACrawlReport:NMReportRecord);
+procedure TaNMSimplex.AddToReportList(var AmoebeReport:NMReportRecord);
 var k: NelderMeadParam;
 begin
-with ACrawlReport do
+with AmoebeReport do
   begin
   if FitValid and assigned(BestVertex) and (BestScore<CrawlReport.BestScore) then
     begin
     CrawlReport.BestScore := BestScore;
-    CrawlReport.BestVertex:= Copy(BestVertex);
+    CrawlReport.BestVertex:= BestVertex;
     CrawlReport.AmoebeID  := AmoebeID;
     end;
   CrawlReport.Cycles:= CrawlReport.Cycles+Cycles;
@@ -1136,7 +1223,7 @@ begin
 with ResultData do
   if Amoebes<=1 then
     SingleAmoebe(AVertex,CumulativeSeconds,CallBackAmoebes)
-  else if not Alive then
+  else if not Live then
     begin
     InitReport(AVertex);
     SetLength(AmoebeThreadList,Amoebes);
@@ -1185,8 +1272,8 @@ var j                : Integer;
     Start            : TDateTime;
     Amoebe           : TaNMSimplexAmoebe;
     RunTime,BreakTime: Double;
-    begin
-with ResultData do if not Alive then
+begin
+with ResultData do if not Live then
   begin
   InitReport(AVertex);
   Amoebes  := 1;                                                                //zero-based counting
@@ -1211,6 +1298,7 @@ with ResultData do if not Alive then
            StopAmoebe;
       until (j=0) or (RunTime>5*BreakTime);
       AddToReportList(ResultData.fCrawlReportList[0]);                          //copy bestvertex to fNMCrawlReport when bestscore improves
+      Amoebe.Free;
       end; {while restarts}
     Seconds:= fCumulativeSeconds+SecondSpan(Now,Start);                         //report time of startamoebe
     end; {with}
@@ -1218,9 +1306,19 @@ with ResultData do if not Alive then
 end; {~singleamoebe}
 
 
+{13/02/2021}
+procedure TaNMsimplex.ResetAmoebe(AVertex:TaFunctionVertex);
+begin
+if Length(AVertex)<>ResultData.fDim then SetLength(AVertex,ResultData.fDim);
+fBestSimplex.Vertex:= Copy(AVertex);
+fBestSimplex.Score := 0;
+ResultData.ClearReportLists;
+end; {~resetamoebe}
+
+
 procedure TaNMsimplex.StopAmoebe;
 begin
-Alive:= False;
+Live:= False;
 end; {~stopamoebe}
 
 
@@ -1228,12 +1326,14 @@ destructor TaNMsimplex.Destroy;
 begin
 fLocker.Free;
 ResultData.Free;
-Finalize(fBestSimplex); {length should be fdim+1}
+Finalize(fBestSimplex.Vertex);
+Finalize(fBestSimplex);
 Inherited;
 end; {~destroy}
 
 
 //-----procedures-and functions------------------------------------------------
+
 
 function WithinRange(AValue,Limit1,Limit2:TaVertexDataType;
                      Limit1Inclusive     :Boolean=False;
@@ -1245,4 +1345,3 @@ end; {withinrange}
 
 
 end.
-
