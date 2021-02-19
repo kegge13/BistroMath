@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 11/02/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 18/02/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -981,11 +981,12 @@ type
     procedure PreloadTransfer(Sender       :TObject                );
    {$ENDIF PRELOAD}
    {when data are read directly, they are sent to the Editor in a separate thread}
-    function  AddEngine                                             : Integer;
+    function  AddEngine(ForceExpand        :Boolean=False          ): Integer;
     procedure SetEngineValues(aEngine      :Integer                );
     function  SelectEngine(aEngine         :Integer;
                            aShift          :Integer=0;
                            Synchronise     :Boolean=True           ): Integer;
+    procedure SetHistoryListSize(NewLength :Word                   );
     function  PassRefOrg(ReceivingEngine   :Integer                ): Boolean;
     function  DataSource2PlotItem(aSource  :twcDataSource          ): PlotItems;
     procedure InitCxBlock(NewLineMax       :Integer                );
@@ -1161,7 +1162,6 @@ const DefAppName           ='BistroMath';
       DefChartAxB          =  1;
       DefChartAxR          =  2;                                                //DefChartAxT=3;
       DefMinFPCbuild       =690;
-      DefEngineFinalize    =-99;
       DefConfigRepairFile  ='BM700_renamed_elements.ini';
       XtypeFilter          = csNumeric+[EmptyXtype];
       PlotSeriesColors  : array[PlotItems] of TColor       = (clRed,clBlue,clGreen,clMaroon{,clNavy});
@@ -1487,16 +1487,16 @@ begin
 inherited;
 if DefaultFormatSettings.DecimalSeparator<>'.' then
   FatalError('needs "." as decimal separator');
-SetLength(Engines,1);
 {$IFDEF PRELOAD}
 PreLoadStream      := TStringStream.Create('');
 {$ENDIF PRELOAD}
 CommonAppData      := AppendPathDelim(GetCommonAppdataRoot);                    //TOtools.pas
+SetLength(Engines,1);                                                           //we start with one engine
 UsedEngine         :=  0;
 LoadEngine         :=  0;
+Engines[UsedEngine]:= TWellhoferData.Create;                                    //primary analysis engine
 UsedDataTopLine    :=  0;
 TempRefEngine      := -1;
-Engines[UsedEngine]:= TWellhoferData.Create;                                    //primary analysis engine
 PanelElements      := TPanelConfig.Create(CxMaxCol,0);                          //the visual results panel elements, created dynamically
 ClipBoardLock      := True;                                                     //keep clipboard locked during initialisation
 CxUsedLineMax      := 0;                                                        //early initialisation needed
@@ -3224,6 +3224,7 @@ end; {~setenginevalues}
 
 
 {29/09/2020 transfer temporary reference between engines}
+{18/02/2021 when historylistsize is reduced, the lowest temprefengine has the highest chance to survive}
 function TAnalyseForm.PassRefOrg(ReceivingEngine:Integer): Boolean;
 begin
 Result:= assigned(Engines[ReceivingEngine]) and
@@ -3235,7 +3236,7 @@ if Result then
   if Result then                                                                //keep it safe
     begin
     Engines[ReceivingEngine].SetReferenceOrg(dsRefOrg,True,Engines[TempRefEngine]);
-    TempRefEngine:= ReceivingEngine;                                             //always keep latest copy of reforg
+    TempRefEngine:= Min(TempRefEngine,ReceivingEngine);                         //always keep lowest copy of reforg
     end
   else
     Engines[ReceivingEngine].UnSetReferenceOrg;
@@ -3246,13 +3247,16 @@ end; {~passreforg}
 {14/09/2020 will expand the number of engines until the maximum and then resuse the oldest, the index is stored in LoadEngine}
 {17/09/2020 Freeze}
 {29/09/2020 PassRefOrg}
-function TAnalyseForm.AddEngine: Integer;
+{15/02/2021 forceexpand mode added}
+function TAnalyseForm.AddEngine(ForceExpand:Boolean=False): Integer;
 begin
 if not HistoryListCheckBox.Checked then
   Result:= 0
 else if not Engines[UsedEngine].IsValid then
   Result:= UsedEngine
 else
+  ForceExpand:= True;
+if ForceExpand then
   begin
   Result:= Length(Engines);
   if Result<HistoryListSize_num.Value then
@@ -3265,9 +3269,9 @@ else
     end
   else
     Result:= SelectEngine(LoadEngine,1,False);
-  end;
-LoadEngine            := Result;
-Engines[Result].Freeze:= False;
+  end; {expand}
+LoadEngine                := Result;
+Engines[LoadEngine].Freeze:= False;
 SetEngineValues(Result);
 end; {~addengine}
 
@@ -3280,6 +3284,7 @@ end; {~addengine}
 {17/11/2020 UsedDataTopLine}
 {14/01/2020 PriorityMessage shown at the very end}
 {11/02/2021 not needed, double work: if not Engines[UsedEngine].Freeze then Reload(Self);}
+{18/02/2021 call PassRefOrg only when tempref is set}
 function TAnalyseForm.SelectEngine(aEngine    :Integer;
                                    aShift     :Integer=0;
                                    Synchronise:Boolean=True): Integer;
@@ -3293,7 +3298,7 @@ if Result>0 then
   Result:= (Result+aEngine+Clip(aShift,-Result,Result)) mod Result;             //UsedEngine must always be positive
   if (Result<>UsedEngine) and Synchronise then
     begin
-    if UsedEngine<Length(Engines) then
+    if (UsedEngine<Length(Engines)) and assigned(Engines[UsedEngine]) then
       Engines[UsedEngine].Freeze:= HistoryListFreezeCheckBox.Enabled and HistoryListFreezeCheckBox.Checked;
     UsedEngine                 := Result;
     DataEditor        .Modified:= False;
@@ -3303,7 +3308,8 @@ if Result>0 then
     FileOpenDialog    .Filename:= Engines[UsedEngine].FileName;
     DetectedFileType           := Engines[UsedEngine].LastDetectedFileType;
     UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;            //restore full state including starting point for reading
-    PassRefOrg(UsedEngine);                                                     //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
+    if ProcessSetTempRefItem.Checked then
+      PassRefOrg(UsedEngine);                                                     //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
     ClearScreen(Self);
     DataEditor.Clear;
    {$IFDEF PRELOAD}
@@ -3964,7 +3970,7 @@ if (PageControl.ActivePage=AnalysisTab)    and
           if LocalDataTopLine=0 then                                            //already in editor when LocalDataTopLine>0
             begin
            {$IFDEF PRELOAD}
-            PreloadStream.Size:= 0;
+            PreloadStream.Clear;
             PreloadStream.WriteString(ClipBoard.AsText);                        //copy clipboard to stream
             Engines[UsedEngine].FileName:= DefaultName;
             PreloadTransfer(Self);
@@ -3975,13 +3981,14 @@ if (PageControl.ActivePage=AnalysisTab)    and
             end
           else
             begin
-            {$IFDEF PRELOAD}
-             PreloadStream.WriteString(DataEditor.Lines.Text);                  //copy editor to stream
-             Engines[UsedEngine].FileName:= DefaultName;
-             PreloadTransfer(Self);
-            {$ELSE}
-             DataEditor.Modified:= False;
-            {$ENDIF}
+           {$IFDEF PRELOAD}
+            PreloadStream.Clear;
+            PreloadStream.WriteString(DataEditor.Lines.Text);                  //copy editor to stream
+            Engines[UsedEngine].FileName:= DefaultName;
+            PreloadTransfer(Self);
+           {$ELSE}
+            DataEditor.Modified:= False;
+           {$ENDIF}
             end;
           ReadEditor(nil);                                                      //here the text data are send to engine[usedengine] and analysed, using UsedDataTopLine
           SetCaption(Engines[UsedEngine].MakeCurveName);
@@ -4901,11 +4908,30 @@ with Engines[UsedEngine] do
 end; {~smartscaleelectronpdd}
 
 
+{15/02/2021}
+{18/02/2021 do not add empty engines immediately}
+procedure TAnalyseForm.SetHistoryListSize(NewLength:Word);
+var i,j: Integer;
+begin
+HistoryListSize_num.Value:= NewLength;
+j                        := Length(Engines);
+if NewLength<Length(Engines) then
+  for i:= j-1 downto 0 do
+    if i>=NewLength then
+      FreeAndNil(Engines[i])
+    else
+      Engines[i].Freeze:= HistoryListCheckBox.Checked;
+if TempRefEngine>=NewLength then
+  ProcessUnsetTempRefClick(Self);
+end; {~sethistorylistsize}
+
+
 {16/09/2020}
 {17/09/2020 HistoryListFreezeCheckBox}
 {18/09/2020 when unfrozen relaod current data if possible}
+{15/02/2021 handling engines size moved to SetHistoryListSize}
 procedure TAnalyseForm.HistoryListSizeClick(Sender: TObject);
-var i,j: Integer;
+var i  : Integer;
     c,s: Boolean;
 begin
 c:= FileHistoryItem.Checked<>HistoryListCheckBox.Checked;                       //prevent reentrance by changing checked within procedure
@@ -4919,23 +4945,19 @@ if c or (Sender=HistoryListSize_num) then
   s:= (Sender=HistoryListSize_num);                                             //s = true when listsize is changed
   if c and (not s) then                                                         //when switched to checked a size of 2 is the smallest meaningful
     HistoryListSize_num.Value:= Max(2,HistoryListSize_num.Value);
-  j:= ifthen(LoadEngine=DefEngineFinalize,0,Max(1,ifthen(FileHistoryItem.Checked,HistoryListSize_num.Value,1)));
-  if j<Length(Engines) then
+  i:= Max(1,ifthen(FileHistoryItem.Checked,HistoryListSize_num.Value,1));
+  if UsedEngine>=i then
     begin
-    for i:= Length(Engines)-1 downto 0 do
-      if i>=j then
-        FreeAndNil(Engines[i])
-      else
-        Engines[i].Freeze:= c;
-    SetLength(Engines,j);
-    if UsedEngine>=j then
-      begin
-      LoadEngine:= 0;
-      SelectEngine(0);
-      end
-    else if not (c or s or ClipBoardLock) then                                  //ClipBoardLock is set during FormCreate
-      Reload(Sender);                                                           //reload current data in unfrozen state when meaningful
-    end;
+    if assigned(Engines[0]) then
+      FreeAndNil(Engines[0]);
+    Engines[0         ]:= Engines[UsedEngine];
+    Engines[UsedEngine]:= nil;
+    LoadEngine         := 0;
+    SelectEngine(0);
+    end
+  else if not (c or s or ClipBoardLock) then                                    //ClipBoardLock is set during FormCreate
+    Reload(Sender);                                                             //reload current data in unfrozen state when meaningful
+  SetHistoryListSize(i);
   if not ClipBoardLock then                                                     //ClipBoardLock is set during FormCreate
     UpdateSettings(Sender);
   ShowMenuItemStatus(FileHistoryItem);
@@ -7104,8 +7126,8 @@ if Result then
         FileName          := AFile;
        {$IFDEF PRELOAD}
         Parser.Assign(AFile,BinStream);                                         //direct transfer from binary stream to parser parser when possible; clears binstream
-        Parser.PreLoaded  := True;
-        PreloadStream.Size:= 0;
+        Parser.PreLoaded:= True;
+        PreloadStream.Clear;
         Parser.Strings.SaveToStream(PreLoadStream);                             //copy from parser to stringstream
         PreloadTransfer(Self);
        {$ELSE} //no preload
@@ -9444,7 +9466,7 @@ end; {~formkeypress}
 procedure TAnalyseForm.PreloadTransfer(Sender:TObject);
 begin
 if (DataEditor.Lines.Count=0) and assigned(PreloadStream) and (PreloadStream.Size>MinClipBoardBytes) then
-  begin                                                                         //preserve data created through outher methods, and not yet cleared
+  begin                                                                         //preserve data created through other methods, and not yet cleared
   PreloadStream.Position:= 0;                                                   //it seems to be critical to set the stream position to zero
   DataEditor.Lines.LoadFromStream(PreloadStream);                               //this might take a long time...
   DataEditor.Modified:= False;                                                  //the data are already processed so modified should be false
@@ -9744,6 +9766,11 @@ MeasGenericToElectronItem.Checked:= False;
 SettingsTabExit(Self);
 AdvancedSettingsTabExit(Self);
 PDDfitCheckBox.Checked:= True;
+if FileHistoryItem.Checked then
+  begin
+  FileHistoryItem.Checked:= False;
+  HistoryListSizeClick(FileHistoryItem);
+  end;
 CheckMenuItem(MeasUseFitModelItem       ,False);
 CheckMenuItem(ViewSwapGTItem            ,False);
 CheckMenuItem(ViewSwapABItem            ,False);
@@ -9876,7 +9903,7 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
   Engines[UsedEngine].ResampleGridSize:= 0.2;
   CheckMenuItem(MeasResampleItem,True);
   ReadEditor(Self);
-  FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50,twcRight),21.08,0.2,'Right, resampled');
+  FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50,twcRight),19.2,0.2,'Right, resampled'); {23}
   CheckMenuItem(MeasResampleItem,False);
   EdgeDetectionCheckBox.Checked:= True;
   end;
@@ -9975,8 +10002,8 @@ if TestResult(LoadSelftestFile('selftest10_generic.txt'  ),'Generic profile') th
   CursorPosCm:= -7;
   PlotCursor(Sender);
   AddMessage(Format('Filter=%0.1f mm, Calculation width=%0.1f mm',[FilterWidth_mm.Value,CalcWidth_mm.Value]),tNormal);
-  FloatResult(PlotValues[pMeasured  ].Caption,99.51,0.01  ,'Measured interpolated at -7');           {62}
-  FloatResult(PlotValues[pCalculated].Caption,99.86,0.03  ,'Calculated interpolated at -7');         {63}
+  FloatResult(PlotValues[pMeasured  ].Caption,99.6,0.1,'Measured interpolated at -7');               {62}
+  FloatResult(PlotValues[pCalculated].Caption,99.9,0.1,'Calculated interpolated at -7');             {63}
   CalcWidth_mm.Value:= 0;
   SettingsTabExit(Self);
   ReadEditor(Self);
@@ -10220,19 +10247,12 @@ end; {~formclose}
 {14/09/2020 EngineCleanUp}
 procedure TAnalyseForm.FormDestroy(Sender:TObject);
 begin
-LoadEngine:= DefEngineFinalize;                                                 //this is checked in HistoryListSizeClick
-HistoryListSizeClick(Self);
+{$IFDEF PRELOAD}
+FreeAndNil(PreLoadStream);
+{$ENDIF PRELOAD}
 {$IFDEF THREAD_FILES}
 if assigned(ScanListThread) then
   ScanListThread.Terminate;
-{$IFDEF PRELOAD}
-{$IFDEF PRELOADTRANSFER}
-if assigned(PreloadTransferThread) then
-  PreloadTransferThread.Terminate;
-PreloadTransferThread:= nil;
-{$ENDIF PRELOADTRANSFER}
-FreeAndNil(PreLoadStream);
-{$ENDIF PRELOAD}
 {$ENDIF THREAD_FILES}
 if ConfigAutoSaveItem.Checked then
   ConfigSave(Self);
@@ -10245,6 +10265,7 @@ FreeAndNil(PanelElements);
 Finalize(FileConvPhotonItems);
 Finalize(FileConvElectronItems);
 Finalize(FileConvGeneralItems);
+SetHistoryListSize(0);                                                          //finalize all engines
 inherited;
 end; {~formdestroy}
 
