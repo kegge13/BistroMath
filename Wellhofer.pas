@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 17/02/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 19/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 {$I TOmath_opt.inc}
@@ -267,6 +267,7 @@ const
   twcSamePositionRadiusCm  = 0.02;
   twcDefSigmoidRadiusCm    = 1;
   twcDefMinFilterWidthCm   = 0.01;
+  twcDefEdgeRangeCm        = 2;
   pddfit_I1                = 0;              {This ordering is important when skipping the build-up part}
   pddfit_mu1               = 1;
   pddfit_mu2               = 2;
@@ -440,7 +441,7 @@ type
   twcFieldSizeDesc  =(fInplane,fCrossplane);
   twcModalityChar   = 'C'..'X';
   twcShiftType      =(AbsShift,RelShift);
-  twcAnyDataSource  =(dsMeasured,dsReference,dsMeasFiltered,dsRefFiltered,dsCalculated,dsBuffer,dsRefOrg,dsUnrelated
+  twcSourceEnum     =(dsMeasured,dsReference,dsMeasFiltered,dsRefFiltered,dsCalculated,dsBuffer,dsRefOrg,dsUnrelated
                      {$IFDEF WELLHOFER_DUMPDATA},dsDefault{$ENDIF});                                                                   {order is used for coupling}
   twcTankAxis       =(X,Y,Z);
   twcMeasAxis       =(Inplane,Crossplane,Beam);
@@ -522,12 +523,12 @@ const                                                                           
   twcLastRelated    = dsBuffer;
   twcFilterSources  = [dsMeasured    ,dsReference  ];
   twcFilteredCopies = [dsMeasFiltered,dsRefFiltered];
-  twcCoupledSources :array[dsMeasured..dsReference      ] of twcAnyDataSource=(dsMeasFiltered,dsRefFiltered);
-  twcCoupledFiltered:array[dsMeasFiltered..dsRefFiltered] of twcAnyDataSource=(dsMeasured    ,dsReference  );
+  twcCoupledSources :array[dsMeasured..dsReference      ] of twcSourceEnum=(dsMeasFiltered,dsRefFiltered);
+  twcCoupledFiltered:array[dsMeasFiltered..dsRefFiltered] of twcSourceEnum=(dsMeasured    ,dsReference  );
 
 {$IFDEF WELLHOFER_DUMPDATA}
 var
-  DumpDataFilter:set of twAnyDataSource=[dsMeasured..dsUnrelated];
+  DumpDataFilter:set of twcSourceEnum=[dsMeasured..dsUnrelated];
 {$ENDIF}
 
 (*------modality---------------------------------------
@@ -2724,9 +2725,14 @@ type
                         X                             :twcFloatType;
                         ASource                       :twcDataSource=dsMeasured;
                         InverseCalc                   :Boolean      =False     ): twcFloatType;
-     function  FindCalcRange(CalcPosCm                :twcFloatType;                                 //BistroMath core function
+     function  FindCalcRange(CalcPosCm                :twcFloatType;                                 //find range around posiiton
                              var Lpos,Rpos            :Integer;
-                             ASource                  :twcDataSource=dsMeasured): Boolean;
+                             ASource                  :twcDataSource=dsMeasured): Boolean; overload;
+     function  FindCalcRange(ADataLevel               :twcFloatType;                                 //find range around level
+                             NearestPos               :Integer;
+                             var Lpos,Rpos            :Integer;
+                             ASide                    :twcSides;
+                             ASource                  :twcDataSource=dsMeasured): Boolean; overload;
      function  SigmoidFitErrorResult(var a            :TaFunctionVertex        ): TaVertexDataType;  //costfunction for edge fit
      function  TvSpddFunction(a                       :TaFunctionVertex;
                               cm                      :TaVertexDataType        ): TaVertexDataType;
@@ -3129,9 +3135,9 @@ type
      procedure UnSetReferenceOrg;                                                         //invalidate wsource[reforg]
      function  StopProcessing                                                  : Boolean;
      {$IFDEF WELLHOFER_DUMPDATA}
-     procedure DumpData(const Info                 :String         ='';
-                        ASource                    :twcDataSource  =dsMeasured;
-                        OriginSource               :twAnyDataSource=dsDefault );
+     procedure DumpData(const Info                 :String        ='';
+                        ASource                    :twcDataSource =dsMeasured;
+                        OriginSource               :twcSourceEnum =dsDefault  );
      {$ENDIF}
      destructor Destroy;                                                                         override;
     published
@@ -3240,7 +3246,7 @@ const
   twcPDDminTopCm          :twcFloatType= 0.3;
   twcExtBlackList         :String      ='.exe.ini.cnt.hlp.nld.eng.lnk';
   twcFieldShapeStg        :array[twcFieldShape     ] of String=('RECTANGULAR','BLOCKS','MLC','CIRCULAR');
-  twcDataSourceNames      :array[twcAnyDataSource  ] of String=('Measured','Reference','Filtered','RefFiltered','Calculated','Buffer','RefOrg','Unrelated'
+  twcDataSourceNames      :array[twcSourceEnum     ] of String=('Measured','Reference','Filtered','RefFiltered','Calculated','Buffer','RefOrg','Unrelated'
                                                                 {$IFDEF WELLHOFER_DUMPDATA},'Default'{$ENDIF});
   twcDoseLevelNames       :array[twcDoseLevel      ] of String=('dLow','dHigh','d20','d50','d80','d90','dUser','Derivative','Inflection','Sigmoid50','dTemp');
   twcCenterTypeNames      :array[twcCenterType     ] of String=('Border/Edge','Origin','Maximum');                                                                          {ordering critical for user interface}
@@ -14770,20 +14776,20 @@ if not Result then
   {$IFDEF COMPILED_DEBUG}
   if LogLevel>1 then
     begin
-    if not IsValid                            then FailInfo:= 'invalid source'
-    else if not wSource[ADivisor].twValid     then FailInfo:= 'invalid divisor'
-    else if ASource=fDivisor                  then FailInfo:= 'source=divisor'
-    else if fSource=fDivisor                  then FailInfo:= 'fsource=divisor'
-    else if wSource[ASource ].twAvgNormVal<=0 then FailInfo:= 'source normvalue'
-    else if wSource[ADivisor].twAvgNormVal<=0 then FailInfo:= 'divisor normvalue'
-    else                                           FailInfo:= '';
+    if not IsValid                              then FailInfo:= 'invalid source'
+    else if not wSource[ADivisor].twValid       then FailInfo:= 'invalid divisor'
+    else if ASource=fDivisor                    then FailInfo:= 'source=divisor'
+    else if fSource=fDivisor                    then FailInfo:= 'fsource=divisor'
+    else if wSource[ASource ].twAvgNormValue<=0 then FailInfo:= 'source normvalue'
+    else if wSource[ADivisor].twAvgNormValue<=0 then FailInfo:= 'divisor normvalue'
+    else                                             FailInfo:= '';
     end;
   {$ENDIF}
   Result:= IsValid and wSource[ADivisor].twValid and (ASource<>ADivisor) and
            (ASource<>fDivisor) and (fSource<>ADivisor)                   and
            (wSource[ASource].twAvgNormValue>0) and (wSource[ADivisor].twAvgNormValue>0);
   {$IFDEF COMPILED_DEBUG}
-  FailInfo:= ifthen(ok,'start','entrance');
+  FailInfo:= ifthen(Result,'start','entrance');
   {$ENDIF}
   if Result then
     begin
@@ -14942,7 +14948,7 @@ if not Result then
     Dec(FActiveCnt);
     end; {result}
   {$IFDEF COMPILED_DEBUG}
-  if (not Ok) and (LogLevel>1) then
+  if (not Result) and (LogLevel>1) then
     StatusMessage(Format('Divide %s failed at %s',[twcDataSourceNames[ASource],FailInfo]),False,1);
   {$ENDIF}
   end;
@@ -16523,6 +16529,7 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
  -NumBins was again (a second time) reduced for right side
  -when WedgeData was true, m for left side was obtained from right peak statistics
  -loops stopped at k=1 but had exit approval for k=0 situation}
+{18/02/2021 limitations on edge range: twcDefEdgeRangeCm}
 function TWellhoferData.Derive(cm          :twcFloatType =twcDefaultValue;
                                ASource     :twcDataSource=dsMeasured;
                                ADestination:twcDataSource=dsCalculated;
@@ -16544,7 +16551,7 @@ var L                   : TLinFit;
    {$ENDIF FIXED_DISTANCE_DERIVATIVE}
     DeadBandLow,DeadBandHigh,
     LocalMin,LocalMax,
-    Y,PeakWidth,
+    Y,PeakWidth,RangeCm,
     GlobalMin,GlobalMax : twcFloatType;
     PeakAtMax,WedgedData,
     HighPassed,LowPassed: Boolean;
@@ -16707,6 +16714,9 @@ if (not FFrozen) and wSource[ASource].twValid then
         twData[Pc]:= 0;
        end;
     FreeAndNil(L);
+    {$IFDEF WELLHOFER_DUMPDATA}
+    DumpData('Raw derivative',ADestination,ASource);
+    {$ENDIF}
     Pc:= Max(twDataFirst,Pred(twScanFirst));                                    //may be local peak
     GlobalMin:= twData[Pc];
     GlobalMax:= GlobalMin;
@@ -16843,29 +16853,35 @@ if (not FFrozen) and wSource[ASource].twValid then
           twMinArr:= EnsureRange(twMinArr,Min(twMaxArr+5,twDataLast),twDataLast)
         else if not Penumbra[twcLeft].Valid then
           twMaxArr:= EnsureRange(twMaxArr,twDataFirst,Max(twMinArr-5,twDataFirst));
-        Level:= 0;              //==========================fit of peaks=========================
+        Level  := 0;              //=================================fit of peaks==============================
+        RangeCm:= twcDefEdgeRangeCm*twSDD2SSDratio*twSSD_cm/100;
         with Penumbra[twcLeft] do if Valid then                                 //left side
           begin
           Nearest:= twMaxArr;
           Valid  := False;
           k      := 2;
-          while (Nearest<twMinArr) and (not Valid) and (k>=0) do
+          while (Nearest<twMinArr) and (not Valid) and (k>=0) do                //try to fit peak, reduce points when needed
             begin
             i    := Max(twScanFirst,Nearest-k);
-            j    := Nearest+k;
+            while twPosCm[Nearest]-twPosCm[i]>RangeCm do Inc(i);
+            j    := Min(Nearest+k,twScanLast);
+            while twPosCm[j]-twPosCm[Nearest]>RangeCm do Dec(j);
+            m    := Min(m,Succ(j-i));
             Calc := twPosCm[twMaxArr];
             if (k=0) and (i=twMaxArr) then
               Valid:= True
             else if m>2 then                                                    //enough points available
               begin
               Q.Initialize;
-              for Pc:= i to j do
-                Q.Add_XY(twPosCm[Pc],twData[Pc]);
+              for Pc:= i to j do                                                //test also that data are on penumbra
+               Q.Add_XY(twPosCm[Pc],twData[Pc]);
               Y    := Q.TopX;
               Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-k)],twPosCm[Min(Nearest+k,twScanLast)]);
               if Valid then
                 Calc:= Y;                                                       //best possible calculation when enough points availabe
-              end;
+              end
+            else
+              k:= 1;
             Dec(k);
             end;
           if wCenterDefinition[twSetFieldType]=CenterPenumbra then
@@ -16882,8 +16898,11 @@ if (not FFrozen) and wSource[ASource].twValid then
           m      := Sampler.CountBelow[Sampler.LargestBin];                     //data points below dead band
           while (Nearest>twMaxArr) and (not Valid) and (k>=0) do
             begin
-            i    := Nearest-k;
+            i    := Max(twScanFirst,Nearest-k);
+            while twPosCm[Nearest]-twPosCm[i]>RangeCm do Inc(i);
             j    := Min(Nearest+k,twScanLast);
+            while twPosCm[j]-twPosCm[Nearest]>RangeCm do Dec(j);
+            m    := Min(m,Succ(j-i));
             Calc := twPosCm[MinArr];
             if (k=0) and (j=MinArr) then
               Valid:= True
@@ -16897,7 +16916,9 @@ if (not FFrozen) and wSource[ASource].twValid then
               Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-k)],twPosCm[Min(Nearest+k,twScanLast)]);
               if Valid then
                 Calc := Y;                                                      //best possible calculation when enough points availabe
-              end;
+              end
+            else
+              k:= 1;
             Dec(k);
             end;
           if wCenterDefinition[twSetFieldType]=CenterPenumbra then
@@ -16928,7 +16949,7 @@ if (not FFrozen) and wSource[ASource].twValid then
         end;
       end;
     Result:= twCenterPosCm;
-    end; {with}
+    end; {with ADestination}
   {$IFDEF WELLHOFER_DUMPDATA}
   DumpData('Derive',ADestination,ASource);
   DumpData('Derive Points',dsUnrelated);
@@ -17526,8 +17547,8 @@ with wSource[ASource] do
   Result:= twValid and InRange(CalcPosCm,twFirstDataPosCm,twLastDataPosCm);
   if Result then
     begin
-    X:= CalcPosCm-CalcWidth_cm/2;
     c:= CalcWidth_cm/2;
+    X:= CalcPosCm-c;
     try
       Lpos:= Max(0,Trunc((X-twPosCm[twDataFirst])/twStepSizeCm))+twDataFirst;    //preliminary estimation
      except
@@ -17540,6 +17561,34 @@ with wSource[ASource] do
     X   := X+CalcWidth_cm;
     Rpos:= Min(Succ(Lpos),twDataLast);
     while (Rpos<twDataLast) and (twPosCm[Rpos]<=X) and (twPosCm[Rpos+1]-X<c) do
+      Inc(Rpos);
+    end;
+  end;
+end; {~findcalcrange}
+
+
+{19/02/2021 new variant}
+function TWellhoferData.FindCalcRange(ADataLevel   :twcFloatType;
+                                      NearestPos   :Integer;
+                                      var Lpos,Rpos:Integer;
+                                      ASide        :twcSides;
+                                      ASource      :twcDataSource=dsMeasured): Boolean;
+var X,c: twcFloatType;
+    i  : Integer;
+begin
+with wSource[ASource] do
+  begin
+  Result:= twValid and InRange(NearestPos,twScanFirst,twScanLast);
+  if Result then
+    begin
+    c   := CalcWidth_cm/2;
+    X   := twPosCm[NearestPos];
+    i   := ifthen(ASide=twcLeft,1,-1);
+    Lpos:= NearestPos;
+    Rpos:= NearestPos;
+    while (Lpos>twScanFirst) and ((X-twPosCm[Pred(Lpos)]<c) or (i*(ADataLevel-twData[Lpos])<=0)) do
+      Dec(Lpos);
+    while (Rpos<twScanLast ) and ((twPosCm[Succ(Rpos)]-X<c) or (i*(ADataLevel-twData[Rpos])>0)) do
       Inc(Rpos);
     end;
   end;
@@ -17804,6 +17853,7 @@ To improve speed, old results are checked to see if a certain actual level is al
 {09/07/2020 twEdgeDefUse:= GetRelatedEdgeType(twUsedEdgeLevel)
             twEdgeDefUse depends no longer on (wCenterDefinition[FieldClass]=CenterPenumbra)}
 {05/11/2020 do not initialise Lpos and Rpos anymore for findcalcrange}
+{19/02/2021 alternative version findcalcrange}
 function TWellhoferData.FindLevelPos(ASource          :twcDataSource=dsMeasured;
                                      ALevel           :twcDoseLevel =d50;
                                      Symmetric        :Boolean     =True): Boolean;
@@ -17889,7 +17939,7 @@ with wSource[ASource] do
         Result:= Valid;
         if Valid then
           begin
-          FindCalcRange(twPosCm[Nearest],Lpos,Rpos,ASource);                    //faster than GetQfittedValue because nearest posiiotn already known
+          FindCalcRange(WantedLevel,Nearest,Lpos,Rpos,twcLeft,ASource);
           Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
           end
         else
@@ -17940,7 +17990,7 @@ with wSource[ASource] do
         Result:= Result and Valid;                                              //result is true when both borders are valid
         if Valid then
           begin
-          FindCalcRange(twPosCm[Nearest],Lpos,Rpos,ASource);
+          FindCalcRange(WantedLevel,Nearest,Lpos,Rpos,twcRight,ASource);
           Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
           end
         else
@@ -18172,7 +18222,7 @@ with wSource[ASource] do
             end;
         if twValid then
           try
-            if twLocalPeak then
+            if twLocalPeak then   //-------localpeak only-----------------
               begin                                                             //twAbsNormPos must be available, find twScanFirst en twScanFirst
               i   := NearestPosition(twAbsNormPosCm,ASource);
               lTmp:= twcSearchNoiseFactor*twData[i];
@@ -18201,7 +18251,7 @@ with wSource[ASource] do
                   lTmp      := twcSearchNoiseFactor*lMin;
                   end
                 end; {while}
-              end; {localpeak}
+              end;                //-------localpeak only-----------------
             if ScanType in twcHoriScans then
               begin
               j   := twScanFirst;
@@ -18256,12 +18306,12 @@ with wSource[ASource] do
                 twRelNormValue  := vmax;
                 end;
               {$IFDEF COMPILED_DEBUG}
-              StatusMessage(Format('%s: max(%0.1f)=%0.1f',[twcDataSourceNames[ASource],twMaxPosCm,vmax]),False,2);
+              StatusMessage(Format('%s: max(%0.1f)=%0.1f',[twcDataSourceNames[ASource],twMaxPosCm,vmax]),False,1);
               {$ENDIF}
               if twFittedData then
                 PDDmaxNMFit(ASource);                                           //sets twMaxPosCm, twMaxValue
               {$IFDEF COMPILED_DEBUG}
-              FailInfo:= Format('p4: %0.1f=%0.1f',[twAbsNormPosCm,twAbsNormVal]);
+              FailInfo:= Format('p4: %0.1f=%0.1f',[twAbsNormPosCm,twAbsNormValue]);
               {$ENDIF}
               try
                 twValid         := (twAbsNormValue>0) and InRange(GetQFittedValue(twAbsNormPosCm,ASource)/twAbsNormValue,0.1,10);
@@ -18391,11 +18441,8 @@ with wSource[ASource] do
       twValid:= False;
      end; {try, no fastscan}
 {$IFDEF COMPILED_DEBUG}
-if (not wSource[ASource].twValid) and (LogLevel>1) then
-  begin
+if not wSource[ASource].twValid then
   StatusMessage(Format('FastScan %s failed at %s',[twcDataSourceNames[ASource],FailInfo]),False,1);
-  wSource[ASource].twValid:= True;
-  end;
 {$ENDIF}
 Dec(FActiveCnt);
 end; {~fastscan}
@@ -19036,9 +19083,9 @@ end; {~stopprocessing}
 
 {$IFDEF WELLHOFER_DUMPDATA}
 {19/05/2020}
-procedure TWellhoferData.DumpData(const Info  :String         ='';
-                                  ASource     :twcDataSource  =dsMeasured;
-                                  OriginSource:twAnyDataSource=dsDefault);
+procedure TWellhoferData.DumpData(const Info  :String       ='';
+                                  ASource     :twcDataSource=dsMeasured;
+                                  OriginSource:twcSourceEnum=dsDefault);
 var Stg: String;
     i  : Integer;
 begin
@@ -19050,12 +19097,22 @@ if (ASource in DumpDataFilter) or (OriginSource in DumpDataFilter) then
   with wSource[ASource] do
     begin
     Stg:= '';
-    for i:= twDataFirst to twDataLast do
-      Stg:= Format('%s, %0.9f',[Stg,twPosCm[i]]);
+    if assigned(twPosCm) then
+      begin
+      for i:= twDataFirst to twDataLast do
+        Stg:= Format('%s, %0.9f',[Stg,twPosCm[i]]);
+      end
+    else
+      Stg:= 'twPosCm empty';
     StatusMessage(Stg,False);
     Stg:= '';
-    for i:= twDataFirst to twDataLast do
-      Stg:= Format('%s, %0.9f',[Stg,twData[i]]);
+    if assigned(twPosCm) then
+      begin
+      for i:= twDataFirst to twDataLast do
+        Stg:= Format('%s, %0.9f',[Stg,twData[i]]);
+      end
+    else
+      Stg:= 'twData empty';
     StatusMessage(Stg,False);
     end;
   end;

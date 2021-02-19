@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 11/02/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 18/02/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -3224,6 +3224,7 @@ end; {~setenginevalues}
 
 
 {29/09/2020 transfer temporary reference between engines}
+{18/02/2021 when historylistsize is reduced, the lowest temprefengine has the highest chance to survive}
 function TAnalyseForm.PassRefOrg(ReceivingEngine:Integer): Boolean;
 begin
 Result:= assigned(Engines[ReceivingEngine]) and
@@ -3235,7 +3236,7 @@ if Result then
   if Result then                                                                //keep it safe
     begin
     Engines[ReceivingEngine].SetReferenceOrg(dsRefOrg,True,Engines[TempRefEngine]);
-    TempRefEngine:= ReceivingEngine;                                             //always keep latest copy of reforg
+    TempRefEngine:= Min(TempRefEngine,ReceivingEngine);                         //always keep lowest copy of reforg
     end
   else
     Engines[ReceivingEngine].UnSetReferenceOrg;
@@ -3283,6 +3284,7 @@ end; {~addengine}
 {17/11/2020 UsedDataTopLine}
 {14/01/2020 PriorityMessage shown at the very end}
 {11/02/2021 not needed, double work: if not Engines[UsedEngine].Freeze then Reload(Self);}
+{18/02/2021 call PassRefOrg only when tempref is set}
 function TAnalyseForm.SelectEngine(aEngine    :Integer;
                                    aShift     :Integer=0;
                                    Synchronise:Boolean=True): Integer;
@@ -3296,7 +3298,7 @@ if Result>0 then
   Result:= (Result+aEngine+Clip(aShift,-Result,Result)) mod Result;             //UsedEngine must always be positive
   if (Result<>UsedEngine) and Synchronise then
     begin
-    if UsedEngine<Length(Engines) then
+    if (UsedEngine<Length(Engines)) and assigned(Engines[UsedEngine]) then
       Engines[UsedEngine].Freeze:= HistoryListFreezeCheckBox.Enabled and HistoryListFreezeCheckBox.Checked;
     UsedEngine                 := Result;
     DataEditor        .Modified:= False;
@@ -3306,7 +3308,8 @@ if Result>0 then
     FileOpenDialog    .Filename:= Engines[UsedEngine].FileName;
     DetectedFileType           := Engines[UsedEngine].LastDetectedFileType;
     UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;            //restore full state including starting point for reading
-    PassRefOrg(UsedEngine);                                                     //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
+    if ProcessSetTempRefItem.Checked then
+      PassRefOrg(UsedEngine);                                                     //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
     ClearScreen(Self);
     DataEditor.Clear;
    {$IFDEF PRELOAD}
@@ -4906,6 +4909,7 @@ end; {~smartscaleelectronpdd}
 
 
 {15/02/2021}
+{18/02/2021 do not add empty engines immediately}
 procedure TAnalyseForm.SetHistoryListSize(NewLength:Word);
 var i,j: Integer;
 begin
@@ -4917,9 +4921,8 @@ if NewLength<Length(Engines) then
       FreeAndNil(Engines[i])
     else
       Engines[i].Freeze:= HistoryListCheckBox.Checked;
-if j<NewLength then
-  for i:= j to NewLength-1 do
-    AddEngine(True);                                                            //new length of engines is set here
+if TempRefEngine>=NewLength then
+  ProcessUnsetTempRefClick(Self);
 end; {~sethistorylistsize}
 
 
@@ -4943,14 +4946,18 @@ if c or (Sender=HistoryListSize_num) then
   if c and (not s) then                                                         //when switched to checked a size of 2 is the smallest meaningful
     HistoryListSize_num.Value:= Max(2,HistoryListSize_num.Value);
   i:= Max(1,ifthen(FileHistoryItem.Checked,HistoryListSize_num.Value,1));
-  SetHistoryListSize(i);
   if UsedEngine>=i then
     begin
-    LoadEngine:= 0;
+    if assigned(Engines[0]) then
+      FreeAndNil(Engines[0]);
+    Engines[0         ]:= Engines[UsedEngine];
+    Engines[UsedEngine]:= nil;
+    LoadEngine         := 0;
     SelectEngine(0);
     end
   else if not (c or s or ClipBoardLock) then                                    //ClipBoardLock is set during FormCreate
     Reload(Sender);                                                             //reload current data in unfrozen state when meaningful
+  SetHistoryListSize(i);
   if not ClipBoardLock then                                                     //ClipBoardLock is set during FormCreate
     UpdateSettings(Sender);
   ShowMenuItemStatus(FileHistoryItem);
@@ -9759,6 +9766,11 @@ MeasGenericToElectronItem.Checked:= False;
 SettingsTabExit(Self);
 AdvancedSettingsTabExit(Self);
 PDDfitCheckBox.Checked:= True;
+if FileHistoryItem.Checked then
+  begin
+  FileHistoryItem.Checked:= False;
+  HistoryListSizeClick(FileHistoryItem);
+  end;
 CheckMenuItem(MeasUseFitModelItem       ,False);
 CheckMenuItem(ViewSwapGTItem            ,False);
 CheckMenuItem(ViewSwapABItem            ,False);
@@ -9891,7 +9903,7 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
   Engines[UsedEngine].ResampleGridSize:= 0.2;
   CheckMenuItem(MeasResampleItem,True);
   ReadEditor(Self);
-  FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50,twcRight),21.08,0.2,'Right, resampled');
+  FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50,twcRight),19.2,0.2,'Right, resampled'); {23}
   CheckMenuItem(MeasResampleItem,False);
   EdgeDetectionCheckBox.Checked:= True;
   end;
@@ -9990,8 +10002,8 @@ if TestResult(LoadSelftestFile('selftest10_generic.txt'  ),'Generic profile') th
   CursorPosCm:= -7;
   PlotCursor(Sender);
   AddMessage(Format('Filter=%0.1f mm, Calculation width=%0.1f mm',[FilterWidth_mm.Value,CalcWidth_mm.Value]),tNormal);
-  FloatResult(PlotValues[pMeasured  ].Caption,99.51,0.01  ,'Measured interpolated at -7');           {62}
-  FloatResult(PlotValues[pCalculated].Caption,99.86,0.03  ,'Calculated interpolated at -7');         {63}
+  FloatResult(PlotValues[pMeasured  ].Caption,99.6,0.1,'Measured interpolated at -7');               {62}
+  FloatResult(PlotValues[pCalculated].Caption,99.9,0.1,'Calculated interpolated at -7');             {63}
   CalcWidth_mm.Value:= 0;
   SettingsTabExit(Self);
   ReadEditor(Self);
