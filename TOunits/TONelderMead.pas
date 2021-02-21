@@ -1,4 +1,4 @@
-unit TONelderMead;   {© Theo van Soest, FPC 3.2.0: 17/02/2021}
+unit TONelderMead;   {© Theo van Soest, FPC 3.2.0: 20/02/2021}
 {$MODE DELPHI}
 
 (*
@@ -8,10 +8,10 @@ unit TONelderMead;   {© Theo van Soest, FPC 3.2.0: 17/02/2021}
  Fuchang Gao, Lixing Han: Implementing the Nelder-Mead simplex algorithm with adaptive parameters
  Comput Optim Appl, DOI 10.1007/s10589-010-9329-3 [2011]
 
- A vertex is a vector consisting of the parameters of the function to be optimised. The length is fDim.
- The Nelder-Mead optimisation creates a simplex of fDim+1 vertices using variations on the initial vertex.
- This simplex crawls through the fDim-dimensional space using the results of a given error function.
- For this reason the simplex can be seen as a amoebe (a jellyfish like bacteria).
+ A *vertex* is a vector consisting of the parameters of the function to be optimised. The length is fDim.
+ The Nelder-Mead optimisation creates a *simplex* of fDim+1 vertices using variations on the initial vertex.
+ This simplex crawls through the fDim-dimensional space using the results of a given *error function*.
+ For this reason the simplex can be seen as a *amoebe* (a jellyfish like bacteria).
  The error function is called with a (fDim) vertex and is expected to calculate the difference between
  data and the function to be optimised. The user is responsible for the error function.
 
@@ -60,17 +60,17 @@ type
   {27/07/2017 amoebeid, restarts->integer}
   {01/02/2021 LastCallBackTime,LastCallBackScore}
   NMReportRecord=record
-                  BestScore        : TaVertexDataType;
-                  BestVertex       : TaFunctionVertex;  //The parameters of the error function
-                  Cycles           : LongWord;          //Used cycles for the optimisation
-                  Seconds          : Single;            //Calender time used.
-                  AmoebeID         : Word;              //Each thread has its own report, starting from 0
-                  NMsteps          : array[NelderMeadParam] of LongWord; //Counts each type of step.
-                  Restarts         : Integer;           //Restaring does help to jump into a better solution.
-                  FitValid         : Boolean;           //The vertex produces a legal error function result
-                  ENR              : Single;            //extended noise reduction tries to flatten 'waves'
-                  ReportTime       : TDateTime;
-                  Reported         : Boolean;
+                  BestScore        : TaVertexDataType;                          //The best result of the errro function (in general the lowest)
+                  BestVertex       : TaFunctionVertex;                          //The parameters of the error function
+                  Cycles           : LongWord;                                  //Used cycles for the optimisation
+                  Seconds          : Single;                                    //Calender time used.
+                  AmoebeID         : Word;                                      //Each thread has its own report, starting from 0
+                  NMsteps          : array[NelderMeadParam] of LongWord;        //Counts each type of step.
+                  Restarts         : Integer;                                   //Restaring does help to jump into a better solution.
+                  FitValid         : Boolean;                                   //The vertex produces a legal error function result
+                  ENR              : Single;                                    //extended noise reduction tries to flatten 'waves'
+                  ReportTime       : TDateTime;                                 //datetime of report
+                  Reported         : Boolean;                                   //true when handled by main thread
                  end;
 
   NMReportPointer       = ^NMReportRecord;

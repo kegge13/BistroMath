@@ -1,8 +1,6 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 19/02/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 21/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
-{$I TOmath_opt.inc}
-
 
 (*
 =================================================================================
@@ -54,11 +52,11 @@ TWellhoferData=class(TRadthData) is the main object class in this unit. It is in
   e) irregular data sets must be supported.
 
  TWellhoferData holds a series of identical data structures:
-    wSource                   : array[twcDataSource] of twCurveDataRec;
-	  twcDataSource=twcFirstDataSource..twcLastDataSource;
+    wSource: array[twcDataSource] of twCurveDataRec;
+	  twcDataSource     =twcFirstDataSource..twcLastDataSource;
 	  twcFirstDataSource= dsMeasured;
 	  twcLastDataSource = dsUnrelated;
-          twAnyDataSource=(dsMeasured,dsReference,dsMeasFiltered,dsRefFiltered,dsCalculated,dsBuffer,dsRefOrg,dsUnrelated,dsDefault);
+          twAnyDataSource   =(dsMeasured,dsReference,dsMeasFiltered,dsRefFiltered,dsCalculated,dsBuffer,dsRefOrg,dsUnrelated,dsDefault);
 
   As filtered versions of the raw data are used intensively, it is efficient to keep filtered versions available at all times.
   The burden of this strategy is to keep the fileterd version updated at all times.
@@ -2020,46 +2018,44 @@ Number of points: 1024
     end;
 
 (*
-**********WMS-binair*******************************
-   +++++++++++++++++++++++++++++++++++++++
-   -lengte van header    :   integer=588              2 bytes
-   -header               :   record                 588
-    .header-identificatie:   integer=6    2+
-    .headerstructuur                    584+------ (588)
-    .header-identificatie:   integer=6    2+
+**********WMS-binary*******************************
+   +++++++ integer = smallint = 2 bytes ++
+   -length of header      :   integer=588              2 bytes
+   -header                :   record                 588
+    .header identification:   integer=6    2+
+    .header structure                    584+------ (588)
+    .header identification:   integer=6    2+
 
-   -lengte profieldata   :   integer=n*10+4           2
-   -datablok=profiel                           variabel
-    .data-identificatie  :   integer=7    2+
-    .aantal datapunten   :   integer      2+--  (4+5n*2)
-    .n*(x,y,z,field,ref) :   integer   5n*2+   posities in 0.1 mm
+   -length scan data      :   integer=n*10+4           2
+   -data block=profile                            4+5n*2
+    .data identification  :   integer=7    2+
+    .data points          :   integer      2+ >> (4+5n*2)
+    .n*(x,y,z,field,ref)  :   integer   5n*2+   positions in 0.1 mm
      (met x=gt, y=ab, z=bm)
-   OF
-   -lengte van plane-data:   integer=n*4+18           2
-   -datablok=plane                             variabel
-    .data-identificatie  :   integer=8    2+
-    .restant plane header: 8*integer    8*2+-- (18+2n*2)
-    .n*(field,ref)       :2n*integer   2n*2+
+   OR
+   -length of plane data  :   integer=n*4+18           2
+   -data block=plane                             18+2n*2
+    .data-identification  :   integer=8    2+
+    .rest of plane header : 8*integer    8*2+ >>(18+2n*2)
+    .n*(field,ref)        :2n*integer   2n*2+
    +++++++++++++++++++++++++++++++++++++++
 
-   Volgens het bestand 'common.f' waaruit deze informatie is gehaald, volgt
-   aan het einde van een datablok ook nog een data-identificatie. Dit blijkt
-   in praktijk niet zo te zijn; in de berekening van de grootte van het data-
-   blok wordt dit ook niet meegenomen!
+   According to the file 'common.f' on which this information is based, there follows
+   at the end of a data block also a data identification. This appears not be true in practice;
+   in the calculation of the data block size this is not included!
 
-   Toelichting op variabelen in wmsFileHeader_Rec en wmsPlaneHeader_Rec:
-  -Scangrenzen:
-   *WmhBorders[1..2;AxGT..AxBm] geeft de meetposities in versnellercoördinaten.
-   *De grenzen voor de as waarlangs gescand wordt, staan bovendien in wmhScan1,2.
-    {GT/AB/Beam start/stop; voor line scan 0 en lengte van scan.
-   *wmhKs geeft het type data in de file: D=depth dose, G=gt, A=ab, L=line scan,
-                                          U=undefined , P=plane.
-   *wmhOrKs geeft het type data dat oorspronkelijk is gemeten door WMS.
-    In het algemeen wmhKs=wmhOrKs
-   *De as waarlangs gescand wordt, is benoemd in wmhOrKs; wmhKs='P' (plane).
-    In theorie zou hier elke van de twee assen kunnen staan, die het vlak opspannen.
-    Dit is echter niet zo: zowel scan-programmatuur als BDAS leggen een vaste koppeling
-    tussen het te scannen vlak en de scanas.
+   Notes on variables in wmsFileHeader_Rec and wmsPlaneHeader_Rec:
+  -Scan limits:
+   *WmhBorders[1..2;AxGT..AxBm] gives de measurement positions in linac coördinates.
+   *The limits for the scan axis are also given in wmhScan1,2.
+    {GT/AB/Beam start/stop; for line scan ("L", see below) 0 en length van scan.
+   *wmhKs indicates the data type: D=depth dose, G=gt, A=ab, L=line scan,
+                                   U=undefined , P=plane.
+   *wmhOrKs gives the originalle measured data type.
+    In general wmhKs=wmhOrKs
+   *The scan axis is set in wmhOrKs; wmhKs='P' (plane).
+    In theory any combinations of two axes could be given for a plane.
+    This proves to be fixed in all known software:
 	  wmhOrKs   wmpPlane  scan/transportrichting   korte/lange zijde film
 	    'G'        1      axgt/axab                    G/A   (rotatie 0°)
 	    'A'        2      axab/axbm                    A/P
@@ -15328,6 +15324,7 @@ end; {~timereport}
 {03/06/2018 FIndexingMode}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
+{21/02/2021 avoid division by zero for twFitNormalisation altogether insteed of relying on try..except}
 procedure TWellhoferData.PddFit(ASource     :twcDataSource=dsMeasured;
                                 ADestination:twcDataSource=dsCalculated);
 const Photonvertex   : array[0..pddfit_mubpower ] of TaVertexDataType=(110,  4,  -7,  15,   -10, 60,    260,  0.1 ); {I1, mu1..4, Ib, mub,mubpower}
@@ -15582,7 +15579,9 @@ if (not (FFrozen or FIndexingMode)) and Analyse(ASource) then
     twFitNormalisation:= 1;     {needed for PDDmaxNMFit}
     Analyse(FNMPddSource); { -> PDDmaxNMFit; sets twMaxPosCm, twMaxValue}
     try
-      twFitNormalisation:= 100/TvSpddFunction(BestVertex,twMaxPosCm);
+      fMax:= TvSpddFunction(BestVertex,twMaxPosCm);
+      if fMax>0 then
+        twFitNormalisation:= 100/fMax;
      except
       twFitNormalisation:= 1;
      end;
