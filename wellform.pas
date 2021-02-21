@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.10/FPC 3.2.0: 18/02/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 21/02/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -21,13 +21,21 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
-  Menus, StdCtrls, ActnList, MaskEdit, EditBtn, Spin,
+  Menus, StdCtrls, ActnList, EditBtn, Spin,
   {$IFDEF Windows}
   htmlhelp,
   {$ENDIF}
   TAGraph, TASeries, TAFuncSeries, TATransformations, TAAxisSource, SpinEx, RTTICtrls,
   LCLType, Grids, ValEdit, LMessages,
-  FileIter, TOconfigStrings, TOnumparser, Wellhofer, PanelElements;
+  FileIter, TOconfigStrings, TOnumparser, Wellhofer, PanelElements, TAChartAxisUtils;
+
+//Work-around for backward compatibility for LCL v2.0.10 and below.
+//It seems that both the TChartAxis.OnMarkToText event and TChartAxis.OnGetMarkText exist in v2.0.10 and v2.0.12
+//but the object inspector v2.0.10 offers only OnMarkToText and v2.0.12 only OnGetMarkText.
+//Therefore setting this at design time is has become problematic. Instead this event now is set at runtime in FormCreate.
+{$if declared(TChartGetAxisMarkTextEvent)}
+ {$DEFINE LCL_2-0-12_Up}
+{$endif}
 
 const
   NumSpecialModes  = 3;
@@ -304,6 +312,9 @@ type
     added ShowLockItemCheckBox
   30/01/2021
     event DataPlotExtentChanged(Sender: TChart);
+  21/02/2021
+      replace AxisMarkToText for deprecated OnMarkToText event with
+      RightAxisGetMarkText on OnGetMarkText
   }
 
   {=========== TAnalyseForm =====================}
@@ -739,7 +750,7 @@ type
     procedure SelectConfig             (Sender         : TObject);                //selection of config file, implemented as application of fileopendialog
     procedure ConfigLoad               (Sender         : TObject);      overload;
     procedure ConfigSave               (Sender         : TObject);      overload;
-    procedure SetWellhoferValues       (Sender         : TObject);
+    procedure SetWellhoferValues       (Sender         : TObject);                //set both global and twellhoferdata related values in wellhofer.pas
     procedure FormResize               (Sender         : TObject);
     procedure SettingsTabExit          (Sender         : TObject);
     procedure AdvancedSettingsTabExit  (Sender         : TObject);
@@ -752,10 +763,8 @@ type
     procedure ReadDroppedFile          (Sender         : TObject;                 //uses DataFileOpen
                                         const FileNames: array of String);
     procedure Reload                   (Sender         : TObject);      overload;
-    procedure ReadEditor               (Sender         : TObject);      overload;
+    procedure ReadEditor               (Sender         : TObject);      overload; //read data from raw data tab and call ondataread
     procedure OnDataRead               (Sender         : TObject);      overload; //BistroMath core function, call user dependent wellhofer function, fills graphics
-    procedure AxisMarkToText           (var AText      : String;                  //introduce ability to change marks at will
-                                        AMark          : Double );
     procedure SyncSetExtSym            (Sender         : TObject);      overload; //manages submenu
     procedure SyncSetFFFpeak           (Sender         : TObject);      overload; //manages submenu
     procedure SyncSetNormalisation     (Sender         : TObject);
@@ -771,14 +780,14 @@ type
     procedure MeasMoveClick            (Sender         : TObject);
     procedure CalcSubMenuClick         (Sender         : TObject);
     procedure SymCorrectClick          (Sender         : TObject);
-    procedure UImodeChange             (Sender         : TObject);
-    procedure ReferenceDevSpecClick    (Sender         : TObject);
+    procedure UImodeChange             (Sender         : TObject);                //Enable parts of GUI on state and tab changes
+    procedure ReferenceDevSpecClick    (Sender         : TObject);                //respond to RefDeviceSpecificItem
     procedure ReferenceGenericBeamClick(Sender         : TObject);
-    procedure LocalPeakClick           (Sender         : TObject);
-    procedure RightAxisToGridClick     (Sender         : TObject);
+    procedure LocalPeakClick           (Sender         : TObject);                //limit twScanFirst/Last to area around peak
+    procedure RightAxisToGridClick     (Sender         : TObject);                //align DataPlot right axis with grid set by left axis
     procedure ActivateZoom             (Sender         : TObject);
     procedure ActivateUnZoom           (Sender         : TObject);
-    procedure DataPlotExtentChanged    (Sender         : TChart);
+    procedure DataPlotExtentChanged    (Sender         : TChart);                 //respond to DataPlot mouse zoom
     procedure MeasurementSaveClick     (Sender         : TObject);
     procedure OnMenu                   (Sender         : TObject);
     procedure EditEnter                (Sender         : TObject);
@@ -802,6 +811,14 @@ type
     procedure PageControlRequestChange (Sender         : TObject;
                                         var AllowChange: Boolean);
     procedure PageControlChange        (Sender         : TObject);
+   {$IFDEF LCL_2-0-12_Up}
+    procedure RightAxisGetMarkText     (Sender         : TObject;
+                                        var AText      : String;
+                                        AMark          : Double);
+   {$ELSE}
+    procedure AxisMarkToText           (var AText      : String;                  //introduce ability to change marks at will
+                                        AMark          : Double );
+   {$ENDIF}
     procedure FileConvPathBtnClick     (Sender         : TObject);
     procedure FileConvStartCheck       (Sender         : TObject);
     procedure FileConvStartClick       (Sender         : TObject);
@@ -812,7 +829,7 @@ type
                                         var Key        : Char);
     procedure FileConvNameMaskEnter    (Sender         : TObject);
     procedure FileConvIteratorTerminate(Sender         : TObject);
-    procedure InventoryPrepareCanvas   (Sender         : TObject;
+    procedure InventoryPrepareCanvas   (Sender         : TObject;               //inventory is on files tab
                                         aCol, aRow     : Integer;
                                         aState         : TGridDrawState);
     procedure InventoryDoFile          (Sender         : TObject;
@@ -2011,7 +2028,11 @@ if Length(PresetName)>0 then
   PresetLoad(ifthen(Pos(PathSeparator,PresetName)=0,CommonAppData,'')+PresetName)
 else
   PresetName:= 'preset';
-DataPlot.AxisList[DefChartAxR].OnMarkToText:= @AxisMarkToText;
+{$IFDEF LCL_2-0-12_Up}
+DataPlot.AxisList[DefChartAxR].OnGetMarkText:= @RightAxisGetMarkText;
+{$ELSE}
+DataPlot.AxisList[DefChartAxR].OnMarkToText := @AxisMarkToText;
+{$ENDIF}
 SetCaption(ExtraVersionInfo);
 SetForegroundWindow(Handle);
 {$IFNDEF MULTIREF_INDEX}
@@ -2081,6 +2102,17 @@ CursorPosCm                                         := 0;
 end; {~setbasicdefaults}
 
 
+{$IFDEF LCL_2-0-12_Up}
+//linked to OnMarkToText event of right axis only to improve alignment of labels
+{31/05/2020 OnMarkTiText event}
+{21/02/2021 replacement OnGetMarkText event for deprecated OnMarkToText event}
+procedure TAnalyseForm.RightAxisGetMarkText(Sender   : TObject;
+                                                    var AText: String;
+                                                    AMark    : Double);
+begin
+AText:= Format('%s%6.2f',[ifthen(AMark<100,' ',''),AMark]);
+end; {~rightaxisgetmarktext}
+{$ELSE}
 //linked to OnMarkToText event of right axis only (at runtime) to improve alignment of labels
 {31/05/2020}
 procedure TAnalyseForm.AxisMarkToText(var AText: String;
@@ -2088,6 +2120,7 @@ procedure TAnalyseForm.AxisMarkToText(var AText: String;
 begin
 AText:= Format('%s%6.2f',[ifthen(AMark<100,' ',''),AMark]);
 end; {~axismarktotext}
+{$ENDIF}
 
 
 //add default display rules to results panel
@@ -3594,6 +3627,7 @@ else
 end; {~updatesettings}
 
 
+(* UImode change responds to tab changing and other state changes with dis/enabling relevant parts of the GUI *)
 //=> AdvancedModeItem, SimpleModeItem
 {03/12/2015 edgedetectiongroupboox added}
 {17/12/2015 FFFDetectionGroupBox added
@@ -8253,6 +8287,7 @@ in second instance, by the Buffer curve.}
 {21/07/2020 fcWedge}
 {29/07/2020 switch on title for Gamma, no range adaption for Gamma}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{21/02/2021 avoid potentional log(0) situations}
 procedure TAnalyseForm.AutoZoom(FullAuto:Boolean=True);
 var p,d,ZoomWanted: Boolean;
     r,x  : twcFloatType;
@@ -8418,7 +8453,7 @@ with DataPlot,AxisList[DefChartAxR] do
         Range.Min:= Round(Range.Min);
       Range.Max  := Range.Min+r*DefAxisMaxExtension;
       end;
-    Marks.Format:= Format('%%%d.1f',[Ceil(Log10(Range.Max))+2]);
+    Marks.Format:= Format('%%%d.1f',[Ceil(Log10(Max(10,Range.Max)))+2]);
     end;
 PlotIndicators;
 PlotCursor(Self);
