@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 21/02/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 24/02/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -2616,6 +2616,7 @@ end; {~presetload}
 {15/07/2020 GammaInFieldLimits,AppliedEdgeRefNorm}
 {21/07/2020 ReadGroup}
 {16/11/2020 FileMultipleInputItem}
+{23/02/2021 writegroup ComboBox added}
 procedure TAnalyseForm.PresetLoad(CF:TConfigStrings);
 var b: Boolean;
     i: Integer;
@@ -2663,6 +2664,8 @@ var b: Boolean;
       Dec(i);
       if Controls[i] is TCheckBox then
         CF.ShortRead(SectionName,TCheckBox(Controls[i]))
+      else if Controls[i] is TComboBox then
+        CF.ShortRead(SectionName,TComboBox(Controls[i]))
       else if Controls[i] is TSpinEditEx then
         CF.ShortRead(SectionName,TSpinEditEx(Controls[i]))
       else if Controls[i] is TFloatSpinEditEx then
@@ -4236,6 +4239,7 @@ Fills graph and triggers display of analysis results (PublishResults).
 {15/10/2020 set FieldType name in axis title as is, without brackect or lowercase}
 {29/10/2020 ReportDifferences added for failing reference}
 {14/01/2020 PriorityMessage shown at the very end}
+{24/02/2021 FFF detected added to bottom axis title}
 procedure TAnalyseForm.OnDataRead(Sender:TObject);
 var i                           : Integer;
     m                           : twcMeasAxis;
@@ -4538,7 +4542,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
               end;
       Set_F;                                                                             //set scaling for measured
       with DataPlot do
-        begin
+        begin                    //------------------bottom axis title--------------------------------------------------------------------------------------
         b:= False;
         if not ViewBottomAxisAlwaysBlack.Checked then                                    //wUserAxisSign is applied in Prepareprofile}
           for m:= Inplane to Beam do b:= b or ((wUserAxisSign[m]<0) and twDesVaryingAxis[m]);
@@ -4561,7 +4565,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
             Er:= Er+'e';
           Er:= Format(' %0.0f %sV,',[tmpE,Er]);
           end;
-        Br:= Format('%s%s %s%s%s%s%s%s%s%s',
+        Br:= Format('%s%s %s%s%s%s%s%s%s%s%s',
                     [ifthen(Linac=twcDefUnknown,'',Linac+','),
                      Er,Tr,
                      ifthen((ScanType in [snGT,snAB,snFreescan,snAngle]) and
@@ -4571,6 +4575,8 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
                             ', '+Identity                                                                   ,''),
                      ifthen(AxisViewFieldTypeCheckBox .Checked,
                             ', '+twcFieldClassNames[AppliedFieldClass]                                      ,''),
+                     ifthen(twFFFdetected and (AppliedFieldClass<>fcFFF),
+                            ' (fff)'                                                                        ,''),
                      ifthen(AxisViewDetNameCheckBox   .Checked,
                             ', '+wDetectorInfo.twDetName.SubString(0,Round(AxisViewDetLength_num.Value))    ,''),
                      ifthen(AxisViewCommentsCheckBox  .Checked and (Length(wCurveInfo.twDesMeasComment)>0)  ,
@@ -7366,6 +7372,7 @@ results.
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {06/10/2020 fundamentals alternative}
 {09/02/2021 added conditions PCRMRlinac and PCRelectron}
+{23/02/2021 introduced PCRfffShape, renamed PCRfff to PCRfffType}
 procedure TAnalyseForm.PublishResults;
 var s                                 : String;
     ZeroShift,L,NotNormCenter         : Boolean;
@@ -7413,14 +7420,14 @@ var s                                 : String;
   end; {setcxresultvisible}
 
   procedure RunPanelElements;
-  var i,j                  : Integer;
-      decimals             : Word;
-      annotations,sLocal   : String;
-      ccolor,cdefault      : TColor;
-      cblock               : CxBlock;
-      cbeam                : Char;
-      tval,cval,cmulti     : twcFloatType;
-      cvertical,cnm_NxorAbs: Boolean;
+  var i,j                           : Integer;
+      decimals                      : Word;
+      annotations,sLocal            : String;
+      ccolor,cdefault               : TColor;
+      cblock                        : CxBlock;
+      cbeam                         : Char;
+      tval,cval,cmulti,esteps       : twcFloatType;
+      cvertical,cnm_NxorAbs,FFFshape: Boolean;
 
     function CheckCond(AFlag:Boolean;
                        ACond:SmallInt): Boolean;
@@ -7452,9 +7459,19 @@ var s                                 : String;
     end; {addannotation}
 
   begin
-  i    := 0;
-  j    := PanelElements.Count;
-  cbeam:= Engines[UsedEngine].wSource[dsMeasured].twBeamInfo.twBModality;
+  i       := 0;
+  j       := PanelElements.Count;
+  cbeam   := Engines[UsedEngine].wSource[dsMeasured].twBeamInfo.twBModality;
+  FFFshape:= Engines[UsedEngine].wSource[dsMeasured].twFFFdetected;
+  try
+    esteps:= Round(Engines[UsedEngine].wSource[dsMeasured].twBeamInfo.twbEnergy/DefEnergyUncertainty);
+    if Engines[UsedEngine].ScanType in twcVertScans then
+      tval:= Engines[UsedEngine].GetFieldLength
+    else
+      tval:= Engines[UsedEngine].GetFieldWidthCm(dsMeasured,dDerivative)/Engines[UsedEngine].wSource[dsmeasured].twSDD2SSDratio;
+   except
+    tval:= 0;
+   end;
   while i<j do
     begin
     with PanelElements.FElements[i] do
@@ -7464,29 +7481,21 @@ var s                                 : String;
         begin
         if PCRdefaultsource or (not Engines[UsedEngine].wSource[PCRxrecord.XSource].twValid) then
           PCRxrecord.Xsource:= DataSource;   {Usource changed as needed}
-        try
-          if Engines[UsedEngine].ScanType in twcVertScans then
-            tval:= Engines[UsedEngine].GetFieldLength
-          else
-            tval:= Engines[UsedEngine].GetFieldWidthCm(dsMeasured,dDerivative)/Engines[UsedEngine].wSource[dsmeasured].twSDD2SSDratio;
-         except
-          tval:= 0;
-         end;
         if CheckCond(AppliedFieldClass=fcStandard      ,PCRconditions[PCRstandard      ]) and
-           CheckCond(AppliedFieldClass=fcFFF           ,PCRconditions[PCRfff           ]) and
+           CheckCond(AppliedFieldClass=fcFFF           ,PCRconditions[PCRfffType       ]) and
            CheckCond(AppliedFieldClass=fcSmall         ,PCRconditions[PCRsmall         ]) and
            CheckCond(AppliedFieldClass=fcMRlinac       ,PCRconditions[PCRMRlinac       ]) and
            CheckCond(AppliedFieldClass=fcWedge         ,PCRconditions[PCRwedge         ]) and
            CheckCond(AppliedFieldClass=fcElectron      ,PCRconditions[PCRelectron      ]) and
            CheckCond(Engines[UsedEngine].ReferenceValid,PCRconditions[PCRrefvalid      ]) and
+           CheckCond(FFFshape                          ,PCRconditions[PCRfffShape      ]) and
            CheckCond(RefUseDivideByItem .Checked       ,PCRconditions[PCRisDivision    ]) and
            CheckCond(RefUseGammaItem    .Checked       ,PCRconditions[PCRisGamma       ]) and
            CheckCond(not SimpleModeItem .Checked       ,PCRconditions[PCRSimpleViewHide]) and
            CheckFieldSize(PCRfieldSize,tval)                                              and
            ((PCRenergySteps=0)                                     or
-            InRange(Round(Engines[UsedEngine].wSource[PCRxrecord.XSource].twBeamInfo.twbEnergy/DefEnergyUncertainty),
-                    ifthen(PCRenergyDif<0,0     ,PCRenergySteps+PCRenergyDif),
-                    ifthen(PCRenergyDif>0,MaxInt,PCRenergySteps+PCRenergyDif))                           ) then
+            InRange(esteps,ifthen(PCRenergyDif<0,0,PCRenergySteps+PCRenergyDif),ifthen(PCRenergyDif>0,MaxInt,PCRenergySteps+PCRenergyDif)))
+           then
           with Engines[UsedEngine].wSource[PCRxrecord.XSource] do
             begin
             if PCRsimple then
@@ -7511,7 +7520,7 @@ var s                                 : String;
                             SyntheticMade,
                             ccolor);
               AddAnnotation(pa_fff,
-                            AppliedFieldClass=fcFFF,
+                            FFFshape,
                             ccolor);
               AddAnnotation(pa_ssd,
                             Engines[UsedEngine].wSource[PCRxrecord.XSource].twPosScaling<>1,

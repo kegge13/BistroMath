@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 21/02/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 23/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2474,6 +2474,7 @@ type
   {22/05/2020 twSigmoidDone}
   {21/07/2020 removed twIsWedgedProfile}
   {27/08/2020 reintroduced twMaxPosCm,twMaxValue; twTopModel now only used for fitresults of top}
+  {23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff}
   twCurveDataRec=record
     twAbsNormConfig  : Boolean;       {a configured value/position is used to normalise}
     twAbsNormDefUse  : twcPositionUseType;
@@ -2501,6 +2502,7 @@ type
     twDerivativeValid: Boolean;
     twExtraText      : TStringDynArray;
     twFastScan       : Boolean;
+    twFFFdetected    : Boolean;
     twFFFslope       : array[twcSides] of twFFFslopeRecord;
     twFFFslopesTop   : twcFloatType;
     twFileIDString   : String;
@@ -8652,6 +8654,7 @@ with ACurveRec,twBeamInfo do
   twDataHistoryStg := '';
   twDevice         := '';
   twFastScan       := False;
+  twFFFdetected    := False;
   twFileIDString   := '';
   twFileName       := '';
   twFilmData       := False;
@@ -13224,6 +13227,7 @@ end; {~exportwmsprofile}
 {15/05/2020 twFirstScanPosCm,twLastScanPosCm}
 {22/05/2020 twSigmoidDone}
 {27/08/2020 twMaxPosCm, twMaxValue}
+{23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff}
 procedure TWellhoferData.CopyParameters(var ASource,ADestination:twCurveDataRec);
 begin
 with ADestination do
@@ -13256,6 +13260,7 @@ with ADestination do
   twExtraText       := ASource.twExtraText;
   twFastScan        := ASource.twFastScan;
   twSetFieldType    := ASource.twSetFieldType;
+  twFFFdetected     := ASource.twFFFdetected;
   twFFFslopesTop    := ASource.twFFFslopesTop;
   twFFFslope        := ASource.twFFFslope;
   twFileIDString    := ASource.twFileIDString;
@@ -18500,6 +18505,7 @@ There are a lot of variations:
 {19/10/2020 evaluate dUser always}
 {20/10/2020 linac error calculation now based on twSetFieldtype (not fixed on d50 anymore)}
 {30/01/2021 measured file type as priority message}
+{23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff; FFF specific works now linked to twFFFdetected, there is referred to AppliedFieldClass}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -18543,7 +18549,7 @@ var s: twcDataSource;
         AutoCenter                     : Boolean;
         AppliedFieldClass              : twcFieldClass;
     begin
-    with wSource[ASource] do
+    with wSource[ASource] do                                                    //fcWedge,fcElectron,fcMRlinac already detected in FastScan
       begin
       lc:= 0;                   {loop count for analysis cycle}
       repeat
@@ -18585,7 +18591,7 @@ var s: twcDataSource;
             else                                                      lDP:= d50;
             twInFieldAreaOk:= BordersValid(ASource,dDerivative);
             lSize          := GetFieldWidthCm(ASource,lDP)*twPosScaling*twcDefaultSSDcm/(twSSD_cm*twSDD2SSDratio);  {calculate "real" field size at SSD=100}
-            if (lSize)<10 then                     //-----------in-field area for field size < 10 cm----------------------------
+            if (lSize)<10 then                     //------------------in-field area for field size < 10 cm----------------------
               begin                                                             //fieldwidth - 2 cm
               lTmp1:= Min(lSize/2-0.25,1);
               with twLevelPos[lDP].Penumbra[twcLeft] do
@@ -18599,7 +18605,7 @@ var s: twcDataSource;
                 twInFieldArr[twcRight]  := Clip(NearestPosition(twInFieldPosCm[twcRight],ASource,False),Succ(twCenterArr),twScanLast);
                 end;
               end
-            else                                   //-----------in-field area for field size >= 10 cm----------------------------
+            else                                   //------------------in-field area for field size >= 10 cm----------------------
               begin                                                             //70/80% of fieldwidth}
               lTmp1:=ifthen(twIsDiagonal,twcNCSInFieldDiagonal,twcNCSInFieldAxis);
               with twLevelPos[lDP].Penumbra[twcLeft] do
@@ -18624,19 +18630,26 @@ var s: twcDataSource;
                   twInFieldPosCm[twcRight]:= twPosCm[twScanLast];
                   twInFieldArr[twcRight]  := twScanLast;
                  end;
-              end; {size>=10}                      //------------------end in-field area-----------------------
+              end; {size>=10}                      //------------------end in-field area------------------------------------------
             if LogLevel>2 then
               StatusMessage(Format('->In-Field area curve[%d]: %0.1f cm',[Ord(ASource),abs(twPosCm[twInFieldArr[twcRight]]-twPosCm[twInFieldArr[twcLeft]])]));
-            try                                     //------------------------------FFF detection----------------------------
-              if (AppliedFieldClass=fcStandard) and wFieldTypeDetection[fcFFF] and (twBeamInfo.twBModality='X') and
-                 twCenterPosValid               and twInFieldAreaOk            and
-                 (lSize>10)                     and (ScanType in [snGT,snAB,snAngle]) then
+            try                                    //------------------FFF detection when fcStandard or fcMRlinac-----------------
+              if (((AppliedFieldClass=fcStandard) and wFieldTypeDetection[fcFFF]) or (AppliedFieldClass=fcMRlinac)) and
+                 (twBeamInfo.twBModality='X')                                                                       and
+                 twCenterPosValid                                                                                   and
+                 twInFieldAreaOk                                                                                    and
+                 (lSize>10)                                                                                         and
+                 (ScanType in [snGT,snAB,snAngle])                                                                  then
                 begin
                 lTmp1:= GetLevelDistance(d50,dDerivative,twcLeft ,ASource);
                 lTmp2:= GetLevelDistance(d50,dDerivative,twcRight,ASource);
                 if (100-(50*(twData[twInFieldArr[twcLeft]]+twData[twInFieldArr[twcRight]])/twData[twCenterArr])>wFFFMinDoseDifPerc) and
                    ((lTmp1=0) or (lTmp1>wFFFMinEdgeDifCm) or (lTmp2=0) or (lTmp2>wFFFMinEdgeDifCm)) then
-                  twSetFieldType:= fcFFF;
+                    begin
+                    twFFFdetected := True;
+                    if AppliedFieldClass=fcStandard then                        //when AppliedFieldClass=fcMRlinac then keep it that way
+                      twSetFieldType:= fcFFF;
+                    end;
                 end
               else
                 twSetFieldType:= AppliedFieldClass;
@@ -18645,9 +18658,8 @@ var s: twcDataSource;
              end;
             if not (ASource in twcFilteredCopies) then                          //now fieldtype is set
               QfitMaxPos(ASource);                                              //for filtered versions: rely on unfiltered result
-            if twSetFieldType=fcFFF then                  //------------------------------start FFF specific works----------------------------
+            if twFFFdetected then           //------------------start FFF specific works-----------------------------------
               begin
-              AppliedFieldClass:= fcFFF;
               for side:= twcLeft to twcRight do {if (borders are symmetrical around origin) && (average twInFieldArr < 90%):  evaluate FFF slopes}
                 with twFFFslope[side] do
                   begin
@@ -18675,7 +18687,7 @@ var s: twcDataSource;
                except
                 twFFFslopesTop:= 0;
                end;
-              case wCenterDefinition[fcFFF] of
+              case wCenterDefinition[AppliedFieldClass] of
                 CenterPenumbra:
                   begin
                   if wEdgeDetect and SigmoidFitAvailable(ASource) then begin lDP:= dInflection;  twCenterPosDefUse:= dUseInflection; end

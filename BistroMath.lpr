@@ -29,7 +29,7 @@ begin
  {$endIf}
 {$ENDIF HEAPTRACE}
 RequireDerivedFormResource:= True;
-Application.Scaled        := True;
+  Application.Scaled:=True;
 Application.Initialize;
 Application.CreateForm(TAnalyseForm, AnalyseForm);
 Application.Run;
