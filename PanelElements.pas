@@ -1,4 +1,4 @@
-unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-09/02/2021}
+unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-23/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -18,18 +18,7 @@ interface
 uses SysUtils,
      TOtools,TObaseDef,TOconfigStrings,TOnumparser,Wellhofer;
 
-const
-  EmptyXtype           =  #0;
-  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','r','R','s','S','T','u','U','w','X','x','Y','y',EmptyXtype];
-  DefEnergyUncertainty = 0.01; {MeV}
-  DefPanel             = 'PanelElements';
-  DefCondTxt           = 'cond:';
-  DefCondTypeString    = 'NFSMWErdgus';     {linked to PCRconditionTypes}
-  DefAnnotTxt          = 'annot:';
-  DefAnnotTypeString   = '!sfFnzucCrSeT*R'; {linked to AnnotationTypes}
-  DefColorTxt          = 'color:';
-  DefSizeTxt           = 'size:';
-{
+     {
 Parameters with the exclamation symbol have a left and right result. Therefore the left result is obtained as -"evaluation type" and the right results as +"evaluation type". When no sign is given the result will be the average of left and right value.
 
     a                Area ratio
@@ -109,37 +98,52 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
        standard scaling   Y[side]:= GetPenumbraValue(Xsource,X/twAbsNormVal,side);
 }
 
+const
+  EmptyXtype           =  #0;
+  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','r','R','s','S','T','u','U','w','X','x','Y','y',EmptyXtype];
+  DefEnergyUncertainty = 0.01; {MeV}
+  DefPanel             = 'PanelElements';
+  DefCondTxt           = 'cond:';
+  DefCondTypeString    = 'NFSMWEerdgus';    {linked to PCRconditionTypes}
+  DefAnnotTxt          = 'annot:';
+  DefAnnotTypeString   = '!sfFnzucCrSeT*R'; {linked to AnnotationTypes}
+  DefColorTxt          = 'color:';
+  DefSizeTxt           = 'size:';
 
 type
+  //PCRconditionTypes is zero-based because of Lazarus limitations and linked to DefCondTypeString='NFSMWEfrdgus' which is a 1-based list
+  PCRconditionTypes =(PCRstandard,PCRfffType ,PCRsmall     ,PCRMRlinac,PCRwedge      ,PCRelectron,
+                      PCRfffShape,PCRrefvalid,PCRisDivision,PCRisGamma,PCRisUnrelated,PCRSimpleViewHide);
 
-    {The ResultsInfoRecord is the basic data element for retrieving analysis information in the results panel.
-     See the supported EvaluationXtypes below.
-     See function TAnalyseForm.EvaluateInfoRecord(var ARec:InfoRecord).}
-    {01/02/2018 Ymultiplier, Y_mm}
-    {05/06/2020 Ylevel}
-    {17/06/2020 Xedge}
-    {09/07/2020 Usource}
-    ResultsInfoRecord=record
-                        X          : twcFloatType;
-                        Y          : array[twcSides] of twcFloatType;
-                        Sidedness  : Boolean;
-                        ConvStg    : String;
-                        Xsign      : Integer;                        //0= unsided; -1/+1 = L/R
-                        Xsource    : twcDataSource;                  //source
-                        Usource    : twcDataSource;                  //confirmed source
-                        Xchar      : Char;                           //optional source selector
-                        Xtype      : Char;                           //evaluation type
-                        Xedge      : twcPositionUseType;             //confirmed edge
-                        Xerrorval  : twcFloatType;
-                        Ymultiplier: twcFloatType;
-                        Y_mm       : UnitsType;                      //see TOtools.pas
-                        Iparse     : Integer;
-                        Ylevel     : twcDoseLevel                    //applied doselevel, when relevant
-                      end;
 
-    AnnotationTypes=(pa_synthetic=1,pa_symmetric ,pa_fitted   ,pa_fff    ,pa_normdif,pa_ssd    ,pa_userlevel,
-                     pa_centered   ,pa_centertype,pa_resampled,pa_shifted,pa_edge  ,pa_topmodel,pa_config   ,pa_RDD);
-   {linked to DefAnnotTypeString='!sfFnzucCrSeT*R', both lists indexed on 1}
+  //linked to DefAnnotTypeString='!sfFnzucCrSeT*R', both lists indexed on 1
+  AnnotationTypes=(pa_synthetic=1,pa_symmetric ,pa_fitted   ,pa_fff    ,pa_normdif,pa_ssd    ,pa_userlevel,
+                   pa_centered   ,pa_centertype,pa_resampled,pa_shifted,pa_edge  ,pa_topmodel,pa_config   ,pa_RDD);
+
+  {The ResultsInfoRecord is the basic data element for retrieving analysis information in the results panel.
+   See the supported EvaluationXtypes below.
+   See function TAnalyseForm.EvaluateInfoRecord(var ARec:InfoRecord).}
+  {01/02/2018 Ymultiplier, Y_mm}
+  {05/06/2020 Ylevel}
+  {17/06/2020 Xedge}
+  {09/07/2020 Usource}
+  ResultsInfoRecord=record
+                      X          : twcFloatType;
+                      Y          : array[twcSides] of twcFloatType;
+                      Sidedness  : Boolean;
+                      ConvStg    : String;
+                      Xsign      : Integer;                        //0= unsided; -1/+1 = L/R
+                      Xsource    : twcDataSource;                  //source
+                      Usource    : twcDataSource;                  //confirmed source
+                      Xchar      : Char;                           //optional source selector
+                      Xtype      : Char;                           //evaluation type
+                      Xedge      : twcPositionUseType;             //confirmed edge
+                      Xerrorval  : twcFloatType;
+                      Ymultiplier: twcFloatType;
+                      Y_mm       : UnitsType;                      //see TOtools.pas
+                      Iparse     : Integer;
+                      Ylevel     : twcDoseLevel                    //applied doselevel, when relevant
+                    end;
 
 
  {===================TPanelConfig====================
@@ -150,12 +154,11 @@ type
 23/01/2020 FAddMode changed to integer; negative values clear all rules
 09/02/2021 PCRconditionTypes:PCRMRlinac added}
 
-PCRconditionTypes =(PCRstandard,PCRfff,PCRsmall,PCRMRlinac,PCRwedge,PCRelectron,PCRrefvalid,PCRisDivision, PCRisGamma, PCRisUnrelated, PCRSimpleViewHide); {0 based list}
-{linked to DefCondTypeString='NFSMWErdgus';                                                                                             1 based list}
-PCRfieldSizeArray = array[0..1] of Single;
+  PCRfieldSizeArray  = array[0..1] of Single;
+  PCRconditionsArray = array[PCRconditionTypes] of SmallInt; {-1=false,0=don't care,+1=true}
 
-{30/07/2020 added PCRlabelResult}
-PanelConfigRec=record
+  {30/07/2020 added PCRlabelResult}
+  PanelConfigRec=record
                 PCRid           : Integer;
                 PCRconfigstg    : String;
                 PCRstg          : String;
@@ -169,12 +172,12 @@ PanelConfigRec=record
                 PCRcol          : Integer;
                 PCRrow          : Integer;
                 PCRxrecord      : ResultsInfoRecord;
-                PCRmodalities   : String;                               {'XEPO', or-function}
+                PCRmodalities   : String;                               {'XEPO'; or-function}
                 PCRenergySteps  : Integer;
                 PCRenergyDif    : ShortInt;
                 PCRscans        : set of twcScanTypes;                  {or-function}
-                PCRconditions   : array[PCRconditionTypes] of SmallInt; {-1=false,0=don't care,+1=true}
-                PCRannotations  : set of AnnotationTypes;
+                PCRconditions   : PCRconditionsArray;
+                PCRannotations  : set of AnnotationTypes;               {-1=false,0=don't care,+1=true}
                 PCRcolors       : set of AnnotationTypes;
                 PCRfieldSize    : PCRfieldSizeArray;                    {fieldsize limits in cm}
                end;
