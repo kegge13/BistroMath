@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 23/02/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 26/02/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2728,8 +2728,8 @@ type
                              ASource                  :twcDataSource=dsMeasured): Boolean; overload;
      function  FindCalcRange(ADataLevel               :twcFloatType;                                 //find range around level
                              NearestPos               :Integer;
-                             var Lpos,Rpos            :Integer;
                              ASide                    :twcSides;
+                             var Lpos,Rpos            :Integer;
                              ASource                  :twcDataSource=dsMeasured): Boolean; overload;
      function  SigmoidFitErrorResult(var a            :TaFunctionVertex        ): TaVertexDataType;  //costfunction for edge fit
      function  TvSpddFunction(a                       :TaFunctionVertex;
@@ -17574,8 +17574,8 @@ end; {~findcalcrange}
 {19/02/2021 new variant}
 function TWellhoferData.FindCalcRange(ADataLevel   :twcFloatType;
                                       NearestPos   :Integer;
-                                      var Lpos,Rpos:Integer;
                                       ASide        :twcSides;
+                                      var Lpos,Rpos:Integer;
                                       ASource      :twcDataSource=dsMeasured): Boolean;
 var X,c: twcFloatType;
     i  : Integer;
@@ -17943,7 +17943,7 @@ with wSource[ASource] do
         Result:= Valid;
         if Valid then
           begin
-          FindCalcRange(WantedLevel,Nearest,Lpos,Rpos,twcLeft,ASource);
+          FindCalcRange(WantedLevel,Nearest,twcLeft,Lpos,Rpos,ASource);
           Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
           end
         else
@@ -17994,7 +17994,7 @@ with wSource[ASource] do
         Result:= Result and Valid;                                              //result is true when both borders are valid
         if Valid then
           begin
-          FindCalcRange(WantedLevel,Nearest,Lpos,Rpos,twcRight,ASource);
+          FindCalcRange(WantedLevel,Nearest,twcRight,Lpos,Rpos,ASource);
           Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
           end
         else

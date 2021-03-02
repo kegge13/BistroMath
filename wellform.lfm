@@ -20,7 +20,7 @@ object AnalyseForm: TAnalyseForm
   OnKeyPress = FormKeyPress
   OnKeyUp = FormKeyUp
   OnResize = FormResize
-  LCLVersion = '2.0.10.0'
+  LCLVersion = '2.0.12.0'
   object PageControl: TPageControl
     Left = 0
     Height = 495

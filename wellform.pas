@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 24/02/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 02/03/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -29,12 +29,14 @@ uses
   LCLType, Grids, ValEdit, LMessages,
   FileIter, TOconfigStrings, TOnumparser, Wellhofer, PanelElements, TAChartAxisUtils;
 
-//Work-around for backward compatibility for LCL v2.0.10 and below.
-//It seems that both the TChartAxis.OnMarkToText event and TChartAxis.OnGetMarkText exist in v2.0.10 and v2.0.12
-//but the object inspector v2.0.10 offers only OnMarkToText and v2.0.12 only OnGetMarkText.
-//Therefore setting this at design time is has become problematic. Instead this event now is set at runtime in FormCreate.
+//Work-around for backward compatibility with for LCL v2.0.10 and below.
+//In a testversion of v2.0.12 OnMarkToText was set as deprecated.
+//but the object inspector v2.0.10 offers only OnMarkToText and the pre-production version of v2.0.12 only OnGetMarkText.
+//Therefore setting this at design time WAS become problematic. Instead this event now is set at runtime in FormCreate.
+//The solution below works in Laz v2.0.12, therefore I leave it as is for now. It will change with LcL 2.2
+//https://forum.lazarus.freepascal.org/index.php/topic,53455.msg396003.html#msg396003
 {$if declared(TChartGetAxisMarkTextEvent)}
- {$DEFINE LCL_2-0-12_Up}
+ {$DEFINE LCL_2-3_Up}
 {$endif}
 
 const
@@ -313,8 +315,10 @@ type
   30/01/2021
     event DataPlotExtentChanged(Sender: TChart);
   21/02/2021
-      replace AxisMarkToText for deprecated OnMarkToText event with
-      RightAxisGetMarkText on OnGetMarkText
+    replace AxisMarkToText for deprecated OnMarkToText event with
+    RightAxisGetMarkText on OnGetMarkText
+  02/03/2021
+    added FFFfeatures
   }
 
   {=========== TAnalyseForm =====================}
@@ -811,7 +815,7 @@ type
     procedure PageControlRequestChange (Sender         : TObject;
                                         var AllowChange: Boolean);
     procedure PageControlChange        (Sender         : TObject);
-   {$IFDEF LCL_2-0-12_Up}
+   {$IFDEF LCL_2-3_Up}
     procedure RightAxisGetMarkText     (Sender         : TObject;
                                         var AText      : String;
                                         AMark          : Double);
@@ -941,6 +945,7 @@ type
     PlotScaleMin          : Single;
     PlotScaleMax          : Single;
     SelectPlot            : Boolean;
+    FFFfeatures           : Boolean;                                            //set in OnDataRead as wSource[dsMeasured].twFFFdetected
     FileConvSourceDir     : String;
     FileConvDestDir       : String;
     FileConvDestExt       : String;
@@ -1436,6 +1441,7 @@ end; {wndcallback}
 {26/09/2020 PenumbraSigmoids}
 {29/09/2020 TempRefEngine}
 {17/11/2020 UsedDataTopLine}
+{02/03/2021 FFFfeatures}
 procedure TAnalyseForm.FormCreate(Sender: TObject);
 var k         : PlotItems;
     i,j       : Integer;
@@ -1888,6 +1894,7 @@ AxisAlignSource           .AxisFrom       := DataPlot.LeftAxis;
 AxisAlignSource           .AxisTo         := DataPlot.AxisList[DefChartAxR];    //used in AutoZoom
 SM2_Infotype                              := 1;
 AppliedFieldClass                         := fcStandard;
+FFFfeatures                               := False;
 AppliedEdgeRefNorm                        := d50;
 PlotPending                               := False;
 OnDataReadBusy                            := False;
@@ -2028,7 +2035,7 @@ if Length(PresetName)>0 then
   PresetLoad(ifthen(Pos(PathSeparator,PresetName)=0,CommonAppData,'')+PresetName)
 else
   PresetName:= 'preset';
-{$IFDEF LCL_2-0-12_Up}
+{$IFDEF LCL_2-3_Up}
 DataPlot.AxisList[DefChartAxR].OnGetMarkText:= @RightAxisGetMarkText;
 {$ELSE}
 DataPlot.AxisList[DefChartAxR].OnMarkToText := @AxisMarkToText;
@@ -2102,10 +2109,10 @@ CursorPosCm                                         := 0;
 end; {~setbasicdefaults}
 
 
-{$IFDEF LCL_2-0-12_Up}
+{$IFDEF LCL_2-3_Up}
 //linked to OnMarkToText event of right axis only to improve alignment of labels
 {31/05/2020 OnMarkTiText event}
-{21/02/2021 replacement OnGetMarkText event for deprecated OnMarkToText event}
+{21/02/2021 replacement OnGetMarkText event for future deprecated OnMarkToText event}
 procedure TAnalyseForm.RightAxisGetMarkText(Sender   : TObject;
                                                     var AText: String;
                                                     AMark    : Double);
@@ -3499,9 +3506,10 @@ end; {~showmenuitemstatus}
 {28/07/2020 Ft_XXXX[twcFieldClass] elements}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {26/09/2020 PenumbraSigmoids}
+{02/03/2021 FFFIndicators depend on FFFfeatures}
 procedure TAnalyseForm.ViewItems(Sender:TObject);
-var b,c,r: Boolean;
-    side : twcSides;
+var b,c,r,f: Boolean;
+    side   : twcSides;
 
   procedure SetActiveStatus(k           :PlotItems;
                             ActiveStatus:Boolean);
@@ -3527,16 +3535,7 @@ SetActiveStatus(pReference ,ViewReferenceItem .Checked and (RefAutoLoadItem.Chec
 SetActiveStatus(pMeasured  ,ViewMeasuredItem  .Checked or ViewPointsItem.Checked);
 SetActiveStatus(pCalculated,ViewCalculatedItem.Checked);
 SetActiveStatus(pBuffer    ,ViewBufferItem    .Checked);
-FitResultsTab.TabVisible:= PDDfitCheckBox.Checked and (Engines[UsedEngine].ScanType in twcVertScans);
-for side:= twcLeft to twcRight do
-  begin
-  InFieldIndicators[side].Active     := ViewIndicatorsItem   .Checked and IndicatorsOk;
-  FFFIndicators[side]    .Active     := ViewFFFIndicatorsItem.Checked and Ft_DetectionCheckBox[fcFFF].Checked;
-  PenumbraSigmoids[side] .Active     := ViewPenumbraItem     .Checked and IndicatorsOk;
-  end;
-TopModelSeries           .Active     := ViewFFFIndicatorsItem.Checked and
-                                       (AppliedFieldClass=fcFFF)      and
-                                        Engines[UsedEngine].wSource[FFFdataSource].twTopModel.Valid;
+FitResultsTab            .TabVisible := PDDfitCheckBox.Checked and (Engines[UsedEngine].ScanType in twcVertScans);
 ProcessMirrorMeasRefItem .Checked    := ProcessMirrorMeasRefItem  .Checked and
                                         (not ProcessSetTempRefItem.Checked);
 RefAutoLoadItem          .Enabled    := not (ProcessSetTempRefItem  .Checked or
@@ -3546,6 +3545,14 @@ RefAutoLoadItem          .Enabled    := not (ProcessSetTempRefItem  .Checked or
 b                                    := (RefAutoLoadItem.Checked and RefAutoLoadItem.Enabled) or
                                          ProcessSetTempRefItem.Checked;
 c                                    := (Engines[UsedEngine].AutoLoadReference<>b);
+f                                    := ViewFFFIndicatorsItem.Checked and FFFfeatures;
+for side:= twcLeft to twcRight do
+  begin
+  InFieldIndicators[side].Active     := ViewIndicatorsItem.Checked and IndicatorsOk;
+  FFFIndicators[side]    .Active     := f;
+  PenumbraSigmoids[side] .Active     := ViewPenumbraItem.Checked   and IndicatorsOk;
+  end;
+TopModelSeries           .Active     := f and Engines[UsedEngine].wSource[FFFdataSource].twTopModel.Valid;
 Engines[UsedEngine].AutoLoadReference:= b;
 if Sender is TMenuItem then with Sender as TMenuItem do
   begin
@@ -3585,6 +3592,7 @@ end; {~viewitems}
 {14/09/2020 Engines}
 {17/09/2020 HistoryListFreezeCheckBox}
 {16/11/2020 FileMultipleInputItem}
+{02/03/2021 FFF elements depend on both fcFFF and fcMRlinac}
 procedure TAnalyseForm.UpdateSettings(Sender:TObject);
 var b: Boolean;
 begin
@@ -3595,8 +3603,8 @@ b                                := (not MeasMirrorToBufferItem.Checked) and
                                     (RefAutoLoadItem.Checked or ProcessSetTempRefItem.Checked);
 ViewMeasNormAdjustMode   .Enabled:= ProcessAutoscalingItem.Enabled and (not ProcessAutoscalingItem.Checked);
 MeasUseFitModelItem      .Enabled:= PDDfitCheckBox             .Checked;
-MeasPeakFFFSubMenu       .Enabled:= Ft_DetectionCheckBox[fcFFF].Checked;
-RefAlignTopforFFF        .Enabled:= Ft_DetectionCheckBox[fcFFF].Checked and RefAlignItem.Checked;
+MeasPeakFFFSubMenu       .Enabled:= Ft_DetectionCheckBox[fcFFF].Checked or Ft_DetectionCheckBox[fcMRlinac].Checked;
+RefAlignTopforFFF        .Enabled:= MeasPeakFFFSubMenu         .Enabled and RefAlignItem.Checked;
 ViewBufferItem           .Checked:= ViewBufferItem             .Checked or MeasMirrorToBufferItem.Checked;
 RefCalcSubMenu           .Enabled:= b;
 RefNormaliseItem         .Enabled:= b;
@@ -4240,6 +4248,7 @@ Fills graph and triggers display of analysis results (PublishResults).
 {29/10/2020 ReportDifferences added for failing reference}
 {14/01/2020 PriorityMessage shown at the very end}
 {24/02/2021 FFF detected added to bottom axis title}
+{02/03/2021 FFFfeatures}
 procedure TAnalyseForm.OnDataRead(Sender:TObject);
 var i                           : Integer;
     m                           : twcMeasAxis;
@@ -4483,7 +4492,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
       end
     else
       begin
-      ViewZoomItem.Checked:= LastProfileZoomState and not ((AppliedFieldClass=fcFFF) and ViewAutoUnzoomFFFitem.Checked);
+      ViewZoomItem.Checked:= LastProfileZoomState and not (FFFfeatures and ViewAutoUnzoomFFFitem.Checked);
       if (not Freeze) and ReferenceValid then
         Analyse(dsReference);
       end;
@@ -4541,9 +4550,10 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
                Tr:= '';
               end;
       Set_F;                                                                             //set scaling for measured
+      b          := False;
+      FFFfeatures:= twFFFdetected;
       with DataPlot do
         begin                    //------------------bottom axis title--------------------------------------------------------------------------------------
-        b:= False;
         if not ViewBottomAxisAlwaysBlack.Checked then                                    //wUserAxisSign is applied in Prepareprofile}
           for m:= Inplane to Beam do b:= b or ((wUserAxisSign[m]<0) and twDesVaryingAxis[m]);
         if (Round(FieldGT_cm)=FieldGT_cm) and (Round(FieldAB_cm)=FieldAB_cm) then i:= 0
@@ -4575,7 +4585,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
                             ', '+Identity                                                                   ,''),
                      ifthen(AxisViewFieldTypeCheckBox .Checked,
                             ', '+twcFieldClassNames[AppliedFieldClass]                                      ,''),
-                     ifthen(twFFFdetected and (AppliedFieldClass<>fcFFF),
+                     ifthen(FFFfeatures and (AppliedFieldClass<>fcFFF),
                             ' (fff)'                                                                        ,''),
                      ifthen(AxisViewDetNameCheckBox   .Checked,
                             ', '+wDetectorInfo.twDetName.SubString(0,Round(AxisViewDetLength_num.Value))    ,''),
@@ -4811,7 +4821,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
   SmartScaleElectronPDD(Sender);
   DataChanged   := False;
   OnDataReadBusy:= False;
-  if (AppliedFieldClass=fcFFF) and Engines[UsedEngine].ShowWarning and (not FFFmessageShown) then
+  if FFFfeatures and Engines[UsedEngine].ShowWarning and (not FFFmessageShown) then
     begin
     CF             := TConfigStrings.Create(ConfigName);
     FFFmessageShown:= True;
@@ -5576,6 +5586,7 @@ end; {~pagecontrolrequestchange}
 {14/08/2020 menus on for fieldtypestab}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {23/10/2020 removed PlaceResultsLabels(ifthen(PageControl.ActivePage=AnalysisTab,0,DefaultFontSize))}
+{02/03/2021 when the reference is dropped, call LoadReference}
 procedure TAnalyseForm.PageControlChange(Sender:TObject);
 var i: Integer;
     b: Boolean;
@@ -5604,8 +5615,11 @@ PreloadTransfer(Sender);
 {$ENDIF}
 if PageControl.ActivePage=AnalysisTab then
   begin
-  if not ProcessSetTempRefItem.Checked then
+  if (not ProcessSetTempRefItem.Checked) and RefAutoLoadItem.Checked then
+    begin
     Engines[UsedEngine].UnSetReferenceOrg;   {force a reload of any automatic reference}
+    Engines[UsedEngine].LoadReference;
+    end;
   MenusOnOff(True);
   FitResultsTab.TabVisible:= MeasUseFitModelItem.Enabled;
   if PrevTab=InventoryTab then
@@ -7373,6 +7387,7 @@ results.
 {06/10/2020 fundamentals alternative}
 {09/02/2021 added conditions PCRMRlinac and PCRelectron}
 {23/02/2021 introduced PCRfffShape, renamed PCRfff to PCRfffType}
+{02/03/2021 FFFfeatures}
 procedure TAnalyseForm.PublishResults;
 var s                                 : String;
     ZeroShift,L,NotNormCenter         : Boolean;
@@ -7420,14 +7435,14 @@ var s                                 : String;
   end; {setcxresultvisible}
 
   procedure RunPanelElements;
-  var i,j                           : Integer;
-      decimals                      : Word;
-      annotations,sLocal            : String;
-      ccolor,cdefault               : TColor;
-      cblock                        : CxBlock;
-      cbeam                         : Char;
-      tval,cval,cmulti,esteps       : twcFloatType;
-      cvertical,cnm_NxorAbs,FFFshape: Boolean;
+  var i,j                    : Integer;
+      decimals               : Word;
+      annotations,sLocal     : String;
+      ccolor,cdefault        : TColor;
+      cblock                 : CxBlock;
+      cbeam                  : Char;
+      tval,cval,cmulti,esteps: twcFloatType;
+      cvertical,cnm_NxorAbs  : Boolean;
 
     function CheckCond(AFlag:Boolean;
                        ACond:SmallInt): Boolean;
@@ -7462,7 +7477,6 @@ var s                                 : String;
   i       := 0;
   j       := PanelElements.Count;
   cbeam   := Engines[UsedEngine].wSource[dsMeasured].twBeamInfo.twBModality;
-  FFFshape:= Engines[UsedEngine].wSource[dsMeasured].twFFFdetected;
   try
     esteps:= Round(Engines[UsedEngine].wSource[dsMeasured].twBeamInfo.twbEnergy/DefEnergyUncertainty);
     if Engines[UsedEngine].ScanType in twcVertScans then
@@ -7488,7 +7502,7 @@ var s                                 : String;
            CheckCond(AppliedFieldClass=fcWedge         ,PCRconditions[PCRwedge         ]) and
            CheckCond(AppliedFieldClass=fcElectron      ,PCRconditions[PCRelectron      ]) and
            CheckCond(Engines[UsedEngine].ReferenceValid,PCRconditions[PCRrefvalid      ]) and
-           CheckCond(FFFshape                          ,PCRconditions[PCRfffShape      ]) and
+           CheckCond(FFFfeatures                       ,PCRconditions[PCRfffShape      ]) and
            CheckCond(RefUseDivideByItem .Checked       ,PCRconditions[PCRisDivision    ]) and
            CheckCond(RefUseGammaItem    .Checked       ,PCRconditions[PCRisGamma       ]) and
            CheckCond(not SimpleModeItem .Checked       ,PCRconditions[PCRSimpleViewHide]) and
@@ -7520,7 +7534,7 @@ var s                                 : String;
                             SyntheticMade,
                             ccolor);
               AddAnnotation(pa_fff,
-                            FFFshape,
+                            FFFfeatures,
                             ccolor);
               AddAnnotation(pa_ssd,
                             Engines[UsedEngine].wSource[PCRxrecord.XSource].twPosScaling<>1,
@@ -7543,7 +7557,7 @@ var s                                 : String;
                             twAbsNormConfig,
                             ccolor);
               AddAnnotation(pa_topmodel,
-                            AppliedFieldClass=fcFFF,
+                            FFFfeatures,
                             ccolor,ifthen(FFFpSubItems[CenterFFFTopModel].Checked,'T','S'));
               AddAnnotation(pa_shifted,
                             (tval<>0) and
@@ -7673,7 +7687,7 @@ with Engines[UsedEngine],wCurveInfo do
         begin
         if (WedgeAngle>0) or (AppliedFieldClass=fcWedge) then
           SM2_InfoType:= 2
-        else if AppliedFieldClass=fcFFF then
+        else if FFFfeatures then
           SM2_InfoType:= 3
         else if ((not MeasBadPenumbraItem.Checked) and
                  (GetPenumbraWidth(dsMeasFiltered,twcLeft)+GetPenumbraWidth(dsMeasFiltered,twcRight)>2*BadPenumbraWidth_cm.Value)) then
@@ -7972,8 +7986,8 @@ with Engines[UsedEngine],ARec do                                                
            end;
       'f': begin //Absolute flatness
            with wSource[USource] do
-             if AppliedFieldClass=fcFFF then Result:= SetLengthUnits(Units_in_denominator)*50*(abs(twFFFslope[twcLeft].twFFFgain)+abs(twFFFslope[twcRight].twFFFgain))/Ynorm
-             else                            Result:= wSource[USource].twFlatness*100;
+             if FFFfeatures then Result:= SetLengthUnits(Units_in_denominator)*50*(abs(twFFFslope[twcLeft].twFFFgain)+abs(twFFFslope[twcRight].twFFFgain))/Ynorm
+             else                Result:= wSource[USource].twFlatness*100;
            Sidedness:= False;
            end;
       'G',        //Gamma analysis within InField area
@@ -8488,6 +8502,7 @@ end; {~dataplotextentchanged}
 {26/09/2020 PenumbraSigmoids}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {10/11/2020 twFitnormalisation*RawLogisticFunction}
+{02/03/2021 FFFIndicators depend on FFFfeatures}
 procedure TAnalyseForm.PlotIndicators;
 var F,Y1,Y2,PosL,PosR,PosM,tmpX: twcFloatType;
     InFieldColor               : TColor;
@@ -8501,7 +8516,7 @@ case SelectedPlot of
 with Engines[UsedEngine],wSource[FFFdataSource] do
   begin
   IndicatorsOk         := twValid      and (ScanType in twcHoriScans) and ((twFlatness<DefMaxFlatness) or (AppliedFieldClass<>fcStandard));
-  TopModelSeries.Active:= IndicatorsOk and (AppliedFieldClass=fcFFF)  and ViewFFFIndicatorsItem.Checked and wSource[dsMeasured].twTopModel.Valid;
+  TopModelSeries.Active:= IndicatorsOk and FFFfeatures and ViewFFFIndicatorsItem.Checked and wSource[dsMeasured].twTopModel.Valid;
   if IndicatorsOk then
     begin
     F           := twPlotScaling;
@@ -8540,7 +8555,7 @@ with Engines[UsedEngine],wSource[FFFdataSource] do
            until PosL>=PosR;
            end;
       end;
-    if AppliedFieldClass=fcFFF then
+    if FFFfeatures then
       begin
       for side:= twcLeft to twcRight do with twFFFslope[side] do
        if twFFFvalid then
@@ -10315,4 +10330,3 @@ end; {~formdestroy}
 
 
 end.
-
