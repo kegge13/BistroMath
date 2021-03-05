@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 26/02/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 05/03/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -316,7 +316,7 @@ resourcestring
   twForMatch        ='->Match cost function(%0.3f)=%0.5f [step %0.3f cm]';
   twForFileNotFound ='[ file %s not found ]';
   twForFileNotRead  ='[ file %s not loaded ]';
-  twDiagonalFound   ='[ possible diagonal detected ]';
+  twDiagonalFound   ='diagonal detected';
   twForNMreport     = 'ENR: %0.2f in %d cycles, %d restart%s, %0.1f s (amoebes: %d), max %0.2f at %0.2f cm';
   twMedianFilterStg = 'median-filtered';
   twQuadFilterStg   = 'quad-filtered';
@@ -2436,6 +2436,7 @@ type
 
   {26/06/2016: twFitMaxScaling}
   {13/07/2020: twFitOffsetCm added as replacement for shared twSigmoidOffsetCm}
+  {05/03/2021: added twFitResult1,2 for optional model results}
   twFitRecord=record
       twFitLowCm            : twcFloatType;
       twFitHighCm           : twcFloatType;
@@ -2443,8 +2444,10 @@ type
       twFitMaxScaling       : twcFloatType;         {scaling for dmax=100}
       twFitScalingPointCm   : twcFloatType;
       twFitOffsetCm         : twcFloatType;         {former twSigmoidOffset is now separate for each side}
-      twFitValid            : Boolean;
       twFitModel            : twcFitModels;         {models are: pddPhoton,pddPhotonExtrapolation,pddElectron,fffSlope,fffTop,penumbraSigmoid}
+      twFitResult1          : twcFloatType;         {optional calculation results; sigmoid true inflection point}
+      twFitResult2          : twcFloatType;         {optional calculation results; sigmoid slope in inflection point}
+      twFitValid            : Boolean;
       twNMReport            : NMReportRecord;
     end;
 
@@ -2659,6 +2662,7 @@ const
 {09/10/2020 added EclipseData}
 {20/10/2020 call to Analyse changed}
 {16/11/2020 ADataTopLine}
+{03/03/2021 added wDiagonalDetection, removed DetectDiagonalScans}
 type
   TWellhoferData=class(TRadthData)
     private
@@ -2670,7 +2674,6 @@ type
      FAutoLoadRef    : Boolean;
      FCalcWidth_cm   : twcFloatType;
      FCentered       : Boolean;
-     FDiagonalDetect : Boolean;
      FFilterWidth    : twcFloatType;
      FLastFileType   : twcFileType;
      FLastMultiFile  : String;
@@ -2763,6 +2766,7 @@ type
       wCurveInfo                : twCurveDesRec;
       wDefaultIgnoreSet         : twcIgnoreSet;
       wDetectorInfo             : twDetectorDesRec;
+      wDiagonalDetection        : array[twcFieldClass] of Boolean;
       wEdgeDetect               : Boolean;                                      {if set or wedge found, a derivative is calculated for edge detection}
       wEdgeFallBackCm           : twcFloatType;                                 {when 50% level differs more, use edge}
       wEdgeMethod               : array[twcEdgeClass,twcFieldClass] of twcDoseLevel;
@@ -3029,16 +3033,19 @@ type
                      ScaleOverlap                  :Boolean       =True       ): Boolean;
      function  SigmoidPenumbraFit(ASource          :twcDataSource =dsMeasured;
                                   ApplyModel       :Boolean       =False;
-                                  ADestination     :twcDataSource =dsMeasured ): Boolean;
+                                  ADestination     :twcDataSource =dsMeasured ): Boolean;           //shiftCm is applied shift for model
      function  RawLogisticFunction(const a         :TaFunctionVertex;
                                    const cm        :TaVertexDataType;
                                    const shiftCm   :twcFloatType  =0          ): TaVertexDataType;  //needs multiplication with twFitNormalisation to represent twData
-     function  GetNormalisedRevLogistic(ASide      :twcSides;
-                                        ASource    :twcDataSource =dsMeasured;
-                                        Apercentage:twcFloatType  =50         ):twcFloatType;
+     function  RawLogisticDerivative(const a       :TaFunctionVertex;
+                                     const cm      :TaVertexDataType;
+                                     const shiftCm :twcFloatType=0): TaVertexDataType;
      function  RevRawLogisticFunction(const a      :TaFunctionVertex;
                                       const FxRaw  :TaVertexDataType;
                                       const shiftCm:twcFloatType=0            ): TaVertexDataType; //expects FxRaw scaled down with twFitNormalisation to match RawLogisticFunction
+     function  GetNormalisedRevLogistic(ASide      :twcSides;
+                                        ASource    :twcDataSource =dsMeasured;
+                                        Apercentage:twcFloatType  =50         ):twcFloatType;
      function  GetNormalisedSigmoidLevel(cm        :twcFloatType;
                                          ASource   :twcDataSource =dsMeasured ): twcFloatType; //autoselect side
      function  SigmoidFitAvailable(ASource         :twcDataSource =dsMeasured ): Boolean;
@@ -3147,7 +3154,6 @@ type
      property ArrayScanRefUse      :Boolean         read FArrayScanRefUse write SetArrayScanRefUse;
      property BeamType;
      property CalcWidth_cm         :twcFloatType    read FCalcWidth_cm    write SetCalcWidth;
-     property DetectDiagonalScans  :Boolean         read FDiagonalDetect  write FDiagonalDetect  default True;
      property Energy               :twcFloatType    read wSource[dsMeasured].twBeamInfo.twBEnergy;
      property FieldGT_cm           :twcFloatType    read GetFieldGT       write SetFieldGT;
      property FieldAB_cm           :twcFloatType    read GetFieldAB       write SetFieldAB;
@@ -4036,13 +4042,6 @@ for m:= Inplane to Beam do
 end; {shiftpoint}
 
 
-procedure TRadthData.AddWarning(AWarning:String);
-begin
-if AWarning=''                                     then FWarning:= ''
-else if ShowWarning and (Pos(AWarning,FWarning)=0) then FWarning:= Warning+#32+AWarning;
-end; {~addwarning}
-
-
 (*   GetScanDirection
 This is based on the OmniPro v6 definition of the scanangle and axis directions
 Note that the user interface might swap the letters as needed.
@@ -4066,18 +4065,18 @@ end; {~getscandirection}
 
 {08/09/2015}
 {13/08/2016 InsertIdentity}
+{05/03/2021 do not combine warning with lastmessage}
 function TRadthData.GetLastMessage: string;
 begin
-Result:= FLastMessage;
-if Length(Result)>0 then
+if Length(Warning)>0 then
   begin
-  if Length(Warning)>0 then
-    begin
-    Result := Format('%s %s',[Result,Warning]);
-    Warning:= '';
-    end;
+  Result := 'Warning: '+Warning;
+  Warning:= '';
+  end
+else
+  Result:= FLastMessage;
+if Length(Result)>0 then
   Result:= InsertIdentity(Result);
- end;
 end; {~getlastmessage}
 
 
@@ -4196,6 +4195,13 @@ if (LogLevel>=MinLevel) and ((AMessage<>FLastMessage) or (LogLevel>3)) then
   end;
 end; {~statusmessage}
 {$pop}
+
+
+procedure TRadthData.AddWarning(AWarning:String);
+begin
+if AWarning=''                                     then FWarning:= ''
+else if ShowWarning and (Pos(AWarning,FWarning)=0) then FWarning:= FWarning+#32+AWarning;
+end; {~addwarning}
 
 
 procedure TRadthData.ExceptMessage(AString:String);
@@ -8303,7 +8309,8 @@ wEdgeMethod[fcPrimary ,fcFFF    ] := dInflection;
 wEdgeMethod[fcPrimary ,fcMRlinac] := dInflection;
 wEdgeMethod[fcPrimary ,fcWedge  ] := dInflection;
 FillChar(wFieldTypeDetection,SizeOf(wFieldTypeDetection),1);
-FillChar(wAutoShiftCm,SizeOf(wAutoShiftCm),0);
+FillChar(wDiagonalDetection ,SizeOf(wDiagonalDetection ),1);
+FillChar(wAutoShiftCm       ,SizeOf(wAutoShiftCm       ),0);
 LoadAliasList(nil);
 ResetMultiScanCounters;
 ResetAliasList;
@@ -8491,6 +8498,7 @@ end; {~setdefaults}
 {29/09/2020 option PassRefOrg added}
 {30/09/2020 use PassRefOrgData}
 {13/10/2020 AutoDecimalPoint,AutoDecimalList}
+{03/03/2021 wDiagonalDetection added, DetectDiagonalScans removed}
 (* wAutoShiftCm is not passed to load unshifted references *)
 procedure TWellhoferData.PassSettings(var ADestination:TWellhoferData;
                                       AObjectCallSign :String        ='';
@@ -8506,6 +8514,7 @@ if assigned(ADestination) then
   ADestination.wUserAxisSign             := wUserAxisSign;
   ADestination.wAxisPreserveOnExport     := wAxisPreserveOnExport;
   ADestination.wCenterProfiles           := wCenterProfiles;
+  ADestination.wDiagonalDetection        := wDiagonalDetection;
   ADestination.wEdgeFallBackCm           := wEdgeFallBackCm;
   ADestination.wGenericToPDD             := wGenericToPDD;
   ADestination.wCenterDefinition         := wCenterDefinition;
@@ -8552,7 +8561,6 @@ if assigned(ADestination) then
   ADestination.AutoLoadReference         := AutoLoadReference;
   ADestination.AlignReference            := AlignReference;
   ADestination.CalcWidth_cm              := CalcWidth_cm;
-  ADestination.DetectDiagonalScans       := DetectDiagonalScans;
   ADestination.FFilterWidth              := FFilterWidth;
   ADestination.FArrayScanRefUse          := FArrayScanRefUse;
   ADestination.MatchOverride             := MatchOverride;
@@ -14109,6 +14117,7 @@ with wSource[ASource] do if twValid and (not FFrozen) then
           twFitHighCm                                   := twFitHighCm        +cm;
           twFitScalingPointCm                           := twFitScalingPointCm+Cm;
           twFitOffsetCm                                 := twFitOffsetCm      +cm;
+          twFitResult1                                  := twFitResult1       +cm;
           twNMReport.BestVertex[sigmoid_InflectionMajor]:= twNMReport.BestVertex[sigmoid_InflectionMajor]+cm;
           end;
       end; {for sides}
@@ -16006,7 +16015,7 @@ https://www.mathworks.com/matlabcentral/fileexchange/38122-four-parameters-logis
 
 The following is the 4PL model equation where x is the concentration (in the case of ELISA analysis)
 or the independent value and F(x) would be the response value (e.g. absorbance, OD, response value) or dependent value.
-F(x) = ((D-A)/(1+((x/B)^C))) + A
+f(x) = ((D-A)/(1+((x/B)^C))) + A
 Note: this function will not respond well to x=0.
 
 The rearranged equation to solve x is:
@@ -16027,6 +16036,14 @@ D = maximum asymptote
 for the correct inflection point
 x=B*((C-1)/(C+1))^(1/C)
 
+Derivative
+https://www.wolframalpha.com/input/?i=derivative+of+f%28x%29+%3D+%28D-A%29%2F%281%2B%28%28x%2FB%29%5EC%29%29+%2BA
+f'(x) = (A*C*(x/B)^C)/(x*((x/B)^C + 1)^2) - (C*D*(x/B)^C)/(x*((x/B)^C + 1)^2)
+
+Derivative in inflection point:
+https://www.wolframalpha.com/input/?i=derivative+of+f%28x%29+%3D+%28D-A%29%2F%281%2B%28%28x%2FB%29%5EC%29%29+%2BA+for+x%3DB*%28%28C-1%29%2F%28C%2B1%29%29%5E%281%2FC%29
+f'(IP) = (B ((C - 1)/(C + 1))^(1/C)) = (C (((C - 1)/(C + 1))^(1/C))^(C - 1) (A - D))/(B ((((C - 1)/(C + 1))^(1/C))^C + 1)^2)
+
 5PL model
 F(x) = A + (D/(1+(X/B)^C)^E)
     A is the MFI (Mean Fluorescent Intensity)/RLU (Relative Light Unit) value for the minimum asymptote
@@ -16037,6 +16054,7 @@ F(x) = A + (D/(1+(X/B)^C)^E)
 The 5-PL model equation has the extra E parameter which the 4-PL model lacks and when E = 1 the 5-PL equation is identical to the 4-PL equation.
 
 The output is the fit result on twData/twFitNormalisation.
+
 *)
 {27/11/2015}
 {14/01/2017 avoid pos=0}
@@ -16044,22 +16062,49 @@ The output is the fit result on twData/twFitNormalisation.
 function TWellhoferData.RawLogisticFunction(const a      :TaFunctionVertex;
                                             const cm     :TaVertexDataType;
                                             const shiftCm:twcFloatType=0): TaVertexDataType;
+var x: TaVertexDataType;
 begin
 if (not Assigned(a)) then
   Result:= fitCalcErrorDef
 else
   if Length(a)=SigmoidDim then
-    try  {F(x) =  (D-A)/(1+((x/B)^C)) + A}
-      if cm=0 then
+    try                                                                         //f(x) = (D-A)/(1+((x/B)^C)) + A
+      x:= cm-shiftCm;
+      if x=0 then
         Result:= a[sigmoid_HighVal]
       else
-        Result:= ((a[sigmoid_HighVal]-a[sigmoid_LowVal])/(1+Power((cm-shiftCm)/a[sigmoid_InflectionMajor],a[sigmoid_Slope]))) + a[sigmoid_LowVal];
+        Result:= ((a[sigmoid_HighVal]-a[sigmoid_LowVal])/(1+Power(x/a[sigmoid_InflectionMajor],a[sigmoid_Slope]))) + a[sigmoid_LowVal];
      except
       Result:= fitCalcErrorDef;
      end
   else
     Result:= 0;
 end; {~rawlogisticfunction}
+
+
+{05/03/2021 new}
+function TWellhoferData.RawLogisticDerivative(const a      :TaFunctionVertex;
+                                              const cm     :TaVertexDataType;
+                                              const shiftCm:twcFloatType=0): TaVertexDataType;
+var x,Pwr_x: TaVertexDataType;
+begin
+if (not Assigned(a)) then
+  Result:= fitCalcErrorDef
+else
+  if Length(a)=SigmoidDim then                                                  //f(x)  = ((D-A)/(1+((x/B)^C))) + A
+    try                                                                         //f'(x) = (A*C*P)/(x*(P + 1)^2) - (C*D*P)/(x*(P + 1)^2); P=(x/B)^C
+      x:= cm-shiftCm;
+      if x=0 then
+        Result:= a[sigmoid_HighVal]
+      else
+        Pwr_x := Power(x/a[sigmoid_InflectionMajor],a[sigmoid_Slope]);
+        Result:= a[sigmoid_LowVal]*a[sigmoid_Slope]*Pwr_x/(x*Sqr(Pwr_x+1)) - a[sigmoid_Slope]*a[sigmoid_HighVal]*Pwr_x/(x*Sqr(Pwr_x+1));
+     except
+      Result:= fitCalcErrorDef;
+     end
+  else
+    Result:= 0;
+end; {~rawlogisticderivative}
 
 
 {18/06/2020 x= InflectionMajor * power((y-High)/(Low-y),1/Slope) WolframAlpha online}
@@ -16151,7 +16196,7 @@ end; {~sigmoidfiterrorresult}
 
 
 (*----------SigmoidPenumbraFit----------------
- See introduction to logistic function above: F(x) = (D-A)/(1+((x/B)^C)) + A
+ See introduction to logistic function above: f(x) = (D-A)/(1+((x/B)^C)) + A
  We have to avoid x=0. Therefore twSigmoidOffset is intoduced which is initialised to the field center.
  Note that with this offset the C is negative for both penumbras.
  In this case a positive value of B will produce a ascending and descending curve for left and right side respectively.
@@ -16162,7 +16207,7 @@ end; {~sigmoidfiterrorresult}
  For tiny fields the penumbras overlap severely and the standard model range exceeds the center position.
  There the data will not be suitable for the sigmoid model.
  Also experimented with keeping the range symmetrical around the initial inflection point, but this does not influence the result.
- Another complication was the use of one single sigmoid model position offset parameter, usually the center posiiton.
+ Another complication was the use of one single sigmoid model position offset parameter, usually the center position.
  For tiny fields this introduces again a zero position within fitting range, which must be avoided at all costs. Therefore now
  each side has its individual offset valus. For large enough fields they will be identical.
 ----------------------------------------------*)
@@ -16198,6 +16243,7 @@ end; {~sigmoidfiterrorresult}
 {10/11/2020 set twFitnormalisation to twMaxValue/100 and apply this to fit parameters}
 {12/11/2020 scaled error limit (h)}
 {17/02/2021 singleamoebe}
+{05/03/2021: added twFitResult1,2 for optional model results}
 function TWellhoferData.SigmoidPenumbraFit(ASource     :twcDataSource=dsMeasured;
                                            ApplyModel  :Boolean      =False;
                                            ADestination:twcDataSource=dsMeasured): Boolean;
@@ -16314,7 +16360,7 @@ var s : twcSides;
                {$ENDIF}
                for n:= NMreflection to NMshrinkage do
                  Inc(NMsteps[n],CrawlReport.NMsteps[n]);
-               Restarts  := Restarts+CrawlReport.Restarts;                   //repeat loop introduces by definition 1 extra restart
+               Restarts  := Restarts+CrawlReport.Restarts;                      //repeat loop introduces by definition 1 extra restart
                Seconds   := Seconds +CrawlReport.Seconds;
                BestScore := CrawlReport.BestScore;
                twFitValid:= assigned(BestVertex);
@@ -16332,10 +16378,12 @@ var s : twcSides;
             begin
             with twLevelPos[dInflection].Penumbra[ASide] do
               begin
-              h      := BestVertex[sigmoid_Slope];                              //just for short-writing in next line
-              Calc   := BestVertex[sigmoid_InflectionMajor]*power((h-1)/(h+1),1/h)+twFitOffsetCm;
-              Nearest:= NearestPosition(Calc,FNMEdgeSource);
-              Valid  := True;
+              h           := BestVertex[sigmoid_Slope];                                                       //just for short-writing in next line
+              Calc        := BestVertex[sigmoid_InflectionMajor]*power((h-1)/(h+1),1/h)+twFitOffsetCm;        //inflection point: x=B*((C-1)/(C+1))^(1/C)
+              Nearest     := NearestPosition(Calc,FNMEdgeSource);
+              Valid       := True;
+              twFitResult1:= Calc;                                                                            //infection point
+              twFitResult2:= twFitNormalisation*RawLogisticDerivative(BestVertex,twFitResult1,twFitOffsetCm); //slope in inflection point
               if wEdgeDetect then
                 begin
                 h:= GetQfittedValue(Calc,ASource);
@@ -18180,6 +18228,7 @@ The major output results are mostly preliminary and include:
 {20/08/2020 sign of wWedge90ShiftFactor changed}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
+{04/03/2021 twIsDiagonal is evaluated anyway, but may be dropped for certain fieldtypes}
 procedure TWellhoferData.FastScan(ASource:twcDataSource=dsMeasured);
 var i,j                : Integer;
     lMin,lTmp,vmin,vmax: twcFloatType;
@@ -18369,19 +18418,12 @@ with wSource[ASource] do
                           end;
                         end;
                       end;
-                    if (not twIsDiagonal) and  (FieldLength<>UndefinedVal) and
-                       ( ((abs(twBeamInfo.twBCollimator-45) mod 90)<25) or
-                         ((FieldLength>2) and (twWidthCm*twPosScaling/twSDD2SSDratio>FieldLength*(1+twcDefAccNormDif))) ) then
-                      begin
-                      twIsDiagonal:= DetectDiagonalScans;
-                      if twIsDiagonal then
-                        StatusMessage(twDiagonalFound)
-                      else
-                        begin
-                        Warning:= twDiagonalFound;
-                        StatusMessage(LastMessage);
-                        end
-                      end;
+                    lTmp:= FieldLength;                                         //diagonal detection, may be dropped in Analyse for changed fieldtype
+                    if (not (twIsDiagonal or (ASource in twcFilteredCopies) or (twSetFieldType=fcSmall))) and
+                       (lTmp<>UndefinedVal)                                                               and
+                       ( (abs(twBeamInfo.twBCollimator-45) mod 90<25) or
+                         (twWidthCm*twPosScaling/twSDD2SSDratio>lTmp*(1+twcDefAccNormDif)) ) then
+                      twIsDiagonal:= True;
                     end; {not relative}
                   end; {twhoriscans}
                 if (not Inrange(twCenterPosCm,twFirstScanPosCm,twLastScanPosCm)) or
@@ -18392,7 +18434,7 @@ with wSource[ASource] do
                   twCenterPosDefUse:= dUseMax;
                   end;
                 if (wNormalisation[twSetFieldType] in [NormOnCenter,NormOnInFieldArea]) or
-                   (not InRange(0,twFirstScanPosCm,twLastScanPosCm))                      or
+                   (not InRange(0,twFirstScanPosCm,twLastScanPosCm))                    or
                    (GetQfittedValue(0,ASource,0)*10<twMaxValue)  then
                   begin
                   twAbsNormPosCm := twCenterPosCm;
@@ -18483,7 +18525,7 @@ There are a lot of variations:
 {23/11/2017 added twFlatPosCm,twSymAreaRatio}
 {24/11/2017 twSymAreaRatio calculated on symmetrical range around twCenterPosCm, twPosIntegral moved from FastScan and now base on Integrate function}
 {25/11/2017 apply optional SigmoidPenumbraFit at start of analysis for horizontal scans with absolute data}
-{04/12/2017 wInflectionSigmoid[AppliedFieldClass]}
+{04/12/2017 wInflectionSigmoid[AppliedFieldType]}
 {27/12/2017 if ASource=Measured then QuadFilter(Measured,MeasFiltered)}
 {12/01/2018 added twAbsNormConfig to note used info from modlist}
 {14/01/2018 atBorderuserdoselevel invalids twFastscan if needed}
@@ -18497,7 +18539,7 @@ There are a lot of variations:
 {01/07/2020 code for horizontal and vertical scans in separate local functions}
 {11/07/2020 FindEdge now handles edge detection and related tasks}
 {20/07/2020 twcFieldClass}
-{21/07/2020 AppliedFieldClass now only used for temporary storage, fcWedge}
+{21/07/2020 AppliedFieldType now only used for temporary storage, fcWedge}
 {18/08/2020 fcFFF detection only when set field type is fcStandard}
 {27/08/2020 twMaxPosCm, twMaxValue, wTopModelRadiusCm}
 {03/09/2020 also keep track which bands the derived data scan has passed with LowPassed and HighPassed}
@@ -18505,7 +18547,8 @@ There are a lot of variations:
 {19/10/2020 evaluate dUser always}
 {20/10/2020 linac error calculation now based on twSetFieldtype (not fixed on d50 anymore)}
 {30/01/2021 measured file type as priority message}
-{23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff; FFF specific works now linked to twFFFdetected, there is referred to AppliedFieldClass}
+{23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff; FFF specific works now linked to twFFFdetected, there is referred to AppliedFieldType}
+{03/03/2021 twIsDiagonal now depends on fieldtypes}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -18547,7 +18590,7 @@ var s: twcDataSource;
         side                           : twcSides;
         LinFit                         : TLinFit;
         AutoCenter                     : Boolean;
-        AppliedFieldClass              : twcFieldClass;
+        AppliedFieldType               : twcFieldClass;
     begin
     with wSource[ASource] do                                                    //fcWedge,fcElectron,fcMRlinac already detected in FastScan
       begin
@@ -18578,8 +18621,19 @@ var s: twcDataSource;
           ProfileNormalisation(twSetFieldType);                                 //sets twAbsNormPosCm, twAbsNormVal, twAvgNormVal, twAppliedNormVal
           FindEdge(ASource);         //-----FindEdge--------uses current field type, sets twUsedEdgeLevel---------------
           end; {not twrelativedata}
-        AppliedFieldClass:= twSetFieldType;
-        twAvgNormValue   := GetQfittedValue(twAbsNormPosCm,ASource);
+        AppliedFieldType:= twSetFieldType;                                      //here the final FieldType is known
+        twAvgNormValue  := GetQfittedValue(twAbsNormPosCm,ASource);
+        if twIsDiagonal then
+          begin
+          twIsDiagonal:= wDiagonalDetection[AppliedFieldType];                  //actual detection of diagonal depends on fieldtype
+          if twIsDiagonal then
+            StatusMessage(twDiagonalFound)
+          else
+            begin
+            Warning:= twDiagonalFound;
+            StatusMessage(LastMessage);                                         //possibly conflicting situation
+            end
+          end; {twisdiagonal}
         if twCenterPosValid or AcceptMissingPenumbra then
           begin                                                                 //derive twInFieldArr[Left,Rigtht] as 80% of fieldwidth
           LinFit:= TLinFit.Create;                                              //this object is reused several times
@@ -18593,15 +18647,15 @@ var s: twcDataSource;
             lSize          := GetFieldWidthCm(ASource,lDP)*twPosScaling*twcDefaultSSDcm/(twSSD_cm*twSDD2SSDratio);  {calculate "real" field size at SSD=100}
             if (lSize)<10 then                     //------------------in-field area for field size < 10 cm----------------------
               begin                                                             //fieldwidth - 2 cm
-              lTmp1:= Min(lSize/2-0.25,1);
+              lTmp1:= Min(lSize/2,1);
               with twLevelPos[lDP].Penumbra[twcLeft] do
                 begin
-                twInFieldPosCm[twcLeft]:= ifthen(Valid,Calc,twFirstScanPosCm)+lTmp1;
+                twInFieldPosCm[twcLeft]:= ifthen(Valid,Calc,twFirstScanPosCm)+lTmp1;   //add lTmp to calculated left border with lDP definition
                 twInFieldArr[twcLeft]  := Clip(NearestPosition(twInFieldPosCm[twcLeft],ASource,False),twScanFirst,Pred(twCenterArr));
                 end;
               with twLevelPos[lDP].Penumbra[twcRight] do
                 begin
-                twInFieldPosCm[twcRight]:= ifthen(Valid,Calc,twLastScanPosCm )-lTmp1;
+                twInFieldPosCm[twcRight]:= ifthen(Valid,Calc,twLastScanPosCm )-lTmp1;  //subtract lTmp from calculated right border with lDP definition
                 twInFieldArr[twcRight]  := Clip(NearestPosition(twInFieldPosCm[twcRight],ASource,False),Succ(twCenterArr),twScanLast);
                 end;
               end
@@ -18634,12 +18688,12 @@ var s: twcDataSource;
             if LogLevel>2 then
               StatusMessage(Format('->In-Field area curve[%d]: %0.1f cm',[Ord(ASource),abs(twPosCm[twInFieldArr[twcRight]]-twPosCm[twInFieldArr[twcLeft]])]));
             try                                    //------------------FFF detection when fcStandard or fcMRlinac-----------------
-              if (((AppliedFieldClass=fcStandard) and wFieldTypeDetection[fcFFF]) or (AppliedFieldClass=fcMRlinac)) and
-                 (twBeamInfo.twBModality='X')                                                                       and
-                 twCenterPosValid                                                                                   and
-                 twInFieldAreaOk                                                                                    and
-                 (lSize>10)                                                                                         and
-                 (ScanType in [snGT,snAB,snAngle])                                                                  then
+              if (((AppliedFieldType=fcStandard) and wFieldTypeDetection[fcFFF]) or (AppliedFieldType=fcMRlinac)) and
+                 (twBeamInfo.twBModality='X')                                                                     and
+                 twCenterPosValid                                                                                 and
+                 twInFieldAreaOk                                                                                  and
+                 (lSize>10)                                                                                       and
+                 (ScanType in [snGT,snAB,snAngle])                                                                then
                 begin
                 lTmp1:= GetLevelDistance(d50,dDerivative,twcLeft ,ASource);
                 lTmp2:= GetLevelDistance(d50,dDerivative,twcRight,ASource);
@@ -18647,14 +18701,14 @@ var s: twcDataSource;
                    ((lTmp1=0) or (lTmp1>wFFFMinEdgeDifCm) or (lTmp2=0) or (lTmp2>wFFFMinEdgeDifCm)) then
                     begin
                     twFFFdetected := True;
-                    if AppliedFieldClass=fcStandard then                        //when AppliedFieldClass=fcMRlinac then keep it that way
+                    if AppliedFieldType=fcStandard then                         //when AppliedFieldType=fcMRlinac then keep it that way
                       twSetFieldType:= fcFFF;
                     end;
                 end
               else
-                twSetFieldType:= AppliedFieldClass;
+                twSetFieldType:= AppliedFieldType;
              except
-              twSetFieldType:= AppliedFieldClass;
+              twSetFieldType:= AppliedFieldType;
              end;
             if not (ASource in twcFilteredCopies) then                          //now fieldtype is set
               QfitMaxPos(ASource);                                              //for filtered versions: rely on unfiltered result
@@ -18687,7 +18741,7 @@ var s: twcDataSource;
                except
                 twFFFslopesTop:= 0;
                end;
-              case wCenterDefinition[AppliedFieldClass] of
+              case wCenterDefinition[AppliedFieldType] of
                 CenterPenumbra:
                   begin
                   if wEdgeDetect and SigmoidFitAvailable(ASource) then begin lDP:= dInflection;  twCenterPosDefUse:= dUseInflection; end
@@ -18744,7 +18798,7 @@ var s: twcDataSource;
           if twAbsNormValue>0 then
             begin
             twRelAvgInField := LinFit.AverageY/twAbsNormValue;
-            twAppliedNormVal:= ifthen(wNormalisation[AppliedFieldClass]=NormOnInFieldArea,LinFit.AverageY,twAbsNormValue);
+            twAppliedNormVal:= ifthen(wNormalisation[AppliedFieldType]=NormOnInFieldArea,LinFit.AverageY,twAbsNormValue);
             twFlatness      := (lMax-lMin)/twAppliedNormVal;                      {compatibel met omnipro}
             twRelMaxInField := lMax/twAppliedNormVal;
             twRelMinInField := lMin/twAppliedNormVal;
