@@ -1,4 +1,4 @@
-unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-23/02/2021}
+unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-05/03/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -43,7 +43,7 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,True,NormAdjustNumEdit.Value/100);
     g                Gamma analysis over complete profile
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,NormAdjustNumEdit.Value/100);
-  ! i                Sigmoid edge
+  ! i                Sigmoid edge (inflection point)
                        wSource[Xsource].twLevelPos[dSigmoid].Penumbra[side].Calc;
   ! I                Sigmoid 50%,
                        wSource[Xsource].twLevelPos[dSigmoid50].Penumbra[side].Calc;
@@ -65,8 +65,10 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                          1: ApplyDynamicWidth:= False
                          2: ApplyDynamicWidth:= True
                         (nothing) or other: value according to Field Types tab
-  ! q                Sigmoid slope for any field
+  ! q                Slope of sigmoid model (always positive in this implementation)
                        Y[side]:= wSource[Xsource].twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope]/Ynorm
+  ! Q                Sigmoid slope in the inflection point
+                       Y[side]:= Abs(wSource[Xsource].twSigmoidFitData[side].twFitResult2)/Ynorm
     P [10|20|20/10]  Percentage depth dose
                        wSource[Xsource].twPDD10,twPDD20,twPDD20/twPDD10
   ! r [nn]           Profile Evaluation Point at fraction nn% of border relative to center of field
@@ -98,9 +100,10 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
        standard scaling   Y[side]:= GetPenumbraValue(Xsource,X/twAbsNormVal,side);
 }
 
+{05/03/2021 added 'Q'}
 const
   EmptyXtype           =  #0;
-  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','r','R','s','S','T','u','U','w','X','x','Y','y',EmptyXtype];
+  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','Q','r','R','s','S','T','u','U','w','X','x','Y','y',EmptyXtype];
   DefEnergyUncertainty = 0.01; {MeV}
   DefPanel             = 'PanelElements';
   DefCondTxt           = 'cond:';

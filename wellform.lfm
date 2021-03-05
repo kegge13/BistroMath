@@ -1,7 +1,7 @@
 object AnalyseForm: TAnalyseForm
-  Left = 293
+  Left = 487
   Height = 538
-  Top = 106
+  Top = 125
   Width = 885
   AllowDropFiles = True
   AlphaBlendValue = 0
@@ -390,7 +390,7 @@ object AnalyseForm: TAnalyseForm
         object Ft_EdgePrimaryLabel: TStaticText
           Left = 9
           Height = 19
-          Top = 135
+          Top = 160
           Width = 191
           HelpContext = 23
           Align = alCustom
@@ -402,7 +402,7 @@ object AnalyseForm: TAnalyseForm
         object Ft_EdgeFallBackLabel: TStaticText
           Left = 9
           Height = 19
-          Top = 165
+          Top = 190
           Width = 191
           HelpContext = 23
           Align = alCustom
@@ -414,7 +414,7 @@ object AnalyseForm: TAnalyseForm
         object Ft_MeasSymCorrLabel: TStaticText
           Left = 9
           Height = 19
-          Top = 55
+          Top = 80
           Width = 191
           HelpContext = 23
           Align = alCustom
@@ -426,7 +426,7 @@ object AnalyseForm: TAnalyseForm
         object Ft_RefSymCorrLabel: TStaticText
           Left = 9
           Height = 19
-          Top = 80
+          Top = 105
           Width = 191
           HelpContext = 23
           Align = alCustom
@@ -438,7 +438,7 @@ object AnalyseForm: TAnalyseForm
         object Ft_CoFLabel: TStaticText
           Left = 9
           Height = 19
-          Top = 195
+          Top = 220
           Width = 191
           HelpContext = 23
           Align = alCustom
@@ -450,7 +450,7 @@ object AnalyseForm: TAnalyseForm
         object Ft_NormLabel: TStaticText
           Left = 9
           Height = 19
-          Top = 225
+          Top = 250
           Width = 191
           HelpContext = 23
           Align = alCustom
@@ -474,7 +474,7 @@ object AnalyseForm: TAnalyseForm
         object EdgeDetectionGroupBox: TGroupBox
           Left = 296
           Height = 144
-          Top = 309
+          Top = 314
           Width = 558
           HelpContext = 23
           Caption = 'Edge detection and related parameters'
@@ -634,7 +634,7 @@ object AnalyseForm: TAnalyseForm
         object FFFDetectionGroupBox: TGroupBox
           Left = 8
           Height = 144
-          Top = 309
+          Top = 314
           Width = 272
           HelpContext = 23
           Caption = 'FFF detection and analysis'
@@ -730,7 +730,7 @@ object AnalyseForm: TAnalyseForm
         object Ft_CenterModelRadiusLabel: TStaticText
           Left = 9
           Height = 19
-          Top = 255
+          Top = 280
           Width = 191
           HelpContext = 23
           Align = alCustom
@@ -742,7 +742,7 @@ object AnalyseForm: TAnalyseForm
         object Ft_DynPenumbraWidthLabel: TStaticText
           Left = 9
           Height = 19
-          Top = 105
+          Top = 130
           Width = 191
           HelpContext = 23
           Align = alCustom
@@ -750,6 +750,18 @@ object AnalyseForm: TAnalyseForm
           Color = clDefault
           ParentColor = False
           TabOrder = 10
+        end
+        object Ft_DetDiagonalLabel: TStaticText
+          Left = 9
+          Height = 19
+          Top = 55
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Detect diagonals'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 11
         end
       end
     end
@@ -3521,15 +3533,6 @@ object AnalyseForm: TAnalyseForm
       end
       object MeasGenStrategySubMenu: TMenuItem
         Caption = 'General detection strategy...'
-        object MeasDetectDiagItem: TMenuItem
-          AutoCheck = True
-          Caption = '&Detect diagonals'
-          Checked = True
-          HelpContext = 120
-          Hint = 'Check wether actual field size is larger than registered'
-          ShortCut = 8260
-          OnClick = Reload
-        end
         object MeasBadPenumbraItem: TMenuItem
           AutoCheck = True
           Caption = '&Accept bad penumbra''s'

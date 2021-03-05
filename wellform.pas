@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 02/03/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 05/03/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -191,8 +191,6 @@ type
     added ReferenceGenericBeamClick,ModListRadioButtonClick,ModMode
    05/12/2016
     added ProcessSyntheticProfile
-  24/12/2016
-    FFFmessageShown
   25/12/2016
     InventoryReader
   29/03/2017
@@ -319,6 +317,8 @@ type
     RightAxisGetMarkText on OnGetMarkText
   02/03/2021
     added FFFfeatures
+  03/03/2020
+    added Ft_DetDiagonalLabel,Ft_DetDiagonalCheckbox, removed MeasDetectDiagItem
   }
 
   {=========== TAnalyseForm =====================}
@@ -410,7 +410,6 @@ type
     MeasMoveRightItem           : TMenuItem;  {Shift+.}      //OnClick = MeasMoveClick
     //submenu
     MeasGenStrategySubMenu      : TMenuItem;
-    MeasDetectDiagItem          : TMenuItem;  {Shift+D}      //OnClick = Reload
     MeasBadPenumbraItem         : TMenuItem;  {Shift+A}      //OnClick = Reload
     MeasMissingPenumbraItem     : TMenuItem;  {Shift+I}      //OnClick = OnDataRead
     MeasZeroStepsItem           : TMenuItem;  {Shift+Z}      //OnClick = OnMenu
@@ -513,6 +512,7 @@ type
     FieldTypesTab               : TTabSheet;
     FieldTypesPanel             : TPanel;
     Ft_DetectLabel              : TStaticText;
+    Ft_DetDiagonalLabel         : TStaticText;
     Ft_MeasSymCorrLabel         : TStaticText;
     Ft_RefSymCorrLabel          : TStaticText;
     Ft_DynPenumbraWidthLabel    : TStaticText;
@@ -911,6 +911,7 @@ type
    {$ENDIF}
     Ft_TypeLabel          : array[twcFieldClass                        ] of TLabel;     //Ft_xxx: used on FieldTypes tab
     Ft_DetectionCheckbox  : array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection
+    Ft_DetDiagonalCheckbox: array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection
     Ft_DynPenumbraCheckbox: array[twcFieldClass                        ] of TCheckBox;  //no synchonisation needed
     Ft_SymCorrCheckbox    : array[twcFieldClass,dsMeasured..dsReference] of TCheckBox;  //local sync with menu ondataread
     Ft_EdgeMethodCombo    : array[twcFieldClass,twcEdgeClass           ] of TComboBox;  //SetWellhofervalues/GetWellhofervalues
@@ -976,7 +977,6 @@ type
     LastProfileZoomState  : Boolean;                                            //preserves the zoomstate for profiles when automatically is unzoomd for pdd's
     InventoryListReady    : Boolean;                                            //See Files tab
     SelectedFitCol        : Integer;                                            //remember last clicked column in FitResultsTab}
-    FFFmessageShown       : Boolean;
     FFFdataSource         : twcDataSource;
     FKeyboardReady        : Boolean;                                            //check with onkeyup event when there are no more keys to be processed
     InventoryReader       : TWellhoferData;
@@ -1404,7 +1404,6 @@ end; {wndcallback}
 {29/07/2016 removed FFFcenterDefault from MeasPeakFFFSubMenu}
 {04/11/2016 UseDoseAddButtonClick}
 {08/11/2016 ModMode}
-{24/12/2016 FFFmessageShown}
 {25/12/2016 InventoryReader}
 {19/01/2017 SetConfigName(ParamStr(Succ(i)),True) (using testfile feature)}
 {08/06/2017 sha256 checksum put on messagebar}
@@ -1442,6 +1441,7 @@ end; {wndcallback}
 {29/09/2020 TempRefEngine}
 {17/11/2020 UsedDataTopLine}
 {02/03/2021 FFFfeatures}
+{03/03/2020 added Ft_DetDiagonalCheckbox, removed MeasDetectDiagItem}
 procedure TAnalyseForm.FormCreate(Sender: TObject);
 var k         : PlotItems;
     i,j       : Integer;
@@ -1698,6 +1698,18 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     OnClick    := @SyncSetDetection;
     Caption    := '';
     end;
+  Ft_DetDiagonalCheckbox[f]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_Detect
+  with Ft_DetDiagonalCheckbox[f] do
+    begin
+    Parent     := FieldTypesPanel;
+    HelpContext:= Parent.HelpContext;
+    Name       := Format('Ft_%sDetDiagonal',[twcFieldClassNames[f]]);
+    Left       := Ft_TypeLabel[f].Left;
+    Top        := Ft_DetDiagonalLabel.Top;
+    Checked    := False;
+    OnClick    := @SyncSetDetection;
+    Caption    := '';
+    end;
   for s:= dsMeasured to dsReference do
     begin
     Ft_SymCorrCheckbox[f,s]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_Symmetry
@@ -1905,7 +1917,6 @@ MultiScanList                             := False;
 PrevKey                                   := #0;                                //keyboard handling
 AdvancedModeOk                            := True;
 InventoryListReady                        := True;                              //see Files tab
-FFFmessageShown                           := False;
 DoseCLastRow                              :=  -1;
 MinClipBoardBytes                         := 100;
 LogLevelEdit              .Value          := 1;                                 //set logging to standard level
@@ -2007,7 +2018,6 @@ for i:= 1 to ParamCount do                                                      
     UImodeChange(Self);
     end;
   end;
-Engines[UsedEngine].DetectDiagonalScans:= MeasDetectDiagItem.Checked;
 if MayneordSSD2_cm.Value=MayneordSSD2_cm.MinValue then                          //set nice default when not set after loadconfig
   MayneordSSD2_cm.Value:= DefaultSSD_cm.value;
 ModListUpdate(Sender);
@@ -2094,6 +2104,7 @@ Ft_EdgeMethodCombo[fcElectron,fcFallBack ].ItemIndex:= 7;                       
 Ft_EdgeMethodCombo[fcFFF     ,fcFallBack ].ItemIndex:= 2;                       //d20
 Ft_SymCorrCheckbox[fcStandard,dsReference].Checked  := True;
 Ft_DetectionCheckbox[fcStandard          ].Enabled  := False;
+Ft_DetDiagonalCheckbox[fcSmall           ].Enabled  := False;
 Ft_DynPenumbraCheckbox[fcFFF             ].Checked  := True;
 Ft_DynPenumbraCheckbox[fcStandard        ].Checked  := False;
 MeasZeroStepsItem                         .Checked  := True;
@@ -2432,7 +2443,6 @@ end; {~configload}
 {04/08/2015 ViewLeftAxisLowZero}
 {09/06/2016 replaced SpecialModes boolean Active with tmenuitem MenuItem}
 {07/07/2016 added FFFcenterRadius_cm,FFFInFieldExt_cm}
-{24/12/2016 FFFmessageShown}
 {25/10/2018 SpecialModeValues}
 {29/04/2020 MinClipBoardBytes added}
 {02/06/2020 ConfigRepair,WriteMenuShortCuts}
@@ -2518,7 +2528,6 @@ with CF do
   ShortRead(SectionName,InventoryDirBox);
   ShortRead(SectionName,FileConvSourcePath);
   ShortRead(SectionName,FileConvDestinationPath);
-  FFFmessageShown:= ReadBool(SectionName,'FFFmessage',FFFmessageShown);
   if SectionExists(AliasText) then
     begin
     ReadSectionValues(AliasText,t);
@@ -3046,6 +3055,7 @@ end; {~configsave}
 {17/09/2020 Freeze}
 {18/09/2020 MeasSDD2SSDItem,MeasScale2defaultSSDitem,MeasMissingPenumbraItem,MeasZeroStepsItem,MeasDetectDiagItem}
 {13/10/2020 AutoSetDecPointCheckBox,AutoDecPointList,AutoDecimalPoint,AutoDecimalList}
+{03/03/2020 removed MeasDetectDiagItem}
 procedure TAnalyseForm.GetWellhoferValues;
 var q: twcEdgeClass;
     f: twcFieldClass;
@@ -3108,7 +3118,6 @@ with Engines[UsedEngine] do
     MeasScale2defaultSSDitem  .Checked:= wScale2DefaultSSD;
     MeasMissingPenumbraItem   .Checked:= AcceptMissingPenumbra;
     MeasZeroStepsItem         .Checked:= AcceptZeroSteps;
-    MeasDetectDiagItem        .Checked:= DetectDiagonalScans;
     end;
 if not Engines[UsedEngine].FReeze then
   for q:= fcPrimary to fcFallBack do
@@ -3191,6 +3200,7 @@ end; {~setwellhofervalues}
 {18/09/2020 MeasSDD2SSDItem,MeasScale2defaultSSDitem}
 {13/10/2020 AutoSetDecPointCheckBox,AutoDecPointList,AutoDecimalPoint,AutoDecimalList}
 {21/10/2020 more settings to transfer: AcceptMissingPenumbra,AcceptZeroSteps,DetectDiagonalScans,wApplySigmoidToBuffer}
+{03/03/2020 removed MeasDetectDiagItem}
 procedure TAnalyseForm.SetEngineValues(aEngine:Integer);
 var p: twcDoseLevel;
     q: twcEdgeClass;
@@ -3205,10 +3215,8 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     SyncSetDetection(nil);
     SyncSetFFFpeak(nil);
     AutoLoadReference         := (RefAutoLoadItem.Checked and RefAutoLoadItem.Enabled) or ProcessSetTempRefItem.Checked;
-    DetectDiagonalScans       := MeasDetectDiagItem.Checked and (not ProcessSyntheticProfile.Checked);
     AcceptMissingPenumbra     := MeasMissingPenumbraItem        .Checked;
     AcceptZeroSteps           := MeasZeroStepsItem              .Checked;
-    DetectDiagonalScans       := MeasDetectDiagItem             .Checked and (not ProcessSyntheticProfile.Checked);
     wApplySigmoidToBuffer     := ProcessSigmoid2BufferItem      .Checked;
     wReferenceFromGeneric     := RefGenericBeamItem             .Checked;
     wApplyUserLevel           := MeasUserDoseItem               .Checked;
@@ -4188,7 +4196,6 @@ Fills graph and triggers display of analysis results (PublishResults).
 {28/06/2016 fill clibboard with pddfit results, using last options}
 {10/09/2016 try..except}
 {05/12/2016 ProcessSyntheticProfile}
-{24/12/2016 FFFmessageShown}
 {30/12/2016
   FFFmessage only when Wellhofer.ShowWarning
   Flatness splitted in Abs. and Rel}
@@ -4249,13 +4256,13 @@ Fills graph and triggers display of analysis results (PublishResults).
 {14/01/2020 PriorityMessage shown at the very end}
 {24/02/2021 FFF detected added to bottom axis title}
 {02/03/2021 FFFfeatures}
+{03/03/2020 removed MeasDetectDiagItem}
 procedure TAnalyseForm.OnDataRead(Sender:TObject);
 var i                           : Integer;
     m                           : twcMeasAxis;
     Br,Er,Tr                    : String;
     tmpE,tmpS,F,tMin,tMax,tmpX,x: twcFloatType;
     b,NMdone                    : Boolean;
-    CF                          : TConfigStrings;
     d                           : twcDoseLevel;
     {$IFDEF SPEEDTEST}
     {$IF DEFINED(PANEL_SPEEDTEST) OR DEFINED(DIVIDE_SPEEDTEST) OR DEFINED(GAMMA_SPEEDTEST)}
@@ -4432,7 +4439,6 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
     begin
     if not Freeze then
       wApplyUserLevel  := MeasUserDoseItem.Checked;                                                   //keep unchanged otherwise
-    DetectDiagonalScans:= MeasDetectDiagItem.Checked and (not ProcessSyntheticProfile.Checked);
     tmpX               := GetDisplayedPositionScale;
     Br                 := Format('%s%0.2f',[wSource[dsMeasured].twBeamInfo.twBModality,Energy]);
     if assigned(UseDoseConvTable) then
@@ -4474,7 +4480,6 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
       begin
       AcceptMissingPenumbra:= MeasMissingPenumbraItem  .Checked;
       AcceptZeroSteps      := MeasZeroStepsItem        .Checked;
-      DetectDiagonalScans  := MeasDetectDiagItem       .Checked and (not ProcessSyntheticProfile.Checked);
       wApplySigmoidToBuffer:= ProcessSigmoid2BufferItem.Checked;
       Analyse; //first time dsMeasured is analysed; all options have been set, therefore nothing needs to be forced, FFF detection is needed to find FFF
       end;
@@ -4821,18 +4826,6 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
   SmartScaleElectronPDD(Sender);
   DataChanged   := False;
   OnDataReadBusy:= False;
-  if FFFfeatures and Engines[UsedEngine].ShowWarning and (not FFFmessageShown) then
-    begin
-    CF             := TConfigStrings.Create(ConfigName);
-    FFFmessageShown:= True;
-    CF.WriteBool(SectionName,'FFFmessage',FFFmessageShown);
-    CF.UpdateFile;
-    try
-      CF.Free
-     except
-      ExceptMessage('OnDataRead:CF!');
-     end;
-    end; {with CF}
   {$IFDEF ONDATA_SPEEDTEST}
   MessageBar:= Format('%0.0f ms per run of analysis and presentation (%d)',[(MilliSecondOfTheDay(Now)-o)/j,j]);
   {$ENDIF ONDATA_SPEEDTEST}
@@ -4891,11 +4884,15 @@ end; {~syncsetnormalisation}
 {28/07/2020 Ft_DetectionCheckBox}
 {03/09/2020 Ft_DynPenumbraCheckBox}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{03/03/2021 wDiagonalDetection}
 procedure TAnalyseForm.SyncSetDetection(Sender:TObject);
 var f: twcFieldClass;
 begin
 for f:= Low(twcFieldClass) to High(twcFieldClass) do
-  Engines[UsedEngine].wFieldTypeDetection[f]:= Ft_DetectionCheckBox[f].Checked;
+  begin
+  Engines[UsedEngine].wFieldTypeDetection[f]:= Ft_DetectionCheckBox[f]  .Checked;
+  Engines[UsedEngine].wDiagonalDetection[f] := Ft_DetDiagonalCheckBox[f].Checked and (not ProcessSyntheticProfile.Checked);
+  end;
 end; {~syncsetdetection}
 
 
@@ -7785,7 +7782,7 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,True,NormAdjustNumEdit.Value/100);
     g                Gamma analysis over complete profile
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,NormAdjustNumEdit.Value/100);
-  ! i                Sigmoid edge
+  ! i                Sigmoid edge  (inflection point: )
                        wSource[Xsource].twLevelPos[dInflection].Penumbra[side].Calc;
   ! I                Sigmoid 50%,
                        wSource[Xsource].twLevelPos[dSigmoid50].Penumbra[side].Calc
@@ -7807,8 +7804,10 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
 			  1: ApplyDynamicWidth:= False
 			  2: ApplyDynamicWidth:= True
 			 (nothing) or other: value according to Field Types tab
-  ! q                Sigmoid slope for any field
+  ! q                Slope of sigmoid model (always positive in this implementation)
                        Y[side]:= wSource[Xsource].twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope]/Ynorm
+  ! Q                Sigmoid slope in the inflection point
+                       Y[side]:= Abs(wSource[Xsource].twSigmoidFitData[side].twFitResult2)/Ynorm
     P [10|20|20/10]  Percentage depth dose
                        wSource[Xsource].twPDD10,twPDD20,twPDD20/twPDD10
   ! r [nn]           Profile Evaluation Point at fraction nn% of border relative to center of field
@@ -7869,6 +7868,7 @@ In the ResultsInfoRecord (see also PanelElements) the result is returned, includ
 {03/09/2020 'p' and 'q' completely splitted, implementation ft_DynPenumbraCheckbox}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {16/10/2020 fill ConvStg with dose level of border for u,U}
+{05/03/2021 added 'Q'}
 function TAnalyseForm.EvaluateInfoRecord(var ARec:ResultsInfoRecord): twcFloatType;
 var side     : twcSides;
     Ynorm,r,c: twcFloatType;
@@ -8078,14 +8078,17 @@ with Engines[UsedEngine],ARec do                                                
              else                                           Result:= Xerrorval;
            Sidedness:= False;
            end;
-      'q': begin
+      'q',
+      'Q': begin
            if Usource in twcFilteredCopies then
-             Xsource:= twcCoupledFiltered[Usource];
+             Xsource:= twcCoupledFiltered[Usource];                             //use unfiltered
            with wSource[Xsource] do
              if AssureSigmoidData(Xsource) then
                try
-                 Xedge := dUseInflection;                                    //change confirmed Xedge to sigmoid-related value
-                 Y[side]:= SetLengthUnits(Units_in_denominator)*100*twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope]/Ynorm;
+                 if Selection='Q' then c:= abs(twSigmoidFitData[side].twFitResult2)
+                 else                  c:= twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope];
+                 Xedge  := dUseInflection;                                      //change confirmed Xedge to sigmoid-related value
+                 Y[side]:= SetLengthUnits(Units_in_denominator)*100*c/Ynorm;
                  if not Inrange(Y[side],0,1000) then
                    Y[side]:= 0;
                 except
