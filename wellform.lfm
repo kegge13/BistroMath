@@ -1198,11 +1198,11 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 109
           Top = 338
-          Width = 578
+          Width = 583
           HelpContext = 127
           Caption = 'Mayneord settings'
           ClientHeight = 89
-          ClientWidth = 574
+          ClientWidth = 579
           TabOrder = 5
           object MayneordDmaxLabel: TStaticText
             Left = 22
@@ -1289,7 +1289,7 @@ object AnalyseForm: TAnalyseForm
           Left = 3
           Height = 19
           Hint = 'Take missing origin value from other line (StarCheck maxi)'
-          Top = 311
+          Top = 340
           Width = 204
           HelpContext = 127
           Alignment = taLeftJustify
@@ -1465,7 +1465,7 @@ object AnalyseForm: TAnalyseForm
           Left = 173
           Height = 21
           Hint = 'Non-standard dosepercentage for field border definition.'
-          Top = 126
+          Top = 128
           Width = 75
           HelpContext = 127
           AutoSize = False
@@ -1477,10 +1477,10 @@ object AnalyseForm: TAnalyseForm
           Value = 50
         end
         object XHpenumbra_perc: TFloatSpinEditEx
-          Left = 165
+          Left = 166
           Height = 21
           Hint = 'Upper dose level for penumbra width'
-          Top = 157
+          Top = 158
           Width = 59
           HelpContext = 127
           AutoSize = False
@@ -1525,7 +1525,7 @@ object AnalyseForm: TAnalyseForm
           Left = 227
           Height = 21
           Hint = 'Upper dose level for penumbra width'
-          Top = 187
+          Top = 188
           Width = 47
           HelpContext = 127
           AutoSize = False
@@ -1537,10 +1537,10 @@ object AnalyseForm: TAnalyseForm
           Value = 50
         end
         object DefaultEnergy_MeV: TFloatSpinEditEx
-          Left = 167
+          Left = 166
           Height = 21
           Hint = 'Assumed energy when unknown'''
-          Top = 216
+          Top = 218
           Width = 57
           HelpContext = 127
           AutoSize = False
@@ -1552,7 +1552,7 @@ object AnalyseForm: TAnalyseForm
           Value = 6
         end
         object DefaultSSD_cm: TFloatSpinEditEx
-          Left = 167
+          Left = 166
           Height = 21
           Hint = 'SSD when not known'
           Top = 248
@@ -1570,7 +1570,7 @@ object AnalyseForm: TAnalyseForm
         object HistogramLimitLabel: TStaticText
           Left = 10
           Height = 19
-          Top = 281
+          Top = 310
           Width = 145
           HelpContext = 129
           Align = alCustom
@@ -1581,10 +1581,10 @@ object AnalyseForm: TAnalyseForm
           TabOrder = 26
         end
         object HistogramLimit_num: TFloatSpinEditEx
-          Left = 167
+          Left = 166
           Height = 21
           Hint = 'Position of first (negative) and last bin'
-          Top = 279
+          Top = 308
           Width = 57
           HelpContext = 129
           AutoSize = False
@@ -1595,6 +1595,45 @@ object AnalyseForm: TAnalyseForm
           NullValue = 2
           NullValueBehaviour = nvbInitialValue
           Value = 2
+        end
+        object Nominal_IFA_CheckBox: TCheckBox
+          Left = 35
+          Height = 19
+          Hint = 'Derive the IFA from given field size if realistic'
+          Top = 370
+          Width = 172
+          HelpContext = 127
+          Alignment = taLeftJustify
+          Caption = 'Use nominal field size for IFA'
+          ParentBidiMode = False
+          TabOrder = 28
+        end
+        object DefaultMRlinacSSDLabel: TStaticText
+          Left = 12
+          Height = 19
+          Top = 280
+          Width = 145
+          HelpContext = 127
+          Align = alCustom
+          Alignment = taRightJustify
+          Caption = 'Default SSD MRlinac (cm):'
+          TabOrder = 29
+        end
+        object DefaultMRlinacSSD_cm: TFloatSpinEditEx
+          Left = 168
+          Height = 21
+          Hint = 'SSD when not known'
+          Top = 278
+          Width = 57
+          HelpContext = 127
+          AutoSize = False
+          MaxLength = 0
+          TabOrder = 30
+          DecimalPlaces = 1
+          Increment = 10
+          MaxValue = 500
+          MinValue = 10
+          Value = 143.5
         end
       end
     end
