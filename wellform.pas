@@ -319,6 +319,8 @@ type
     added FFFfeatures
   03/03/2020
     added Ft_DetDiagonalLabel,Ft_DetDiagonalCheckbox, removed MeasDetectDiagItem
+  07/03/2021
+    added Nominal_IFA_CheckBox, DefaultMRlinacSSD_cm: TFloatSpinEditEx;
   }
 
   {=========== TAnalyseForm =====================}
@@ -594,10 +596,13 @@ type
     DefaultEnergyLabel          : TStaticText;
     DefaultEnergy_MeV           : TFloatSpinEditEx;
     DefaultSSDLabel             : TStaticText;
-    DefaultSSD_cm               : TFloatSpinEditEx;
-    InsertOriginCheckBox        : TCheckBox;
+    DefaultSSD_cm               : TFloatSpinEditEx;                             //twcDefaultSSDcm
+    DefaultMRlinacSSDLabel      : TStaticText;
+    DefaultMRlinacSSD_cm        : TFloatSpinEditEx;                             //twcDefaultMRlinacSSDcm
     HistogramLimitLabel         : TStaticText;
     HistogramLimit_num          : TFloatSpinEditEx;
+    InsertOriginCheckBox        : TCheckBox;
+    Nominal_IFA_CheckBox        : TCheckBox;                                    //wNominalIFA
     //-shift settings groupbox
     ShiftGroupBox               : TGroupBox;
     ShiftStepLabel              : TStaticText;
@@ -909,15 +914,15 @@ type
     FilePrintSelItem      : TMenuItem;                    {Ctrl+Shift+P}                //OnClick = FilePrintFormClick
     FilePrintAllItem      : TMenuItem;                    {Ctrl+Alt+P}                  //OnClick = FilePrintFormClick
    {$ENDIF}
-    Ft_TypeLabel          : array[twcFieldClass                        ] of TLabel;     //Ft_xxx: used on FieldTypes tab
-    Ft_DetectionCheckbox  : array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection
-    Ft_DetDiagonalCheckbox: array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection
-    Ft_DynPenumbraCheckbox: array[twcFieldClass                        ] of TCheckBox;  //no synchonisation needed
-    Ft_SymCorrCheckbox    : array[twcFieldClass,dsMeasured..dsReference] of TCheckBox;  //local sync with menu ondataread
-    Ft_EdgeMethodCombo    : array[twcFieldClass,twcEdgeClass           ] of TComboBox;  //SetWellhofervalues/GetWellhofervalues
-    Ft_CenterMethodCombo  : array[twcFieldClass                        ] of TComboBox;  //SyncSetCenterOfField
-    Ft_NormMethodCombo    : array[twcFieldClass                        ] of TComboBox;  //SyncSetNormalisation
-    Ft_CenterRadiusEdit_Cm: array[twcFieldClass                        ] of TFloatSpinEditEx;
+    Ft_TypeLabel          : array[twcFieldClass                        ] of TLabel;     //Ft_xxx: used on FieldTypes tab         |-
+    Ft_DetectionCheckbox  : array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection                       |wFieldTypeDetection
+    Ft_DetDiagonalCheckbox: array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection                       |wDiagonalDetection
+    Ft_DynPenumbraCheckbox: array[twcFieldClass                        ] of TCheckBox;  //no synchonisation needed               |-
+    Ft_SymCorrCheckbox    : array[twcFieldClass,dsMeasured..dsReference] of TCheckBox;  //local sync with menu ondataread        |-
+    Ft_EdgeMethodCombo    : array[twcFieldClass,twcEdgeClass           ] of TComboBox;  //SetWellhofervalues/GetWellhofervalues  |wEdgeMethod
+    Ft_CenterMethodCombo  : array[twcFieldClass                        ] of TComboBox;  //SyncSetCenterOfField                   |wCenterDefinition
+    Ft_NormMethodCombo    : array[twcFieldClass                        ] of TComboBox;  //SyncSetNormalisation                   |wNormalisation
+    Ft_CenterRadiusEdit_Cm: array[twcFieldClass                        ] of TFloatSpinEditEx; //SetEnginevalues                  |wTopModelRadiusCm
     GammaInFieldLimits    : array[twcFieldClass                        ] of TCheckBox;
     ExtSymSubItems        : array[ExtSymType                           ] of TMenuItem;
     FFFpSubItems          : array[CenterFFFTopModel..CenterFFFSlopes   ] of TMenuItem;
@@ -3056,6 +3061,7 @@ end; {~configsave}
 {18/09/2020 MeasSDD2SSDItem,MeasScale2defaultSSDitem,MeasMissingPenumbraItem,MeasZeroStepsItem,MeasDetectDiagItem}
 {13/10/2020 AutoSetDecPointCheckBox,AutoDecPointList,AutoDecimalPoint,AutoDecimalList}
 {03/03/2020 removed MeasDetectDiagItem}
+{07/03/2021 DefaultMRlinacSSD_cm}
 procedure TAnalyseForm.GetWellhoferValues;
 var q: twcEdgeClass;
     f: twcFieldClass;
@@ -3084,6 +3090,7 @@ FitMubPowerFixedCheckBox .Checked:= twcPddFitMubPowerFixed;
 FitENRweigthedCheckBox   .Checked:= twcPddFitCostENRWeighted;
 InsertOriginCheckBox     .Checked:= twcMccInsertOrigin;
 DefaultSSD_cm            .Value  := twcDefaultSSDcm;
+DefaultMRlinacSSD_cm     .Value  := twcDefaultSSD_MRcm;
 FitCycles_num            .Value  := twcNMcycles;
 FitMaxTime_sec           .Value  := twcNMseconds;
 FitRestarts_num          .Value  := twcNMrestarts;
@@ -3155,6 +3162,7 @@ end; {~getwellhofervalues}
 {18/08/2020 EdgeMRlinacTUcsvList}
 {27/08/2020 Ft_CenterRadiusEdit_Cm}
 {15/09/2020 split off setenginevalues}
+{07/03/2021 DefaultMRlinacSSD_cm}
 procedure TAnalyseForm.SetWellhoferValues(Sender:TObject);
 begin
 SetEngineValues(UsedEngine);
@@ -3169,6 +3177,7 @@ twcPDDpar[pddfit_mu4]         := FitMu4CheckBox                .Checked;
 twcPDDpar[pddfit_mx2]         := FitMx2CheckBox                .Checked;
 twcDefaultEnergy_MeV          := DefaultEnergy_MeV             .Value;
 twcDefaultSSDcm               := DefaultSSD_cm                 .Value;
+twcDefaultSSD_MRcm            := DefaultMRlinacSSD_cm          .Value;
 twcGammaCutoffDepth           := GammaDepthCutoff_mm           .Value/10;
 twcGammaCutoffPercent         := GammaDoseCutoff_perc          .Value;
 twcGammaDosePercBase          := GammaDoseNorm_perc            .Value;
@@ -3201,6 +3210,7 @@ end; {~setwellhofervalues}
 {13/10/2020 AutoSetDecPointCheckBox,AutoDecPointList,AutoDecimalPoint,AutoDecimalList}
 {21/10/2020 more settings to transfer: AcceptMissingPenumbra,AcceptZeroSteps,DetectDiagonalScans,wApplySigmoidToBuffer}
 {03/03/2020 removed MeasDetectDiagItem}
+{07/03/2021 Nominal_IFA_CheckBox}
 procedure TAnalyseForm.SetEngineValues(aEngine:Integer);
 var p: twcDoseLevel;
     q: twcEdgeClass;
@@ -3258,6 +3268,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     wLinacSymInnerRadiusCm    := LinacSymInner_cm               .Value;
     wLinacSymOuterRadiusCm    := LinacSymOuter_cm               .Value;
     wFFFMinDoseDifPerc        := FFFMinDoseDifEdit_perc         .Value;
+    wNominalIFA               := Nominal_IFA_CheckBox           .Checked;
     wFFFMinEdgeDifCm          := FFFMinEdgeDif_mm               .Value/10;
     ArrayScanRefUse           := RefDeviceSpecificItem          .Checked;
     wAxisPreserveOnExport     := MeasPreserveDataItem           .Checked;
