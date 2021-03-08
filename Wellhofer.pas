@@ -8805,7 +8805,7 @@ end; {~configsave}
 {12/07/2017 twcPddFitZWeightPower}
 {10/01/2020 do not read DUser}
 {16/05/2020 storage of wMultiScanNr removed}
-{07/03/2021 twcDefaultSSD_MRcm}
+{08/03/2021 twcDefaultSSD_MRcm}
 procedure TWellhoferData.ReadConfig(CF:TConfigStrings=nil);
 var IsLocal: Boolean;
     S      : TStringList;
@@ -8851,8 +8851,8 @@ with CF do
   FilterWidth                := ReadFloat(Section   ,twcFilterKey              ,0.6);
   wOutlierFilter             := ReadBool(Section    ,twcFilterKey+'Outlier'    ,True);
   twcDefaultEnergy_MeV       := ReadFloat(Section   ,twcEnergyKey              ,6);
-  twcDefaultSSDcm            := ReadFloat(Section   ,twcSSDKey                 ,100);
-  twcDefaultSSD_MRcm         := ReadFloat(Section   ,twcSSDKey+'_MR'           ,100);
+  twcDefaultSSDcm            := ReadFloat(Section   ,twcSSDKey                 ,twcDefaultSSDcm);
+  twcDefaultSSD_MRcm         := ReadFloat(Section   ,twcSSDKey+'_MR'           ,twcDefaultSSD_MRcm);
   w2D_ArrayRefList.CommaText := ReadString(Section  ,twcMultiScanKey+'list'    ,'' );
   twcOutlierPointLimit       := ReadInteger(Section ,twcFilterKey+'Limit'      ,7  );
   ResampleGridSize           := ReadFloat(Section   ,twcGridKey                ,0.0);
