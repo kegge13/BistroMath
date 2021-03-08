@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 07/03/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 08/03/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2518,7 +2518,7 @@ type
     twFittedData     : Boolean;
     twInFieldAreaOk  : Boolean;
     twInFieldArr     : array[twcSides] of Integer;
-    twInFieldPosCm   : array[twcSides] of twcFloatType;
+    twInFieldPosCm   : array[twcSides] of twcFloatType;                         //theoretical values, not on array positions.
     twFlatness       : twcFloatType;
     twIsDerivative   : Boolean;
     twIsDiagonal     : Boolean;
@@ -2587,7 +2587,7 @@ type
     twSymAreaRatio   : twcFloatType;
     twTag            : Integer;
     twTopModel       : TQuadFitReport;
-    twUsedEdgeLevel  : twcDoseLevel;
+    twUsedEdgeLevel  : twcDoseLevel;                                            //the actually applied dose level for border positions
     twValid          : Boolean;
     twWidthCm        : twcFloatType;                                            //width at edge level
   end;
@@ -9285,8 +9285,7 @@ function TWellhoferData.GetPenumbraValue(ASource   :twcDataSource;
                                          ASide     :twcSides): twcFloatType;
 begin
 with wSource[ASource].twLevelPos[ADoseLevel].Penumbra[ASide] do
- if Valid then Result:= Calc
- else          Result:= 0;
+ Result:= ifthen(Valid,Calc,0);
 end; {~getpenumbravalue}
 
 
@@ -18567,7 +18566,7 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {30/01/2021 measured file type as priority message}
 {23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff; FFF specific works now linked to twFFFdetected, there is referred to AppliedFieldType}
 {03/03/2021 twIsDiagonal now depends on fieldtypes}
-{07/03/2021 review of IFA definition,wNominalIFA,twcDefaultSSD_MRcm}
+{08/03/2021 review of IFA definition,wNominalIFA,twcDefaultSSD_MRcm}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -18610,19 +18609,24 @@ var s: twcDataSource;
         LinFit                         : TLinFit;
         AutoCenter                     : Boolean;
         AppliedFieldType               : twcFieldClass;
-
+        CurrentCenterDef               : twcPositionUseType;
 
         procedure Set_IFA;
+        var BorderAvg: twcFloatType;
         begin
         with wSource[ASource] do
-          begin
-          twInFieldPosCm[twcLeft] := twCenterPosCm-IFA/2;
-          twInFieldArr[twcLeft]   := Clip(NearestPosition(twInFieldPosCm[twcLeft],ASource,False),twScanFirst,Pred(twCenterArr));
-          twInFieldPosCm[twcRight]:= twCenterPosCm+IFA/2;
-          twInFieldArr[twcRight]  := Clip(NearestPosition(twInFieldPosCm[twcRight],ASource,False),Succ(twCenterArr),twScanLast);
-          twInFieldAreaOk         := twInFieldAreaOk and (twInFieldArr[twcRight]-twInFieldArr[twcLeft]>2);
-          end;
-        end;
+          if twCenterPosValid then
+            begin
+            BorderAvg:= (GetPenumbraValue(ASource,twUsedEdgeLevel,twcLeft)+GetPenumbraValue(ASource,twUsedEdgeLevel,twcRight))/2;
+            if Abs(twCenterPosCm-BorderAvg)<1 then
+              BorderAvg:= twCenterPosCm;                                        //IFA should be within borders at all times
+            twInFieldPosCm[twcLeft] := BorderAvg-IFA/2;
+            twInFieldArr[twcLeft]   := Clip(NearestPosition(twInFieldPosCm[twcLeft],ASource,False),twScanFirst,Pred(twCenterArr));
+            twInFieldPosCm[twcRight]:= BorderAvg+IFA/2;
+            twInFieldArr[twcRight]  := Clip(NearestPosition(twInFieldPosCm[twcRight],ASource,False),Succ(twCenterArr),twScanLast);
+            twInFieldAreaOk         := twInFieldAreaOk and (twInFieldArr[twcRight]-twInFieldArr[twcLeft]>2);
+            end;
+        end; {set_ifa}
 
     begin
     with wSource[ASource] do                                                    //fcWedge,fcElectron,fcMRlinac already detected in FastScan
@@ -18656,6 +18660,7 @@ var s: twcDataSource;
           end; {not twrelativedata}
         AppliedFieldType:= twSetFieldType; //+++++++++++++++++++from here the final FieldType is known++++++++++++++++++
         twAvgNormValue  := GetQfittedValue(twAbsNormPosCm,ASource);
+        CurrentCenterDef:= twCenterPosDefUse;
         if twIsDiagonal then
           begin
           twIsDiagonal:= wDiagonalDetection[AppliedFieldType];                  //actual detection of diagonal depends on fieldtype
@@ -18768,9 +18773,10 @@ var s: twcDataSource;
                     end;
                    end; {except}
                  end; {case}
-              Set_IFA;                                                          //center definition might be changed
+              if twCenterPosDefUse<>CurrentCenterDef then
+                Set_IFA;                                                        //center definition might be changed
               ProfileNormalisation(fcFFF);
-              end; {twFFFdetected}              //------------------------------ end FFF specific works----------------------------
+              end; {twfffdetected}              //------------------------------ end FFF specific works----------------------------
             if twInFieldAreaOk and (LogLevel>2) then
               StatusMessage(Format('->In-Field area curve[%d]: %0.1f cm',[Ord(ASource),abs(twPosCm[twInFieldArr[twcRight]]-twPosCm[twInFieldArr[twcLeft]])]));
             end; {not isrelative}
@@ -18779,7 +18785,7 @@ var s: twcDataSource;
           try   {search min, max and calculate straight lijn over in-field area}
             if twSetFieldType=fcStandard then
               LinFit.Initialize;
-            for i:= twInFieldArr[twcLeft] to twInFieldArr[twcRight] do
+            for i:= twInFieldArr[twcLeft] to twInFieldArr[twcRight] do          //IFA analysis based on array points, no interpolations
               begin
               if twSetFieldType=fcStandard then
                 LinFit.Add_XY(twPosCm[i],twData[i]);
@@ -18798,7 +18804,7 @@ var s: twcDataSource;
             begin
             twRelAvgInField := LinFit.AverageY/twAbsNormValue;
             twAppliedNormVal:= ifthen(wNormalisation[AppliedFieldType]=NormOnInFieldArea,LinFit.AverageY,twAbsNormValue);
-            twFlatness      := (lMax-lMin)/twAppliedNormVal;                      {compatibel met omnipro}
+            twFlatness      := (lMax-lMin)/twAppliedNormVal;                    //compatible with omnipro
             twRelMaxInField := lMax/twAppliedNormVal;
             twRelMinInField := lMin/twAppliedNormVal;
             if twFlatness>1 then
