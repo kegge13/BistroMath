@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 05/03/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 09/03/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -4308,8 +4308,9 @@ var i                           : Integer;
       end; {with wellhofer}
   end; {docorrections}
 
-  {29/02/2016: introduction of selectable source for output (Wsrc, Fpar[3])}
-  {16/10/2019: introduction of FPar[4]}
+  {29/02/2016 introduction of selectable source for output (Wsrc, Fpar[3])}
+  {16/10/2019 introduction of FPar[4]}
+  {09/03/2021 set filesavedialog.defaultext}
   procedure DoSpecialMode3;
   var i,p,q: integer;
       s    : twcFloatType;
@@ -4318,17 +4319,21 @@ var i                           : Integer;
   begin
   with Engines[UsedEngine],SpecialMode[3] do
     begin
-    QuadFilter(Fpar[1],dsMeasured);                                                //FPar[1]=filter width in cm
-    i:= Min(Max(Ord(Low(twcAutoCenter)),Round(FPar[5])),Ord(High(twcAutoCenter))); //FPar[5]=twcAutoCenter:(0=AC_default,1=AC_on,2=AC_off);
-    Analyse(dsMeasured,twcAutoCenter(i));
+    if (Length(SPar[2])>0) and (FileSaveDialog.DefaultExt<>SPar[2]) and (Pos(Spar[2],FileSaveDialog.Filter)>0) then
+      begin
+      SPar[2]                  := SPar[2].Trim(['*',',']);                      //TStringhelper function
+      FileSaveDialog.DefaultExt:= SPar[2];
+      end;
+    QuadFilter(Fpar[1],dsMeasured);                                             //FPar[1]=filter width in cm, output to dsCalculated
+    Analyse(dsMeasured,twcAutoCenter(Min(Max(Ord(Low(twcAutoCenter)),Round(FPar[5])),Ord(High(twcAutoCenter))))); //FPar[5]=twcAutoCenter:(0=AC_default,1=AC_on,2=AC_off)
     if PDDfitCheckBox.Enabled and PDDfitCheckBox.Checked and (ScanType in twcVertScans) then
       begin
       PddFit(dsMeasured,dsBuffer);
       NMdone:= True;
       end;
     Analyse(dsCalculated);
-    if FPar[3]<0.5 then Wsrc:= dsMeasured
-    else                Wsrc:= dsCalculated;
+    if Round(FPar[3])<1 then Wsrc:= dsMeasured
+    else                     Wsrc:= dsCalculated;
     with wSource[Wsrc],twBeamInfo do if twValid then
       begin
       DateTimeToString(Ds,'yyyymmdd_hhnn',twMeasDateTime);
