@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 09/03/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 10/03/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -348,18 +348,18 @@ type
     ProcessingDivisor2          : TMenuItem;
     ProcessingDivisor3          : TMenuItem;
     ProcessAutoscalingItem      : TMenuItem;  {none}         //OnClick = Reload;                     Tag=4
-    ProcessSigmoid2BufferItem   : TMenuItem;  {Ctrl+B}
+    ProcessSigmoid2BufferItem   : TMenuItem;  {Ctrl+B}       //OnClick = Reload                      >wApplySigmoidToBuffer
     ProcessReprocessItem        : TMenuItem;  {Ctrl+R}       //OnClick = OnDataRead
     ProcessResetFitItem         : TMenuItem;  {Ctrl+Z}       //OnClick = ProcessResetFitClick
     ProcessMergeItem            : TMenuItem;  {Ctrl+Q}       //OnClick = OnDataRead
     ProcessSetMergeSourceItem   : TMenuItem;  {Ctrl+Alt+Q}   //OnClick = ProcessMergeSourceClick
     ProcessClearMergeItem       : TMenuItem;  {Shift+Ctrl+O} //OnClick = ProcessMergeSourceClick
     ProcessMirrorMeasRefItem    : TMenuItem;  {Ctrl+X}       //OnClick = ProcessMirrorMeasRefClick
-    ProcessSyntheticProfile     : TMenuItem;  {Ctrl+F}       //OnClick = Reload
-    ProcessSetTempRefItem       : TMenuItem;  {Ctrl+T}       //Action = TempRefAction
+    ProcessSyntheticProfile     : TMenuItem;  {Ctrl+F}       //OnClick = Reload                      >wDefaultIgnoreSet
+    ProcessSetTempRefItem       : TMenuItem;  {Ctrl+T}       //Action = TempRefAction                >wCheckRefCurveString
     ProcessUnsetTempRefItem     : TMenuItem;  {Shift+Ctrl+T} //OnClick = ProcessUnsetTempRefClick
-    ProcessIgnoreTUnameItem     : TMenuItem;  {Ctrl+U}       //OnClick = ProcessUpdateDataRead
-    ProcessCheckTempTypeItem    : TMenuItem;  {Ctrl+Y}       //OnClick = ProcessUpdateDataRead
+    ProcessIgnoreTUnameItem     : TMenuItem;  {Ctrl+U}       //OnClick = ProcessUpdateDataRead       >wCheckRefCurveString,wCheckRefIgnoreLinac
+    ProcessCheckTempTypeItem    : TMenuItem;  {Ctrl+Y}       //OnClick = ProcessUpdateDataRead       >wCheckRefCurveString
     //view menu
     ViewMenu                    : TMenuItem;
     ViewDivisor1                : TMenuItem;
@@ -387,7 +387,7 @@ type
     ViewScaleElectronPDDrange   : TMenuItem;  {S}            //OnClick = SmartScaleElectronPDD
     ViewMillimetersItem         : TMenuItem;  {X}            //OnClick = OnDataRead
     ViewClearItem               : TMenuItem;  {End}          //OnClick = ClearScreen
-    ViewBottomAxisAlwaysBlack   : TMenuItem;  {none}         //OnClick = OnDataRead
+    ViewBottomAxisAlwaysBlack   : TMenuItem;  {none}         //OnClick = OnDataRead                   >wUserAxisSign
     ViewSwapGTItem              : TMenuItem;  {G}            //OnClick = OnDataRead
     ViewSwapABItem              : TMenuItem;  {A}            //OnClick = OnDataRead
     ViewSwapUDItem              : TMenuItem;  {D}            //OnClick = OnDataRead
@@ -400,11 +400,11 @@ type
     MeasDivisor4                : TMenuItem;
     MeasDivisor5                : TMenuItem;
     MeasSymCorrectItem          : TMenuItem;  {Shift+S}      //OnClick = Reload
-    MeasMove2OriginItem         : TMenuItem;  {Shift+O}      //OnClick = Reload
+    MeasMove2OriginItem         : TMenuItem;  {Shift+O}      //OnClick = Reload                       >wCenterProfiles
     MeasMirrorItem              : TMenuItem;  {Shift+T}      //OnClick = ReadEditor
     MeasResampleItem            : TMenuItem;  {Shift+R}      //OnClick = Reload
     MeasMayneordItem            : TMenuItem;  {Shift+M}      //OnClick = Reload
-    MeasUserDoseItem            : TMenuItem;  {Shift+U}      //OnClick = OnDataRead
+    MeasUserDoseItem            : TMenuItem;  {Shift+U}      //OnClick = OnDataRead                   >wApplyUserLevel
     MeasUseFitModelItem         : TMenuItem;  {Shift+P}      //OnClick = OnDataRead
     MeasMirrorToBufferItem      : TMenuItem;  {Shift+E}      //OnClick = ViewItems
     MeasLocalPeakItem           : TMenuItem;  {Shift+L}      //OnClick = LocalPeakClick
@@ -415,34 +415,34 @@ type
     MeasBadPenumbraItem         : TMenuItem;  {Shift+A}      //OnClick = Reload
     MeasMissingPenumbraItem     : TMenuItem;  {Shift+I}      //OnClick = OnDataRead
     MeasZeroStepsItem           : TMenuItem;  {Shift+Z}      //OnClick = OnMenu
-    MeasGenericToPDDItem        : TMenuItem;  {Shift+G}      //OnClick = Reload
+    MeasGenericToPDDItem        : TMenuItem;  {Shift+G}      //OnClick = Reload                       >wGenericToPDD
     MeasGenericToElectronItem   : TMenuItem;  {Shift++}      //OnClick = Reload
     MeasPeakFFFSubMenu          : TMenuItem;
     MeasExtSymSubMenu           : TMenuItem;
     //submenu
     MeasSSDsubmenu              : TMenuItem;
-    MeasSDD2SSDItem             : TMenuItem;  {Shift+C}      //OnClick = Reload
-    MeasScale2DefaultSSDitem    : TMenuItem;  {Shift+H}      //OnClick = ReadEditor
+    MeasSDD2SSDItem             : TMenuItem;  {Shift+C}      //OnClick = Reload                       >wScaleSDD2SSD
+    MeasScale2DefaultSSDitem    : TMenuItem;  {Shift+H}      //OnClick = ReadEditor                   >wScale2DefaultSSD
     //submenu
     MeasSignalSubMenu           : TMenuItem;
     MeasBackgroundCorrItem      : TMenuItem;  {Shift+B}      //OnClick = Reload
     MeasOD2DoseConvItem         : TMenuItem;  {Shift+N}      //OnClick = ReadEditor
     MeasIon2DoseItem            : TMenuItem;  {Shift+Y}      //OnClick = Ionisation2DoseClick
-    MeasReNormaliseDataItem     : TMenuItem;  {Shift+W}      //OnClick = ReadEditor
+    MeasReNormaliseDataItem     : TMenuItem;  {Shift+W}      //OnClick = ReadEditor                   >wRenormaliseData
     //submenu
     MeasAxisSubMenu             : TMenuItem;
     MeasInvertGTitem            : TMenuItem;  {Shift+1}      //OnClick = ReadEditor
     MeasInvertABitem            : TMenuItem;  {Shift+2}      //OnClick = ReadEditor
     MeasInvertUDitem            : TMenuItem;  {Shift+3}      //OnClick = ReadEditor
     MeasRemapCoordinates        : TMenuItem;                 //OnClick = ReadEditor
-    MeasPreserveDataItem        : TMenuItem;                 //OnClick = SetWellhoferValues;   Tag=4
+    MeasPreserveDataItem        : TMenuItem;                 //OnClick = SetWellhoferValues;   Tag=4  >wAxisPreserveOnExport
     //reference menu
     ReferenceMenu               : TMenuItem;
     RefAutoLoadItem             : TMenuItem;  {Alt+L}        //OnClick = ViewItems
-    RefDeviceSpecificItem       : TMenuItem;  {Alt+I}        //OnClick = ReferenceDevSpecClick
-    RefGenericBeamItem          : TMenuItem;  {Alt+R}        //OnClick = ReferenceGenericBeamClick    > Wellhofer.wReferenceFromGeneric
+    RefDeviceSpecificItem       : TMenuItem;  {Alt+I}        //OnClick = ReferenceDevSpecClick        >wMeas2TankMapping
+    RefGenericBeamItem          : TMenuItem;  {Alt+R}        //OnClick = ReferenceGenericBeamClick    >wReferenceFromGeneric
     RefMakeIndexItem            : TMenuItem;  {Alt+X}        //OnClick = Reload
-    RefAtDefaultSSDItem         : TMenuItem;  {Alt+H}        //OnClick = ReadEditor
+    RefAtDefaultSSDItem         : TMenuItem;  {Alt+H}        //OnClick = ReadEditor                   >wRefAtDefaultSSD
     RefBackgroundCorrItem       : TMenuItem;  {Alt+B}        //OnClick = OnDataRead
     RefSymCorrectItem           : TMenuItem;  {Alt+S}        //OnClick = ReadEditor
     RefAlignItem                : TMenuItem;  {Alt+M}        //OnClick = Reload
@@ -527,24 +527,24 @@ type
     FFFInFieldExtLabel          : TStaticText;
     FFFInFieldExt_cm            : TFloatSpinEditEx;
     FFFMinDoseDifLabel          : TStaticText;
-    FFFMinDoseDifEdit_perc      : TFloatSpinEditEx;
+    FFFMinDoseDifEdit_perc      : TFloatSpinEditEx;                             //>wFFFMinDoseDifPerc
     FFFMinEdgeDifLabel          : TStaticText;
-    FFFMinEdgeDif_mm            : TFloatSpinEditEx;
+    FFFMinEdgeDif_mm            : TFloatSpinEditEx;                             //>wFFFMinEdgeDifCm
     //-Edge groupbox
     EdgeDetectionGroupBox       : TGroupBox;
-    EdgeDetectionCheckBox       : TCheckBox;
-    EdgeDetectionError_mm       : TFloatSpinEditEx;
+    EdgeDetectionCheckBox       : TCheckBox;                                    //>wEdgeDetect
+    EdgeDetectionError_mm       : TFloatSpinEditEx;                             //>wEdgeFallBackCm
     EdgeSigmoidRadiusLabel      : TStaticText;
-    EdgeSigmoidRadius_cm        : TFloatSpinEditEx;
+    EdgeSigmoidRadius_cm        : TFloatSpinEditEx;                             //>wInflectionSigmoidRadiusCm
     EdgeSmallFieldWidthLabel    : TStaticText;
-    EdgeSmallFieldWidth_cm      : TFloatSpinEditEx;
+    EdgeSmallFieldWidth_cm      : TFloatSpinEditEx;                             //>wSmallFieldLimitCm
     EdgeWedge90ShiftLabel       : TStaticText;
-    EdgeWedge90ShiftFactor      : TFloatSpinEditEx;
+    EdgeWedge90ShiftFactor      : TFloatSpinEditEx;                             //>wWedge90ShiftFactor
     EdgeMRlinacListLabel        : TStaticText;
-    EdgeMRlinacTUcsvList        : TEdit;
+    EdgeMRlinacTUcsvList        : TEdit;                                        //>wMRlinacTUlist
     //inventory tab
     InventoryTab                : TTabSheet;
-    InventoryAltAxisCheckBox    : TCheckBox;
+    InventoryAltAxisCheckBox    : TCheckBox;                                    //>wMeas2TankMapping
     InventoryDirBox             : TDirectoryEdit;                               //InventoryDirBoxAccept
     InventoryGrid               : TStringGrid;
     InventoryRadioRef           : TRadioButton;                                 //InventoryDirBoxChange
@@ -588,21 +588,21 @@ type
     UserBorderDoseLabel         : TStaticText;
     UserBorderDose_perc         : TFloatSpinEditEx;
     XpenumbraLabel              : TStaticText;
-    XLpenumbra_perc             : TFloatSpinEditEx;
-    XHpenumbra_perc             : TFloatSpinEditEx;
+    XLpenumbra_perc             : TFloatSpinEditEx;                             //>wXPenumbraL
+    XHpenumbra_perc             : TFloatSpinEditEx;                             //>wXPenumbraH
     EpenumbraLabel              : TStaticText;
-    ELpenumbra_perc             : TFloatSpinEditEx;
-    EHpenumbra_perc             : TFloatSpinEditEx;
+    ELpenumbra_perc             : TFloatSpinEditEx;                             //>wEPenumbraL
+    EHpenumbra_perc             : TFloatSpinEditEx;                             //>wEPenumbraH
     DefaultEnergyLabel          : TStaticText;
     DefaultEnergy_MeV           : TFloatSpinEditEx;
     DefaultSSDLabel             : TStaticText;
-    DefaultSSD_cm               : TFloatSpinEditEx;                             //twcDefaultSSDcm
+    DefaultSSD_cm               : TFloatSpinEditEx;                             //>twcDefaultSSDcm
     DefaultMRlinacSSDLabel      : TStaticText;
-    DefaultMRlinacSSD_cm        : TFloatSpinEditEx;                             //twcDefaultMRlinacSSDcm
+    DefaultMRlinacSSD_cm        : TFloatSpinEditEx;                             //>twcDefaultMRlinacSSDcm
     HistogramLimitLabel         : TStaticText;
     HistogramLimit_num          : TFloatSpinEditEx;
     InsertOriginCheckBox        : TCheckBox;
-    Nominal_IFA_CheckBox        : TCheckBox;                                    //wNominalIFA
+    Nominal_IFA_CheckBox        : TCheckBox;                                    //>wNominalIFA
     //-shift settings groupbox
     ShiftGroupBox               : TGroupBox;
     ShiftStepLabel              : TStaticText;
@@ -610,10 +610,10 @@ type
     //-linac error groupbox
     LinacErrorGroupBox          : TGroupBox;
     LinacSymLabel               : TStaticText;
-    LinacSymInner_cm            : TFloatSpinEditEx;
-    LinacSymOuter_cm            : TFloatSpinEditEx;
-    LinacErrInvertABCheckBox    : TCheckBox;
-    LinacErrInvertGTCheckBox    : TCheckBox;
+    LinacSymInner_cm            : TFloatSpinEditEx;                             //>wLinacSymInnerRadiusCm
+    LinacSymOuter_cm            : TFloatSpinEditEx;                             //>wLinacSymOuterRadiusCm
+    LinacErrInvertABCheckBox    : TCheckBox;                                    //>wLinacSymSign
+    LinacErrInvertGTCheckBox    : TCheckBox;                                    //>wLinacSymSign
     //-merge groupbox
     MergeGroupBox               : TGroupBox;
     MergeProfShiftLabel         : TStaticText;
@@ -658,7 +658,7 @@ type
     HistoryListSize_num         : TSpinEditEx;
     HistoryListFreezeCheckBox   : TCheckBox;
     ForceMatchingCheckBox       : TCheckBox;
-    OutlierFilterStatsCheckBox  : TCheckBox;
+    OutlierFilterStatsCheckBox  : TCheckBox;                                    //>wOutlierFilter
     OutlierMaxPoints_num        : TSpinEditEx;
     AutoSetDecPointCheckBox     : TCheckBox;
     AutoDecPointList            : TEdit;
@@ -667,7 +667,7 @@ type
     OriginMinLevelLabel         : TStaticText;
     OriginMinLevel_perc         : TFloatSpinEditEx;
     PipsPixelSizeLabel          : TStaticText;
-    PipsPixelSize_cm            : TFloatSpinEditEx;
+    PipsPixelSize_cm            : TFloatSpinEditEx;                             //>wPipsPixelCm
     //--pddfitgroupbox
     PDDfitGroupBox              : TGroupBox;
     PDDfitCheckBox              : TCheckBox;
@@ -914,20 +914,20 @@ type
     FilePrintSelItem      : TMenuItem;                    {Ctrl+Shift+P}                //OnClick = FilePrintFormClick
     FilePrintAllItem      : TMenuItem;                    {Ctrl+Alt+P}                  //OnClick = FilePrintFormClick
    {$ENDIF}
-    Ft_TypeLabel          : array[twcFieldClass                        ] of TLabel;     //Ft_xxx: used on FieldTypes tab         |-
-    Ft_DetectionCheckbox  : array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection                       |wFieldTypeDetection
-    Ft_DetDiagonalCheckbox: array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection                       |wDiagonalDetection
-    Ft_DynPenumbraCheckbox: array[twcFieldClass                        ] of TCheckBox;  //no synchonisation needed               |-
-    Ft_SymCorrCheckbox    : array[twcFieldClass,dsMeasured..dsReference] of TCheckBox;  //local sync with menu ondataread        |-
-    Ft_EdgeMethodCombo    : array[twcFieldClass,twcEdgeClass           ] of TComboBox;  //SetWellhofervalues/GetWellhofervalues  |wEdgeMethod
-    Ft_CenterMethodCombo  : array[twcFieldClass                        ] of TComboBox;  //SyncSetCenterOfField                   |wCenterDefinition
-    Ft_NormMethodCombo    : array[twcFieldClass                        ] of TComboBox;  //SyncSetNormalisation                   |wNormalisation
-    Ft_CenterRadiusEdit_Cm: array[twcFieldClass                        ] of TFloatSpinEditEx; //SetEnginevalues                  |wTopModelRadiusCm
+    Ft_TypeLabel          : array[twcFieldClass                        ] of TLabel;     //Ft_xxx: used on FieldTypes tab         >|-
+    Ft_DetectionCheckbox  : array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection                       >wFieldTypeDetection
+    Ft_DetDiagonalCheckbox: array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection                       >wDiagonalDetection
+    Ft_DynPenumbraCheckbox: array[twcFieldClass                        ] of TCheckBox;  //no synchonisation needed               >-
+    Ft_SymCorrCheckbox    : array[twcFieldClass,dsMeasured..dsReference] of TCheckBox;  //local sync with menu ondataread        >-
+    Ft_EdgeMethodCombo    : array[twcFieldClass,twcEdgeClass           ] of TComboBox;  //SetWellhofervalues/GetWellhofervalues  >wEdgeMethod
+    Ft_CenterMethodCombo  : array[twcFieldClass                        ] of TComboBox;  //SyncSetCenterOfField                   >wCenterDefinition
+    Ft_NormMethodCombo    : array[twcFieldClass                        ] of TComboBox;  //SyncSetNormalisation                   >wNormalisation
+    Ft_CenterRadiusEdit_Cm: array[twcFieldClass                        ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
     GammaInFieldLimits    : array[twcFieldClass                        ] of TCheckBox;
     ExtSymSubItems        : array[ExtSymType                           ] of TMenuItem;
     FFFpSubItems          : array[CenterFFFTopModel..CenterFFFSlopes   ] of TMenuItem;
     SpecialMode           : array[1..NumSpecialModes                   ] of SpecModeRec;
-    ShiftLabels           : array[twcMeasAxis                          ] of TStaticText;
+    ShiftLabels           : array[twcMeasAxis                          ] of TStaticText; //                                      >wAutoShiftCm
     ShiftValues_cm        : array[twcMeasAxis                          ] of TFloatSpinEditEx;
     CxResults             : array of CxLine;                                    //implementation PANEL DISPLAY RULES; binding to TPanelConfig.FElements; CxUsedRowMax=highest row number; see InitCxBlock, PublishResults
     UseDoseConvTable      : array of OD2dose_Rec;
@@ -3312,26 +3312,28 @@ end; {~passreforg}
 {15/02/2021 forceexpand mode added}
 function TAnalyseForm.AddEngine(ForceExpand:Boolean=False): Integer;
 begin
-if not HistoryListCheckBox.Checked then
-  Result:= 0
-else if not Engines[UsedEngine].IsValid then
-  Result:= UsedEngine
-else
-  ForceExpand:= True;
-if ForceExpand then
+Result:= 0;
+if HistoryListCheckBox.Checked then
   begin
-  Result:= Length(Engines);
-  if Result<HistoryListSize_num.Value then
-    begin
-    Engines[Result-1].Purge;                                                    //remove data that can be reconstructed (when not frozen)
-    SetLength(Engines,Result+1);
-    Engines[Result]:= TWellhoferData.Create(Engines[0].ModalityNormList,Engines[0].ModalityFilmList,Engines[0].ModalityBeamList);
-    Engines[0].PassSettings(Engines[Result]);
-    PassRefOrg(Result);                                                         //pass dsRefOrg from TempRefEngine to Result (if applicable)
-    end
+  if not Engines[UsedEngine].IsValid then
+    Result:= UsedEngine
   else
-    Result:= SelectEngine(LoadEngine,1,False);
-  end; {expand}
+    ForceExpand:= True;
+  if ForceExpand then
+    begin
+    Result:= Length(Engines);
+    if Result<HistoryListSize_num.Value then
+      begin
+      Engines[Result-1].Purge;                                                  //remove data that can be reconstructed (when not frozen)
+      SetLength(Engines,Result+1);
+      Engines[Result]:= TWellhoferData.Create(Engines[0].ModalityNormList,Engines[0].ModalityFilmList,Engines[0].ModalityBeamList);
+      Engines[0].PassSettings(Engines[Result]);
+      PassRefOrg(Result);                                                       //pass dsRefOrg from TempRefEngine to Result (if applicable)
+      end
+    else
+      Result:= SelectEngine(LoadEngine,1,False);
+    end; {expand}
+  end;
 LoadEngine                := Result;
 Engines[LoadEngine].Freeze:= False;
 SetEngineValues(Result);
@@ -6918,7 +6920,7 @@ var tmpParser: toTNumParser;
     begin
     Result:= ARec.ConvStg;
     if (ARec.Sidedness) and (not (Engines[UsedEngine].ScanType in twcVertScans)) then
-      Result:= Result.Trim(['-','+']);
+      Result:= Result.Trim(['-','+']);                                          //TStringHelper function
     end;
 
 begin
@@ -7426,7 +7428,7 @@ var s                                 : String;
                      ACaption   :String;
                      Annotations:String='');  overload;
   begin
-  Annotations:= Annotations.Trim(chNull);
+  Annotations:= Annotations.Trim(chNull);                                       //TStringHelper function
   if Length(Annotations)>0 then
     Annotations:= '('+Annotations+')';
   ALabel.Caption:= ACaption+Annotations+':';
@@ -8974,7 +8976,7 @@ with FitResultsGrid do
   k  := Pred(RowCount);
   if FitResultsAllCheckBox.Checked then
     begin
-    while Length(Rows[k].CommaText.Trim(','))=0 do
+    while Length(Rows[k].CommaText.Trim(','))=0 do                              //TStringHelper function
       Dec(k);
     l:= 0;
     m:= Pred(ColCount);
@@ -9715,7 +9717,7 @@ var hev,tdmm,tdbf,tgcp,tgdp,tgdc,tgsf,tmnp,tssd,v: twcFloatType;
   begin
   try
     if Avalue= '-' then f:= 0
-    else                f:= StrToFloat(AValue.Trim('%'));
+    else                f:= StrToFloat(AValue.Trim('%'));                       //TStringHelper function
     Result:= FloatResult(f,AReference,MaxDif,AMessage,Secs);
    except
     Result:= TestResult(False,Format('%s could not be evaluated',[AMessage]),Secs);
