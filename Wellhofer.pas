@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 08/03/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 15/03/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -229,7 +229,6 @@ const
   twcSymCorrLimitKey       ='SymmetryCorrection';
   twcFilterKey             ='Filter';
   twcEnergyKey             ='Energy';
-  twcSSDKey                ='SSD';
   twcGridKey               ='Grid';
   twcCalcKey               ='Norm';
   twcPenumbraKey           ='Penumbra';
@@ -3149,14 +3148,15 @@ type
      {$ENDIF}
      destructor Destroy;                                                                         override;
     published
-     property AcceptMissingPenumbra:Boolean         read FNoPenumbraOk    write SetNoPenumbraOk  default False;
-     property AcceptZeroSteps      :Boolean         read FZeroStepsOk     write SetZeroStepsOk   default False;
-     property AutoLoadReference    :Boolean         read FAutoLoadRef     write SetAutoLoadRef   default False;
-     property AlignReference       :Boolean         read FALignRef        write FAlignRef        default True;
+     property AcceptMissingPenumbra:Boolean         read FNoPenumbraOk    write SetNoPenumbraOk      default False;
+     property AcceptZeroSteps      :Boolean         read FZeroStepsOk     write SetZeroStepsOk       default False;
+     property AutoLoadReference    :Boolean         read FAutoLoadRef     write SetAutoLoadRef       default False;
+     property AlignReference       :Boolean         read FALignRef        write FAlignRef            default True;
      property ArrayScanRefOk       :Boolean         read FArrayScanRefOk;
      property ArrayScanRefUse      :Boolean         read FArrayScanRefUse write SetArrayScanRefUse;
      property BeamType;
      property CalcWidth_cm         :twcFloatType    read FCalcWidth_cm    write SetCalcWidth;
+     property DefaultSSD_cm        :twcFloatType    read FDefaultSSDcm;
      property Energy               :twcFloatType    read wSource[dsMeasured].twBeamInfo.twBEnergy;
      property FieldGT_cm           :twcFloatType    read GetFieldGT       write SetFieldGT;
      property FieldAB_cm           :twcFloatType    read GetFieldAB       write SetFieldAB;
@@ -3173,7 +3173,7 @@ type
      property ModalityFilmList     :TModFilmList    read FModFilmList;
      property ModalityBeamList     :TModTextList    read FModBeamList;
      property MultiRefIndex        :Boolean         read FMultiRefIndex         write SetMultiRefIndex;
-     property MatchOverride        :Boolean         read FMatchOverride         write FMatchOverride   default False;
+     property MatchOverride        :Boolean         read FMatchOverride         write FMatchOverride default False;
      property PenumbraHi           :twcFloatType    read FPenumbraH;
      property PenumbraLo           :twcFloatType    read FPenumbraL;
      property EngineReady          :Boolean         read GetReady;
@@ -3223,8 +3223,6 @@ const
   twcSymCorrectionLevel   :twcFloatType=   0.1;  {minimal fraction of normval to apply symmetry correction}
   twcDefaultEnergy_MeV    :twcFloatType=   6.0;
   twcOmniPro7MinRatioPerc :twcFloatType=  10;    {ratio in omnipro_v7 data should exceed this level, otherwise normalisedfield is taken}
-  twcDefaultSSDcm         :twcFloatType= 100.0;
-  twcDefaultSSD_MRcm      :twcFloatType= 143.5;
   twcDeriveStatsBinDiv    :Integer     =  10;    {divide number of bands with this number; implications when in upper or lower region}
   twcDeriveStatsBinWDiv   :Integer     =  30;    {same but alleviated for wedged profiles}
   twcENRlimit             :twcFloatType=  2.0;
@@ -3257,12 +3255,13 @@ const
   twcFieldShapeStg        :array[twcFieldShape     ] of String=('RECTANGULAR','BLOCKS','MLC','CIRCULAR');
   twcDataSourceNames      :array[twcSourceEnum     ] of String=('Measured','Reference','Filtered','RefFiltered','Calculated','Buffer','RefOrg','Unrelated'
                                                                 {$IFDEF WELLHOFER_DUMPDATA},'Default'{$ENDIF});
-  twcDoseLevelNames       :array[twcDoseLevel      ] of String=('dLow','dHigh','d20','d50','d80','d90','dUser','Derivative','Inflection','Sigmoid50','dTemp');
-  twcCenterTypeNames      :array[twcCenterType     ] of String=('Border/Edge','Origin','Maximum');                                                                          {ordering critical for user interface}
-  twcPositionUseNames     :array[twcPositionUseType] of String=('Border','Derivative','Inflection','Sigmoid50','Origin','Maximu','FFF Top','FFF slopes','Undefined','Configured');
-  twcNormalisationNames   :array[twcNormalisation  ] of String=('Center','Origin','Maximum','In-Field area');
-  twcMeasAxisNames        :array[twcMeasAxis       ] of String=('Inplane','Crossplane','Beam');
-  twcFieldClassNames      :array[twcFieldClass     ] of String=('Standard','FFF','Small','MRlinac','Wedge','Electrons');
+  twcDoseLevelNames       :array[twcDoseLevel      ] of String      =('dLow','dHigh','d20','d50','d80','d90','dUser','Derivative','Inflection','Sigmoid50','dTemp');
+  twcCenterTypeNames      :array[twcCenterType     ] of String      =('Border/Edge','Origin','Maximum');                                                                          {ordering critical for user interface}
+  twcPositionUseNames     :array[twcPositionUseType] of String      =('Border','Derivative','Inflection','Sigmoid50','Origin','Maximu','FFF Top','FFF slopes','Undefined','Configured');
+  twcNormalisationNames   :array[twcNormalisation  ] of String      =('Center','Origin','Maximum','In-Field area');
+  twcMeasAxisNames        :array[twcMeasAxis       ] of String      =('Inplane','Crossplane','Beam');
+  twcFieldClassNames      :array[twcFieldClass     ] of String      =('Standard','FFF','Small','MRlinac','Wedge','Electrons');
+  twcDefaultSSDcm         :array[twcFieldClass     ] of twcFloatType=(100.0,100.0,100.0,143.5,100.0,100.0);
   twcFFFInFieldExtCm      :twcFloatType= 0.5;                                    //extention of slope from conventional "InField area"
   twcMccInsertOrigin      :Boolean     = False;
 
@@ -4522,7 +4521,7 @@ with RfaData do
   rfaField_mm[fCrossplane]:=  100;
   rfaRadiation            := ifthen(twcGenericToElectron,'ELE','PHO');
   rfaEnergy_MV            :=    6;
-  rfaSSD_mm               := Round(twcDefaultSSDcm*10);
+  rfaSSD_mm               := Round(twcDefaultSSDcm[fcStandard]*10);
   rfaBUP_01mm             :=    0;
   rfaBRD_mm               := 1000;
   rfaFShape               :=    1;
@@ -5407,7 +5406,7 @@ w2ScanType      := 'OPP';
 w2ScanAxis      := 'X';
 w2NumPoints     :=    0;
 w2Step_01_mm    :=    0;
-w2SSD_mm        := Round(twcDefaultSSDcm*10);
+w2SSD_mm        := Round(twcDefaultSSDcm[fcStandard]*10);
 w2Depth_mm      :=    0;
 w2WedgeAngle    :=    0;
 w2WedgeName     := '00';
@@ -6069,7 +6068,7 @@ with MccData,tmElectrometer,tmRefField,tmScanInfo do
   tmIsoc             := 1000;
   tmEnergy           :=    0;
   tmDmax             :=   15;
-  tmSSD_mm           := twcDefaultSSDcm*10;
+  tmSSD_mm           := twcDefaultSSDcm[fcStandard]*10;
   tmSCD_mm           :=  380;
   tmBlock            :=    0;
   tmField_mm         := Fill_FieldDescrArr(400);
@@ -7490,7 +7489,7 @@ with wmsFileHeader,wmsRec06 do                                                  
   wmhBRect1_cm:=  0   ;         wmhBRect2_cm:=   0   ;    wmhBDiam_cm :=   0;
   wmhTrayTr   :=  1   ;         wmhCollim   :=  90   ;    wmhGantry_cm:=   0;
   wmhNOP1     :=  #0  ;         wmhNOP2     :=  #0   ;
-  wmhSSD_cm   := twcDefaultSSDcm;
+  wmhSSD_cm   := twcDefaultSSDcm[fcStandard];
   for I:= wmhG1 to wmhU4 do
     Stg2Char('',wmhComs[I,1]);
   wmhDosCon   :=  0   ;         wmhBShape   := 'S';
@@ -8476,7 +8475,7 @@ with wGeneralInfo,wCurveInfo,
   for k:= dsMeasured to twcLastRelated do
     wSource[k].twValid:= False;
   end;
-FDefaultSSDcm:= twcDefaultSSDcm;
+FDefaultSSDcm:= twcDefaultSSDcm[fcStandard];
 FCentered    := False;
 FParseOk     := False;
 Freeze       := False;
@@ -8684,7 +8683,7 @@ with ACurveRec,twBeamInfo do
   twIsDiagonal     := False;
   twIsFiltered     := False;
   twIsGamma        := False;
-  twSSD_cm         := twcDefaultSSDcm;
+  twSSD_cm         := twcDefaultSSDcm[fcStandard];
   FillChar(twFFFslope    ,SizeOf(twFFFslope    ),0);
   FillChar(twInFieldArr  ,SizeOf(twInFieldArr  ),0);
   FillChar(twInFieldPosCm,SizeOf(twInFieldPosCm),0);
@@ -8851,8 +8850,6 @@ with CF do
   FilterWidth                := ReadFloat(Section   ,twcFilterKey              ,0.6);
   wOutlierFilter             := ReadBool(Section    ,twcFilterKey+'Outlier'    ,True);
   twcDefaultEnergy_MeV       := ReadFloat(Section   ,twcEnergyKey              ,6);
-  twcDefaultSSDcm            := ReadFloat(Section   ,twcSSDKey                 ,twcDefaultSSDcm);
-  twcDefaultSSD_MRcm         := ReadFloat(Section   ,twcSSDKey+'_MR'           ,twcDefaultSSD_MRcm);
   w2D_ArrayRefList.CommaText := ReadString(Section  ,twcMultiScanKey+'list'    ,'' );
   twcOutlierPointLimit       := ReadInteger(Section ,twcFilterKey+'Limit'      ,7  );
   ResampleGridSize           := ReadFloat(Section   ,twcGridKey                ,0.0);
@@ -8982,8 +8979,6 @@ with CF do
   WriteString(Section,twcPenumbraKey+'EH'        ,Num2Stg(wEPenumbraH               ,0,3));
   WriteString(Section,twcPenumbraKey+'EL'        ,Num2Stg(wEPenumbraL               ,0,3));
   WriteString(Section,twcEnergyKey               ,Num2Stg(twcDefaultEnergy_MeV      ,0,2));
-  WriteString(Section,twcSSDKey                  ,Num2Stg(twcDefaultSSDcm           ,0,1));
-  WriteString(Section,twcSSDKey+'_MR'            ,Num2Stg(twcDefaultSSD_MRcm        ,0,1));
   WriteString(Section,twcFilterKey               ,Num2Stg(FFilterWidth              ,0,3));
   WriteString(Section,'Z_weighting'              ,Num2Stg(twcPddFitZWeightPower     ,0,2));
   WriteString(Section,'Mu_b_Power'               ,Num2Stg(twcPddFitMubPower         ,0,2));
@@ -10972,7 +10967,7 @@ with wCurveInfo do
     twSSD_cm         := Max(1,twSSD_cm);
     if wFieldTypeDetection[fcMRlinac] and (Pos(Linac,wMRlinacTUlist)>0) then
       twSetFieldType:= fcMRlinac;
-    FDefaultSSDcm    := ifthen(twSetFieldType=fcMRlinac,twcDefaultSSD_MRcm,twcDefaultSSDcm);
+    FDefaultSSDcm    := twcDefaultSSDcm[twSetFieldType];
     twSDD2SSDratio   := ifthen(abs(twVector_ICD_cm[Start].m[Beam]-twVector_ICD_cm[Stop].m[Beam])<0.1,1+twVector_ICD_cm[Start].m[Beam]/Max(10,Abs(twSSD_cm)),1);
     twPosScaling     := Max(0.1,ifthen(wScaleSDD2SSD,Max(1,twSDD2SSDratio),1)*ifthen(wScale2DefaultSSD,twSSD_cm/Max(10,FDefaultSSDcm),1));
     twResampled      := False;
@@ -18711,7 +18706,8 @@ var s: twcDataSource;
              except
               twSetFieldType:= AppliedFieldType;
              end;
-            if not (ASource in twcFilteredCopies) then                          //now fieldtype is set
+            FDefaultSSDcm:= twcDefaultSSDcm[AppliedFieldType];                  //now fieldtype is set
+            if not (ASource in twcFilteredCopies) then
               QfitMaxPos(ASource);                                              //for filtered versions: rely on unfiltered result
             if twFFFdetected then           //------------------start FFF specific works-----------------------------------
               begin
