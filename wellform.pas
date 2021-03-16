@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 10/03/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 16/03/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -137,7 +137,7 @@ type
   {===================TAnalyseForm====================
 
   The analyseform is the graphical user interface of BistroMath and handles all user's choices.
-  A series of instances of the TWellhoferData object (engines) handle all data input, output and analysis.
+  A series of instances of the TWellhoferData object ('engines') handle all data input, output and analysis.
 
   22/07/2015
     Mayneord-related items added.
@@ -320,7 +320,10 @@ type
   03/03/2020
     added Ft_DetDiagonalLabel,Ft_DetDiagonalCheckbox, removed MeasDetectDiagItem
   07/03/2021
-    added Nominal_IFA_CheckBox, DefaultMRlinacSSD_cm: TFloatSpinEditEx;
+    added Nominal_IFA_CheckBox, DefaultMRlinacSSD_cm
+  15/03/2021
+    added Ft_Default_SSD_Label, Ft_Default_SSD_Edit_Cm
+    removed DefaultMRlinacSSD_cm
   }
 
   {=========== TAnalyseForm =====================}
@@ -492,10 +495,10 @@ type
     L_AxisTransform_AutoScale   : TAutoScaleAxisTransform;                      //see AutoZoom function
     R_AxisTransforms            : TChartAxisTransformations;                    //see C:\lazarus\components\tachart\demo\axistransf
     R_AxisTransform_AutoScale   : TAutoScaleAxisTransform;                      //see also AxisAlignSource object and AutoZoom function
-    TopModelSeries              : TFuncSeries;
-    ErrorSeries                 : TLineSeries;                                  //for development ease two series are added at design time, all others at runtime
+    TopModelSeries              : TFuncSeries;                                  //for development ease two series are added at design time, all others at runtime
+    ErrorSeries                 : TLineSeries;                                  //ErrorSeries shows residual of pddfit
     ResultsPanel                : TPanel;
-    MeasNormAdjustEdit          : TFloatSpinEditEx;
+    MeasNormAdjustEdit          : TFloatSpinEditEx;                             //mostly hidden feature for changing normalisation level
     PositionLabel               : TLabel;
     PositionValue               : TLabel;
     //histogram tab
@@ -523,6 +526,7 @@ type
     Ft_CoFLabel                 : TStaticText;
     Ft_NormLabel                : TStaticText;
     Ft_CenterModelRadiusLabel   : TStaticText;
+    Ft_Default_SSD_Label        : TStaticText;
     FFFDetectionGroupBox        : TGroupBox;
     FFFInFieldExtLabel          : TStaticText;
     FFFInFieldExt_cm            : TFloatSpinEditEx;
@@ -595,10 +599,6 @@ type
     EHpenumbra_perc             : TFloatSpinEditEx;                             //>wEPenumbraH
     DefaultEnergyLabel          : TStaticText;
     DefaultEnergy_MeV           : TFloatSpinEditEx;
-    DefaultSSDLabel             : TStaticText;
-    DefaultSSD_cm               : TFloatSpinEditEx;                             //>twcDefaultSSDcm
-    DefaultMRlinacSSDLabel      : TStaticText;
-    DefaultMRlinacSSD_cm        : TFloatSpinEditEx;                             //>twcDefaultMRlinacSSDcm
     HistogramLimitLabel         : TStaticText;
     HistogramLimit_num          : TFloatSpinEditEx;
     InsertOriginCheckBox        : TCheckBox;
@@ -754,6 +754,7 @@ type
     //procedures and functions linked to GUI
     procedure FormCreate               (Sender         : TObject);
     procedure AdjustHelpContext        (Sender         : TObject);                //linked to OnMouseEnter event for pages with different help contexts}
+    procedure MeasMenuClick(Sender: TObject);
     procedure SetDefaultPanel          (Sender         : TObject);                //insert default panel display rules in results panel
     procedure SetCaption               (Sender         : TObject);      overload;
     procedure SelectConfig             (Sender         : TObject);                //selection of config file, implemented as application of fileopendialog
@@ -799,7 +800,7 @@ type
     procedure DataPlotExtentChanged    (Sender         : TChart);                 //respond to DataPlot mouse zoom
     procedure MeasurementSaveClick     (Sender         : TObject);
     procedure OnMenu                   (Sender         : TObject);
-    procedure EditEnter                (Sender         : TObject);
+    procedure EditEnter                (Sender         : TObject);                //AliasListEditor,EdgeMRlinacTUcsvList,ModListGrid,DataEditor,InventoryDirBox,FileConvSourcePath
     procedure HistoryListSizeClick     (Sender         : TObject);
     procedure ProcessSetTempRefClick   (Sender         : TObject);
     procedure ProcessUnsetTempRefClick (Sender         : TObject);
@@ -923,6 +924,7 @@ type
     Ft_CenterMethodCombo  : array[twcFieldClass                        ] of TComboBox;  //SyncSetCenterOfField                   >wCenterDefinition
     Ft_NormMethodCombo    : array[twcFieldClass                        ] of TComboBox;  //SyncSetNormalisation                   >wNormalisation
     Ft_CenterRadiusEdit_Cm: array[twcFieldClass                        ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
+    Ft_Default_SSD_Edit_Cm: array[twcFieldClass                        ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
     GammaInFieldLimits    : array[twcFieldClass                        ] of TCheckBox;
     ExtSymSubItems        : array[ExtSymType                           ] of TMenuItem;
     FFFpSubItems          : array[CenterFFFTopModel..CenterFFFSlopes   ] of TMenuItem;
@@ -1447,6 +1449,7 @@ end; {wndcallback}
 {17/11/2020 UsedDataTopLine}
 {02/03/2021 FFFfeatures}
 {03/03/2020 added Ft_DetDiagonalCheckbox, removed MeasDetectDiagItem}
+{15/03/2021 added Ft_Default_SSD_Edit_Cm}
 procedure TAnalyseForm.FormCreate(Sender: TObject);
 var k         : PlotItems;
     i,j       : Integer;
@@ -1514,7 +1517,7 @@ var k         : PlotItems;
 begin
 inherited;
 if DefaultFormatSettings.DecimalSeparator<>'.' then
-  FatalError('needs "." as decimal separator');
+  FatalError('needs "." (period) as decimal separator in the regional settings');
 {$IFDEF PRELOAD}
 PreLoadStream      := TStringStream.Create('');
 {$ENDIF PRELOAD}
@@ -1801,19 +1804,38 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
   Ft_CenterRadiusEdit_Cm[f]:= TFloatSpinEditEx.Create(AnalyseForm);             //Field types: Ft_radius
   with Ft_CenterRadiusEdit_Cm[f] do
     begin
-    Parent     := FieldTypesPanel;
-    HelpContext:= Parent.HelpContext;
-    Top        := Ft_CenterModelRadiusLabel.Top-3;
-    Width      := i;
-    Left       := Ft_TypeLabel[f].Left;                                         //align with labels
-    Name       := Format('Ft_%s_CenterRadiusEdit',[twcFieldClassNames[f]]);
-    MinValue   :=  0;
-    MaxValue   := 50;
-    Value      :=  2.5;
-    Increment  :=  0.1;
-    NullValue  := Value;
-    NumbersOnly:= True;
-    OnChange   := @SetWellhoferValues;
+    Parent       := FieldTypesPanel;
+    HelpContext  := Parent.HelpContext;
+    Top          := Ft_CenterModelRadiusLabel.Top-3;
+    Width        := i;
+    Left         := Ft_TypeLabel[f].Left;                                       //align with labels
+    Name         := Format('Ft_%s_CenterRadiusEdit',[twcFieldClassNames[f]]);
+    MinValue     :=  0;
+    MaxValue     := 50;
+    Value        :=  2.5;
+    Increment    :=  0.1;
+    DecimalPlaces:= 1;
+    NullValue    := Value;
+    NumbersOnly  := True;
+    OnChange     := @SetWellhoferValues;
+    end;
+  Ft_Default_SSD_Edit_Cm[f]:= TFloatSpinEditEx.Create(AnalyseForm);             //Field types: Ft_default_SSD
+  with Ft_Default_SSD_Edit_Cm[f] do
+    begin
+    Parent       := FieldTypesPanel;
+    HelpContext  := Parent.HelpContext;
+    Top          := Ft_Default_SSD_Label.Top-3;
+    Width        := i;
+    Left         := Ft_TypeLabel[f].Left;                                       //align with labels
+    Name         := Format('Ft_%s_Default_SSD_Edit',[twcFieldClassNames[f]]);
+    MinValue     :=  10;
+    MaxValue     := 900;
+    Value        := twcDefaultSSDcm[f];
+    DecimalPlaces:= 1;
+    Increment    :=   0.1;
+    NullValue    := Value;
+    NumbersOnly  := True;
+    OnChange     := @SetWellhoferValues;
     end;
   end;
 aa:= String(DefFFFpSubTexts).Split(',');                                        //FFF peak submenu: texts
@@ -2023,8 +2045,6 @@ for i:= 1 to ParamCount do                                                      
     UImodeChange(Self);
     end;
   end;
-if MayneordSSD2_cm.Value=MayneordSSD2_cm.MinValue then                          //set nice default when not set after loadconfig
-  MayneordSSD2_cm.Value:= DefaultSSD_cm.value;
 ModListUpdate(Sender);
 Visible               := True;
 PrevTab               := PageControl.ActivePage;
@@ -3089,8 +3109,6 @@ FitZWeight_val           .Value  := twcPddFitZWeightPower;
 FitMubPowerFixedCheckBox .Checked:= twcPddFitMubPowerFixed;
 FitENRweigthedCheckBox   .Checked:= twcPddFitCostENRWeighted;
 InsertOriginCheckBox     .Checked:= twcMccInsertOrigin;
-DefaultSSD_cm            .Value  := twcDefaultSSDcm;
-DefaultMRlinacSSD_cm     .Value  := twcDefaultSSD_MRcm;
 FitCycles_num            .Value  := twcNMcycles;
 FitMaxTime_sec           .Value  := twcNMseconds;
 FitRestarts_num          .Value  := twcNMrestarts;
@@ -3128,12 +3146,12 @@ with Engines[UsedEngine] do
     end;
 if not Engines[UsedEngine].FReeze then
   for q:= fcPrimary to fcFallBack do
-   for f:= Low(twcFieldClass) to High(twcFieldClass) do with Ft_EdgeMethodCombo[f,q] do
-     begin
-     ItemIndex:= 0;
-     while (ItemIndex<Items.Count) and (Items[ItemIndex]<>twcDoseLevelNames[Engines[UsedEngine].wEdgeMethod[q,f]]) do
-       ItemIndex:= ItemIndex+1;
-     end;
+    for f:= Low(twcFieldClass) to High(twcFieldClass) do with Ft_EdgeMethodCombo[f,q] do
+      begin
+      ItemIndex:= 0;
+      while (ItemIndex<Items.Count) and (Items[ItemIndex]<>twcDoseLevelNames[Engines[UsedEngine].wEdgeMethod[q,f]]) do
+        ItemIndex:= ItemIndex+1;
+      end;
 end; {~getwellhofervalues}
 
 
@@ -3163,9 +3181,13 @@ end; {~getwellhofervalues}
 {27/08/2020 Ft_CenterRadiusEdit_Cm}
 {15/09/2020 split off setenginevalues}
 {07/03/2021 DefaultMRlinacSSD_cm}
+{15/03/2021 twcDefaultSSDcm[f]}
 procedure TAnalyseForm.SetWellhoferValues(Sender:TObject);
+var f: twcFieldClass;
 begin
 SetEngineValues(UsedEngine);
+for f:= Low(twcFieldClass) to High(twcFieldClass) do
+  twcDefaultSSDcm[f]:= Ft_Default_SSD_Edit_Cm[f].Value;
 twcNMcycles                   := Round(FitCycles_num           .Value);
 twcNMseconds                  := FitMaxTime_sec                .Value;
 twcNMrestarts                 := Round(FitRestarts_num         .Value);
@@ -3176,8 +3198,6 @@ twcPDDpar[pddfit_mu3]         := FitMu3CheckBox                .Checked;
 twcPDDpar[pddfit_mu4]         := FitMu4CheckBox                .Checked;
 twcPDDpar[pddfit_mx2]         := FitMx2CheckBox                .Checked;
 twcDefaultEnergy_MeV          := DefaultEnergy_MeV             .Value;
-twcDefaultSSDcm               := DefaultSSD_cm                 .Value;
-twcDefaultSSD_MRcm            := DefaultMRlinacSSD_cm          .Value;
 twcGammaCutoffDepth           := GammaDepthCutoff_mm           .Value/10;
 twcGammaCutoffPercent         := GammaDoseCutoff_perc          .Value;
 twcGammaDosePercBase          := GammaDoseNorm_perc            .Value;
@@ -3463,8 +3483,15 @@ procedure TAnalyseForm.SettingsTabExit(Sender:TObject);
 begin
 UpdateSettings(Sender);
 SetWellhoferValues(Sender);
-MeasMayneordItem.Caption:= Format(MayneordItemText,[ifthen(MayneordSSD2_cm.Value>0,MayneordSSD2_cm.Value,twcDefaultSSDcm)]);
+MeasMenuClick(Sender);
 end; {~settingstabexit}
+
+
+{15/03/2021}
+procedure TAnalyseForm.MeasMenuClick(Sender: TObject);
+begin
+MeasMayneordItem.Caption:= Format(MayneordItemText,[ifthen(MayneordSSD2_cm.Value>0,MayneordSSD2_cm.Value,Engines[UsedEngine].DefaultSSD_cm)]);
+end; {~measmenuclick}
 
 
 {18/09/2015 loglevel}
@@ -4455,6 +4482,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
   MeasIon2DoseItem.Checked:= False;                                             //this item does not autocheck, checking it should be a one-time event
   with Engines[UsedEngine],wCurveInfo do if IsValid and (not OnDataReadBusy) then
     begin
+    MeasMenuClick(Sender);
     if not Freeze then
       wApplyUserLevel  := MeasUserDoseItem.Checked;                                                   //keep unchanged otherwise
     tmpX               := GetDisplayedPositionScale;
@@ -9602,6 +9630,7 @@ end; {~runaboutbox}
 {14/01/2018 adapted for CxBlocks}
 {03/12/2018 adapted for autoscaling}
 {04/09/2020 updated}
+{16/03/2021 updated}
 procedure TAnalyseForm.SelfTest(Sender:TObject);
 const tNormal =1;
       tDefault=3;
@@ -9790,7 +9819,7 @@ tgsf                    := twcGammaSearchMultiplier;
 tmrf                    := twcMatchRangeDivider;
 tmsf                    := twcMatchStepsNumber;
 tmnp                    := twcMatchNormDeltaPercent;
-tssd                    := twcDefaultSSDcm;
+tssd                    := twcDefaultSSDcm[fcStandard];
 tAutoScale              := ProcessAutoscalingItem.Checked;
 tGenericToElectron      := MeasGenericToElectronItem.Checked;
 twcDeriveMinMax         := 0.9;
@@ -9987,7 +10016,7 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
   CheckMenuItem(MeasResampleItem,False);
   EdgeDetectionCheckBox.Checked:= True;
   end;
-AddEmptyTest(2); {25}
+AddEmptyTest(2);                                                                                   {24}
 Engines[UsedEngine].ModalityNormList.FindModData(smod,ModRec);
 TestResult(Assigned(ModRec),'Obtaining modality data for '+smod);                                  {26}
 if TestResult(LoadSelftestFile('selftest15_missing_penumbra.txt'),'Missing penumbra') then         {27}
@@ -9997,18 +10026,18 @@ if TestResult(LoadSelftestFile('selftest15_missing_penumbra.txt'),'Missing penum
     v:= Abs(Engines[UsedEngine].Parser.NextFloat)
   else
     v:= 1;
-  FloatResult(v,0.09,0.10,'Alignment by matching');                             {28}
-  FloatResult(CxResults[0][1],0.0,0.05,'Center position');                      {29}
+  FloatResult(v,0.09,0.10,'Alignment by matching');                                                {28}
+  FloatResult(CxResults[0][1],0.0,0.05,'Center position');                                         {29}
   ViewItems(Self);
   end;
-AddEmptyTest(4); {31}
+AddEmptyTest(4);                                                                                   {31}
 if TestResult(LoadSelftestFile('selftest01_asym.txt'),'Asymmetric') then
   begin
-  FloatResult(CxResults[3][0],2.9,0.1,'Flatness(%)');                           {35}
+  FloatResult(CxResults[3][0],3.4,0.1,'Flatness(%)');                                              {35}
   CheckMenuItem(MeasSymCorrectItem,True,0);
   Ft_SymCorrCheckBox[fcStandard,dsMeasured].Checked:= True;
   ReadEditor(Self);
-  FloatResult(CxResults[3][0],0,0.1,'Flatness(%)');                             {36}
+  FloatResult(CxResults[3][0],0.1,0.1,'Flatness(%)');                                              {36}
   end
 else CheckMenuItem(MeasSymCorrectItem,True);
 ViewItems(Self);
@@ -10212,8 +10241,8 @@ if LoadSelftestFile('selftest24_ScanAngle135.txt') then
   Stg:= 'selftestx6d135_40d_ssd100_d016m.txt';
   AddEmptyTest;
   end;
-DefaultSSD_cm.Value:= 100;
-twcDefaultSSDcm    := 100;
+twcDefaultSSDcm[fcStandard]             := 100;
+Ft_Default_SSD_Edit_Cm[fcStandard].Value:= 100;
 if LoadSelftestFile('selftest29_FFF.mcc') then
   FloatResult(CxResults[2][1],20.00,0.5,'Width');                                                    {117}
 CheckMenuItem(MeasScale2defaultSSDitem,True);
@@ -10259,17 +10288,18 @@ for i:= 0 to Pred(Length(UseDoseConvTable)) do with UseDoseConvTable[i] do
   with DCDoseBox do Checked:= Tag=1;
   end;
 SettingsTabExit(Self);
-twcDeriveMinMax         := tdmm;
-twcDeriveBinFraction    := tdbf;
-twcDeriveLookAhead      := tdla;
-twcGammaCutoffPercent   := tgcp;
-twcGammaDosePercBase    := tgdp;
-twcGammaDistCmBase      := tgdc;
-twcGammaSearchMultiplier:= tgsf;
-twcMatchRangeDivider    := tmrf;
-twcMatchStepsNumber     := tmsf;
-twcMatchNormDeltaPercent:= tmnp;
-twcDefaultSSDcm         := tssd;
+twcDeriveMinMax                         := tdmm;
+twcDeriveBinFraction                    := tdbf;
+twcDeriveLookAhead                      := tdla;
+twcGammaCutoffPercent                   := tgcp;
+twcGammaDosePercBase                    := tgdp;
+twcGammaDistCmBase                      := tgdc;
+twcGammaSearchMultiplier                := tgsf;
+twcMatchRangeDivider                    := tmrf;
+twcMatchStepsNumber                     := tmsf;
+twcMatchNormDeltaPercent                := tmnp;
+twcDefaultSSDcm[fcStandard]             := tssd;
+Ft_Default_SSD_Edit_Cm[fcStandard].Value:= tssd;
 GetWellhoferValues;
 AddMessage('See the help file, <F1>, for information.',2);
 {$IFDEF Windows}

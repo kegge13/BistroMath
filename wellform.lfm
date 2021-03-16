@@ -1,15 +1,15 @@
 object AnalyseForm: TAnalyseForm
-  Left = 487
-  Height = 538
-  Top = 125
+  Left = 521
+  Height = 565
+  Top = 287
   Width = 885
   AllowDropFiles = True
   AlphaBlendValue = 0
   Caption = 'AnalyseForm'
-  ClientHeight = 518
+  ClientHeight = 545
   ClientWidth = 885
   Color = clScrollBar
-  Constraints.MinHeight = 535
+  Constraints.MinHeight = 565
   Constraints.MinWidth = 885
   DefaultMonitor = dmMainForm
   Menu = MainMenu
@@ -23,7 +23,7 @@ object AnalyseForm: TAnalyseForm
   LCLVersion = '2.0.12.0'
   object PageControl: TPageControl
     Left = 0
-    Height = 495
+    Height = 522
     Top = 0
     Width = 885
     HelpContext = 1
@@ -40,12 +40,12 @@ object AnalyseForm: TAnalyseForm
       AnchorSideBottom.Side = asrBottom
       HelpContext = 1
       Caption = 'Analysis'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       object ResultsPanel: TPanel
         Left = 0
         Height = 93
-        Top = 374
+        Top = 401
         Width = 877
         HelpContext = 11
         Align = alBottom
@@ -94,7 +94,7 @@ object AnalyseForm: TAnalyseForm
       end
       object DataPlot: TChart
         Left = 0
-        Height = 374
+        Height = 401
         Top = 0
         Width = 877
         HelpContext = 9
@@ -268,16 +268,16 @@ object AnalyseForm: TAnalyseForm
     object FitResultsTab: TTabSheet
       HelpContext = 20
       Caption = 'Fit Results'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       object FitResultsPanel: TPanel
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 220
         Align = alClient
-        ClientHeight = 467
+        ClientHeight = 494
         ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
@@ -343,12 +343,12 @@ object AnalyseForm: TAnalyseForm
     object AliasTab: TTabSheet
       HelpContext = 20
       Caption = 'Alias'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       OnExit = AliasTabExit
       object AliasListEditor: TValueListEditor
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 20
@@ -372,17 +372,17 @@ object AnalyseForm: TAnalyseForm
     object FieldTypesTab: TTabSheet
       HelpContext = 23
       Caption = 'Field Types'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       OnExit = SetWellhoferValues
       object FieldTypesPanel: TPanel
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 23
         Align = alClient
-        ClientHeight = 467
+        ClientHeight = 494
         ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
@@ -474,7 +474,7 @@ object AnalyseForm: TAnalyseForm
         object EdgeDetectionGroupBox: TGroupBox
           Left = 296
           Height = 144
-          Top = 314
+          Top = 344
           Width = 558
           HelpContext = 23
           Caption = 'Edge detection and related parameters'
@@ -634,7 +634,7 @@ object AnalyseForm: TAnalyseForm
         object FFFDetectionGroupBox: TGroupBox
           Left = 8
           Height = 144
-          Top = 314
+          Top = 344
           Width = 272
           HelpContext = 23
           Caption = 'FFF detection and analysis'
@@ -763,22 +763,34 @@ object AnalyseForm: TAnalyseForm
           ParentColor = False
           TabOrder = 11
         end
+        object Ft_Default_SSD_Label: TStaticText
+          Left = 9
+          Height = 19
+          Top = 310
+          Width = 191
+          HelpContext = 23
+          Align = alCustom
+          Caption = 'Default SSD (cm)'
+          Color = clDefault
+          ParentColor = False
+          TabOrder = 12
+        end
       end
     end
     object SettingsTab: TTabSheet
       HelpContext = 127
       Caption = 'Settings'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       OnExit = SettingsTabExit
       object SettingsPanel: TPanel
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 127
         Align = alClient
-        ClientHeight = 467
+        ClientHeight = 494
         ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
@@ -1200,6 +1212,7 @@ object AnalyseForm: TAnalyseForm
           Top = 338
           Width = 583
           HelpContext = 127
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'Mayneord settings'
           ClientHeight = 89
           ClientWidth = 579
@@ -1289,7 +1302,7 @@ object AnalyseForm: TAnalyseForm
           Left = 3
           Height = 19
           Hint = 'Take missing origin value from other line (StarCheck maxi)'
-          Top = 340
+          Top = 280
           Width = 204
           HelpContext = 127
           Alignment = taLeftJustify
@@ -1397,17 +1410,6 @@ object AnalyseForm: TAnalyseForm
           ParentColor = False
           TabOrder = 13
         end
-        object DefaultSSDLabel: TStaticText
-          Left = 10
-          Height = 19
-          Top = 250
-          Width = 145
-          HelpContext = 127
-          Align = alCustom
-          Alignment = taRightJustify
-          Caption = 'Default SSD (cm):'
-          TabOrder = 14
-        end
         object FilterWidth_mm: TFloatSpinEditEx
           Left = 173
           Height = 21
@@ -1416,7 +1418,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 15
+          TabOrder = 14
           DecimalPlaces = 1
           MaxValue = 30
           Value = 6
@@ -1430,7 +1432,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 16
+          TabOrder = 15
           DecimalPlaces = 1
           MaxValue = 30
         end
@@ -1443,7 +1445,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 17
+          TabOrder = 16
           DecimalPlaces = 1
           MaxValue = 30
         end
@@ -1455,7 +1457,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 18
+          TabOrder = 17
           DecimalPlaces = 1
           MaxValue = 300
           MinValue = 2
@@ -1470,7 +1472,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 19
+          TabOrder = 18
           DecimalPlaces = 1
           MaxValue = 300
           MinValue = 2
@@ -1485,7 +1487,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 20
+          TabOrder = 19
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1500,7 +1502,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 21
+          TabOrder = 20
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1515,7 +1517,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 22
+          TabOrder = 21
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1530,7 +1532,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 23
+          TabOrder = 22
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1545,32 +1547,16 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 24
+          TabOrder = 23
           DecimalPlaces = 1
           Increment = 0.1
           MinValue = 0.01
           Value = 6
         end
-        object DefaultSSD_cm: TFloatSpinEditEx
-          Left = 166
-          Height = 21
-          Hint = 'SSD when not known'
-          Top = 248
-          Width = 57
-          HelpContext = 127
-          AutoSize = False
-          MaxLength = 0
-          TabOrder = 25
-          DecimalPlaces = 1
-          Increment = 10
-          MaxValue = 500
-          MinValue = 10
-          Value = 100
-        end
         object HistogramLimitLabel: TStaticText
           Left = 10
           Height = 19
-          Top = 310
+          Top = 250
           Width = 145
           HelpContext = 129
           Align = alCustom
@@ -1578,18 +1564,18 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Histogram/Gamma range:'
           Color = clDefault
           ParentColor = False
-          TabOrder = 26
+          TabOrder = 24
         end
         object HistogramLimit_num: TFloatSpinEditEx
           Left = 166
           Height = 21
           Hint = 'Position of first (negative) and last bin'
-          Top = 308
+          Top = 248
           Width = 57
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 27
+          TabOrder = 25
           MaxValue = 30
           MinValue = 0.05
           NullValue = 2
@@ -1600,40 +1586,13 @@ object AnalyseForm: TAnalyseForm
           Left = 35
           Height = 19
           Hint = 'Derive the IFA from given field size if realistic'
-          Top = 370
+          Top = 310
           Width = 172
           HelpContext = 127
           Alignment = taLeftJustify
           Caption = 'Use nominal field size for IFA'
           ParentBidiMode = False
-          TabOrder = 28
-        end
-        object DefaultMRlinacSSDLabel: TStaticText
-          Left = 12
-          Height = 19
-          Top = 280
-          Width = 145
-          HelpContext = 127
-          Align = alCustom
-          Alignment = taRightJustify
-          Caption = 'Default SSD MRlinac (cm):'
-          TabOrder = 29
-        end
-        object DefaultMRlinacSSD_cm: TFloatSpinEditEx
-          Left = 168
-          Height = 21
-          Hint = 'SSD when not known'
-          Top = 278
-          Width = 57
-          HelpContext = 127
-          AutoSize = False
-          MaxLength = 0
-          TabOrder = 30
-          DecimalPlaces = 1
-          Increment = 10
-          MaxValue = 500
-          MinValue = 10
-          Value = 143.5
+          TabOrder = 26
         end
       end
     end
@@ -3017,7 +2976,7 @@ object AnalyseForm: TAnalyseForm
   object StatusBar: TStatusBar
     Left = 0
     Height = 23
-    Top = 495
+    Top = 522
     Width = 885
     HelpContext = 21
     Panels = <    
@@ -3480,6 +3439,7 @@ object AnalyseForm: TAnalyseForm
     object MeasMenu: TMenuItem
       Caption = '&Measurement'
       HelpContext = 120
+      OnClick = MeasMenuClick
       object MeasSymCorrectItem: TMenuItem
         AutoCheck = True
         Caption = '&Symmetry correction'
