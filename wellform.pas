@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 16/03/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 17/03/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -3952,12 +3952,15 @@ end; {~reload}
 {08/09/2020 added DoClearScreen option}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {17/11/2020 UsedDataTopLine supports all context changes through SelectEngine}
+{17/03/2021 For multiscan files the scannr might change and no shift should be applied in that case.}
 procedure TAnalyseForm.Reload(Sender       :TObject;
                               DoClearScreen:Boolean);
 var b: Boolean;
-    s: twcFloatType;
+    x: twcFloatType;
+    s: String;
 begin
-s:= ifthen(Sender=FileLoadDataItem,0,Engines[UsedEngine].wSource[dsMeasured].twShiftCm);
+x:= ifthen(Sender=FileLoadDataItem,0,Engines[UsedEngine].wSource[dsMeasured].twShiftCm);
+s:= Engines[UsedEngine].wSource[dsMeasured].twCurveIDString;
 if ProcessAutoscalingItem.Checked then
   MeasNormAdjustEdit.Value:= 100;
 ShowMenuItemStatus(Sender);
@@ -3984,9 +3987,9 @@ else
   begin                                                                         //***ascii data***
   b:= Engines[UsedEngine].IsFile;
   ReadEditor(Sender,DoClearScreen);
-  if s<>0 then
-    begin
-    Engines[UsedEngine].Shift(s);                                               //preserve shift
+  if (x<>0) and (s=Engines[UsedEngine].wSource[dsMeasured].twCurveIDString) then
+    begin                                                                       //apply shift only on same scan for multiscan files
+    Engines[UsedEngine].Shift(x);                                               //preserve shift
     OndataRead(Sender);
     end;
   Engines[UsedEngine].IsFile:= b;
