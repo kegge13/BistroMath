@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 15/03/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 30/03/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -188,7 +188,7 @@ All in all there is a lot of object context jumping.
 --
 
   //*************  ascendants must reintroduce CheckData if applicable and call the inherited function first  ************
-  function TRadthData.CheckData(AStringList:TStrings): Boolean;
+  function TRadthData.CheckData(AStringList:TStrings=nil): Boolean;
   var i: Integer;
   begin
   if assigned(AStringList) then
@@ -682,6 +682,7 @@ type
 {19/10/2020 visibility of BinStream and BinsTreamFile extended to public}
 {16/11/2020 added FindMoreData,ADataTopLine: support for multiple complete data sets in one single file intended for one single scan}
 {14/01/2020 added PriorityMessage}
+{30/03/2021 FormatOk dropped, use ParseOk instead}
   TRadthData=class
     protected
      FExtraText       : TStringDynArray;
@@ -723,7 +724,7 @@ type
                                UpdateLastMessage:Boolean =True;
                                MinLevel         :ShortInt=1  );
      function    GetNumPoints                                 : Integer;    virtual;
-     function    CheckData(AStringList:TStrings              ): Boolean;    virtual;
+     function    CheckData(AStringList:TStrings=nil          ): Boolean;    virtual;
      function    LoadBinStream(AFileName:String              ): Boolean;
      function    ReadData(AStringList :TStrings;
                           ADataTopLine:Integer    =0;
@@ -756,7 +757,6 @@ type
      FLogLevel     : Word;
      FScanType     : twcScanTypes;
      FWarning      : String;
-     FFormatOk     : Boolean;
      FLocalParser  : Boolean;
      function    DualReadData(AStringList :TStrings;
                               AStream     :TStream;
@@ -764,7 +764,7 @@ type
                               ADataTopLine:Integer    =0;
                               AFileFormat :twcFileType=twcUnknown    ): Boolean;     virtual;
      function    ParseData(CheckFileTypeOnly:Boolean=False           ): Boolean;     virtual;
-     function    GetScanDirection(ASide:twcSides                     ): twcMeasAxisStg;
+     function    GetScanDirection(const ASide:twcSides               ): twcMeasAxisStg;
      function    GetLastMessage                                       : string;
      function    InsertIdentity(AMessage:String=''                   ): String;
      procedure   SetStatusProcedure(AStatusProc:toExtMsgProc=nil     );
@@ -787,8 +787,8 @@ type
     public
      function    FindMoreData(FromCurrentLine:Boolean=False): Boolean;             virtual;
      function    GetDistance(c1,c2:twcCoordinate)           : twcFloatType;
-     procedure   ShiftPoint(var p :twcCoordinate;
-                            AShift:twcCoordinate           );
+     procedure   ShiftPoint(var p       :twcCoordinate;
+                            const AShift:twcCoordinate     );
     published
      property BeamType        :twcBeamType                   read GetBeamType;
      property Energy          :twcFloatType                  read UndefinedVal;
@@ -801,15 +801,15 @@ type
      property LastMessage     :String                        read GetLastMessage;
      property LogLevel        :word                          read FLogLevel   write SetLogLevel;
      property MultiScanCapable:Boolean                       read FMultiScanCapable;
+     property ParseOk         :Boolean                       read FParseOk;
      property Parser          :toTNumParser                  read FParser;
-     property ParserTopLine   :Integer                       read FParserTopLine;
+     property ParserTopLine   :Integer                       read FParserTopLine;  //offset to start of data header
      property ScanType        :twcScanTypes                  read FScanType;
      property ScanLeftSide    :twcMeasAxisStg index twcLeft  read GetScanDirection;
      property ScanRightSide   :twcMeasAxisStg index twcRight read GetScanDirection;
      property StatusProcedure :toExtMsgProc                  read FStatusProc write SetStatusProcedure;
      property Warning         :String                        read FWarning    write AddWarning;
      property WedgeAngle      :twcFloatType                  read UndefinedVal;
-     property FormatOk        :Boolean                       read FFormatOk;
     end;
 
 (*
@@ -946,7 +946,7 @@ type
      function  MakeTimeString(ADateTime:TDateTime        ): String;
      function  GetFileType(AFileName       :String ='';
                            BinaryOnly      :Boolean=False): twcFileType;  override;
-     function  CheckData(AStringList       :TStrings     ): Boolean;      override;
+     function  CheckData(AStringList       :TStrings=nil ): Boolean;      override;
      function  GetNumPoints                               : Integer;      override;
      function  GetProfile(Index            :Integer      ): twcGrafPoint;
      procedure PutProfile(Index            :Integer;
@@ -970,7 +970,7 @@ type
      property LastMessage;
      property Warning;
      property WedgeAngle     :Integer        read RfaData.rfaWedge_deg;
-     property FormatOk;
+     property ParseOk;
     end;
 
 (*
@@ -1279,7 +1279,7 @@ type
      function  MakeTimeString(ADateTime:TDateTime        ): String;
      function  GetFileType(AFileName       :String ='';
                            BinaryOnly      :Boolean=False): twcFileType;  override;
-     function  CheckData(AStringList       :TStrings     ): Boolean;      override;
+     function  CheckData(AStringList       :TStrings=nil ): Boolean;      override;
      function  GetNumPoints                               : Integer;      override;
      function  ReadResults(PostText:String=''            ): Boolean;      override;
      destructor Destroy;                                                  override;
@@ -1291,7 +1291,7 @@ type
      property Identity;
      property LastMessage;
      property Warning;
-     property FormatOk;
+     property ParseOk;
      end;
 
 
@@ -1354,7 +1354,7 @@ type
      function  MakeTimeString(ADateTime    :TDateTime     ): String;
      function  GetFileType(AFileName       :String ='';
                            BinaryOnly      :Boolean=False ): twcFileType;  override;
-     function  CheckData(AStringList       :TStrings      ): Boolean;      override;
+     function  CheckData(AStringList       :TStrings=nil  ): Boolean;      override;
      function  GetNumPoints                                : Integer;      override;
      destructor Destroy;                                                   override;
     published
@@ -1365,7 +1365,7 @@ type
      property Identity;
      property LastMessage;
      property Warning;
-     property FormatOk;
+     property ParseOk;
      end;
 
 
@@ -1459,7 +1459,7 @@ type
      function  MakeTimeString(ADateTime    :TDateTime     ): String;
      function  GetFileType(AFileName       :String ='';
                            BinaryOnly      :Boolean=False ): twcFileType;  override;
-     function  CheckData(AStringList       :TStrings      ): Boolean;      override;
+     function  CheckData(AStringList       :TStrings=nil  ): Boolean;      override;
      function  GetNumPoints                                : Integer;      override;
      function  GetProfile(Index            :Integer       ): twcGrafPoint;
      procedure PutProfile(Index            :Integer;
@@ -1474,7 +1474,7 @@ type
      property Identity;
      property LastMessage;
      property Warning;
-     property FormatOk;
+     property ParseOk;
      end;
 
 (*
@@ -1775,7 +1775,7 @@ Mephysto has created those, we are not responsible for the funny choice here J.}
      procedure SetNumpoints(Npoints:wmsIntType);
      function  MakeTimeString(ADateTime    :TDateTime     ): String;
      function  GetNumPoints                                : Integer;      override;
-     function  CheckData(AStringList       :TStrings      ): Boolean;      override;
+     function  CheckData(AStringList       :TStrings=nil  ): Boolean;      override;
      function  GetProfile(Index            :Integer       ): twcGrafPoint;
      function  GetFileType(AFileName       :String ='';
                            BinaryOnly      :Boolean=False ): twcFileType;  override;
@@ -1801,7 +1801,7 @@ Mephysto has created those, we are not responsible for the funny choice here J.}
      property LastMessage;
      property Warning;
      property WedgeAngle     :twcFloatType        read MccData.tmWedge;
-     property FormatOk;
+     property ParseOk;
     end;
 
 {
@@ -1840,7 +1840,7 @@ type
                         AIdentity   :String='hdf/generic'      );               reintroduce;
      procedure SetDefaults;                                                     override;
      function  GetNumPoints                                     : Integer;      override;
-     function  CheckData(AStringList       :TStrings           ): Boolean;      override;
+     function  CheckData(AStringList       :TStrings=nil       ): Boolean;      override;
      function  GetProfile(Index            :Integer            ): twcGrafPoint;
      procedure PutProfile(Index            :Integer;
                           Point            :twcGrafPoint       );
@@ -1856,7 +1856,7 @@ type
      property Identity;
      property LastMessage;
      property Warning;
-     property FormatOk;
+     property ParseOk;
     end;
 
 {
@@ -1892,7 +1892,7 @@ x: 0, a: 0
                         BinaryFile  :String       ='';
                         AStatusProc :toExtMsgProc =nil;
                         AIdentity   :String='schuster'      );              reintroduce;
-     function  CheckData(AStringList:TStrings               ): Boolean;     override;
+     function  CheckData(AStringList:TStrings=nil           ): Boolean;     override;
      procedure SetDefaults;                                                 override;
      function  GetProfile(Index            :Integer         ): wmsRealType;
      procedure PutProfile(Index            :Integer;
@@ -1910,7 +1910,7 @@ x: 0, a: 0
      property Identity;
      property LastMessage;
      property Warning;
-     property FormatOk;
+     property ParseOk;
     end;
 
 
@@ -1948,7 +1948,7 @@ type
                         BinaryFile  :String       ='';
                         AStatusProc :toExtMsgProc =nil;
                         AIdentity   :String       ='xio');               reintroduce;
-     function  CheckData(AStringList:TStrings           ): Boolean;      override;
+     function  CheckData(AStringList:TStrings=nil       ): Boolean;      override;
     published
      property ScanType;
      property ScanLeftSide;
@@ -1960,7 +1960,7 @@ type
      property Identity;
      property LastMessage;
      property Warning;
-     property FormatOk;
+     property ParseOk;
     end;
 
 {
@@ -2013,7 +2013,7 @@ Number of points: 1024
      property Identity;
      property LastMessage;
      property Warning;
-     property FormatOk;
+     property ParseOk;
     end;
 
 (*
@@ -2266,7 +2266,7 @@ type
      property Identity;
      property LastMessage;
      property Warning;
-     property FormatOk;
+     property ParseOk;
    end;
 
 (*
@@ -2896,22 +2896,16 @@ type
      function  AdvReadData(AStringList             :TStrings;
                            ADataTopLine            :Integer       =0;
                            UnFreeze                :Boolean       =True;
-                           ResampleData            :Boolean       =False;
-                           CoordinateOrder         :twcMeasAxisStg=twcMeasAxisStandard;
                            AFileFormat             :twcFileType   =twcUnknown;
                            ASourceReference        :String        =''         ): Boolean;    overload;
      function  AdvReadData(AFileName               :String;
                            ADataTopLine            :Integer       =0;
                            UnFreeze                :Boolean       =True;
                            IsBinaryFile            :Boolean       =False;
-                           ResampleData            :Boolean       =False;
-                           CoordinateOrder         :twcMeasAxisStg=twcMeasAxisStandard;
                            AFileFormat             :twcFileType   =twcUnknown ): Boolean;   overload;
      function  AdvStreamData(AStream               :TStream;
                              ADataTopLine          :Integer       =0;
                              UnFreeze              :Boolean       =True;
-                             ResampleData          :Boolean       =False;
-                             CoordinateOrder       :twcMeasAxisStg=twcMeasAxisStandard;
                              AFileFormat           :twcFileType   =twcUnknown;
                              ASourceReference      :String=''                 ): Boolean;
      function  WriteData  (AFileName               :String;
@@ -3185,7 +3179,7 @@ type
      property UserBorderDoseLevel  :twcFloatType    read FUserLevel             write SetUserLevel;
      property Warning;
      property WedgeAngle           :SmallInt        read wSource[dsMeasured].twBeamInfo.twBWedge;
-     property FormatOk;
+     property ParseOk;
     end;
 
 
@@ -3989,7 +3983,11 @@ else
   FParser:= SharedParser;
 end; {~create}
 
-
+(* SetDefaults: set defaults for base class, needs to be extended by child class
+input  : none
+output : none
+results: set default values
+*)
 {10/05/2016 ErrorState added}
 {14/01/2020 prioritymessage}
 procedure TRadthData.SetDefaults;
@@ -4037,8 +4035,9 @@ Result:= VectorLength(c1.t[X],c1.t[Y],c1.t[Z],c2.t[X],c2.t[Y],c2.t[Z]);
 end; {getdistance}
 
 
-procedure TRadthData.ShiftPoint(var p :twcCoordinate;
-                                AShift:twcCoordinate);
+//shift any 3D point with 3D vector
+procedure TRadthData.ShiftPoint(var p       :twcCoordinate;
+                                const AShift:twcCoordinate);
 var m: twcMeasAxis;
 begin
 for m:= Inplane to Beam do
@@ -4047,11 +4046,13 @@ end; {shiftpoint}
 
 
 (*   GetScanDirection
+input : twcLeft or twcRight
+output: character(s) for input side
 This is based on the OmniPro v6 definition of the scanangle and axis directions
-Note that the user interface might swap the letters as needed.
+Note that the user interface might swap the characters as needed.
 *)
 {11/09/2018 swapped relation between scanangle 45/135 and GA/TA}
-function TRadthData.GetScanDirection(ASide:twcSides): twcMeasAxisStg;
+function TRadthData.GetScanDirection(const ASide:twcSides): twcMeasAxisStg;
 var Stg: String[4];
     i  : Byte;
 begin
@@ -4065,48 +4066,6 @@ case FScanType of
 i     := Length(Stg) div 2;
 Result:= Copy(Stg,Succ(Ord(ASide)*i),i);
 end; {~getscandirection}
-
-
-{08/09/2015}
-{13/08/2016 InsertIdentity}
-{05/03/2021 do not combine warning with lastmessage}
-function TRadthData.GetLastMessage: string;
-begin
-if Length(Warning)>0 then
-  begin
-  Result := 'Warning: '+Warning;
-  Warning:= '';
-  end
-else
-  Result:= FLastMessage;
-if Length(Result)>0 then
-  Result:= InsertIdentity(Result);
-end; {~getlastmessage}
-
-
-{15/08/2016}
-procedure TRadthData.TransferLastMessage(var AMessage:String);
-begin
-if Length(FLastMessage)>0 then
-  begin
-  AMessage:= FLastMessage;
-  StatusMessage(AMessage);
-  end;
-end; {~transferlastmessage}
-
-
-{13/08/2016}
-function TRadthData.InsertIdentity(AMessage:String=''): String;
-begin
-if (Length(AMessage)=0) or (AMessage[1]<>'[') then
-  begin
-  if ScanMax>1 then Result:= Format(' %d/%d',[ScanNr,ScanMax])
-  else              Result:= '';
-  Result:= Format('[%s%s] %s',[FIdentity,Result,AMessage]);
-  end
-else
-  Result:= AMessage;
-end; {~insertidentity}
 
 
 function TRadthData.GetNumPoints: Integer;
@@ -4175,6 +4134,48 @@ FStatusProc:= AStatusProc;
 end; {~setstatusprocedure}
 
 
+{13/08/2016}
+function TRadthData.InsertIdentity(AMessage:String=''): String;
+begin
+if (Length(AMessage)=0) or (AMessage[1]<>'[') then
+  begin
+  if ScanMax>1 then Result:= Format(' %d/%d',[ScanNr,ScanMax])
+  else              Result:= '';
+  Result:= Format('[%s%s] %s',[FIdentity,Result,AMessage]);
+  end
+else
+  Result:= AMessage;
+end; {~insertidentity}
+
+
+{08/09/2015}
+{13/08/2016 InsertIdentity}
+{05/03/2021 do not combine warning with lastmessage}
+function TRadthData.GetLastMessage: string;
+begin
+if Length(Warning)>0 then
+  begin
+  Result := 'Warning: '+Warning;
+  Warning:= '';
+  end
+else
+  Result:= FLastMessage;
+if Length(Result)>0 then
+  Result:= InsertIdentity(Result);
+end; {~getlastmessage}
+
+
+{15/08/2016}
+procedure TRadthData.TransferLastMessage(var AMessage:String);
+begin
+if Length(FLastMessage)>0 then
+  begin
+  AMessage:= FLastMessage;
+  StatusMessage(AMessage);
+  end;
+end; {~transferlastmessage}
+
+
 {$push}{$warn 5092 off: Variable does not seem to be initialized}
 {17/06/2020 add loglevel to FStatusProc}
 {20/08/2020 pass only new messages}
@@ -4218,7 +4219,7 @@ end; {~exceptmessage}
 {10/08/2020 take only filename of parser when not empty}
 function TRadthData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
 begin
-Result:= CheckData(nil) or CheckFileTypeOnly;
+Result:= CheckData or CheckFileTypeOnly;
 if Length(Parser.FileName)>0 then
   FileName:= Parser.FileName;
 end; {~parsedata}
@@ -4241,7 +4242,13 @@ else
 end; {~findmoredata}
 
 
-function TRadthData.CheckData(AStringList:TStrings): Boolean;
+(* CheckData: marginal test on validity of text based data
+input     : text from either TStrings source or FParser
+output    : true if at least twcDefMinProfilePoints lines
+additional: -FParser.GotoTop
+            -set IdentificationStg
+*)
+function TRadthData.CheckData(AStringList:TStrings=nil): Boolean;
 var i: Integer;
 begin
 if assigned(AStringList) then
@@ -4259,6 +4266,14 @@ Result:= i>=twcDefMinProfilePoints;
 end; {~checkdata}
 
 
+(* DualReadData: accommodate stringlists, streams and files through one single path
+The data may be text or binary; single scan, structured multiple scans or an 'unstructured' series of single file data sets
+input     : stringlist, stream or filename
+            offset to known start of data (for multiple single-scan data sets in one file)
+            known data type
+output    : true if read and result acceptable
+additional: data type
+*)
 {15/12/2015 AStream}
 {14/02/2016 replaced tmemorystream with tstringstream}
 {27/09/2016 FBinaryAllowed}
@@ -4283,6 +4298,10 @@ if Result and CheckBlackList(AFileName) then
 end; {~dualreaddata}
 
 
+(* ReadBinData: read binary data; not supported in base class; should be overridden when napplicable
+output    : true if read and result acceptable
+additional: data type
+*)
 {27/09/2016}
 function TRadthData.ReadBinData: Boolean;
 begin
@@ -4290,6 +4309,11 @@ Result:= False;
 end; {~readbindata}
 
 
+(* ReadData (overloaded): read data from stream, might be binary
+input     : stream
+output    : true if read and result acceptable
+additional: data type
+*)
 {15/12/2015}
 {14/02/2016 replaced tmemorystream with tstringstream}
 {21/07/2016 more general support for streams}
@@ -4322,7 +4346,11 @@ else
 end; {~readdata}
 
 
-{because TStrings is input, the data are in some ascii-format}
+(* ReadData (overloaded): read ascii data from stringlist
+input     : TStrings
+output    : true if read and result acceptable
+additional: data type
+*)
 {16/11/2020 ADataTopLine}
 function TRadthData.ReadData(AStringList :TStrings;
                              ADataTopLine:Integer    =0;
@@ -4344,6 +4372,13 @@ end; {~readdata}
 
 
 {$push}{$I-}
+(* ReadData (overloaded): read data from file, only ascii in base class
+input     : file name
+            known offset to start of data for multiple single file sets into one
+            known file format
+output    : true if read and result acceptable
+additional: data type
+*)
 {16/11/2020 ADataTopLine}
 function TRadthData.ReadData(AFileName   :String;
                              ADataTopLine:Integer    =0;
@@ -4371,11 +4406,18 @@ end; {~readdata}
 
 
 {$push}{$warn 5024 off: Parameter "ASource" not used}
+(* WriteData (overloaded): ascii data to file, non-functional framework-only in base class
+input     : file name
+	    stringlist
+	    source not implemented in base class
+	    optional clear stringlist afterwards
+output    : true if written
+*)
 {26/09/2016 changed order}
 function TRadthData.WriteData(AFileName  :String;
                               AStringList:TStrings;
                               ASource    :twcDataSource=dsMeasured;
-                              ClearList  :Boolean     =True    ): Boolean;
+                              ClearList  :Boolean      =True    ): Boolean;
 begin
 FFileName:= AFileName;
 Result   := False;
@@ -4387,10 +4429,17 @@ end; {~writedata}
 
 
 {$push}{$warn 5024 off: Parameter "ASource" not used}
+(* WriteData (overloaded): data to stream, non-functional framework-only in base class
+input     : file name
+	    stringlist
+	    source not implemented in base class
+	    force default extension for file name
+output    : true if written
+*)
 function TRadthData.WriteData(AFileName:String;
-                              Binary   :Boolean        =True;
-                              ASource  :twcDataSource   =dsMeasured;
-                              SetExt   :Boolean        =True): Boolean;
+                              Binary   :Boolean       =True;
+                              ASource  :twcDataSource =dsMeasured;
+                              SetExt   :Boolean       =True): Boolean;
 var T: TStringList;
     S: TFileStream;
 begin
@@ -4402,7 +4451,7 @@ if Binary then
 else
   begin
   T     := TStringList.Create;
-  Result:= WriteData(FileName,T,ASource);
+  Result:= WriteData(FileName,T,ASource);                                       //has to be overridden by child class
   if Result then
     begin
     S:= TFileStream.Create(Filename,fmCreate,fmShareDenyNone);
@@ -4427,17 +4476,27 @@ end; {~writedata}
 
 
 {$push}{$warn 5024 off: Parameter not used}
+(* WriteData (overloaded): data to file, non-functional framework-only in base class
+input     : file name
+	    output format
+	    source not implemented in base class
+	    force default extension for file name
+output    : true if written
+*)
 function TRadthData.WriteData(AFileName :String;
                               OutPutType:twcFileType;
                               ASource   :twcDataSource=dsMeasured;
-                              SetExt    :Boolean=True          ): Boolean;
+                              SetExt    :Boolean      =True): Boolean;
 begin
 FFileName:= AFileName;
 Result   := False;
 end; {~writedata}
 {$pop}
 
-
+(* ReadResults: messaging on validity of read data
+input : information on location of failure
+needed: FParseOk
+*)
 {01/07/2015
 The introduction of FFormatOk makes the distinction between correct
 data but with too few data points possible.
@@ -4448,7 +4507,6 @@ function TRadthData.ReadResults(PostText:String=''): Boolean;
 begin
 if Length(PostText)>0 then
   PostText:= ' '+PostText;
-FFormatOk:= FParseOk;
 if not FParseOk then with FParser do
   StatusMessage(Format(twForParseError,[LastLineOkNumber,LastLineOk+' ('+SearchText+ErrorString+')',PostText]))
 else
@@ -4571,7 +4629,7 @@ end; {~getfiletype}
 {$pop}
 
 
-function TRfaProfileData.CheckData(AStringList:TStrings): Boolean;
+function TRfaProfileData.CheckData(AStringList:TStrings=nil): Boolean;
 begin
 Result:= (inherited CheckData(AStringList)) and (Pos(rfaNumMeasID,IdentificationStg)=1);
 if Result then with FParser do
@@ -5084,7 +5142,7 @@ end; {~getfiletype}
 {$pop}
 
 {21/08/2015}
-function TICprofiler_ascii.CheckData(AStringList:TStrings): Boolean;
+function TICprofiler_ascii.CheckData(AStringList:TStrings=nil): Boolean;
 begin
 Result:= (inherited CheckData(AStringList)) and (Pos(wICPAIdentStg,IdentificationStg)=1);
 if Result then
@@ -5449,7 +5507,7 @@ end; {~getfiletype}
 
 
 {19/11/2020 w2ID is specified to be in first 255 bytes, not first line}
-function Tw2CAD_data.CheckData(AStringList:TStrings): Boolean;
+function Tw2CAD_data.CheckData(AStringList:TStrings=nil): Boolean;
 var i: Integer;
 begin
 Result:= (inherited CheckData(AStringList));
@@ -5890,7 +5948,7 @@ end; {~getfiletype}
 
 {09/10/2020 new}
 {11/10/2020 forgot to build in test}
-function TEclipseData.CheckData(AStringList:TStrings): Boolean;
+function TEclipseData.CheckData(AStringList:TStrings=nil): Boolean;
 begin
 Result:= (inherited CheckData(AStringList)) and (InRange(Pos(eclipseID,IdentificationStg),1,4));
 if Result then
@@ -6162,7 +6220,7 @@ end; {~getfiletype}
 {$pop}
 
 
-function TMccProfileData.CheckData(AStringList:TStrings): Boolean;
+function TMccProfileData.CheckData(AStringList:TStrings=nil): Boolean;
 begin
 Result:= inherited CheckData(AStringList) and (Pos(mccBEGIN+mcc_SCAN_DATA,IdentificationStg)=1);
 if Result then with FParser do
@@ -6868,7 +6926,7 @@ end; {~setdefaults}
 
 {04/08/2015 check on zero-length IdentificationStg}
 {29/07/2020 removed all character checking for generic type; just want to find two numbers}
-function THdfProfileData.CheckData(AStringList:TStrings): Boolean;
+function THdfProfileData.CheckData(AStringList:TStrings=nil): Boolean;
 var i,j: Integer;
 begin
 Result:= inherited CheckData(AStringList) and (Length(IdentificationStg)>0);
@@ -7073,7 +7131,7 @@ FRegisteredFiles:= '.xio';
 end; {~create}
 
 
-function TCmsProfileData.CheckData(AStringList:TStrings): Boolean;
+function TCmsProfileData.CheckData(AStringList:TStrings=nil): Boolean;
 begin
 Result:= (inherited CheckData(AStringList)) and (IdentificationStg=xioID);
 if Result then
@@ -7196,7 +7254,7 @@ end; {~setdefaults}
 
 
 {29/09/2016 specific implementation for identification of schuster file}
-function TSchusterProfileData.CheckData(AStringList:TStrings): Boolean;
+function TSchusterProfileData.CheckData(AStringList:TStrings=nil): Boolean;
 var SPtr: ^TStrings;
     i   : Integer;
 begin
@@ -11798,11 +11856,20 @@ if Result then
 end;  {~readrfb}
 
 
-(*
-****BistroMath core function****
+(* DualReadData   ****BistroMath core function****
+input     : stringlist OR stream OR filename
+            offset to data for unstructured single file format data sets in one file
+            known file type
+additional: wMultiScanNr
+results   : call to read data for implemented data types until FParseOk is true
+            FParseOk
+            wMultiScanNr (confirmed)
+            wMultiScanMax
+            fill data to wSource[dsMeasured]
+            PrepareProfile: initialise additional variables and load reference
 This function opens all supported data formats as either a stream or a filename reference.
-When a format has a specialised object, this is initialised and used. This object is then combined with a specific
-import procedure within the twellhoferdata object.
+When a format has a specialised object, this is initialised and used. This object is then
+combined with a specific import procedure within the twellhoferdata object.
 *)
 {01/07/2015
   Introduction of FormatOk en wMultiScanStep to avoid needless attempts
@@ -11821,8 +11888,7 @@ import procedure within the twellhoferdata object.
 {17/09/2020 introduction of FFrozen}
 {09/10/2020 added Eclipse}
 {16/11/2020 ADataTopLine}
-//User either StringSteam/BinStream or AFileName.
-//wMultiScanNr is used
+{30/03/2021 formatok replaced with parseok}
 function TWellhoferData.DualReadData(AStringList :TStrings;
                                      AStream     :TStream;
                                      AFileName   :String;
@@ -11885,7 +11951,7 @@ if FParseOk then
     Wms         := TWmsData.Create(FParser);
     Wms.LogLevel:= LogLevel;
     FParseOk    := Wms.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportWmsProfile(Wms);
-    if Wms.FormatOk then
+    if Wms.ParseOk then
       begin
       AFileFormat:= Wms.FileFormat;
       if not FParseOk then
@@ -11921,8 +11987,8 @@ if FParseOk then
         if i=-1 then i:= Rfa.ScanMax
         else         Dec(i);
         end;
-    until FParseOk or (not wMultiScanLooping) or (not Rfa.FormatOk) or (Rfa.ScanNr<1) or (Rfa.ScanNr>Rfa.ScanMax) or (i<=0);
-    if Rfa.FormatOk then
+    until FParseOk or (not wMultiScanLooping) or (not Rfa.ParseOk) or (Rfa.ScanNr<1) or (Rfa.ScanNr>Rfa.ScanMax) or (i<=0);
+    if Rfa.ParseOk then
       begin
       AFileFormat  := Rfa.FileFormat;
       wMultiScanMax:= Rfa.ScanMax;
@@ -11955,8 +12021,8 @@ if FParseOk then
         if i=-1 then i:= FMcc.ScanMax
         else         Dec(i);
         end;
-    until FParseOk or (not wMultiScanLooping) or (not FMcc.FormatOk) or (FMcc.ScanNr<1) or (FMcc.ScanNr>FMcc.ScanMax) or (i<=0);
-    if FMcc.FormatOk then
+    until FParseOk or (not wMultiScanLooping) or (not FMcc.ParseOk) or (FMcc.ScanNr<1) or (FMcc.ScanNr>FMcc.ScanMax) or (i<=0);
+    if FMcc.ParseOk then
       begin
       AFileFormat  := FMcc.FileFormat;
       wMultiScanMax:= FMcc.ScanMax;
@@ -11968,11 +12034,11 @@ if FParseOk then
     end; {mcc}
   if (not FParseOk) and (AFileFormat in [twcICprofilerAscii,twcUnknown]) then
     begin
-    SNA          := TICprofiler_ascii.Create(FParser);
-    SNA.ScanNr   := wMultiScanNr;
-    SNA.FileTime := FileTime;
-    SNA.LogLevel := LogLevel;
-    i            := -1;
+    SNA         := TICprofiler_ascii.Create(FParser);
+    SNA.ScanNr  := wMultiScanNr;
+    SNA.FileTime:= FileTime;
+    SNA.LogLevel:= LogLevel;
+    i           := -1;
     repeat
       FParseOk:= SNA.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportSNAProfile(SNA);
       if (not FParseOk) and wMultiScanLooping then
@@ -11983,8 +12049,8 @@ if FParseOk then
         if i=-1 then i:= SNA.ScanMax
         else         Dec(i);
         end;
-    until FParseOk or (not wMultiScanLooping) or (not SNA.FormatOk) or (SNA.ScanNr<1) or (SNA.ScanNr>SNA.ScanMax) or (i<=0);
-    if SNA.FormatOk then
+    until FParseOk or (not wMultiScanLooping) or (not SNA.ParseOk) or (SNA.ScanNr<1) or (SNA.ScanNr>SNA.ScanMax) or (i<=0);
+    if SNA.ParseOk then
       begin
       AFileFormat  := SNA.FileFormat;
       wMultiScanMax:= SNA.ScanMax;
@@ -12004,7 +12070,7 @@ if FParseOk then
     Cms         := TCmsProfileData.Create(FParser);
     Cms.LogLevel:= LogLevel;
     FParseOk    := Cms.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportHdfProfile(Cms);
-    if Cms.FormatOk then
+    if Cms.ParseOk then
       AFileFormat:= Cms.FileFormat;
     Cms.TransferLastMessage(FLastMessage);
     try
@@ -12030,8 +12096,8 @@ if FParseOk then
       FParseOk:= w2CAD.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportW2CADProfile(w2CAD);
       if not FParseOk then
         w2CAD.ScanNr:= w2CAD.ScanNr+wMultiScanStep;
-    until FParseOk or (not w2CAD.FormatOk) or (w2CAD.ScanNr<1) or (w2CAD.ScanNr>w2CAD.ScanMax);
-    if w2CAD.FormatOk then
+    until FParseOk or (not w2CAD.ParseOk) or (w2CAD.ScanNr<1) or (w2CAD.ScanNr>w2CAD.ScanMax);
+    if w2CAD.ParseOk then
       begin
       AFileFormat  := w2CAD.FileFormat;
       wMultiScanMax:= w2CAD.ScanMax;
@@ -12050,8 +12116,8 @@ if FParseOk then
     begin
     Hdf         := THdfProfileData.Create(FParser);
     Hdf.LogLevel:= LogLevel;
-    FParseOk     := Hdf.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportHdfProfile(Hdf);
-    if Hdf.FormatOk then
+    FParseOk    := Hdf.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportHdfProfile(Hdf);
+    if Hdf.ParseOk then
       AFileFormat:= Hdf.FileFormat;
     try
       FreeAndNil(Hdf);
@@ -12064,7 +12130,7 @@ if FParseOk then
     Eclipse         := TEclipseData.Create(FParser);
     Eclipse.LogLevel:= LogLevel;
     FParseOk        := Eclipse.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportEclipse(Eclipse);
-    if Eclipse.FormatOk then
+    if Eclipse.ParseOk then
       AFileFormat:= Eclipse.FileFormat;
     try
       FreeAndNil(Eclipse);
@@ -12076,8 +12142,8 @@ if FParseOk then
     begin
     Pips         := TPipsProfileData.Create(wPipsPixelCm,FParser);
     Pips.LogLevel:= LogLevel;
-    FParseOk      := Pips.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportPipsProfile(Pips);
-    if Pips.FormatOk then
+    FParseOk     := Pips.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportPipsProfile(Pips);
+    if Pips.ParseOk then
       AFileFormat:= Pips.FileFormat;
     Pips.TransferLastMessage(FLastMessage);
     try
@@ -12092,7 +12158,7 @@ if FParseOk then
     Schuster.LogLevel:= LogLevel;
     Schuster.FileTime:= FileTime;
     FParseOk         := Schuster.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportSchusterProfile(Schuster);
-    if Schuster.FormatOk then
+    if Schuster.ParseOk then
       AFileFormat:= Schuster.FileFormat;
     Schuster.TransferLastMessage(FLastMessage);
     try
@@ -12110,7 +12176,17 @@ Dec(FActiveCnt);
 end; {~dualreaddata}
 
 
-(* The general path followed is designed for both files and streams.
+(* AdvReadData (overloaded)
+input : text in tstrings
+        offset to unstructured multi file set element
+        permission to change current data
+        resampling
+        coordinate ordering
+        known file format
+        file name for source of the data
+output: true if succesfully interpreted as valid data
+Loads data into wSource[dsMeasured] and performs full analysis (according to all settings).
+The general path followed is designed for both files and streams.
 TWellhoferData.AdvReadData
   TWellhoferData.ReadData
      TWellhoferData.DualReadData
@@ -12125,11 +12201,10 @@ TWellhoferData.AdvReadData
 {17/09/2020 introduction of FFrozen}
 {18/09/2020 UnFreeze}
 {16/11/2020 ADataTopLine}
+{30/03/2021 resample and coordinateorder parameter dropped from parameter list}
 function TWellhoferData.AdvReadData(AStringList     :TStrings;
                                     ADataTopLine    :Integer       =0;
                                     UnFreeze        :Boolean       =True;
-                                    ResampleData    :Boolean       =False;
-                                    CoordinateOrder :twcMeasAxisStg=twcMeasAxisStandard;
                                     AFileFormat     :twcFileType   =twcUnknown;
                                     ASourceReference:String        =''           ): Boolean;
 begin
@@ -12137,8 +12212,6 @@ Result:= Unfreeze or (not FFrozen);
 if Result then
   begin
   Freeze           := False;
-  wResampleData    := ResampleData;
-  wMeas2TankMapping:= CoordinateOrder;
   FFileName        := ASourceReference;
   StatusMessage(Format('Reading {%s} ',[ifthen(assigned(AStringList),AStringList.Strings[0],'')]),True,3);
   Result           := ReadData(AStringList,ADataTopLine,AFileFormat);
@@ -12149,13 +12222,12 @@ end; {~advreaddata}
 {17/09/2020 introduction of FFrozen}
 {18/09/2020 UnFreeze}
 {16/11/2020 ADataTopLine}
-function TWellhoferData.AdvReadData(AFileName       :String;
-                                    ADataTopLine    :Integer       =0;
-                                    UnFreeze        :Boolean       =True;
-                                    IsBinaryFile    :Boolean       =False;
-                                    ResampleData    :Boolean       =False;
-                                    CoordinateOrder :twcMeasAxisStg=twcMeasAxisStandard;
-                                    AFileFormat     :twcFileType   =twcUnknown            ): Boolean;
+{30/03/2021 resample and coordinateorder parameter dropped from parameter list}
+function TWellhoferData.AdvReadData(AFileName      :String;
+                                    ADataTopLine   :Integer       =0;
+                                    UnFreeze       :Boolean       =True;
+                                    IsBinaryFile   :Boolean       =False;
+                                    AFileFormat    :twcFileType   =twcUnknown            ): Boolean;
 begin
 Result:= Unfreeze or (not FFrozen);
 if Result then
@@ -12163,8 +12235,6 @@ if Result then
   Freeze           := False;
   FParser.PreLoaded:= False;
   wTryBinaryOnly   := IsBinaryFile;
-  wResampleData    := ResampleData;
-  wMeas2TankMapping:= CoordinateOrder;
   StatusMessage(Format('Reading %s... ',[AFileName]),True,3);
   Result           := ReadData(AFileName,ADataTopLine,AFileFormat);
   end;
@@ -12176,11 +12246,10 @@ end; {~advreaddata}
 {17/09/2020 introduction of FFrozen}
 {18/09/2020 UnFreeze}
 {16/11/2020 ADataTopLine}
+{30/03/2021 resample and coordinateorder parameter dropped from parameter list}
 function TWellhoferData.AdvStreamData(AStream         :TStream;
                                       ADataTopLine    :Integer       =0;
                                       UnFreeze        :Boolean       =True;
-                                      ResampleData    :Boolean       =False;
-                                      CoordinateOrder :twcMeasAxisStg=twcMeasAxisStandard;
                                       AFileFormat     :twcFileType   =twcUnknown;
                                       ASourceReference:String        =''): Boolean;
 begin
@@ -12190,20 +12259,24 @@ if Result then
   Freeze           := False;
   if (AStream=nil) and (AFileFormat in twcBinaryFormats) then
     AStream        := BinStream;
-  wResampleData    := ResampleData;
-  wMeas2TankMapping:= CoordinateOrder;
   if Length(ASourceReference)>0 then
     FFileName      := ASourceReference;
   Result           := ReadData(AStream,ADataTopLine,AFileFormat);
   end;
-end; {~advreaddata}
+end; {~advstreamdata}
 
 
+(* SetScanType: set or enforce scantype
+input : scan type
+        target to set scan type
+output: true if not generic
+result: twDesTypeString is set
+*)
 {23/08/2015 dependencies on correct data in Angle moved to PrepareProfile}
 {13/09/2018 mapping of snGenericProfile}
 {08/06/2020 a profile cannot freely be set to another file type before import, make notice as function result}
 function TWellhoferData.SetScanType(AScanType:twcScanTypes;
-                                     ASource :twcDataSource=dsMeasured): Boolean;
+                                    ASource  :twcDataSource=dsMeasured): Boolean;
 begin
 if (AScanType=snGenericProfile) then
   begin
@@ -13421,7 +13494,11 @@ begin
 CopyCurve(wSource[ASource],wSource[ADestination],InitializeDestination);
 end; {~copycurve}
 
-
+(* ReferenceValid: decide wheter target can be compared with measurement
+input : target, defaults to dsReference
+output: true when valid
+Both measurement and target should be valid and their CurveIdStrings should match, given the circumstances.
+*)
 {13/08/2015 wCheckRefCurveString added to test}
 {19/03/2016 added wCheckRefIgnoreLinac}
 function TWellhoferData.ReferenceValid(AReference:twcDataSource=dsReference): Boolean;
@@ -13490,14 +13567,16 @@ end; {~reportdifferences}
 
 
 {$push}{$warn 5092 off: Variable RefStg does not seem to be initialized}
-(*
-****BistroMath core function****
+(* LoadReference   ****BistroMath core function****
+input : filename (not used necessarily)
+        force use of current refererence
+output: true if loaded/available
 There are multiple sources for references:
 -a forced reference in memory
 -the last used reference in memory
 -a (possible structured) multiple reference in memory
 -the reference directory
-This procedure tries all in-memory options first and then searches on disk. Disk search is based on filename only.
+This complex procedure tries all in-memory options first and then searches on disk. Disk search is based on filename only.
 *)
 {13/07/2015 wSource[Unrelated] used to store unmatched reference when valid and not locked.}
 {21/07/2015
@@ -18504,9 +18583,11 @@ Dec(FActiveCnt);
 end; {~fastscan}
 
 
-(* ****BistroMath core function****
-Complete and final analysis of data sets.
-FastScan must be completed succesfully.
+(* Analyse ****BistroMath core function****
+input : source
+        centering option
+output: true if analysis results are valid
+Complete and final analysis of data sets. FastScan must be completed succesfully.
 There are a lot of variations:
 -ASource (wSource[ASource])
 -twSetFieldType
