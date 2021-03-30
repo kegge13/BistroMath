@@ -2531,14 +2531,14 @@ object AnalyseForm: TAnalyseForm
         WordWrap = False
       end
     end
-    object EditorTab: TTabSheet
+    object RawDataTab: TTabSheet
       HelpContext = 3
       Caption = 'Raw data'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
-      object DataEditor: TMemo
+      object RawDataEditor: TMemo
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 3

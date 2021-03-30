@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 17/03/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 30/03/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -28,6 +28,7 @@ uses
   TAGraph, TASeries, TAFuncSeries, TATransformations, TAAxisSource, SpinEx, RTTICtrls,
   LCLType, Grids, ValEdit, LMessages,
   FileIter, TOconfigStrings, TOnumparser, Wellhofer, PanelElements, TAChartAxisUtils;
+
 
 //Work-around for backward compatibility with for LCL v2.0.10 and below.
 //In a testversion of v2.0.12 OnMarkToText was set as deprecated.
@@ -237,7 +238,7 @@ type
   17/12/2019
     SimpleModeItem
   17/03/2020
-    DataEditor internal as replacement for external editor window
+    RawDataEditor internal as replacement for external editor window
   14/04/2020
     ===Lazarus implementation===
   15/04/2020
@@ -324,6 +325,7 @@ type
   15/03/2021
     added Ft_Default_SSD_Label, Ft_Default_SSD_Edit_Cm
     removed DefaultMRlinacSSD_cm
+    added MeasMenuClick(Sender: TObject);
   }
 
   {=========== TAnalyseForm =====================}
@@ -342,7 +344,7 @@ type
     FileIgnoreClipboardItem     : TMenuItem;  {Ctrl+I}       //OnClick = FileIgnoreClipboardClick
     FileSaveAsReferenceItem     : TMenuItem;  {Ctrl+R}       //OnClick = FileSaveAsReferenceAction;  Tag=4
     FileLockCriticalItems       : TMenuItem;  {Ctrl+Alt+R}   //OnClick = OptionModeClick;            Tag=4
-    FileHistoryItem             : TMenuItem;  {Ctrl+H}       //OnClick = HistoryListSizeClick
+    FileHistoryItem             : TMenuItem;  {Ctrl+H}       //OnClick = HistoryListSizeClick, linked to HistoryListCheckBox
     FileExitItem                : TMenuItem;  {Alt+F4}       //OnClick = FileExitAction
     FileMultipleInputItem       : TMenuItem;
     //processing menu
@@ -497,7 +499,7 @@ type
     R_AxisTransform_AutoScale   : TAutoScaleAxisTransform;                      //see also AxisAlignSource object and AutoZoom function
     TopModelSeries              : TFuncSeries;                                  //for development ease two series are added at design time, all others at runtime
     ErrorSeries                 : TLineSeries;                                  //ErrorSeries shows residual of pddfit
-    ResultsPanel                : TPanel;
+    ResultsPanel                : TPanel;                                       //she placeholder for all analysis results
     MeasNormAdjustEdit          : TFloatSpinEditEx;                             //mostly hidden feature for changing normalisation level
     PositionLabel               : TLabel;
     PositionValue               : TLabel;
@@ -506,7 +508,7 @@ type
     HistogramPlot               : TChart;                                       //set HistoGramPlot.AutoFocus on to avoid trigger of PageControlRequestChange with VK_LEFT/RIGHT
     Histogram                   : TBarSeries;
     //fit results tab
-    FitResultsTab               : TTabSheet;
+    FitResultsTab               : TTabSheet;                                    //here model parameter values can be observed and copied after a pdd fit
     FitResultsPanel             : TPanel;                                       //only used to set background color
     FitResultsAllCheckBox       : TCheckBox;
     FitResultsGrid              : TStringGrid;
@@ -514,9 +516,9 @@ type
     FitresultsLabel             : TLabel;
     FitResultsLabelsCheckBox    : TCheckBox;
     //FieldType tab
-    FieldTypesTab               : TTabSheet;
-    FieldTypesPanel             : TPanel;
-    Ft_DetectLabel              : TStaticText;
+    FieldTypesTab               : TTabSheet;                                    //a series of settings is highly dependendent on the actual data being processed: the Field Types
+    FieldTypesPanel             : TPanel;                                       //a place holder to ba able to set a background color
+    Ft_DetectLabel              : TStaticText;                                  //twcFieldClass=(fcStandard,fcFFF,fcSmall,fcMRlinac,fcWedge,fcElectron);
     Ft_DetDiagonalLabel         : TStaticText;
     Ft_MeasSymCorrLabel         : TStaticText;
     Ft_RefSymCorrLabel          : TStaticText;
@@ -560,7 +562,7 @@ type
     AliasListEditor             : TValueListEditor;
     //file conversion tab
     FileConversionTab           : TTabSheet;
-    FileConversionPanel         : TPanel;                                       //only used to set background color
+    FileConversionPanel         : TPanel;                                       //placeholder to set background color
     FileConvDestinationLabel    : TStaticText;
     FileConvDestinationTypeLabel: TStaticText;
     FileConvSourceLabel         : TStaticText;
@@ -580,7 +582,7 @@ type
     FileConvList                : TMemo;
     //settings tab
     SettingsTab                 : TTabSheet;
-    SettingsPanel               : TPanel;                                       //only used to set background color
+    SettingsPanel               : TPanel;                                       //placeholder to set background color
     FilterWidthLabel            : TStaticText;
     FilterWidth_mm              : TFloatSpinEditEx;
     CalcWidthLabel              : TStaticText;
@@ -648,15 +650,15 @@ type
     MayneordSSD2_cm             : TFloatSpinEditEx;
     //advanced settings tab
     AdvancedSettingsTab         : TTabSheet;
-    AdvancedSettingsPanel       : TPanel;                                       //only used to set background color
+    AdvancedSettingsPanel       : TPanel;                                       //placeholder to set background color
     AdvancedModeStartCheckBox   : TCheckBox;
     ShowLockItemCheckBox        : TCheckBox;
     AddDateTimeCheckBox         : TCheckBox;
     ShowWarningCheckBox         : TCheckBox;
     LogLevelEdit                : TSpinEditEx;
-    HistoryListCheckBox         : TCheckBox;                                    //onclick=HistoryListSizeClick
+    HistoryListCheckBox         : TCheckBox;                                    //onclick=HistoryListSizeClick; linked to FileHistoryItem
     HistoryListSize_num         : TSpinEditEx;
-    HistoryListFreezeCheckBox   : TCheckBox;
+    HistoryListFreezeCheckBox   : TCheckBox;                                    //when checked data will not be reprocessed, despite changed circumstances/reference data
     ForceMatchingCheckBox       : TCheckBox;
     OutlierFilterStatsCheckBox  : TCheckBox;                                    //>wOutlierFilter
     OutlierMaxPoints_num        : TSpinEditEx;
@@ -665,7 +667,7 @@ type
     BadPenumbraLabel            : TStaticText;
     BadPenumbraWidth_cm         : TFloatSpinEditEx;
     OriginMinLevelLabel         : TStaticText;
-    OriginMinLevel_perc         : TFloatSpinEditEx;
+    OriginMinLevel_perc         : TFloatSpinEditEx;                             //>twcOriginMinNormFraction
     PipsPixelSizeLabel          : TStaticText;
     PipsPixelSize_cm            : TFloatSpinEditEx;                             //>wPipsPixelCm
     //--pddfitgroupbox
@@ -743,8 +745,8 @@ type
     LogTab                      : TTabSheet;
     LogTabMemo                  : TMemo;                                        //LogTabMemo.Tag is used for maximum number of lines, initial value 500
     //raw data tab
-    EditorTab                   : TTabSheet;
-    DataEditor                  : TMemo;
+    RawDataTab                  : TTabSheet;                                    //shows the data as received on the clipboard or from file. binary data are converted to text format
+    RawDataEditor               : TMemo;
     //other elements
     StatusBar                   : TStatusBar;
     FileSaveDialog              : TSaveDialog;
@@ -754,7 +756,7 @@ type
     //procedures and functions linked to GUI
     procedure FormCreate               (Sender         : TObject);
     procedure AdjustHelpContext        (Sender         : TObject);                //linked to OnMouseEnter event for pages with different help contexts}
-    procedure MeasMenuClick(Sender: TObject);
+    procedure MeasMenuClick            (Sender         : TObject);
     procedure SetDefaultPanel          (Sender         : TObject);                //insert default panel display rules in results panel
     procedure SetCaption               (Sender         : TObject);      overload;
     procedure SelectConfig             (Sender         : TObject);                //selection of config file, implemented as application of fileopendialog
@@ -800,7 +802,7 @@ type
     procedure DataPlotExtentChanged    (Sender         : TChart);                 //respond to DataPlot mouse zoom
     procedure MeasurementSaveClick     (Sender         : TObject);
     procedure OnMenu                   (Sender         : TObject);
-    procedure EditEnter                (Sender         : TObject);                //AliasListEditor,EdgeMRlinacTUcsvList,ModListGrid,DataEditor,InventoryDirBox,FileConvSourcePath
+    procedure EditEnter                (Sender         : TObject);                //AliasListEditor,EdgeMRlinacTUcsvList,ModListGrid,RawDataEditor,InventoryDirBox,FileConvSourcePath
     procedure HistoryListSizeClick     (Sender         : TObject);
     procedure ProcessSetTempRefClick   (Sender         : TObject);
     procedure ProcessUnsetTempRefClick (Sender         : TObject);
@@ -933,7 +935,7 @@ type
     ShiftValues_cm        : array[twcMeasAxis                          ] of TFloatSpinEditEx;
     CxResults             : array of CxLine;                                    //implementation PANEL DISPLAY RULES; binding to TPanelConfig.FElements; CxUsedRowMax=highest row number; see InitCxBlock, PublishResults
     UseDoseConvTable      : array of OD2dose_Rec;
-    NextClipboardOwner    : THandle;
+    NextClipboardOwner    : THandle;                                            //BistroMath inserts iself in the chain of clipboardviewers
     SelectedPlot          : PlotItems;
     SelectedSeries        : TBasicChartSeries;                                  //this might be a series outside the plotitems
     FileIterator          : TFileIterator;
@@ -1063,7 +1065,7 @@ type
     function  GetPositionUnitsStg                                   : String;
     procedure GetWellhoferValues;
     procedure AutoZoom(FullAuto            :Boolean=True           );
-    procedure SourceAxisSync;
+    procedure SourceAxisSync;                                                   //updates axis settings for engine, based on information from GUI
     procedure PlotCursor(Sender            :TObject                );
     procedure PlotIndicators;
     procedure SetPlotDate(APlotItem        :PlotItems;
@@ -1106,7 +1108,7 @@ type
     procedure ExceptMessage(AMessage       :String                 );
     procedure InventoryDBChgAction(Sender  :TObject                );
     procedure InventoryDBChgComplete(Sender:TObject                );
-    procedure ChangeZPosition(ASeries      :TBasicChartSeries;                           //graphics series z-ordering
+    procedure ChangeZPosition(ASeries      :TBasicChartSeries;                           //graph series z-ordering
                               MoveUp       :Boolean=True           );
     {$IFDEF Windows}                                                                     //problematic on other platforms
     function  HelpHandler(Command          :Word;
@@ -1423,7 +1425,7 @@ end; {wndcallback}
 {09/01/2019 check on decimal separator}
 {23/01/2020 negative value of addmode clears all rules}
 {--port to Lazarus--}
-{17/03/2020 dataeditor}
+{17/03/2020 RawDataEditor}
 {16/04/2020 tagging of series simplified}
 {19/05/2020 Wellhofer.StatusProcedure:= @SetMessageBar}
 {02/06/2020 WriteMenuShortCuts}
@@ -3082,6 +3084,7 @@ end; {~configsave}
 {13/10/2020 AutoSetDecPointCheckBox,AutoDecPointList,AutoDecimalPoint,AutoDecimalList}
 {03/03/2020 removed MeasDetectDiagItem}
 {07/03/2021 DefaultMRlinacSSD_cm}
+{30/03/2021 MeasResampleItem.Checked:= wResampleData}
 procedure TAnalyseForm.GetWellhoferValues;
 var q: twcEdgeClass;
     f: twcFieldClass;
@@ -3136,6 +3139,7 @@ with Engines[UsedEngine] do
     FFFMinDoseDifEdit_perc    .Value  := wFFFMinDoseDifPerc;
     FFFMinEdgeDif_mm          .Value  := wFFFMinEdgeDifCm   *10;
     MeasReNormaliseDataItem   .Checked:= wRenormaliseData;
+    MeasResampleItem          .Checked:= wResampleData;
     EdgeSmallFieldWidth_cm    .Value  := wSmallFieldLimitCm;
     EdgeWedge90ShiftFactor    .Value  := wWedge90ShiftFactor;
     EdgeMRlinacTUcsvList      .Text   := wMRlinacTUlist;
@@ -3231,6 +3235,7 @@ end; {~setwellhofervalues}
 {21/10/2020 more settings to transfer: AcceptMissingPenumbra,AcceptZeroSteps,DetectDiagonalScans,wApplySigmoidToBuffer}
 {03/03/2020 removed MeasDetectDiagItem}
 {07/03/2021 Nominal_IFA_CheckBox}
+{30/03/2021 wResampleData, wMeas2TankMapping}
 procedure TAnalyseForm.SetEngineValues(aEngine:Integer);
 var p: twcDoseLevel;
     q: twcEdgeClass;
@@ -3250,6 +3255,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     wApplySigmoidToBuffer     := ProcessSigmoid2BufferItem      .Checked;
     wReferenceFromGeneric     := RefGenericBeamItem             .Checked;
     wApplyUserLevel           := MeasUserDoseItem               .Checked;
+    wResampleData             := MeasResampleItem               .Checked;
     twcGenericToElectron      := MeasGenericToElectronItem      .Checked;
     wGenericToPDD             := MeasGenericToPDDItem           .Checked;
     MatchOverride             := ForceMatchingCheckBox          .Checked;
@@ -3260,6 +3266,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     wWedge90ShiftFactor       := EdgeWedge90ShiftFactor         .Value;
     wMRlinacTUlist            := EdgeMRlinacTUcsvList           .Text;
     ShowWarning               := ShowWarningCheckBox            .Checked;
+    wMeas2TankMapping         := ifthen(MeasRemapCoordinates.Checked,MeasReMappingString .Text,twcMeasAxisStandard);
     if EdgeDetectionCheckBox.Checked then
       wEdgeFallBackCm         := EdgeDetectionError_mm          .Value/10
     else
@@ -3385,7 +3392,7 @@ if Result>0 then
     if (UsedEngine<Length(Engines)) and assigned(Engines[UsedEngine]) then
       Engines[UsedEngine].Freeze:= HistoryListFreezeCheckBox.Enabled and HistoryListFreezeCheckBox.Checked;
     UsedEngine                 := Result;
-    DataEditor        .Modified:= False;
+    RawDataEditor     .Modified:= False;
     DataFromEditor             := False;
     MeasNormAdjustEdit.Value   := 100;
     PrevKey                    := #0;
@@ -3393,13 +3400,13 @@ if Result>0 then
     DetectedFileType           := Engines[UsedEngine].LastDetectedFileType;
     UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;            //restore full state including starting point for reading
     if ProcessSetTempRefItem.Checked then
-      PassRefOrg(UsedEngine);                                                     //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
+      PassRefOrg(UsedEngine);                                                   //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
     ClearScreen(Self);
-    DataEditor.Clear;
+    RawDataEditor.Clear;
    {$IFDEF PRELOAD}
     PreLoadStream.Clear;
     with Engines[UsedEngine] do
-      if Parser.LineCount>0 then
+      if Parser.LineCount>0 then                                                //if text data are available, show them
         begin
         for i:= 0 to Parser.LineCount-1 do
           PreLoadStream.WriteString(Parser.Strings[i]+LineEnding);              //also the preloadstream is filled again
@@ -3756,7 +3763,7 @@ SettingsTab               .TabVisible:= b;
 AdvancedSettingsTab       .TabVisible:= b;
 FieldTypesTab             .TabVisible:= b;
 ConfigurationTab          .TabVisible:= b;
-EditorTab                 .TabVisible:= s;
+RawDataTab                 .TabVisible:= s;
 MeasOD2DoseConvItem       .Enabled   := a;
 MeasOD2DoseConvItem       .Visible   := b;
 MeasExtSymSubMenu         .Visible   := s;
@@ -3908,7 +3915,7 @@ if b then
   if (not FileExists(AFileName)) then
     AFileName:= FileExtExists(AFileName,'.txt');
   b:= FileExists(AFileName);
-  if b then with DataEditor do
+  if b then with RawDataEditor do
     begin
     EditorFileName:= AFileName;
    {$IFDEF Windows}
@@ -3953,6 +3960,7 @@ end; {~reload}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {17/11/2020 UsedDataTopLine supports all context changes through SelectEngine}
 {17/03/2021 For multiscan files the scannr might change and no shift should be applied in that case.}
+{30/03/2021 resample and coordinateordering parameter dropped from advstreamdata}
 procedure TAnalyseForm.Reload(Sender       :TObject;
                               DoClearScreen:Boolean);
 var b: Boolean;
@@ -3975,12 +3983,8 @@ if Engines[UsedEngine].wSource[dsMeasured].twOriginalFormat=twcWellhoferRFb then
      Engines[UsedEngine].AdvStreamData(nil,
                                        UsedDataTopLine,                         //this is also restored in selectengine
                                        True,
-                                       MeasResampleItem           .Checked,
-                                       ifthen(MeasRemapCoordinates.Checked,
-                                              MeasReMappingString .Text,
-                                              twcMeasAxisStandard),
                                        DetectedFileType,
-                                       FileOpenDialog             .FileName) then
+                                       FileOpenDialog.FileName) then
      Engine2Editor;                                                             //includes shift
   end
 else
@@ -4027,7 +4031,7 @@ end; {~wmchangecbchain}
 {14/01/2020 Ignore clipboard when text starts with DefAppName or size<MinClipBoardBytes}
 {28/01/2020 set default filename always}
 {30/01/2020 check clipboard.hasformat}
-{17/03/2020 dataeditor}
+{17/03/2020 RawDataEditor}
 {26/03/2020 ====FPC implementation====}
 {09/05/2020 more subtle messaging}
 {15/05/2020 no message if not CF_TEXT}
@@ -4055,7 +4059,7 @@ if (PageControl.ActivePage=AnalysisTab)    and
        {$IFDEF PRELOAD}
         Engines[UsedEngine].Parser.PreLoaded:= False;
        {$ENDIF PRELOAD}
-        DataEditor.Clear;
+        RawDataEditor.Clear;
         DetectedFileType            := twcUnknown;
         PrevKey                     := #0;
         MeasNormAdjustEdit.Value    := 100;                                     //MeasNormAdjustNumEdit is intended for temporary use, reset to default
@@ -4071,19 +4075,19 @@ if (PageControl.ActivePage=AnalysisTab)    and
             Engines[UsedEngine].FileName:= DefaultName;
             PreloadTransfer(Self);
            {$ELSE}
-            DataEditor.PasteFromClipboard;
-            DataEditor.Modified:= False;
+            RawDataEditor.PasteFromClipboard;
+            RawDataEditor.Modified:= False;
            {$ENDIF}
             end
           else
             begin
            {$IFDEF PRELOAD}
             PreloadStream.Clear;
-            PreloadStream.WriteString(DataEditor.Lines.Text);                  //copy editor to stream
+            PreloadStream.WriteString(RawDataEditor.Lines.Text);                  //copy editor to stream
             Engines[UsedEngine].FileName:= DefaultName;
             PreloadTransfer(Self);
            {$ELSE}
-            DataEditor.Modified:= False;
+            RawDataEditor.Modified:= False;
            {$ENDIF}
             end;
           ReadEditor(nil);                                                      //here the text data are send to engine[usedengine] and analysed, using UsedDataTopLine
@@ -4128,11 +4132,12 @@ a lot of times changing users choices will result in rereading raw data.
 => MeasMirrorItem, MeasSDD2SSDItem, MeasScale2defaultSSDitem, MeasResampleItem, MeasUserDoseItem, DataFileOpen *)
 {12/08/2015 CenterProfiles option removed in Wellhofer.AdvReadData, see UpdateSettings}
 {12/02/2016 preload uses stream}
-{19/03/2020 internal dataeditor}
+{19/03/2020 internal RawDataEditor}
 {01/05/2020 check size of data}
 {08/09/2020 added DoClearScreen option}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {17/11/2020 UsedDataTopLine set in WMDRAWCLIPBOARD or DataFileOpen}
+{30/03/2021 resample and coordinateordering parameter dropped from advreaddata/advstreamdata}
 procedure TAnalyseForm.ReadEditor(Sender       :TObject;
                                   DoClearScreen:Boolean);
 var b  : Boolean;
@@ -4150,38 +4155,30 @@ b:= (Engines[UsedEngine].Freeze and HistoryListCheckBox.Checked);
 if not b then
   begin
  {$IFDEF PRELOAD}
-  if (not DataEditor.Modified) and ((Engines[UsedEngine].Parser.PreLoaded) or (Sender=nil)) then
+  if (not RawDataEditor.Modified) and ((Engines[UsedEngine].Parser.PreLoaded) or (Sender=nil)) then
     begin
     DataFromEditor:= False;
     b:= (PreloadStream.Size>MinClipBoardBytes) and
          Engines[UsedEngine].AdvStreamData(PreLoadStream,
                                            UsedDataTopLine,
                                            True,                                //unfreeze
-                                           MeasResampleItem           .Checked,
-                                           ifthen(MeasRemapCoordinates.Checked,
-                                                  MeasReMappingString .Text,
-                                                  twcMeasAxisStandard),
                                            DetectedFileType,
-                                           Engines[UsedEngine]        .FileName);
+                                           Engines[UsedEngine].FileName);
     end
   else
     begin
    {$ENDIF PRELOAD}
-    i:= DataEditor.Lines.Count;
+    i:= RawDataEditor.Lines.Count;
     j:= 0;
     while (i>0) and (j<MinClipBoardBytes) do  {fast count of characters}
       begin
       Dec(i);
-      Inc(j,Length(DataEditor.Lines.Strings[i]));
+      Inc(j,Length(RawDataEditor.Lines.Strings[i]));
       end;
     b:= (j>MinClipBoardBytes) and
-         Engines[UsedEngine].AdvReadData(DataEditor.Lines,
+         Engines[UsedEngine].AdvReadData(RawDataEditor.Lines,
                                          UsedDataTopLine,
                                          True,                                  //unfreeze
-                                         MeasResampleItem           .Checked,
-                                         ifthen(MeasRemapCoordinates.Checked,
-                                                MeasReMappingString .Text,
-                                                twcMeasAxisStandard),
                                          DetectedFileType,
                                          EditorFileName);
    {$IFDEF PRELOAD}
@@ -4269,7 +4266,7 @@ Fills graph and triggers display of analysis results (PublishResults).
 {23/11/2018 SmartScaleElectronPDD}
 {25/11/2018 ProcessAutoscalingItem}
 {10/12/2019 ProcessSigmoid2BufferItem}
-{17/03/2020 dataeditor changes}
+{17/03/2020 RawDataEditor changes}
 {11/04/2020 ========FreePascal TAchart related rewrites==========}
 {15/04/2020 revised implementation of PlotScaleMax and PlotScaleMin}
 {16/04/2020 new implementation of LastProfileZoomState (formerly LastZoomState)}
@@ -4373,7 +4370,7 @@ var i                           : Integer;
            StripCharSet(GetCurveIDString,csIllegalWinName) +
            ifthen(AddDateTimeCheckBox.Checked,'_'+Ds,'');
       WriteData(Fs,SetFileType(FileSaveDialog.DefaultExt));
-      DataEditor.Clear;
+      RawDataEditor.Clear;
       EditorFileName:= ChangeFileExt(Fs+'_data',DefaultExtension);
       s:= Math.Max(0.1,Fpar[2]);
       if (ScanType in twcVertScans) then                                        //FPar[2]=step width in cm
@@ -4391,7 +4388,7 @@ var i                           : Integer;
                                 [i*s,GetScaledQfValue(i*s,False,scNormalised,dsCalculated),
                                  Linac,LowerCase(wCurveInfo.twDesTypeString[1]),FieldLength,Ds]));
       if FPar[4]>0 then                                                         //FPar[4]=1:write resampled data to disk
-        MemoSaveToFile(DataEditor);
+        MemoSaveToFile(RawDataEditor);
       end;
     end;
   end; {dospecialmode3}
@@ -4442,7 +4439,7 @@ var i                           : Integer;
     PlotScaleMax:= Math.Max(PlotScaleMax,twData[twMaxArr]);
     end;
   {$IFDEF THREAD_PLOT}
-  Engines[UsedEngine].wSource[ASource].twLocked:= True;                                   //creating the thread also takes some time: do manual lock first in main thread
+  Engines[UsedEngine].wSource[ASource].twLocked:= True;                         //creating the thread also takes some time: do manual lock first in main thread
   PlotFillThread[ASeries]:= THelpFillThread.Create(@ThreadSaveFillPlot,ASeries,ASource,AScaling,False); //no freeonterminate, cleanup on end of ondataread
   {$ELSE}
   ThreadSaveFillPlot(ASeries,ASource,AScaling);
@@ -4473,7 +4470,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
   {$ENDIF THREAD_PLOT}
   ClearAllCx;
   ShowMenuItemStatus(Sender);                                                   //when sender is menuitem its state will be shown on the statusbar
-  if DataEditor.Modified then
+  if RawDataEditor.Modified then
     DetectedFileType      := twcUnknown;
   PlotScaleMin            :=  0;
   PlotScaleMax            :=  0;
@@ -5310,7 +5307,7 @@ end; {~presetsitemclick}
 {02/08/2016 makefilename replaced with makecurvename}
 {03/08/2016 repaired usage of makecurvename which is not automatic anymore}
 {10/12/2019 save as ref: invalidate reference}
-{17/03/2020 dataeditor}
+{17/03/2020 RawDataEditor}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 procedure TAnalyseForm.OnMenu(Sender:TObject);
 var Stg: string;
@@ -5359,7 +5356,7 @@ else if Sender=FileSaveAsReferenceItem then                                     
     SetMessageBar(Format(DefSavedText,[Stg]));
     if ((not ArrayScanRefOk) and (FileFormat<>twcWellhoferAscii_v6)) or MeasRemapCoordinates.Checked then
        WriteData(Stg,twcWellhoferAscii_v6,dsMeasured)
-    else if DataEditor.Modified then
+    else if RawDataEditor.Modified then
       SetMessageBar(Format(ModifiedText,[Stg]))
     else if (Stg<>EditorFilename) then
         begin
@@ -5367,7 +5364,7 @@ else if Sender=FileSaveAsReferenceItem then                                     
         LogLevel:= 0;
         if FileExists(Stg) then
           DeleteFile(PChar(Stg));
-        MemoSaveToFile(DataEditor,Stg);
+        MemoSaveToFile(RawDataEditor,Stg);
         WaitLoop(500);
         UnSetReferenceOrg;
         ReadEditor(Sender);
@@ -5628,7 +5625,7 @@ end; {~pagecontrolrequestchange}
   moved iterator-setting for conversion to ConvStartClick
   UnSetReferenceOrg}
 {22/10/2018 if PageControl.ActivePage=SettingsTab then HistogramTab.TabVisible:= False}
-{04/05/2020 last-moment filling dataeditor}
+{04/05/2020 last-moment filling RawDataEditor}
 {14/08/2020 menus on for fieldtypestab}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {23/10/2020 removed PlaceResultsLabels(ifthen(PageControl.ActivePage=AnalysisTab,0,DefaultFontSize))}
@@ -6541,6 +6538,7 @@ else if (not irCreate) and (assigned(InventoryReader)) then
 Result:= not (irCreate xor assigned(InventoryReader));
 end; {~inventoryreadersetup}
 
+
 //for each engine an activity counter is maintained, which should be zero when ready
 {24/01/2018}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
@@ -6781,13 +6779,13 @@ begin
 try
   EditorFileName:= Engines[UsedEngine].FileName;
   if Engines[UsedEngine].FileFormat=twcWellhoferRfb then
-    Engines[UsedEngine].WriteData(EditorFileName,DataEditor.Lines,ASource)
+    Engines[UsedEngine].WriteData(EditorFileName,RawDataEditor.Lines,ASource)
   else
     begin
     with Engines[UsedEngine] do
       if Parser.LineCount>0 then
         begin
-        DataEditor.Lines.AddStrings(Parser.Strings);
+        RawDataEditor.Lines.AddStrings(Parser.Strings);
         FileOpenDialog.FileName:= Parser.Filename;
         end;
     end;
@@ -6798,7 +6796,7 @@ try
       wCheckRefIgnoreLinac:= ProcessIgnoreTUnameItem .Checked and wCheckRefCurveString and ProcessSetTempRefItem.Checked;
       LoadReference;
       end;
-  DataEditor.Modified:= False;
+  RawDataEditor.Modified:= False;
   OnDataRead(Self);
   Engines[UsedEngine].IsFile:= True;
  except
@@ -7136,7 +7134,7 @@ with Engines[UsedEngine],wSource[dsCalculated],SpecialMode[2] do
       ExceptMessage('DoSpecialMode2!');
      end;
     end; {not isdir}
-  with DataEditor do
+  with RawDataEditor do
     begin
     SelStart := 0;
     SelLength:= 0;
@@ -7164,7 +7162,7 @@ The fact that TWellhoferData itself handles all currently known binary types can
 {23/01/2018 setmessagebar}
 {24/01/2018 CheckWellhoferReady}
 {15/10/2018 MeasNormAdjustEdit.Value:= 100}
-{04/05/2020 DataEditor.Clear}
+{04/05/2020 RawDataEditor.Clear}
 {03/07/2020 removed SavedIgnoreState}
 {14/09/2020 addengine}
 {18/09/2020 unfreeze}
@@ -7172,6 +7170,7 @@ The fact that TWellhoferData itself handles all currently known binary types can
 {19/10/2020 BinStream was held in memory but ascii data were read from the file again; now there is a direct transfer}
 {22/20/2020 SourceAxisSync more early}
 {17/11/2020 support automated continuous reading of multiple data sets in single text data set file format}
+{30/03/2021 resample and coordinateordering parameter dropped from advstreamdata}
 function TAnalyseForm.DataFileOpen(AFile         :String;
                                    ResetMultiScan:Boolean=True): Boolean;
 var
@@ -7192,8 +7191,8 @@ if Result then
       SourceAxisSync;
       ClearScreen(Self);
       UpdateSettings(Self);
-      DataEditor.Clear;
-      DataEditor.Modified     := False;
+      RawDataEditor.Clear;
+      RawDataEditor.Modified     := False;
       DataFromEditor          := False;
       MeasNormAdjustEdit.Value:= 100;
       PrevKey                 := #0;
@@ -7209,8 +7208,6 @@ if Result then
         Result:= AdvStreamData(nil,
                                0,                                               //multiple data sets should be structured within file, setting scancount
                                True,                                            //unfreeze
-                               MeasResampleItem   .Checked,
-                               MeasReMappingString.Text,
                                DetectedFileType,
                                AFile);
         if Result then
@@ -7239,7 +7236,7 @@ if Result then
           end
         else
           S.LoadFromFile(AFile);
-        DataEditor.Lines.LoadFromStream(S);
+        RawDataEditor.Lines.LoadFromStream(S);
         S.Free;
        {$ENDIF PRELOAD}
         ReadEditor(Self);                                                       //here the text data are send to engine[usedengine] and analysed
@@ -7278,7 +7275,7 @@ end; {~GetDisplayedPositionScale}
 {17/03/2020}
 procedure TAnalyseForm.DataEditorAddLine(ALine:String);
 begin
-DataEditor.Lines.Add(ALine);
+RawDataEditor.Lines.Add(ALine);
 end; {~dataeditoraddline}
 
 
@@ -7292,7 +7289,7 @@ begin
 {$IFDEF PRELOAD}
 PreloadTransfer(Self);
 {$ENDIF}
-if (AMemo=DataEditor) then
+if (AMemo=RawDataEditor) then
   begin
   if Length(AFileName)>0 then EditorFileName:= AFileName
   else                        AFileName     := EditorFileName;
@@ -7312,12 +7309,17 @@ try
 end; {~memosavetofile}
 
 
+(*
+SourceAxisSync updates axis settings for engine, based on information from GUI;
+When changed from a previous state, the reference will become invalid.
+*)
 {10/05/2016 make reference invalid when axissetup is changed, otherwise do nothing}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{19/03/2021 keep reforg valid}
 procedure TAnalyseForm.SourceAxisSync;
 
   function Transfer(t     :twcMeasAxis;
-                    Invert:Boolean   ): Boolean;
+                    Invert:Boolean    ): Boolean;
   var i: ShortInt;
   begin
   with Engines[UsedEngine] do
@@ -7330,10 +7332,7 @@ procedure TAnalyseForm.SourceAxisSync;
 
 begin
 if not (Transfer(Inplane,MeasInvertGTitem.Checked) and Transfer(Crossplane,MeasInvertABitem.Checked) and Transfer(Beam,MeasInvertUDitem.Checked)) then
-  begin
   Engines[UsedEngine].wSource[dsReference].twValid:= false;
-  Engines[UsedEngine].wSource[dsRefOrg   ].twValid:= false;
-  end;
 end; {~sourceaxissync}
 
 
@@ -9576,11 +9575,11 @@ end; {~formkeypress}
 {08/05/2020 and assigned(PreloadStream)}
 procedure TAnalyseForm.PreloadTransfer(Sender:TObject);
 begin
-if (DataEditor.Lines.Count=0) and assigned(PreloadStream) and (PreloadStream.Size>MinClipBoardBytes) then
+if (RawDataEditor.Lines.Count=0) and assigned(PreloadStream) and (PreloadStream.Size>MinClipBoardBytes) then
   begin                                                                         //preserve data created through other methods, and not yet cleared
   PreloadStream.Position:= 0;                                                   //it seems to be critical to set the stream position to zero
-  DataEditor.Lines.LoadFromStream(PreloadStream);                               //this might take a long time...
-  DataEditor.Modified:= False;                                                  //the data are already processed so modified should be false
+  RawDataEditor.Lines.LoadFromStream(PreloadStream);                            //this might take a long time...
+  RawDataEditor.Modified:= False;                                               //the data are already processed so modified should be false
   end;
 end; {~preloadtransfer}
 {$ENDIF}
