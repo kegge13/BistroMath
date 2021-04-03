@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 30/03/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 01/04/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -7269,7 +7269,7 @@ end; {~getpositionunitsstg}
 function TAnalyseForm.GetDisplayedPositionScale(cm:twcFloatType=1): twcFloatType;
 begin
 Result:= cm*ifthen(ViewMillimetersItem.Checked,10,1);                           //if mm wanted then multiply with 10
-end; {~GetDisplayedPositionScale}
+end; {~getdisplayedpositionscale}
 
 
 {17/03/2020}
@@ -7433,6 +7433,7 @@ results.
 {09/02/2021 added conditions PCRMRlinac and PCRelectron}
 {23/02/2021 introduced PCRfffShape, renamed PCRfff to PCRfffType}
 {02/03/2021 FFFfeatures}
+{01/04/2021 RunPanelElements: fieldsize needs its own local value (w)}
 procedure TAnalyseForm.PublishResults;
 var s                                 : String;
     ZeroShift,L,NotNormCenter         : Boolean;
@@ -7480,14 +7481,14 @@ var s                                 : String;
   end; {setcxresultvisible}
 
   procedure RunPanelElements;
-  var i,j                    : Integer;
-      decimals               : Word;
-      annotations,sLocal     : String;
-      ccolor,cdefault        : TColor;
-      cblock                 : CxBlock;
-      cbeam                  : Char;
-      tval,cval,cmulti,esteps: twcFloatType;
-      cvertical,cnm_NxorAbs  : Boolean;
+  var i,j                      : Integer;
+      decimals                 : Word;
+      annotations,sLocal       : String;
+      ccolor,cdefault          : TColor;
+      cblock                   : CxBlock;
+      cbeam                    : Char;
+      tval,cval,w,cmulti,esteps: twcFloatType;
+      cvertical,cnm_NxorAbs    : Boolean;
 
     function CheckCond(AFlag:Boolean;
                        ACond:SmallInt): Boolean;
@@ -7525,11 +7526,11 @@ var s                                 : String;
   try
     esteps:= Round(Engines[UsedEngine].wSource[dsMeasured].twBeamInfo.twbEnergy/DefEnergyUncertainty);
     if Engines[UsedEngine].ScanType in twcVertScans then
-      tval:= Engines[UsedEngine].GetFieldLength
+      w:= Engines[UsedEngine].GetFieldLength
     else
-      tval:= Engines[UsedEngine].GetFieldWidthCm(dsMeasured,dDerivative)/Engines[UsedEngine].wSource[dsmeasured].twSDD2SSDratio;
+      w:= Engines[UsedEngine].GetFieldWidthCm(dsMeasured,dDerivative)/Engines[UsedEngine].wSource[dsmeasured].twSDD2SSDratio;
    except
-    tval:= 0;
+    w:= 0;
    end;
   while i<j do
     begin
@@ -7551,7 +7552,7 @@ var s                                 : String;
            CheckCond(RefUseDivideByItem .Checked       ,PCRconditions[PCRisDivision    ]) and
            CheckCond(RefUseGammaItem    .Checked       ,PCRconditions[PCRisGamma       ]) and
            CheckCond(not SimpleModeItem .Checked       ,PCRconditions[PCRSimpleViewHide]) and
-           CheckFieldSize(PCRfieldSize,tval)                                              and
+           CheckFieldSize(PCRfieldSize,w)                                                 and
            ((PCRenergySteps=0)                                     or
             InRange(esteps,ifthen(PCRenergyDif<0,0,PCRenergySteps+PCRenergyDif),ifthen(PCRenergyDif>0,MaxInt,PCRenergySteps+PCRenergyDif)))
            then
@@ -7611,38 +7612,46 @@ var s                                 : String;
                             clRed,DefAnnotShift);
               AddAnnotation(pa_centered,
                             MeasMove2OriginItem.Checked,
-                            ifthen(twUsedEdgeLevel in [dDerivative,dInflection],DefWedgeCol,DefCenteredCol));
+                            ifthen(twAppliedEdgeLevel in [dDerivative,dInflection],DefWedgeCol,DefCenteredCol));
               AddAnnotation(pa_symmetric,
                             twSymCorrected,
                             DefSymCorrected);
               AddAnnotation(pa_userlevel,
                             MeasUserDoseItem.Checked or (PCRxrecord.Xtype='u') or (PCRxrecord.Ylevel=dUser),
                             ccolor,Num2Stg(UserBorderDose_perc.Value,0,0));
-              if PCRxrecord.Xtype='p' then                                 {----add penumbra to label}
+              if PCRxrecord.Xtype='p' then                                          //----add penumbra to label
                 begin
                 PCRunits     := '';
                 PCRlabelResult:= PCRlabel[1]+ifthen(PCRxrecord.Ylevel=dTemp,'*','')+
                                  Num2Stg(Engines[UsedEngine].PenumbraHi*100,0,0)+'-'+Num2Stg(Engines[UsedEngine].PenumbraLo*100,0,0);
                 end
-              else if PCRxrecord.Xtype='S' then                                     {----change label to extended symmetry}
+              else if PCRxrecord.Xtype='S' then                                     //----change label to extended symmetry
                 PCRlabelResult:= CleanUpCaption(ExtSymSubItems[ExtSym].Caption)
-              else if (PCRxrecord.Xtype in ['D','X','x','Y','y']) then              {----add convstg to label}
+              else if (PCRxrecord.Xtype in ['D','X','x','Y','y','Z','z']) then      //----add convstg to label
                 PCRlabelResult:= PCRxrecord.Xtype+ifthen(cvertical,'',ifthen(PCRxrecord.Xsign=1,'+',''))+
-                                 Num2Stg(PCRxrecord.X+ifthen(PCRxrecord.Xtype='X',twCenterPosCm,0),0,ifthen(PCRxrecord.Xtype='D',0,1))
-              else if (PCRxrecord.Xtype in ['r','R']) then                          {----add convstg to label for PEP}
+                                 Num2Stg(GetDisplayedPositionScale(ifthen(pa_Xactual in PCRannotations,PCRxrecord.X_actual,PCRxrecord.X)),0,ifthen(PCRxrecord.Xtype='D',0,-1))+
+                                 GetPositionUnitsStg
+              else if (PCRxrecord.Xtype in ['r','R']) then                          //----add convstg to label for PEP
                 begin
-                tval:= PCRxrecord.X*Engines[UsedEngine].wSource[dsMeasured].twWidthCm/(twSDD2SSDratio*200);
-                if (tval<2) or ViewMillimetersItem.Checked then
+                if pa_Xactual in PCRannotations then
                   begin
-                  sLocal:= 'mm';
-                  tval := tval*10;
+                  tval:= PCRxrecord.X_actual/twActDet2NormRatio;
+                  if (tval<2) or ViewMillimetersItem.Checked then
+                    begin
+                    sLocal:= 'mm';
+                    tval  := tval*10;
+                    end
+                  else
+                    sLocal:= 'cm';
                   end
                 else
-                  sLocal:= 'cm';
-                PCRlabelResult:= PCRlabel+ifthen(PCRxrecord.Xsign=1,'+','')+
-                           Num2Stg(tval,0,0)+sLocal;
+                  begin
+                  tval  := PCRxrecord.X;
+                  sLocal:= '%';
+                  end;
+                PCRlabelResult:= PCRlabel+ifthen(PCRxrecord.Xsign=1,'+','')+Num2Stg(tval,0,-1)+sLocal;
                 end
-              else if (PCRxrecord.Xtype='P') and (pa_RDD in PCRannotations) then    {----change label to RDD}
+              else if (PCRxrecord.Xtype='P') and (pa_RDD in PCRannotations) then    //----change label to RDD
                  begin
                  try
                    with Engines[UsedEngine].wSource[PCRxrecord.XSource] do
@@ -7652,7 +7661,7 @@ var s                                 : String;
                   end;
                  PCRlabelResult:= PCRlabelResult+PCRxrecord.ConvStg;
                  end;
-              SetLabel(cblock,PCRlabelResult,annotations);   {display label and annotations}
+              SetLabel(cblock,PCRlabelResult,annotations);                          //display label and annotations
               if cval=PCRxrecord.Xerrorval then
                 begin
                 cblock[CxValue].Visible:= True;
@@ -7804,14 +7813,14 @@ end; {~filesave}
 (*
 EvaluateInfoRecord implements the retrieval of data from TWellhoferData through
 identifiers defined in PanelElements:
-EvaluationXtypes=['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','s','S','T','u','w','X','x','Y','y',EmptyXtype];
+EvaluationXtypes=['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','s','S','T','u','w','X','x','Y','y','Z','z',EmptyXtype];
 ------
 Parameters with the exclamation symbol have a left and right result. Therefore the left result is obtained as -"evaluation type" and the right results as +"evaluation type". When no sign is given the result will be the average of left and right value.
 
     a                Area ratio
                        wSource[Xsource].twSymAreaRatio
   ! b                Border position based on edges user choices
-                       wSource[Xsource].twLevelPos[twUsedEdgeLevel].Penumbra[side].Calc;
+                       wSource[Xsource].twLevelPos[twAppliedEdgeLevel].Penumbra[side].Calc;
     c                Center position as defined by user's choices
                        wSource[Xsource].twCenterPosCm as defined by choices
     C                Curvature of fit of top, always in [cm^-2]
@@ -7867,7 +7876,7 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
   ! u                Edge at user value
                         wSource[Xsource].twLevelPos[dUser].Penumbra[side].Calc
     w                Width according menu choices
-                        wSource[Xsource].twLevelPos[twUsedEdgeLevel]
+                        wSource[Xsource].twLevelPos[twAppliedEdgeLevel]
     X  [[-|+]value]  y value at X
        center based   GetScaledQfValue((2*Ord(side)-1)*abs(X),relative,scNormalised,Xsource)
 
@@ -7917,6 +7926,7 @@ In the ResultsInfoRecord (see also PanelElements) the result is returned, includ
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {16/10/2020 fill ConvStg with dose level of border for u,U}
 {05/03/2021 added 'Q'}
+{02/04/2021 X_actual,twActDet2NormRatio}
 function TAnalyseForm.EvaluateInfoRecord(var ARec:ResultsInfoRecord): twcFloatType;
 var side     : twcSides;
     Ynorm,r,c: twcFloatType;
@@ -7924,7 +7934,7 @@ var side     : twcSides;
     Selection: Char;
     b        : Boolean;
 
-   function Yeff(ASource:twcDataSource): twcFloatType;
+   function Yeff(const ASource:twcDataSource): twcFloatType;
    begin
    with Engines[UsedEngine],wSource[ASource] do
      try
@@ -7935,7 +7945,7 @@ var side     : twcSides;
       end;
    end;
 
-  function SetLengthUnits(AUnitsType:UnitsType): twcFloatType;
+  function SetLengthUnits(const AUnitsType:UnitsType): twcFloatType;
   begin
   if ViewMillimetersItem.Checked and (ARec.Ymultiplier=1) then ARec.Y_mm:= AUnitsType
   else                                                         ARec.Y_mm:= no_Units;
@@ -7946,7 +7956,7 @@ var side     : twcSides;
    end;
   end;
 
-  function AssureSigmoidData(ASource:twcDataSource): Boolean;
+  function AssureSigmoidData(const ASource:twcDataSource): Boolean;
   begin
   with Engines[UsedEngine],wSource[ASource] do
     begin
@@ -7961,13 +7971,13 @@ var side     : twcSides;
   end;
 
 begin
-with Engines[UsedEngine],ARec do                                                          //Y_mm is changed from its default no_Units value here
+with Engines[UsedEngine],ARec do                                                //Y_mm is changed from its default no_Units value here
   begin
   USource  := Xsource;
   Result   := X;
   Sidedness:= True;
   Ynorm    := Math.Max(0.01,wSource[USource].twAppliedNormVal);
-  Xedge    := GetRelatedPositionType(wSource[USource].twUsedEdgeLevel);        //Xedge holds confirmed edge type, source Wellhofer with user's settings, and may be freely changed
+  Xedge    := GetRelatedPositionType(wSource[USource].twAppliedEdgeLevel);      //Xedge holds confirmed edge type, source Wellhofer with user's settings, and may be freely changed
   if Xtype='S' then                                                             //Extended symmetry according to menu choices
     case ExtSym of
       ExtSymLinacError: Selection:= 'L';
@@ -7986,7 +7996,7 @@ with Engines[UsedEngine],ARec do                                                
            end;
       'b': begin //border as based on edges user choices
            if MeasUserDoseItem.Checked then YLevel:= dUser
-           else                             YLevel:= Engines[UsedEngine].wSource[USource].twUsedEdgeLevel;
+           else                             YLevel:= Engines[UsedEngine].wSource[USource].twAppliedEdgeLevel;
            if (Xedge in [dUseDerivative,dUseInflection,dUseSigmoid50]) and (USource in twcFilteredCopies) then
              USource:= twcCoupledFiltered[USource];
            if (Ylevel=dUser) and (Xedge=dUseSigmoid50) then
@@ -8148,16 +8158,17 @@ with Engines[UsedEngine],ARec do                                                
       'r',
       'R': if ScanType in twcHoriScans then
              begin
-             Ylevel:= d50;
-             c     := wSource[Xsource].twCenterPosCm;
-             r     := wSource[Xsource].twLevelPos[YLevel].Penumbra[side].Calc-c;
-             if (Selection='R') and (Abs(r)>=5) then
+             Ylevel:= wSource[Xsource].twAppliedEdgeLevel;
+             c     := wSource[Xsource].twCenterPosCm;                           //center [cm]
+             r     := wSource[Xsource].twLevelPos[YLevel].Penumbra[side].Calc-c;//radius of field [cm]
+             if (Selection='R') and (Abs(r)>=1) then
                begin
-               Divisor:= ifthen(r>5.5,1,2);
-               r      := Round(Divisor*r)/Divisor;
+               Divisor:= ifthen(r>5.5,1,2);                                     //round to 1 cm when r>5.5 or to 0.5 cm for r<=5.5
+               r      := Round(Divisor*r)/Divisor;                              //multiply with divisor, and after rounding, divide again
                c      := Round(Divisor*c)/Divisor;
                end;
-             Y[side]  := GetScaledQfValue((2*Ord(side)-1)*abs(X*r/100)+c,False,scNormalised,Xsource);
+             X_actual := X*r/100;
+             Y[side]  := GetScaledQfValue((2*Ord(side)-1)*abs(X_actual)+c,False,scNormalised,Xsource);
              Result   := Y[side];
              Sidedness:= (Xsign<>0);
              end
@@ -8204,18 +8215,30 @@ with Engines[UsedEngine],ARec do                                                
            end;
       'w': begin  //Width according menu choices
            if MeasUserDoseItem.Checked then YLevel:= dUser
-           else                             YLevel:= Engines[UsedEngine].wSource[Usource].twUsedEdgeLevel;
+           else                             YLevel:= Engines[UsedEngine].wSource[Usource].twAppliedEdgeLevel;
            if (YLevel=dInflection) and (Usource in twcFilteredCopies) then
              Usource:= twcCoupledFiltered[Usource];
              Result:= SetLengthUnits(Units_in_numerator)*GetFieldWidthCm(USource,Ylevel);
            Sidedness:= False;
            end;
       'x',
-      'X': begin
-           Y[side]  := GetScaledQfValue((2*Ord(side)-1)*abs(X),Selection='X',scNormalised,Usource);
-           Result   := Y[side];
-           Sidedness:= (Xsign<>0);
-           end;
+      'z',
+      'X',
+      'Z': with wSource[Usource] do
+             begin
+             if (LowerCase(Selection)='z') and (ScanType in twcHoriscans) then
+               r:= twActDet2NormRatio                                           //ratio of used SDD to standard SSD, corrected for already applied scaling
+             else
+               r:= 1;
+             if (Selection in ['X','Z']) and twCenterPosValid then
+               c:= twCenterPosCm                                                //relative to center
+             else
+               c:= 0;
+             X_actual := (X+c)*r;                                               //for Z-scaling the best choice is to apply it also on the center position
+             Y[side]  := GetScaledQfValue((2*Ord(side)-1)*abs(X_actual),False,scNormalised,Usource);
+             Result   := Y[side];
+             Sidedness:= (Xsign<>0);
+             end;
       'y',
       'Y': begin
            with wCurveInfo,wSource[USource] do

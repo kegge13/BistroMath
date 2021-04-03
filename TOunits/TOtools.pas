@@ -1,4 +1,4 @@
-unit TOtools; {© Theo van Soest, Lazarus 2.0.10/FPC 3.2.0: 2019 - 30/10/2020}
+unit TOtools; {© Theo van Soest, Lazarus 2.0.12/FPC 3.2.0: 2019 - 02/04/2021}
 {$mode objfpc}{$h+}
 {$BOOLEVAL OFF,WARN SYMBOL_PLATFORM OFF}
 
@@ -43,7 +43,7 @@ function  NeededDecimals(AValue                   :Extended;
                          SignificantDigits        :Word    =1;
                          IncludeLeadingZeros      :Boolean =True       ): Word;
 function  Num2Stg(const Value                     :Extended;
-	                Field,Deci                :ShortInt;
+	          Field,Deci                      :ShortInt;                        //negative deci will be set to zero when fraction is zero
                   Fill                            :Char    =#32        ): String;   overload;
 function  Num2Stg(const Value                     :Int64;
                   Field                           :ShortInt=0;
@@ -356,7 +356,7 @@ end; {waitloop}
 function MemAvail: Int64;
 var HS: THeapStatus;
 begin
-Hs:= GetHeapStatus;
+Hs    := GetHeapStatus;
 Result:= HS.TotalFree;
 end; {memavail}
 
@@ -410,16 +410,21 @@ end; {neededdecimals}
 
 
 {17/03/2000, 25/02/2015}
-function Num2Stg(const Value:Extended;
-                 Field,Deci    :ShortInt;
-                 Fill          :Char=#32): String;
+{02/04/2021 support for negative Deci}
+function Num2Stg(const Value:Double;
+                 Field,Deci :ShortInt;
+                 Fill       :Char=#32): String;
 var i,j: ShortInt;
     Stg: String;
 begin
-i:= 0; j:= 0;
-Set_Field_Deci(Value,i,j,False);  Field:= Max(Field,i);  Deci:= Max(Deci,j);
-Stg:= Format('%*.*f',[Field,Deci,Value]);
-if Fill<>#32 then Stg:= AnsiReplaceStr(Stg,#32,Fill);
+i:= 0;
+j:= 0;
+Set_Field_Deci(Value,i,j,False);
+Field:= Max(Field,i);
+Deci := ifthen((Deci<0) and (Value=Round(Value)),0,Max(Abs(Deci),j));
+Stg  := Format('%*.*f',[Field,Deci,Value]);
+if Fill<>#32 then
+  Stg:= AnsiReplaceStr(Stg,#32,Fill);
 if DefaultFormatSettings.DecimalSeparator<>'.' then Result:= AnsiReplaceStr(Stg,'.',DefaultFormatSettings.DecimalSeparator)
 else                                                Result:= Stg;
 end; {num2stg}
