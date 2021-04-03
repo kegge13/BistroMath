@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 30/03/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 02/04/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2467,7 +2467,7 @@ type
   {12/12/2015 twFFFdetected}
   {20/12/2015 twTopModel added, twMinVal removed}
   {15/11/2016 added twCenterPosDefUse}
-  {11/01/2017 added twUsedEdgeLevel}
+  {11/01/2017 added twAppliedEdgeLevel}
   {14/01/2017 added twSigmoidOffsetCm}
   {23/11/2017 added twFlatPosCm,twSymAreaRatio}
   {12/01/2018 added twAbsNormConfig to note used info from modlist}
@@ -2477,6 +2477,7 @@ type
   {21/07/2020 removed twIsWedgedProfile}
   {27/08/2020 reintroduced twMaxPosCm,twMaxValue; twTopModel now only used for fitresults of top}
   {23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff}
+  {02/04/2021 added twActDet2NormRatio}
   twCurveDataRec=record
     twAbsNormConfig  : Boolean;       {a configured value/position is used to normalise}
     twAbsNormDefUse  : twcPositionUseType;
@@ -2552,43 +2553,44 @@ type
    {$IFDEF POSINTEGRAL}
     twPosIntegral    : twcFloatType;
    {$ENDIF}
-    twRelAvgInField  : twcFloatType;                                            //average value within in-field area
-    twRelMinInField  : twcFloatType;
-    twRelMaxInField  : twcFloatType;
-    twRefNormFactor  : twcFloatType;
-    twRelNormPosCm   : twcFloatType;
-    twRelNormValue   : twcFloatType;
-    twResampled      : Boolean;
-    twPosScaling     : twcFloatType;                                            //scaling => twPosScaling:=twSDD2SSDratio/twSSD2NormRatio
-    twRelatedSource  : twcDataSource;
-    twScanAngle      : twcFloatType;                                            //CW angle from AB-axis
-    twScanDevice     : String;
-    twScanFirst      : Integer;
-    twScanLast       : Integer;
-    twScanNr         : Integer;
-    twScanLength     : twcFloatType;
-    twScanTypeString : String;
-    twSelf           : twcDataSource;
-    twSetFieldType   : twcFieldClass;
-    twShiftCm        : twcFloatType;
-    twSigmoidDone    : Boolean;
-    twSigmoidFitData : array[twcSides] of twFitRecord;                          //fit results are based on raw, unscaled data, but with twSigmoidOffsetCm included
-    twSSD_cm         : twcFloatType;
-    twSDD2SSDratio   : twcFloatType;
-    twSSD2NormRatio  : twcFloatType;                                            //ratio of used SSD to standard SSD}
-    twSNR            : twcFloatType;
-    twVector_ICD_cm  : array[twcStartStopType] of twcCoordinate;
-    twStepSizeCm     : twcFloatType;
-    twStepSign       : SmallInt;
-    twSymCorrected   : Boolean;
-    twSymmetry       : twcFloatType;
-    twSymLinacError  : twcFloatType;
-    twSymAreaRatio   : twcFloatType;
-    twTag            : Integer;
-    twTopModel       : TQuadFitReport;
-    twUsedEdgeLevel  : twcDoseLevel;                                            //the actually applied dose level for border positions
-    twValid          : Boolean;
-    twWidthCm        : twcFloatType;                                            //width at edge level
+    twRelAvgInField   : twcFloatType;                                           //average value within in-field area
+    twRelMinInField   : twcFloatType;
+    twRelMaxInField   : twcFloatType;
+    twRefNormFactor   : twcFloatType;
+    twRelNormPosCm    : twcFloatType;
+    twRelNormValue    : twcFloatType;
+    twResampled       : Boolean;
+    twPosScaling      : twcFloatType;                                           //scaling => twSDD2SSDratio*twSSD2NormRatio (when applied)
+    twRelatedSource   : twcDataSource;
+    twScanAngle       : twcFloatType;                                           //CW angle from AB-axis
+    twScanDevice      : String;
+    twScanFirst       : Integer;
+    twScanLast        : Integer;
+    twScanNr          : Integer;
+    twScanLength      : twcFloatType;
+    twScanTypeString  : String;
+    twSelf            : twcDataSource;
+    twSetFieldType    : twcFieldClass;
+    twShiftCm         : twcFloatType;
+    twSigmoidDone     : Boolean;
+    twSigmoidFitData  : array[twcSides] of twFitRecord;                         //fit results are based on raw, unscaled data, but with twSigmoidOffsetCm included
+    twSSD_cm          : twcFloatType;
+    twSDD2SSDratio    : twcFloatType;
+    twSSD2NormRatio   : twcFloatType;                                           //ratio of used SSD to standard SSD
+    twActDet2NormRatio: twcFloatType;                                           //ratio of detector to standard SSD: twSDD2SSDratio*twSSD2NormRatio/twPosScaling;
+    twSNR             : twcFloatType;
+    twVector_ICD_cm   : array[twcStartStopType] of twcCoordinate;
+    twStepSizeCm      : twcFloatType;
+    twStepSign        : SmallInt;
+    twSymCorrected    : Boolean;
+    twSymmetry        : twcFloatType;
+    twSymLinacError   : twcFloatType;
+    twSymAreaRatio    : twcFloatType;
+    twTag             : Integer;
+    twTopModel        : TQuadFitReport;
+    twAppliedEdgeLevel: twcDoseLevel;                                           //the actually applied dose level for border positions
+    twValid           : Boolean;
+    twWidthCm         : twcFloatType;                                           //width at edge level
   end;
 
   twCurveDataPtr=^twCurveDataRec;
@@ -8694,112 +8696,112 @@ var r: twcNMpddFits;
 begin
 with ACurveRec,twBeamInfo do
   begin
-  Freeze           := False;
-  twBEnergy        := twcDefaultEnergy_MeV;
+  Freeze            := False;
+  twBEnergy         := twcDefaultEnergy_MeV;
   if twcGenericToElectron then twBModality:= 'E'
   else                         twBModality:= 'X';
-  twBWedge         := 0;
-  twBGantry        := 0;
-  twBGantryScale   := twCW_180_Down;
-  twBCollimator    := 0;
-  twBSAD_cm        := FDefaultSSDcm;
-  twBApplicator    := '';
-  twBASD           := 0;
-  twBFieldLo       := Fill_FieldDescrArr(UndefinedVal/2);
-  twBFieldHi       := twBFieldLo;
-  twBMedium        := 'water';
-  twBTrayTransm    := 0;
-  twAbsNormPosCm   := 0;
-  twAbsNormConfig  := False;
-  twAbsNormValue   := 0;
-  twAppliedNormVal := 0;
-  twAnalysed       := False;
-  twAvgNormValue   := 0;
-  twBackGround     := 0;
-  twAbsNormDefUse  := dUseUndefined;
-  twCenterPosDefUse:= dUseUndefined;
-  twCenterPosCm    := 0;
-  twCenterPosValid := False;
-  twCenterArr      := 0;
-  twComposite      := False;
-  twCurveIDString  := '';
-  twDataFirst      := 0;
-  twDataLast       := 0;
-  twDataHistoryStg := '';
-  twDevice         := '';
-  twFastScan       := False;
-  twFFFdetected    := False;
-  twFileIDString   := '';
-  twFileName       := '';
-  twFilmData       := False;
-  twFilterPoints   := 0;
-  twFilterString   := '';
-  twFittedData     := False;
-  twInFieldAreaOk  := False;
-  twFlatness       := 0;
-  twIsDerivative   := False;
-  twIsDiagonal     := False;
-  twIsFiltered     := False;
-  twIsGamma        := False;
-  twSSD_cm         := twcDefaultSSDcm[fcStandard];
+  twBWedge          := 0;
+  twBGantry         := 0;
+  twBGantryScale    := twCW_180_Down;
+  twBCollimator     := 0;
+  twBSAD_cm         := FDefaultSSDcm;
+  twBApplicator     := '';
+  twBASD            := 0;
+  twBFieldLo        := Fill_FieldDescrArr(UndefinedVal/2);
+  twBFieldHi        := twBFieldLo;
+  twBMedium         := 'water';
+  twBTrayTransm     := 0;
+  twAbsNormPosCm    := 0;
+  twAbsNormConfig   := False;
+  twAbsNormValue    := 0;
+  twAppliedNormVal  := 0;
+  twAnalysed        := False;
+  twAvgNormValue    := 0;
+  twBackGround      := 0;
+  twAbsNormDefUse   := dUseUndefined;
+  twCenterPosDefUse := dUseUndefined;
+  twCenterPosCm     := 0;
+  twCenterPosValid  := False;
+  twCenterArr       := 0;
+  twComposite       := False;
+  twCurveIDString   := '';
+  twDataFirst       := 0;
+  twDataLast        := 0;
+  twDataHistoryStg  := '';
+  twDevice          := '';
+  twFastScan        := False;
+  twFFFdetected     := False;
+  twFileIDString    := '';
+  twFileName        := '';
+  twFilmData        := False;
+  twFilterPoints    := 0;
+  twFilterString    := '';
+  twFittedData      := False;
+  twInFieldAreaOk   := False;
+  twFlatness        := 0;
+  twIsDerivative    := False;
+  twIsDiagonal      := False;
+  twIsFiltered      := False;
+  twIsGamma         := False;
+  twSSD_cm          := twcDefaultSSDcm[fcStandard];
   FillChar(twFFFslope    ,SizeOf(twFFFslope    ),0);
   FillChar(twInFieldArr  ,SizeOf(twInFieldArr  ),0);
   FillChar(twInFieldPosCm,SizeOf(twInFieldPosCm),0);
-  twTopModel       :=  Default(TQuadFitReport);
+  twTopModel        :=  Default(TQuadFitReport);
   Finalize(twExtraText);
-  twLocalPeak      := False;
-  twAlignedTo      := twSelf;
-  twMayneordApplied:= False;
-  twSigmoidDone    := False;
-  twMeasTime       := '';
-  twLinSlope       :=   0;
-  twMaxArr         :=   0;
-  twMaxPosCm       :=   0;
-  twMaxValue       :=   0;
-  twRelMaxInField  :=   0;
-  twMinArr         :=   0;
-  twRelMinInField  :=   0;
-  twFirstDataPosCm :=   0;
-  twLastDataPosCm  :=   0;
-  twOriginPosValid := False;
-  twPDD10          :=   0;
-  twPDD20          :=   0;
-  twPlotScaling    :=   0;
-  twPoints         :=   0;
+  twLocalPeak       := False;
+  twAlignedTo       := twSelf;
+  twMayneordApplied := False;
+  twSigmoidDone     := False;
+  twMeasTime        := '';
+  twLinSlope        :=   0;
+  twMaxArr          :=   0;
+  twMaxPosCm        :=   0;
+  twMaxValue        :=   0;
+  twRelMaxInField   :=   0;
+  twMinArr          :=   0;
+  twRelMinInField   :=   0;
+  twFirstDataPosCm  :=   0;
+  twLastDataPosCm   :=   0;
+  twOriginPosValid  := False;
+  twPDD10           :=   0;
+  twPDD20           :=   0;
+  twPlotScaling     :=   0;
+  twPoints          :=   0;
  {$IFDEF POSINTEGRAL}
-  twPosIntegral    :=   0;
+  twPosIntegral     :=   0;
  {$ENDIF}
-  twRefNormFactor  :=   0;
-  twRelNormPosCm   :=   0;
-  twRelNormValue   :=   0;
-  twScanDevice     := '';
-  twScanFirst      :=   0;
-  twScanLast       :=   0;
-  twScanNr         :=   0;
-  twScanLength     :=   0;
-  twShiftCm        :=   0;
-  twSNR            :=   0;
-  twStepSizeCm     :=   0;
-  twStepSign       :=   0;
-  twSymmetry       :=   0;
-  twSymAreaRatio   :=   0;
-  twSymLinacError  :=   0;
-  twTag            :=   0;
-  twWidthCm        :=   0;
-  twLocked         := False;
-  twMirrored       := False;
-  tw2DoseConv      := False;
-  twOD2doseFilm    := '';
-  twOriginalFormat := twcWellhoferAscii_v6;
-  twIsRelative     := False;
-  twDerivativeValid:= False;
-  twResampled      := False;
-  twSelf           := dsMeasured;
-  twRelatedSource  := twSelf;
-  twSymCorrected   := False;
-  twUsedEdgeLevel  := d50;
-  twValid          := False;
-  twOriginalFormat := FileFormat;
+  twRefNormFactor   :=   0;
+  twRelNormPosCm    :=   0;
+  twRelNormValue    :=   0;
+  twScanDevice      := '';
+  twScanFirst       :=   0;
+  twScanLast        :=   0;
+  twScanNr          :=   0;
+  twScanLength      :=   0;
+  twShiftCm         :=   0;
+  twSNR             :=   0;
+  twStepSizeCm      :=   0;
+  twStepSign        :=   0;
+  twSymmetry        :=   0;
+  twSymAreaRatio    :=   0;
+  twSymLinacError   :=   0;
+  twTag             :=   0;
+  twWidthCm         :=   0;
+  twLocked          := False;
+  twMirrored        := False;
+  tw2DoseConv       := False;
+  twOD2doseFilm     := '';
+  twOriginalFormat  := twcWellhoferAscii_v6;
+  twIsRelative      := False;
+  twDerivativeValid := False;
+  twResampled       := False;
+  twSelf            := dsMeasured;
+  twRelatedSource   := twSelf;
+  twSymCorrected    := False;
+  twAppliedEdgeLevel:= d50;
+  twValid           := False;
+  twOriginalFormat  := FileFormat;
   for r:= NM_Primary to NM_Extrapolation do with twPddFitData[r] do
     begin
     twFitValid:= False;
@@ -10900,6 +10902,8 @@ reference is loaded
             ...else if TakeReferenceOrg then TakeReferenceOrg... out of ...if FAutoLoadRef then LoadReference...
             TakeReferenceOrg should be called by LoadReference only}
 {07/03/2021 detect fcMRlinac field type, twcDefaultSSD_MRcm}
+{31/03/2021 twSSD2NormRatio implemented}
+{02/04/2021 twActDet2NormRatio}
 function TWellhoferData.PrepareProfile: Boolean;
 var i,j        : Integer;
     mAxis      : twcMeasAxis;
@@ -11022,18 +11026,20 @@ with wCurveInfo do
     twVector_ICD_cm[Stop ]:= twCoordinates[twDataLast ];
     for mAxis:= Inplane to Beam do                                              //will be used to derive scanangle in OmniPro v6 GTABUD coordinate system
       tmpCoord.m[mAxis]:= twVector_ICD_cm[Stop].m[mAxis]-twVector_ICD_cm[Start].m[mAxis];
-    twSSD_cm         := Max(1,twSSD_cm);
     if wFieldTypeDetection[fcMRlinac] and (Pos(Linac,wMRlinacTUlist)>0) then
       twSetFieldType:= fcMRlinac;
-    FDefaultSSDcm    := twcDefaultSSDcm[twSetFieldType];
-    twSDD2SSDratio   := ifthen(abs(twVector_ICD_cm[Start].m[Beam]-twVector_ICD_cm[Stop].m[Beam])<0.1,1+twVector_ICD_cm[Start].m[Beam]/Max(10,Abs(twSSD_cm)),1);
-    twPosScaling     := Max(0.1,ifthen(wScaleSDD2SSD,Max(1,twSDD2SSDratio),1)*ifthen(wScale2DefaultSSD,twSSD_cm/Max(10,FDefaultSSDcm),1));
-    twResampled      := False;
-    twSelf           := dsMeasured;
-    twAlignedTo      := dsMeasured;
-    twConfidenceLimit:= 0;
-    varAxisHex       := 0;
-    twPosCmExportSign:= 1;
+    twSSD_cm          := Max(10,Abs(twSSD_cm));
+    FDefaultSSDcm     := Max(10,Abs(twcDefaultSSDcm[twSetFieldType]));
+    twSSD2NormRatio   := twSSD_cm/FDefaultSSDcm;
+    twSDD2SSDratio    := ifthen(Abs(twVector_ICD_cm[Start].m[Beam]-twVector_ICD_cm[Stop].m[Beam])<0.2,1+twVector_ICD_cm[Start].m[Beam]/twSSD_cm,1);
+    twPosScaling      := Max(0.1,ifthen(wScaleSDD2SSD,Max(1,twSDD2SSDratio),1)*ifthen(wScale2DefaultSSD,twSSD2NormRatio,1));
+    twActDet2NormRatio:= twSDD2SSDratio*twSSD2NormRatio/twPosScaling;
+    twResampled       := False;
+    twSelf            := dsMeasured;
+    twAlignedTo       := dsMeasured;
+    twConfidenceLimit := 0;
+    varAxisHex        := 0;
+    twPosCmExportSign := 1;
     for mAxis:= Inplane to Beam do
       begin                                                                     //set refpoint to first datapoint
       twDesVaryingAxis[mAxis]:= Abs(twVector_ICD_cm[Stop ].m[mAxis]-twVector_ICD_cm[Start].m[mAxis])>0.5;
@@ -13321,6 +13327,7 @@ end; {~exportwmsprofile}
 {22/05/2020 twSigmoidDone}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff}
+{02/04/2021 twActDet2NormRatio}
 procedure TWellhoferData.CopyParameters(var ASource,ADestination:twCurveDataRec);
 begin
 with ADestination do
@@ -13419,6 +13426,7 @@ with ADestination do
   twSSD_cm          := ASource.twSSD_cm;
   twSDD2SSDratio    := ASource.twSDD2SSDratio;
   twSSD2NormRatio   := ASource.twSSD2NormRatio;
+  twActDet2NormRatio:= ASource.twActDet2NormRatio;
   twShiftCm         := ASource.twShiftCm;
   twSNR             := ASource.twSNR;
   twVector_ICD_cm   := ASource.twVector_ICD_cm;
@@ -13430,7 +13438,7 @@ with ADestination do
   twSymLinacError   := ASource.twSymLinacError;
   twTag             := ASource.twTag;
   twTopModel        := ASource.twTopModel;
-  twUsedEdgeLevel   := ASource.twUsedEdgeLevel;
+  twAppliedEdgeLevel:= ASource.twAppliedEdgeLevel;
   twValid           := ASource.twValid;
   twWidthCm         := ASource.twWidthCm;
   end;
@@ -14251,8 +14259,8 @@ if (not FFrozen)                                    and
   Cm:= 0;
   if not M then
     begin
-    MEdgeType:= wSource[ASource   ].twUsedEdgeLevel;
-    REdgeType:= wSource[AReference].twUsedEdgeLevel;
+    MEdgeType:= wSource[ASource   ].twAppliedEdgeLevel;
+    REdgeType:= wSource[AReference].twAppliedEdgeLevel;
     if wRefAlignPeak and (wSource[ASource].twSetFieldType=fcFFF) and (wSource[AReference].twSetFieldType=fcFFF) then
       Cm:= wSource[AReference].twMaxPosCm-wSource[ASource].twMaxPosCm
     else if wSource[AReference].twCenterPosValid and wSource[ASource].twCenterPosValid then
@@ -14784,7 +14792,7 @@ var IgnoreSet: twcIgnoreSet;
                         Offset :twcFloatType): twcFloatType;
   begin
   with wSource[tSource] do
-    Result:= twLevelPos[twUsedEdgeLevel].Penumbra[tSide].Calc+OffSet;
+    Result:= twLevelPos[twAppliedEdgeLevel].Penumbra[tSide].Calc+OffSet;
   end;
 
 begin
@@ -16630,10 +16638,14 @@ if (not FFrozen) and (FirstPosCm<LastPosCm) then
 end; {~integrate}
 
 
-(* ****BistroMath core function****
+(* Derive ****BistroMath core function****
 This function is original work of Theo van Soest.
+input : filterwidth
+        data source
+        data destination
+        prefilter
 output: wSource[ADestination].twLevelPos[dDerivative], and (in most cases)
-                               twCenterPosCm, twUsedEdgeLevel
+                               twCenterPosCm, twAppliedEdgeLevel
 Calculating a derivative by definition calculates differences, and therefore increases the noise.
 For standard conventional profiles the process could stop there. One clear positive and negative peak aar found.
 For wedges the situation is not obvious. The high dose side will be found without problems,
@@ -16676,7 +16688,7 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
 function TWellhoferData.Derive(cm          :twcFloatType =twcDefaultValue;
                                ASource     :twcDataSource=dsMeasured;
                                ADestination:twcDataSource=dsCalculated;
-                               PreFilter   :Boolean     =False): twcFloatType;
+                               PreFilter   :Boolean      =False): twcFloatType;
 const PeakRatio=2;
 var L                   : TLinFit;
     i,j,k,m,P1,P2,Pc,
@@ -17066,7 +17078,7 @@ if (not FFrozen) and wSource[ASource].twValid then
             end;
           if wCenterDefinition[twSetFieldType]=CenterPenumbra then
             twCenterPosCm:= (Calc+twCenterPosCm)/2;
-          twUsedEdgeLevel:= dDerivative;
+          twAppliedEdgeLevel:= dDerivative;
           end;
         if LogLevel>2 then
           StatusMessage(Format('->Derivative curve[%d]: %0.3f cm (%d) / %0.3f cm (%d)',
@@ -17954,9 +17966,16 @@ with wSource[ASource] do
 end; {~qfitmaxpos}
 
 
-//****BistroMath core function****
+
 {$push}{$warn 5057 off}
-(* This function is original work of Theo van Soest.
+(* FindLevelPos   ****BistroMath core function****
+input : source
+        dose level
+        keep symmetric option
+needed: twAbsNormValue
+output: true if both borders are found for dose level
+result: fills twLevelPos[dose level]
+This function is original work of Theo van Soest.
 For a given level this function searches the left and right position where that level can be found.
 This is stored in the twLevelPos array, indexed with levels described in
     twcDoseLevel      =(dLow,dHigh,d20,d50,d80,d90,dUser,dDerivative,dInflection,dSigmoid50,dTemp);
@@ -17983,7 +18002,7 @@ To improve speed, old results are checked to see if a certain actual level is al
             if wMaxAsCenterPos do not take twcenterpos from derivative}
 {22/07/2016 wCenterDefinition}
 {15/11/2016 twCenterDefUse}
-{11/01/2017 toepassing wEdgeFallBackCm, twUsedEdgeLevel}
+{11/01/2017 toepassing wEdgeFallBackCm, twAppliedEdgeLevel}
 {16/01/2017 step inward search preceded by step outward prephase to handle multiple peaks}
 {17/01/2017 LevelPos[dDerivative],LevelPos[dInflection],LevelPos[dSigmoid50] are always calculated when wFFFdetection is true}
 {18/01/2017 wCenterDefinition=Centerorigin handled}
@@ -17993,13 +18012,13 @@ To improve speed, old results are checked to see if a certain actual level is al
 {26/10/2018 step inward valid changed to larger OR equal: (Nearest>=twMaxArr) and (t>=n)}
 {05/06/2020 UserLevelAsBorder}
 {17/06/2020 dTemp as new last element}
-{09/07/2020 twEdgeDefUse:= GetRelatedEdgeType(twUsedEdgeLevel)
+{09/07/2020 twEdgeDefUse:= GetRelatedEdgeType(twAppliedEdgeLevel)
             twEdgeDefUse depends no longer on (wCenterDefinition[FieldClass]=CenterPenumbra)}
 {05/11/2020 do not initialise Lpos and Rpos anymore for findcalcrange}
 {19/02/2021 alternative version findcalcrange}
 function TWellhoferData.FindLevelPos(ASource          :twcDataSource=dsMeasured;
                                      ALevel           :twcDoseLevel =d50;
-                                     Symmetric        :Boolean     =True): Boolean;
+                                     Symmetric        :Boolean      =True): Boolean;
 var WantedLevel,DifLevel,MinDifLevel,CurrentLevel: twcFloatType;
     i,tmpL,tmpR,Lpos,Rpos                        : Integer;                     //array indexes
     b,StepOutward                                : Boolean;
@@ -18154,6 +18173,8 @@ end; {~findlevelpos}
 
 
 (*   FindEdge   ****BistroMath core function****
+input : source, twSetFieldType
+result: twAppliedEdgeLevel, twSetFieldType
 makes adjustments to twSetFieldType
 calls derviative and sigmoid
 sets edge based values dependent on field class
@@ -18165,7 +18186,7 @@ sets edge based values dependent on field class
             synchronise twSetFieldType}
 {21/07/2020 GetAdjustedFilterWidthCm}
 {27/08/2020 twMaxPosCm, twMaxValue}
-{16/10/2020 fallback detetction still used d50-Derivative instead of fcFallBack-fcPrimary}
+{16/10/2020 fallback detection still used d50-Derivative instead of fcFallBack-fcPrimary}
 function TWellhoferData.FindEdge(ASource:twcDataSource=dsMeasured): Boolean;
 var FieldClass   : twcFieldClass;
     SigmoidNeeded: Boolean;
@@ -18201,14 +18222,14 @@ if Result then
       wSource[ASource].twSetFieldType:= fcSmall;
     end;
   FieldClass                       := wSource[ASource].twSetFieldType;
-  SigmoidNeeded                    := (wSource[ASource].twUsedEdgeLevel  in [dInflection,dSigmoid50]) or
+  SigmoidNeeded                    := (wSource[ASource].twAppliedEdgeLevel  in [dInflection,dSigmoid50]) or
                                       (wEdgeMethod[fcPrimary,FieldClass] in [dInflection,dSigmoid50]);
   wSource[ASource].twCenterPosValid:= False;                                    //reset key elements
   wSource[ASource].twInFieldAreaOk := False;
   tSource                          := ASource;                                  //initially tSource is equal to ASource
-  if wApplyUserLevel then wSource[ASource].twUsedEdgeLevel:= dUser
-  else                    wSource[ASource].twUsedEdgeLevel:= wEdgeMethod[fcPrimary,FieldClass];
-  if (wEdgeDetect or wFieldTypeDetection[fcFFF] or (wSource[ASource].twUsedEdgeLevel=dDerivative) or SigmoidNeeded) and
+  if wApplyUserLevel then wSource[ASource].twAppliedEdgeLevel:= dUser
+  else                    wSource[ASource].twAppliedEdgeLevel:= wEdgeMethod[fcPrimary,FieldClass];
+  if (wEdgeDetect or wFieldTypeDetection[fcFFF] or (wSource[ASource].twAppliedEdgeLevel=dDerivative) or SigmoidNeeded) and
      (not wSource[ASource].twIsRelative) and (ASource<>dsBuffer) then
     begin
     if (ASource in twcFilteredCopies) then
@@ -18228,11 +18249,11 @@ if Result then
             ( (GetLevelDistance(wEdgeMethod[fcFallBack,FieldClass],wEdgeMethod[fcPrimary,FieldClass],twcLeft ,tSource)>wEdgeFallBackCm) or
               (GetLevelDistance(wEdgeMethod[fcFallBack,FieldClass],wEdgeMethod[fcPrimary,FieldClass],twcRight,tSource)>wEdgeFallBackCm)   );
     if Result then
-      wSource[ASource].twUsedEdgeLevel:= wEdgeMethod[fcFallBack,FieldClass];
+      wSource[ASource].twAppliedEdgeLevel:= wEdgeMethod[fcFallBack,FieldClass];
     if SigmoidNeeded then
       begin
       if not SigmoidPenumbraFit(tSource) then                                   //try to fit sigmoid function; always on unfiltered data (tSource)
-        wSource[ASource].twUsedEdgeLevel:= dDerivative                          //sigmoidfit failed; fall back to derivative
+        wSource[ASource].twAppliedEdgeLevel:= dDerivative                       //sigmoidfit failed; fall back to derivative
        else if (ASource=dsMeasured) and wApplySigmoidToBuffer then              //improved speed
          ApplySigmoidPenumbraFit(tSource,dsBuffer);
       end;
@@ -18241,15 +18262,15 @@ if Result then
     begin
     for p:= dInflection to dSigmoid50 do
        wSource[ASource].twLevelPos[p]:= wSource[tSource].twLevelPos[p];
-    wSource[ASource].twUsedEdgeLevel:= wSource[tSource].twUsedEdgeLevel;        //decisions are also based on unfiltered data
+    wSource[ASource].twAppliedEdgeLevel:= wSource[tSource].twAppliedEdgeLevel;        //decisions are also based on unfiltered data
     end;
   with wSource[ASource] do
     begin
     if wCenterDefinition[FieldClass]=CenterPenumbra then                        //check center several definitions
-      SetCenterOnPenumbra(twUsedEdgeLevel)
+      SetCenterOnPenumbra(twAppliedEdgeLevel)
     else if (wCenterDefinition[FieldClass]=CenterOrigin)             and
-            (twLevelPos[twUsedEdgeLevel].Penumbra[twcLeft ].Calc<=0) and
-             (twLevelPos[twUsedEdgeLevel].Penumbra[twcRight].Calc>=0) then
+            (twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft ].Calc<=0) and
+             (twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc>=0) then
       begin
       twCenterPosCm    := 0;
       twCenterPosDefUse:= dUseOrigin;
@@ -18267,15 +18288,15 @@ if Result then
     if not Result then
       twCenterPosDefUse:= dUseUndefined;
     twCenterArr:= NearestPosition(twCenterPosCm,ASource);
-    twWidthCm  := GetFieldWidthCm(ASource,twUsedEdgeLevel);
+    twWidthCm  := GetFieldWidthCm(ASource,twAppliedEdgeLevel);
     if not twDerivativeValid then
-      twLevelPos[dDerivative]:= twLevelPos[twUsedEdgeLevel];
+      twLevelPos[dDerivative]:= twLevelPos[twAppliedEdgeLevel];
    end; {with}
  end; {if}
 end; {~findedge}
 
 
-(* ****BistroMath core function****
+(* FastScan  ****BistroMath core function****
 FastScan locates the position of the profile, nu asumptions are made other than
 twScanFirst and twScanlast which can be used for a local peak search.
 Profiles not crossing the origin at all are accepted, but unsupported in most dosimetry protocols.
@@ -18491,7 +18512,7 @@ with wSource[ASource] do
                     //wSource[dsMeasured].twBeamInfo.twBWedge:= 0;  {test}
                     FindLevelPos(ASource,d50);
                     FindLevelPos(ASource,d90);
-                    FindEdge(ASource);         //-----FindEdge--------uses current field type, sets twUsedEdgeLevel---------------
+                    FindEdge(ASource);         //-----FindEdge--------uses current field type, sets twAppliedEdgeLevel---------------
                     if not (twIsDerivative or twIsRelative or twIsGamma) then
                       begin
                       if wFieldTypeDetection[fcWedge] and (twSetFieldType<>fcElectron) then
@@ -18693,7 +18714,7 @@ var s: twcDataSource;
         with wSource[ASource] do
           if twCenterPosValid then
             begin
-            BorderAvg:= (GetPenumbraValue(ASource,twUsedEdgeLevel,twcLeft)+GetPenumbraValue(ASource,twUsedEdgeLevel,twcRight))/2;
+            BorderAvg:= (GetPenumbraValue(ASource,twAppliedEdgeLevel,twcLeft)+GetPenumbraValue(ASource,twAppliedEdgeLevel,twcRight))/2;
             if Abs(twCenterPosCm-BorderAvg)<1 then
               BorderAvg:= twCenterPosCm;                                        //IFA should be within borders at all times
             twInFieldPosCm[twcLeft] := BorderAvg-IFA/2;
@@ -18732,7 +18753,7 @@ var s: twcDataSource;
               FCentered:= True;
             end;
           ProfileNormalisation(twSetFieldType);                                 //sets twAbsNormPosCm, twAbsNormVal, twAvgNormVal, twAppliedNormVal
-          FindEdge(ASource);               //-----FindEdge--------uses current field type, sets twUsedEdgeLevel---------------
+          FindEdge(ASource);               //-----FindEdge--------uses current field type, sets twAppliedEdgeLevel---------------
           end; {not twrelativedata}
         AppliedFieldType:= twSetFieldType; //+++++++++++++++++++from here the final FieldType is known++++++++++++++++++
         twAvgNormValue  := GetQfittedValue(twAbsNormPosCm,ASource);
@@ -18753,10 +18774,10 @@ var s: twcDataSource;
           LinFit:= TLinFit.Create;                                              //this object is reused several times
           if not twIsRelative then
             begin  {parsedata: twPosScaling:= ifthen(twScaleProfile,twSDD2SSDratio,1)}
-            lTmp1          := GetFieldWidthCm(ASource,twUsedEdgeLevel);         //true field size
+            lTmp1          := GetFieldWidthCm(ASource,twAppliedEdgeLevel);      //true field size
             lTmp2          := lTmp1*twPosScaling*FDefaultSSDcm/(twSSD_cm*twSDD2SSDratio); //calculate "real" field size at SSD=100
             lSize          := GetFieldLength;                                   //nominal size from header
-            twInFieldAreaOk:= BordersValid(ASource,twUsedEdgeLevel) and twCenterPosValid;
+            twInFieldAreaOk:= BordersValid(ASource,twAppliedEdgeLevel) and twCenterPosValid;
             if (not wNominalIFA) or (Abs(lSize-lTmp2)>1) then                   //use only nominal when the difference with true field size < 1 cm
               lSize:= lTmp2;
             if (lSize)<10 then                                                  //------------------in-field area for field size < 10 cm----------------------
@@ -18923,10 +18944,10 @@ var s: twcDataSource;
           lMax         := (GetPenumbraValue(ASource,lDP,twcRight)-GetPenumbraValue(ASource,lDP,twcLeft))/2;
           twPosIntegral:= Integrate(twCenterPosCm-lMax,twCenterPosCm+lMax,ASource,True)/twAbsNormVal;
          {$ENDIF}
-          if Sign(twLevelPos[twUsedEdgeLevel].Penumbra[twcLeft].Calc)+Sign(twLevelPos[twUsedEdgeLevel].Penumbra[twcRight].Calc)=0 then
+          if Sign(twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft].Calc)+Sign(twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc)=0 then
             begin {------ calculation of twSymLinacError: left and right border should at least have opposite sign ----------}
-            lSize      := (twSSD_cm+twVector_ICD_cm[Start].m[Beam])*Sign(twLevelPos[twUsedEdgeLevel].Penumbra[twcRight].Calc)/100;
-            j          := twLevelPos[twUsedEdgeLevel].Penumbra[twcLeft].Nearest;
+            lSize      := (twSSD_cm+twVector_ICD_cm[Start].m[Beam])*Sign(twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc)/100;
+            j          := twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft].Nearest;
             RightOutArr:= Min(NearestPosition(wLinacSymOuterRadiusCm*lSize,ASource),twLevelPos[d50].Penumbra[twcRight].Nearest);
             RightInArr := NearestPosition(wLinacSymInnerRadiusCm*lSize,ASource);
             lTmp1      := 0;

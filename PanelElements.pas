@@ -1,4 +1,4 @@
-unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-05/03/2021}
+unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-31/03/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -83,10 +83,10 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                           GetNormalisedRevLogistic(Side,Xsource,UserBorderDoseEdit_perc.Value)
     w                Width according menu choices
                         wSource[Xsource].twLevelPos[twUsedEdgeLevel]
-    X  [[-|+]value]  y value at X
+    X|Z[[-|+]value]  y value at X or Z*(1+depth/SSD)
        center based   GetScaledQfValue((2*Ord(side)-1)*abs(X),relative,scNormalised,Xsource)
 
-    x  [[-|+]value]  y value at x
+    x|z[[-|+]value]  y value at x or z*(1+depth/SSD)
        absolute       GetScaledQfValue((2*Ord(side)-1)*abs(X),absolute,scNormalised,Xsource)
     Y  [[-|+]value]  x value at Y
                         if (ScanType in twcVertScans) and (ConvStg='100') and (Selection='Y') then
@@ -101,27 +101,29 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
 }
 
 {05/03/2021 added 'Q'}
+{31/03/2021 added 'Z','z'}
+{01/04/2021 added pa_Xactual}
 const
   EmptyXtype           =  #0;
-  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','Q','r','R','s','S','T','u','U','w','X','x','Y','y',EmptyXtype];
+  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','Q','r','R','s','S','T','u','U','w','X','x','Y','y','Z','z',EmptyXtype];
   DefEnergyUncertainty = 0.01; {MeV}
   DefPanel             = 'PanelElements';
   DefCondTxt           = 'cond:';
-  DefCondTypeString    = 'NFSMWEerdgus';    {linked to PCRconditionTypes}
+  DefCondTypeString    = 'NFSMWEerdgus';     {linked to PCRconditionTypes}
   DefAnnotTxt          = 'annot:';
-  DefAnnotTypeString   = '!sfFnzucCrSeT*R'; {linked to AnnotationTypes}
+  DefAnnotTypeString   = '!sfFnzucCrSeT*RX'; {linked to AnnotationTypes}
   DefColorTxt          = 'color:';
   DefSizeTxt           = 'size:';
 
 type
   //PCRconditionTypes is zero-based because of Lazarus limitations and linked to DefCondTypeString='NFSMWEfrdgus' which is a 1-based list
-  PCRconditionTypes =(PCRstandard,PCRfffType ,PCRsmall     ,PCRMRlinac,PCRwedge      ,PCRelectron,
-                      PCRfffShape,PCRrefvalid,PCRisDivision,PCRisGamma,PCRisUnrelated,PCRSimpleViewHide);
+  PCRconditionTypes =(PCRstandard, PCRfffType , PCRsmall     , PCRMRlinac, PCRwedge      , PCRelectron,
+                      PCRfffShape, PCRrefvalid, PCRisDivision, PCRisGamma, PCRisUnrelated, PCRSimpleViewHide);
 
 
   //linked to DefAnnotTypeString='!sfFnzucCrSeT*R', both lists indexed on 1
-  AnnotationTypes=(pa_synthetic=1,pa_symmetric ,pa_fitted   ,pa_fff    ,pa_normdif,pa_ssd    ,pa_userlevel,
-                   pa_centered   ,pa_centertype,pa_resampled,pa_shifted,pa_edge  ,pa_topmodel,pa_config   ,pa_RDD);
+  AnnotationTypes=(pa_synthetic=1, pa_symmetric, pa_fitted , pa_fff , pa_normdif , pa_ssd   , pa_userlevel, pa_centered,
+                   pa_centertype , pa_resampled, pa_shifted, pa_edge, pa_topmodel, pa_config, pa_RDD      , pa_Xactual );
 
   {The ResultsInfoRecord is the basic data element for retrieving analysis information in the results panel.
    See the supported EvaluationXtypes below.
@@ -130,22 +132,24 @@ type
   {05/06/2020 Ylevel}
   {17/06/2020 Xedge}
   {09/07/2020 Usource}
+  {01/04/2021 added X_actual}
   ResultsInfoRecord=record
-                      X          : twcFloatType;
-                      Y          : array[twcSides] of twcFloatType;
+                      X          : twcFloatType;                                //input value for position or level
+                      X_actual   : twcFloatType;                                //corrected value of X (when applicable)
+                      Y          : array[twcSides] of twcFloatType;             //output for level or position
                       Sidedness  : Boolean;
                       ConvStg    : String;
-                      Xsign      : Integer;                        //0= unsided; -1/+1 = L/R
-                      Xsource    : twcDataSource;                  //source
-                      Usource    : twcDataSource;                  //confirmed source
-                      Xchar      : Char;                           //optional source selector
-                      Xtype      : Char;                           //evaluation type
-                      Xedge      : twcPositionUseType;             //confirmed edge
+                      Xsign      : Integer;                                     //0= unsided; -1/+1 = L/R
+                      Xsource    : twcDataSource;                               //source
+                      Usource    : twcDataSource;                               //confirmed source
+                      Xchar      : Char;                                        //optional source selector
+                      Xtype      : Char;                                        //evaluation type
+                      Xedge      : twcPositionUseType;                          //confirmed edge
                       Xerrorval  : twcFloatType;
                       Ymultiplier: twcFloatType;
-                      Y_mm       : UnitsType;                      //see TOtools.pas
+                      Y_mm       : UnitsType;                                   //see TOtools.pas
                       Iparse     : Integer;
-                      Ylevel     : twcDoseLevel                    //applied doselevel, when relevant
+                      Ylevel     : twcDoseLevel                                 //applied doselevel, when relevant
                     end;
 
 
@@ -272,6 +276,7 @@ end; {~create}
 {09/10/2018 keep invalid when PCRid<0}
 {05/06/2020 Ylevel}
 {09/07/2020 Usource}
+{01/04/2021 X_actual}
 function TPanelConfig.AddElement(AElementStg:String;
                                  AStatusProc:toExtMsgProc=nil): Boolean;
 const CommaMinCnt=13;
@@ -357,12 +362,12 @@ if Length(AElementStg)>0 then
   SetLength(FElements,Succ(i));
   with FElements[i] do
     begin
-    pGetInteger(k); {buildnumber, no version checks at this moment}
+    pGetInteger(k);                                                             //buildnumber, no version checks at this moment
     pGetInteger(PCRid);
     ClearAll:= Result and (PCRid=0);
     Result  := (PCRid>0) and
                 LogResult(p.DelimiterCount>=CommaMinCnt,'Incomplete line');
-    pGetInteger(k);  {curve selector}
+    pGetInteger(k);                                                             //curve selector
     PCRdefaultsource:= (k<0) or (not (k in [0..Ord(dsUnrelated)]));
     if not PCRdefaultsource then
       PCRxrecord.Xsource:= twcDataSource(k);
@@ -385,12 +390,13 @@ if Length(AElementStg)>0 then
       if (l-m=1) and (m>0) then
         begin
         PCRxrecord.ConvStg:= s.Substring(1,m).Trim(['+','-']);                  //zero-based
-        pGetFloat(PCRxrecord.X,False);
+        pGetFloat(PCRxrecord.X,False);                                          //get X
         if PCRxrecord.Xsign=0 then
-          PCRxrecord.Xsign:= GetSign(s[2]) {s[1] is Xtype, check for sign there}
+          PCRxrecord.Xsign:= GetSign(s[2])                                      //s[1] is Xtype, check for sign there
         else
           PCRxrecord.X:= PCRxrecord.X*PCRxrecord.Xsign;
         end;
+      PCRxrecord.X_actual:= PCRxrecord.X;
       end;
     PCRxrecord.Xedge := dUseUndefined;
     PCRxrecord.Y_mm  := no_Units;
@@ -456,8 +462,7 @@ if Length(AElementStg)>0 then
           k:= Pos(DefCondTypeString[j],s);
           if k>0 then
             begin
-            if (k>1) and (s[Pred(k)]='-')  then k:= -1
-            else                                k:=  1;
+            k:= ifthen((k>1) and (s[Pred(k)]='-'),-1,1);
             PCRconditions[PCRconditionTypes(j-1)]:=  k;                         //PCRconditionTypes is zero-based because of Lazarus limitations
             end;
           end; {for}
@@ -495,7 +500,7 @@ if Length(AElementStg)>0 then
       Dec(j);
       if Abs(FElements[j].PCRid)=k then
         begin
-        if FElements[j].PCRid>0 then {keep invalid version}
+        if FElements[j].PCRid>0 then                                            //keep invalid version
           FElements[j]:= FElements[i];
         SetLength(FElements,i);
         end;
@@ -624,7 +629,7 @@ if Length(FElements)>0 then
   CF.WriteString(DefPanel,'sep',Delimiter);
   CF.WriteInteger(DefPanel,'add',0);
   CF.WriteString(DefPanel,'doc',
-                 'b(build),id,curve sel,eval.type,multiplier,errorval,"label",deci,unit,col,row,mod,energy,scan type[,cond:-][,annot:-][,color:-]');
+                 'b(build),id,curve sel,eval.type,multiplier,errorval,"label",deci,unit,col,row,mod,energy,scantype[,cond:-][,annot:-][,color:-]');
   for i:= 0 to Pred(Length(FElements)) do
     CF.WriteString(DefPanel,Num2Stg(FElements[i].PCRid),FElements[i].PCRconfigstg);
   end;
