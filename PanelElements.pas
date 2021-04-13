@@ -1,4 +1,4 @@
-unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-31/03/2021}
+unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-11/04/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -35,11 +35,11 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                        wSource[Xsource].twLevelPos[dxx].Penumbra[side].Calc;
   ! e                Derivative edge
                        wSource[Xsource].twLevelPos[dDerivative].Penumbra[side].Calc
-    F                Relative Min | Max of flattened area
-                       ifthen(Xsign<0,wSource[Xsource].twRelMinFlattened,wSource[Xsource].twRelMaxFlattened);
+    F                Relative Min | Max of IFA
+                       ifthen(Xsign<0,wSource[Xsource].twRelMinInField,wSource[Xsource].twRelMaxInField);
     f                Absolute flatness
                        wSource[Xsource].twFlatness*100;
-    G                Gamma analysis within flattened area
+    G                Gamma analysis within IFA
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,True,NormAdjustNumEdit.Value/100);
     g                Gamma analysis over complete profile
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,NormAdjustNumEdit.Value/100);
@@ -60,10 +60,10 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                        wSource[Xsource].twAbsNormPosCm
     n                Norm value
                        wSource[Xsource].twAbsNormVal
-  ! p [|1|2]         Penumbra width according to standard definitions for conventional fields
+  ! p [|1|2]         Penumbra width
                        GetPenumbraWidth(XSource,side,ApplyDynamicWidth)
-                         1: ApplyDynamicWidth:= False
-                         2: ApplyDynamicWidth:= True
+                         1: ApplyDynamicWidth:= False | according to standard definitions for conventional fields
+                         2: ApplyDynamicWidth:= True  | based on relative dose of inflection point
                         (nothing) or other: value according to Field Types tab
   ! q                Slope of sigmoid model (always positive in this implementation)
                        Y[side]:= wSource[Xsource].twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope]/Ynorm
@@ -81,7 +81,7 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                           wSource[Xsource].twLevelPos[dUser].Penumbra[side].Calc
   ! U                Border at user value using Sigmoid
                           GetNormalisedRevLogistic(Side,Xsource,UserBorderDoseEdit_perc.Value)
-    w                Width according menu choices
+    w                Width according to menu choices
                         wSource[Xsource].twLevelPos[twUsedEdgeLevel]
     X|Z[[-|+]value]  y value at X or Z*(1+depth/SSD)
        center based   GetScaledQfValue((2*Ord(side)-1)*abs(X),relative,scNormalised,Xsource)
