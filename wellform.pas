@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 01/04/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 11/04/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -25,9 +25,9 @@ uses
   {$IFDEF Windows}
   htmlhelp,
   {$ENDIF}
-  TAGraph, TASeries, TAFuncSeries, TATransformations, TAAxisSource, SpinEx, RTTICtrls,
-  LCLType, Grids, ValEdit, LMessages,
-  FileIter, TOconfigStrings, TOnumparser, Wellhofer, PanelElements, TAChartAxisUtils;
+  TAGraph, TASeries, TAFuncSeries, TATransformations, TAAxisSource, SpinEx,
+  RTTICtrls, LCLType, Grids, ValEdit, LMessages, FileIter, TOconfigStrings,
+  TOnumparser, Wellhofer, PanelElements, TAChartAxisUtils, TATools;
 
 
 //Work-around for backward compatibility with for LCL v2.0.10 and below.
@@ -1144,7 +1144,7 @@ uses {$IFDEF Windows}
      {$ENDIF}
       StrUtils, Math, MD5, Clipbrd, Keyboard, DateUtils,
       lclproc, IniFiles, lazFileUtils,
-      TAChartUtils, TAChartAxis,
+      TAChartUtils, TAChartAxis, TACustomSeries,
       TOfile, TOtools, TOmath,
      {$IFDEF form2pdf}
       form2pdf,
@@ -1620,6 +1620,7 @@ for k:= Low(PlotItems) to High(PlotItems) do         {-----------curve graph obj
     Tag                := Ord(k);                                               //extra linking through tag
     end;
   DataPlot.AddSeries(PlotSeries[k]);
+  //SetMessageBar(Format('%d %s',[DataPlot.Series.Count,PlotSeries[k].Name]));
   CursorSeries[k]:= TLineSeries.Create(Self);        {--------cursorseries[k], added to dataplot------------------}
   with CursorSeries[k],Pointer do
     begin
@@ -4870,8 +4871,8 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
     DataPlot.LogicalExtent:= DataPlot.GetFullExtent;  //reset zooming of chart itself; see https://wiki.freepascal.org/TAChart_documentation#Extents_and_margins
   AutoZoom;                     {======================set axis and indicators===============================}
   SmartScaleElectronPDD(Sender);
-  DataChanged   := False;
-  OnDataReadBusy:= False;
+  DataChanged              := False;
+  OnDataReadBusy           := False;
   {$IFDEF ONDATA_SPEEDTEST}
   MessageBar:= Format('%0.0f ms per run of analysis and presentation (%d)',[(MilliSecondOfTheDay(Now)-o)/j,j]);
   {$ENDIF ONDATA_SPEEDTEST}
@@ -5518,14 +5519,16 @@ UseDoseDelButton.Enabled:= (i>1);
 UseDoseAddButton.Enabled:= (i<OD2doseTableMax);
 end; {~usedosedelbuttonclick}
 
-
+(*
+PlotLabelClick: responds to click on plotlabel, event set at runtime in FormCreate
+*)
 {15/12/2015 selectedseries}
 {17/03/2020 Lazarus-port}
 procedure TAnalyseForm.PlotLabelClick(Sender:TObject);
 begin
 SelectPlot:= True;
 with Sender as TLabel do
-  SelectedPlot:= PlotItems(Tag); {tag is set represent value plotitem at initialisation}
+  SelectedPlot:= PlotItems(Tag);                                                //tag is set represent value plotitem at initialisation
 SelectedSeries:= PlotSeries[SelectedPlot];
 OnSeriesSelected;
 PlotCursor(Sender);
@@ -7816,51 +7819,50 @@ identifiers defined in PanelElements:
 EvaluationXtypes=['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','s','S','T','u','w','X','x','Y','y','Z','z',EmptyXtype];
 ------
 Parameters with the exclamation symbol have a left and right result. Therefore the left result is obtained as -"evaluation type" and the right results as +"evaluation type". When no sign is given the result will be the average of left and right value.
-
     a                Area ratio
                        wSource[Xsource].twSymAreaRatio
   ! b                Border position based on edges user choices
-                       wSource[Xsource].twLevelPos[twAppliedEdgeLevel].Penumbra[side].Calc;
+                       wSource[Xsource].twLevelPos[twUsedEdgeLevel].Penumbra[side].Calc;
     c                Center position as defined by user's choices
-                       wSource[Xsource].twCenterPosCm as defined by choices
-    C                Curvature of fit of top, always in [cm^-2]
-                       wSource[Xsource].twTopModel.Qquad
+                      wSource[Xsource].twCenterPosCm as defined by choices
+    C                Curvature of fit of top
+                      wSource[Xsource].twTopModel.Qquad
     d                Relative flatness
                        wSource[Xsource].twFlatness*100
   ! D [20|50|80|90]  The result is the depth for a pdd or the edge of a profile
                        wSource[Xsource].twLevelPos[dxx].Penumbra[side].Calc;
   ! e                Derivative edge
                        wSource[Xsource].twLevelPos[dDerivative].Penumbra[side].Calc
-    F                Relative Min | Max of InField area
+    F                Relative Min | Max of IFA
                        ifthen(Xsign<0,wSource[Xsource].twRelMinInField,wSource[Xsource].twRelMaxInField);
     f                Absolute flatness
                        wSource[Xsource].twFlatness*100;
-    G                Gamma analysis within InField area
+    G                Gamma analysis within IFA
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,True,NormAdjustNumEdit.Value/100);
     g                Gamma analysis over complete profile
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,NormAdjustNumEdit.Value/100);
-  ! i                Sigmoid edge  (inflection point: )
-                       wSource[Xsource].twLevelPos[dInflection].Penumbra[side].Calc;
+  ! i                Sigmoid edge (inflection point)
+                       wSource[Xsource].twLevelPos[dSigmoid].Penumbra[side].Calc;
   ! I                Sigmoid 50%,
-                       wSource[Xsource].twLevelPos[dSigmoid50].Penumbra[side].Calc
+                       wSource[Xsource].twLevelPos[dSigmoid50].Penumbra[side].Calc;
     L                Linac error
                        100*wSource[Xsource].twSymLinacError
     l                Elevation
                        100*wSource[Xsource].twLinSlope*
-                           (GetPosition(Xsource,twInFieldArr[twcRight])-GetPosition(Xsource,twInFieldArr[twcLeft]))/twAbsNormVal
+                           (GetPosition(Xsource,twFlatArr[twcRight])-GetPosition(Xsource,twFlatArr[twcLeft]))/twAbsNormVal
     m                Relative maximum
-                       100*wSource[Xsource].twMaxValue/max(1,wSource[Xsource].twAbsNormVal)
+                       100*wSource[Xsource].twTopModel.Ytop/max(1,wSource[Xsource].twAbsNormVal)
     M                Top position
-                       wSource[Xsource].twMaxPosCm
+                       wSource[Xsource].twTopModel.Xtop
     N                Norm position
                        wSource[Xsource].twAbsNormPosCm
     n                Norm value
                        wSource[Xsource].twAbsNormVal
-  ! p [|1|2]         Penumbra width according to standard definitions for conventional fields
+  ! p [|1|2]         Penumbra width
                        GetPenumbraWidth(XSource,side,ApplyDynamicWidth)
-			  1: ApplyDynamicWidth:= False
-			  2: ApplyDynamicWidth:= True
-			 (nothing) or other: value according to Field Types tab
+                         1: ApplyDynamicWidth:= False | according to standard definitions for conventional fields
+                         2: ApplyDynamicWidth:= True  | based on relative dose of inflection point
+                        (nothing) or other: value according to Field Types tab
   ! q                Slope of sigmoid model (always positive in this implementation)
                        Y[side]:= wSource[Xsource].twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope]/Ynorm
   ! Q                Sigmoid slope in the inflection point
@@ -7873,14 +7875,16 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
     s                Symmetry
                        100*wSource[Xsource].twSymmetry
     S                Extended symmetry according to menu choices
-  ! u                Edge at user value
-                        wSource[Xsource].twLevelPos[dUser].Penumbra[side].Calc
-    w                Width according menu choices
-                        wSource[Xsource].twLevelPos[twAppliedEdgeLevel]
-    X  [[-|+]value]  y value at X
+  ! u                Border at user value
+                          wSource[Xsource].twLevelPos[dUser].Penumbra[side].Calc
+  ! U                Border at user value using Sigmoid
+                          GetNormalisedRevLogistic(Side,Xsource,UserBorderDoseEdit_perc.Value)
+    w                Width according to menu choices
+                        wSource[Xsource].twLevelPos[twUsedEdgeLevel]
+    X|Z[[-|+]value]  y value at X or Z*(1+depth/SSD)
        center based   GetScaledQfValue((2*Ord(side)-1)*abs(X),relative,scNormalised,Xsource)
 
-    x  [[-|+]value]  y value at x
+    x|z[[-|+]value]  y value at x or z*(1+depth/SSD)
        absolute       GetScaledQfValue((2*Ord(side)-1)*abs(X),absolute,scNormalised,Xsource)
     Y  [[-|+]value]  x value at Y
                         if (ScanType in twcVertScans) and (ConvStg='100') and (Selection='Y') then

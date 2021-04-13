@@ -1,4 +1,4 @@
-unit TOtools; {© Theo van Soest, Lazarus 2.0.12/FPC 3.2.0: 2019 - 02/04/2021}
+unit TOtools; {© Theo van Soest, Lazarus 2.0.12/FPC 3.2.0: 2019 - 13/04/2021}
 {$mode objfpc}{$h+}
 {$BOOLEVAL OFF,WARN SYMBOL_PLATFORM OFF}
 
@@ -36,19 +36,19 @@ function  GetAppVersionString(IncludeBuildInfo    :Boolean =True;
                               IncludeAnyRelease   :Boolean =False      ): String;
 function  AppBuildNumber                                                : Integer;
 function  Stg2Int(const S                         :String              ): Integer;
-function  Stg2Ext(const S                         :String              ): Extended;
-function  FloatFormat(AValue                      :Extended;
+function  Stg2Ext(const S                         :String              ): Double;
+function  FloatFormat(AValue                      :Double;
                       SignificantDigits           :Word    =1          ): String;
-function  NeededDecimals(AValue                   :Extended;
+function  NeededDecimals(AValue                   :Double;
                          SignificantDigits        :Word    =1;
                          IncludeLeadingZeros      :Boolean =True       ): Word;
-function  Num2Stg(const Value                     :Extended;
+function  Num2Stg(const Value                     :Double;
 	          Field,Deci                      :ShortInt;                        //negative deci will be set to zero when fraction is zero
                   Fill                            :Char    =#32        ): String;   overload;
 function  Num2Stg(const Value                     :Int64;
                   Field                           :ShortInt=0;
                   Fill                            :Char    =#32        ): String;   overload;
-procedure Set_Field_Deci(Value                    :Extended;
+procedure Set_Field_Deci(Value                    :Double;
        		               var Field,Deci     :ShortInt;                          {eventuele startwaarden}
                          Use_Input_Width          :BOOLEAN             );             {t => ondergrens field,deci}
 function CharSetReplaceAll(ACharSet               :CharSet;
@@ -321,7 +321,7 @@ Val(S,Result);
 end;
 
 
-function Stg2Ext(const S:String): Extended;
+function Stg2Ext(const S:String): Double;
 begin
 Val(S,Result);
 end;
@@ -365,7 +365,7 @@ end; {memavail}
 {01/02/2018 NeededDecimals}
 {21/02/2020}
 //https://lazarus-ccr.sourceforge.io/docs/rtl/sysutils/decimalseparator.html
-function FloatFormat(AValue              :Extended;
+function FloatFormat(AValue              :Double;
                      SignificantDigits:Word=1  ): String;
 var Stg: String;
 begin
@@ -380,10 +380,10 @@ end; {floatformat}
 {21/08/2018: applying the rounding might rond up to higher decade (9.9999 -> 10.00)}
 {05/09/2018 IncludeLeadingZeros}
 {09/12/2019 added zero protection}
-function NeededDecimals(AValue                :Extended;
+function NeededDecimals(AValue                :Double;
                         SignificantDigits     :Word=1;
                         IncludeLeadingZeros:Boolean=True): Word;
-var LogValue: Extended;
+var LogValue: Double;
 begin
 if AValue=0 then
   Result:= SignificantDigits-Min(1,SignificantDigits)
@@ -431,9 +431,9 @@ end; {num2stg}
 
 
 {17/03/2000}
-function  Num2Stg(const Value:Int64;
-		              Field         :ShortInt=0;
-                  Fill          :Char=#32): String;
+function  Num2Stg(const Value: Int64;
+                  Field      : ShortInt=0;
+                  Fill       : Char=#32  ): String;
 var Stg: String;
 begin
 Stg:= Format('%*d',[Field,Value]);
@@ -443,10 +443,10 @@ end; {num2stg}
 
 
 {05/09/95}
-procedure Set_Field_Deci(Value             :Extended;
-       		            	 var Field,Deci    :ShortInt;
-                   			 Use_Input_Width:BOOLEAN);
-                         var I,J: ShortInt;
+procedure Set_Field_Deci(Value          : Double;
+       		         var Field,Deci : ShortInt;
+                   	 Use_Input_Width: BOOLEAN);
+                         var I,J        : ShortInt;
 begin
 if NOT Use_Input_Width then begin  Field:= 1;  Deci:= 0;  end; {else ondergrens}
 I:= 1;  J:= 1;
