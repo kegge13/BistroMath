@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 02/04/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 19/04/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -423,12 +423,13 @@ positions for each data point from the 3D coordinates.}
 {21/07/2020 added fcWedge}
 {18/08/2020 added fcMRlinac}
 {13/10/2020 added fcElectron}
+{19/04/2021 added CenterNearOrigin}
 type
   twcChannels       =(FieldCh,RefCh);
   twcFieldClass     =(fcStandard,fcFFF,fcSmall,fcMRlinac,fcWedge,fcElectron);
   twcEdgeClass      =(fcPrimary,fcFallBack);
   twcFieldShape     =(Rectangular,Blocks,MLC,Circular);
-  twcCenterType     =(CenterPenumbra,CenterOrigin,CenterMax);                                                                          {ordering critical for user interface}
+  twcCenterType     =(CenterPenumbra,CenterOrigin,CenterNearOrigin,CenterMax);                                                         {ordering critical for user interface}
   twcFFFPeakType    =(CenterFFFTopModel,CenterFFFSlopes);                                                                              {ordering critical for user interface}
   twcDoseLevel      =(dLow,dHigh,d20,d50,d80,d90,dUser,dDerivative,dInflection,dSigmoid50,dTemp);                                      {ordering critical within code and user interface, should be checked if changed}
   twcPositionUseType=(dUseBorder,dUseDerivative,dUseInflection,dUseSigmoid50,dUseOrigin,dUseMax,dUseFFFtop,dUseFFFslopes,dUseUndefined,dUseConfigured); {TAnalyseForm relies on this order, check all code!}
@@ -2665,6 +2666,7 @@ const
 {16/11/2020 ADataTopLine}
 {03/03/2021 added wDiagonalDetection, removed DetectDiagonalScans}
 {07/03/2021 FDefaultSSDcm}
+{19/04/2021 renamed (F)CalcWidth to (F)CalcWidth_cm}
 type
   TWellhoferData=class(TRadthData)
     private
@@ -2677,7 +2679,7 @@ type
      FAutoLoadRef    : Boolean;
      FCalcWidth_cm   : twcFloatType;
      FCentered       : Boolean;
-     FFilterWidth    : twcFloatType;
+     FFilterWidth_cm : twcFloatType;
      FLastFileType   : twcFileType;
      FLastMultiFile  : String;
      FFrozen         : Boolean;
@@ -3159,7 +3161,7 @@ type
      property FieldLength;
      property FieldDepth;
      property FileName;
-     property FilterWidth          :twcFloatType    read FFilterWidth     write SetFilterWidth;
+     property FilterWidth_cm       :twcFloatType    read FFilterWidth_cm  write SetFilterWidth;
      property Freeze               :Boolean         read FFrozen          write FFrozen;
      property Identity;
      property IsValid              :Boolean         read wSource[dsMeasured].twValid;
@@ -3252,7 +3254,7 @@ const
   twcDataSourceNames      :array[twcSourceEnum     ] of String=('Measured','Reference','Filtered','RefFiltered','Calculated','Buffer','RefOrg','Unrelated'
                                                                 {$IFDEF WELLHOFER_DUMPDATA},'Default'{$ENDIF});
   twcDoseLevelNames       :array[twcDoseLevel      ] of String      =('dLow','dHigh','d20','d50','d80','d90','dUser','Derivative','Inflection','Sigmoid50','dTemp');
-  twcCenterTypeNames      :array[twcCenterType     ] of String      =('Border/Edge','Origin','Maximum');                                                                          {ordering critical for user interface}
+  twcCenterTypeNames      :array[twcCenterType     ] of String      =('Border/Edge','Origin','Near Origin','Maximum');                       {ordering critical for user interface}
   twcPositionUseNames     :array[twcPositionUseType] of String      =('Border','Derivative','Inflection','Sigmoid50','Origin','Maximu','FFF Top','FFF slopes','Undefined','Configured');
   twcNormalisationNames   :array[twcNormalisation  ] of String      =('Center','Origin','Maximum','In-Field area');
   twcMeasAxisNames        :array[twcMeasAxis       ] of String      =('Inplane','Crossplane','Beam');
@@ -8629,7 +8631,7 @@ if assigned(ADestination) then
   ADestination.AutoLoadReference         := AutoLoadReference;
   ADestination.AlignReference            := AlignReference;
   ADestination.CalcWidth_cm              := CalcWidth_cm;
-  ADestination.FFilterWidth              := FFilterWidth;
+  ADestination.FFilterWidth_cm           := FFilterWidth_cm;
   ADestination.FArrayScanRefUse          := FArrayScanRefUse;
   ADestination.MatchOverride             := MatchOverride;
   ADestination.ReferenceDirectory        := ReferenceDirectory;
@@ -8907,7 +8909,7 @@ if IsLocal then
 with CF do
   begin
   ReferenceDirectory         := ReadString(Section  ,twcRefDirKey              ,ReferenceDirectory);
-  FilterWidth                := ReadFloat(Section   ,twcFilterKey              ,0.6);
+  FilterWidth_cm             := ReadFloat(Section   ,twcFilterKey              ,0.6);
   wOutlierFilter             := ReadBool(Section    ,twcFilterKey+'Outlier'    ,True);
   twcDefaultEnergy_MeV       := ReadFloat(Section   ,twcEnergyKey              ,6);
   w2D_ArrayRefList.CommaText := ReadString(Section  ,twcMultiScanKey+'list'    ,'' );
@@ -9039,7 +9041,7 @@ with CF do
   WriteString(Section,twcPenumbraKey+'EH'        ,Num2Stg(wEPenumbraH               ,0,3));
   WriteString(Section,twcPenumbraKey+'EL'        ,Num2Stg(wEPenumbraL               ,0,3));
   WriteString(Section,twcEnergyKey               ,Num2Stg(twcDefaultEnergy_MeV      ,0,2));
-  WriteString(Section,twcFilterKey               ,Num2Stg(FFilterWidth              ,0,3));
+  WriteString(Section,twcFilterKey               ,Num2Stg(FFilterWidth_cm           ,0,3));
   WriteString(Section,'Z_weighting'              ,Num2Stg(twcPddFitZWeightPower     ,0,2));
   WriteString(Section,'Mu_b_Power'               ,Num2Stg(twcPddFitMubPower         ,0,2));
   WriteBool(Section  ,'Mu_b_Fixed'               ,twcPddFitMubPowerFixed                 );
@@ -9458,14 +9460,14 @@ end; {~setresamplegrid}
 
 procedure TWellhoferData.SetFilterWidth(cm:twcFloatType);
 begin
-FFilterWidth:= Max(twcDefMinFilterWidthCm,cm);
+FFilterWidth_cm:= Max(twcDefMinFilterWidthCm,cm);
 end; {~setfilterwidth}
 
 
 {21/07/2020 GetAdjustedFilterWidthCm}
 function TWellhoferData.GetAdjustedFilterWidthCm(ASource:twcDataSource=dsMeasured): twcFloatType;
 begin
-Result:= FFilterWidth;
+Result:= FFilterWidth_cm;
 with wSource[ASource] do if twSetFieldType=fcSmall then
   begin
   if BordersValid(ASource) then
@@ -18187,26 +18189,14 @@ sets edge based values dependent on field class
 {21/07/2020 GetAdjustedFilterWidthCm}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {16/10/2020 fallback detection still used d50-Derivative instead of fcFallBack-fcPrimary}
+{19/04/2021 implementation of CenterNearOrigin; now always center is defined}
 function TWellhoferData.FindEdge(ASource:twcDataSource=dsMeasured): Boolean;
 var FieldClass   : twcFieldClass;
     SigmoidNeeded: Boolean;
     tSource      : twcDataSource;
     p            : twcDoseLevel;
-
-    function SetCenterOnPenumbra(ALevel:twcDoseLevel): Boolean;
-    begin
-    with wSource[ASource],twLevelPos[ALevel] do
-      begin
-      Result          := Penumbra[twcLeft].Valid and Penumbra[twcRight].Valid;
-      twCenterPosValid:= Result;
-      if Result then
-         begin
-         twCenterPosCm    := GetFieldCenterCm(ASource,ALevel);
-         twCenterPosDefUse:= GetRelatedPositionType(ALevel);
-         end
-      end;
-    end; {setcenteronpenumbra}
-
+    EdgeCenterCm : twcFloatType;
+    NearOrigin   : Boolean;
 begin
 Result:= ScanType in twcHoriScans;
 if Result then
@@ -18262,33 +18252,42 @@ if Result then
     begin
     for p:= dInflection to dSigmoid50 do
        wSource[ASource].twLevelPos[p]:= wSource[tSource].twLevelPos[p];
-    wSource[ASource].twAppliedEdgeLevel:= wSource[tSource].twAppliedEdgeLevel;        //decisions are also based on unfiltered data
+    wSource[ASource].twAppliedEdgeLevel:= wSource[tSource].twAppliedEdgeLevel;  //decisions are also based on unfiltered data
     end;
   with wSource[ASource] do
     begin
-    if wCenterDefinition[FieldClass]=CenterPenumbra then                        //check center several definitions
-      SetCenterOnPenumbra(twAppliedEdgeLevel)
-    else if (wCenterDefinition[FieldClass]=CenterOrigin)             and
-            (twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft ].Calc<=0) and
-             (twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc>=0) then
+    with twLevelPos[twAppliedEdgeLevel] do
       begin
-      twCenterPosCm    := 0;
+      twCenterPosValid:= Penumbra[twcLeft].Valid and Penumbra[twcRight].Valid;
+      NearOrigin:= twCenterPosValid;
+      if NearOrigin then
+        begin
+        EdgeCenterCm:= (Penumbra[twcRight].Calc+Penumbra[twcLeft].Calc)/2;
+        NearOrigin  := (wCenterDefinition[FieldClass]=CenterNearOrigin) and (Abs(EdgeCenterCm)<=CalcWidth_cm);
+        end;
+      end;
+    if ((wCenterDefinition[FieldClass]=CenterOrigin) or NearOrigin) and
+       (twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft ].Calc<=0)  and
+       (twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc>=0) then         //check center several definitions
+      begin
+      twCenterPosCm    := 0;                                                    //origin within borders; (near) origin wanted
       twCenterPosDefUse:= dUseOrigin;
-      twCenterPosValid := True;
       end
-    else if wCenterDefinition[FieldClass]=CenterMax then
+    else if twCenterPosValid and (wCenterDefinition[FieldClass]<>CenterMax) then
+      begin
+      twCenterPosCm    := EdgeCenterCm;                                         //fallback is edge when not NearOrigin
+      twCenterPosDefUse:= GetRelatedPositionType(twAppliedEdgeLevel);
+      end
+    else
       begin
       twCenterPosCm    := twPosCm[twmaxArr];
       QfitMaxPos(ASource);
       twCenterPosCm    := wSource[ASource].twMaxPosCm;
       twCenterPosDefUse:= dUseMax;
-      twCenterPosValid := True;
       end;
-    Result:= twCenterPosValid;
-    if not Result then
-      twCenterPosDefUse:= dUseUndefined;
-    twCenterArr:= NearestPosition(twCenterPosCm,ASource);
-    twWidthCm  := GetFieldWidthCm(ASource,twAppliedEdgeLevel);
+    twCenterPosValid:= True;
+    twCenterArr     := NearestPosition(twCenterPosCm,ASource);
+    twWidthCm       := GetFieldWidthCm(ASource,twAppliedEdgeLevel);
     if not twDerivativeValid then
       twLevelPos[dDerivative]:= twLevelPos[twAppliedEdgeLevel];
    end; {with}
