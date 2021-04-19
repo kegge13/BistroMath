@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 11/04/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 19/04/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -1779,7 +1779,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     for o:= CenterPenumbra to CenterMax do
       begin
       AddItem(twcCenterTypeNames[o],nil);
-      if LeftStr(twcCenterTypeNames[o],1)=ab[Ord(f)] then                       //DefCoFDefaults='B,O,M,B'
+      if LeftStr(twcCenterTypeNames[o],1)=ab[Ord(f)] then                       //DefCoFDefaults='B,O,L,M'
         ItemIndex:= Items.Count-1;
       end;
     OnChange     := @SyncSetCenterOfField;
@@ -3128,7 +3128,7 @@ with Engines[UsedEngine] do
     ELpenumbra_perc           .Value  := wEPenumbraL        *100;
     UserBorderDose_perc       .Value  := UserBorderDoseLevel*100;
     LogLevelEdit              .Value  := LogLevel;
-    FilterWidth_mm            .Value  := FilterWidth        *10;
+    FilterWidth_mm            .Value  := FilterWidth_cm     *10;
     LinacErrInvertGTCheckBox  .Checked:=(wLinacSymSign[fInplane   ]=-1);
     LinacErrInvertABCheckBox  .Checked:=(wLinacSymSign[fCrossplane]=-1);
     EdgeSigmoidRadius_cm      .Value  := wInflectionSigmoidRadiusCm;
@@ -3277,7 +3277,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     wEPenumbraH               := Round(EHpenumbra_perc          .Value)/100;
     wEPenumbraL               := Round(ELpenumbra_perc          .Value)/100;
     UserBorderDoseLevel       := UserBorderDose_perc            .Value/100;
-    FilterWidth               := FilterWidth_mm                 .Value/10;
+    FilterWidth_cm            := FilterWidth_mm                 .Value/10;
     CalcWidth_cm              := CalcWidth_mm                   .Value/10;
     wEdgeDetect               := EdgeDetectionCheckBox          .Checked;
     for f:= Low(twcFieldClass) to High(twcFieldClass) do

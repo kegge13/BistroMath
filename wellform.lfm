@@ -1,7 +1,7 @@
 object AnalyseForm: TAnalyseForm
-  Left = 521
+  Left = 294
   Height = 565
-  Top = 287
+  Top = 166
   Width = 885
   AllowDropFiles = True
   AlphaBlendValue = 0
@@ -3004,7 +3004,7 @@ object AnalyseForm: TAnalyseForm
     Top = 472
   end
   object InventoryPopupMenu: TPopupMenu
-    Left = 704
+    Left = 832
     Top = 472
     object InventoryPopExpandItem: TMenuItem
       Caption = 'Expand'
@@ -3865,14 +3865,14 @@ object AnalyseForm: TAnalyseForm
     end
   end
   object L_AxisTransforms: TChartAxisTransformations
-    Left = 824
+    Left = 648
     Top = 472
     object L_AxisTransform_AutoScale: TAutoScaleAxisTransform
       Enabled = False
     end
   end
   object R_AxisTransforms: TChartAxisTransformations
-    Left = 560
+    Left = 536
     Top = 472
     object R_AxisTransform_AutoScale: TAutoScaleAxisTransform
     end
