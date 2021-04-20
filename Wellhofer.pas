@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 19/04/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 20/04/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -3255,7 +3255,7 @@ const
                                                                 {$IFDEF WELLHOFER_DUMPDATA},'Default'{$ENDIF});
   twcDoseLevelNames       :array[twcDoseLevel      ] of String      =('dLow','dHigh','d20','d50','d80','d90','dUser','Derivative','Inflection','Sigmoid50','dTemp');
   twcCenterTypeNames      :array[twcCenterType     ] of String      =('Border/Edge','Origin','Near Origin','Maximum');                       {ordering critical for user interface}
-  twcPositionUseNames     :array[twcPositionUseType] of String      =('Border','Derivative','Inflection','Sigmoid50','Origin','Maximu','FFF Top','FFF slopes','Undefined','Configured');
+  twcPositionUseNames     :array[twcPositionUseType] of String      =('Border','Derivative','Inflection','Sigmoid50','Origin','Maximum','FFF Top','FFF slopes','Undefined','Configured');
   twcNormalisationNames   :array[twcNormalisation  ] of String      =('Center','Origin','Maximum','In-Field area');
   twcMeasAxisNames        :array[twcMeasAxis       ] of String      =('Inplane','Crossplane','Beam');
   twcFieldClassNames      :array[twcFieldClass     ] of String      =('Standard','FFF','Small','MRlinac','Wedge','Electrons');
@@ -18190,10 +18190,11 @@ sets edge based values dependent on field class
 {27/08/2020 twMaxPosCm, twMaxValue}
 {16/10/2020 fallback detection still used d50-Derivative instead of fcFallBack-fcPrimary}
 {19/04/2021 implementation of CenterNearOrigin; now always center is defined}
+{20/04/2021 review}
 function TWellhoferData.FindEdge(ASource:twcDataSource=dsMeasured): Boolean;
 var FieldClass   : twcFieldClass;
     SigmoidNeeded: Boolean;
-    tSource      : twcDataSource;
+    uSource      : twcDataSource;
     p            : twcDoseLevel;
     EdgeCenterCm : twcFloatType;
     NearOrigin   : Boolean;
@@ -18202,95 +18203,94 @@ Result:= ScanType in twcHoriScans;
 if Result then
   begin           //(dLow,dHigh,d20,d50,d80,d90,dUser,dDerivative,dInflection,dSigmoid50,dTemp)
   if not wSource[ASource].twFastScan then
-    FastScan(ASource);
-  if wFieldTypeDetection[fcSmall] then
+    FastScan(ASource);                                                          //start with basic FastScan if needed
+  if wFieldTypeDetection[fcSmall] then                                          //----Small field detection----
     begin
     p:= wEdgeMethod[fcPrimary,fcSmall];
     if not BordersValid(ASource,p) then
       FindLevelPos(ASource,p);
-    if Inrange(GetFieldWidthCm(ASource,p),0.05,wSmallFieldLimitCm) then
+    if Inrange(GetFieldWidthCm(ASource,p),0.05,wSmallFieldLimitCm) then         //small when field size is non-zero and <= wSmallFieldLimitCm
       wSource[ASource].twSetFieldType:= fcSmall;
     end;
-  FieldClass                       := wSource[ASource].twSetFieldType;
+  FieldClass                       := wSource[ASource].twSetFieldType;          //set local FieldClass value
   SigmoidNeeded                    := (wSource[ASource].twAppliedEdgeLevel  in [dInflection,dSigmoid50]) or
                                       (wEdgeMethod[fcPrimary,FieldClass] in [dInflection,dSigmoid50]);
   wSource[ASource].twCenterPosValid:= False;                                    //reset key elements
   wSource[ASource].twInFieldAreaOk := False;
-  tSource                          := ASource;                                  //initially tSource is equal to ASource
-  if wApplyUserLevel then wSource[ASource].twAppliedEdgeLevel:= dUser
+  uSource                          := ASource;                                  //initially uSource is equal to ASource
+  if wApplyUserLevel then wSource[ASource].twAppliedEdgeLevel:= dUser           //User dose level trigger overrides default for FieldClass method
   else                    wSource[ASource].twAppliedEdgeLevel:= wEdgeMethod[fcPrimary,FieldClass];
   if (wEdgeDetect or wFieldTypeDetection[fcFFF] or (wSource[ASource].twAppliedEdgeLevel=dDerivative) or SigmoidNeeded) and
      (not wSource[ASource].twIsRelative) and (ASource<>dsBuffer) then
-    begin
-    if (ASource in twcFilteredCopies) then
+    begin                                                                       //set alternative source to unfiltered original
+    if (ASource in twcFilteredCopies) then                                      //----derivative into dsBuffer----
       begin
-      tSource                        := twcCoupledFiltered[ASource];            //tSource is unfiltered data if available
-      wSource[tSource].twSetFieldType:= wSource[ASource].twSetFieldType;        //synchronise fieldtype for robustness
+      uSource                        := twcCoupledFiltered[ASource];            //uSource is unfiltered data if available
+      wSource[uSource].twSetFieldType:= wSource[ASource].twSetFieldType;        //synchronise fieldtype for robustness
       end;
     Derive(GetAdjustedFilterWidthCm(ASource),ASource,dsBuffer);                 //derivative of filtered curve is fully acceptable
     Result                            := wSource[dsBuffer].twDerivativeValid;   //set new function result
     wSource[ASource].twDerivativeValid:= Result;                                //import twDerivative results from buffer
-    if Result then
-      wSource[ASource].twLevelPos[dDerivative]:= wSource[dsBuffer].twLevelPos[dDerivative];
-    if not BordersValid(tSource,d50) then
-      FindLevelPos(ASource,d50);                                                //the 50% level should be available as basic feature
+    if Result then                                                              //always set best result for twLevelPos[dDerivative]
+      wSource[ASource].twLevelPos[dDerivative]:= wSource[dsBuffer].twLevelPos[dDerivative]
+    else
+      wSource[ASource].twLevelPos[dDerivative]:= wSource[ASource ].twLevelPos[wSource[ASource].twAppliedEdgeLevel];
+    if not BordersValid(uSource,d50) then                                       //usource may differ from asource
+      FindLevelPos(ASource,d50);                                                //the 50% level should be available as basic feature in asource
     Result:= Result and wEdgeDetect and                                         //further analysis depends on availability of fallback method and necessarity
             (wEdgeMethod[fcFallBack,FieldClass]<>wEdgeMethod[fcPrimary,FieldClass]) and
-            ( (GetLevelDistance(wEdgeMethod[fcFallBack,FieldClass],wEdgeMethod[fcPrimary,FieldClass],twcLeft ,tSource)>wEdgeFallBackCm) or
-              (GetLevelDistance(wEdgeMethod[fcFallBack,FieldClass],wEdgeMethod[fcPrimary,FieldClass],twcRight,tSource)>wEdgeFallBackCm)   );
+            ( (GetLevelDistance(wEdgeMethod[fcFallBack,FieldClass],wEdgeMethod[fcPrimary,FieldClass],twcLeft ,uSource)>wEdgeFallBackCm) or
+              (GetLevelDistance(wEdgeMethod[fcFallBack,FieldClass],wEdgeMethod[fcPrimary,FieldClass],twcRight,uSource)>wEdgeFallBackCm)   );
     if Result then
-      wSource[ASource].twAppliedEdgeLevel:= wEdgeMethod[fcFallBack,FieldClass];
-    if SigmoidNeeded then
+      wSource[ASource].twAppliedEdgeLevel:= wEdgeMethod[fcFallBack,FieldClass]; //------use fallback method when needed----
+    if SigmoidNeeded then                                                       //------sigmoid------
       begin
-      if not SigmoidPenumbraFit(tSource) then                                   //try to fit sigmoid function; always on unfiltered data (tSource)
+      if not SigmoidPenumbraFit(uSource) then                                   //try to fit sigmoid function; always on unfiltered data (tSource)
         wSource[ASource].twAppliedEdgeLevel:= dDerivative                       //sigmoidfit failed; fall back to derivative
        else if (ASource=dsMeasured) and wApplySigmoidToBuffer then              //improved speed
-         ApplySigmoidPenumbraFit(tSource,dsBuffer);
+         ApplySigmoidPenumbraFit(uSource,dsBuffer);
       end;
-    end; {tSource}
-  if tSource<>ASource then
+    end; {uSource}
+  if uSource<>ASource then                                                      //synchronise sources when different
     begin
     for p:= dInflection to dSigmoid50 do
-       wSource[ASource].twLevelPos[p]:= wSource[tSource].twLevelPos[p];
-    wSource[ASource].twAppliedEdgeLevel:= wSource[tSource].twAppliedEdgeLevel;  //decisions are also based on unfiltered data
+       wSource[ASource].twLevelPos[p]:= wSource[uSource].twLevelPos[p];
+    wSource[ASource].twAppliedEdgeLevel:= wSource[uSource].twAppliedEdgeLevel;  //decisions are also based on unfiltered data
     end;
-  with wSource[ASource] do
+  with wSource[ASource] do                                                      //----center position strategy----
     begin
     with twLevelPos[twAppliedEdgeLevel] do
-      begin
-      twCenterPosValid:= Penumbra[twcLeft].Valid and Penumbra[twcRight].Valid;
-      NearOrigin:= twCenterPosValid;
-      if NearOrigin then
-        begin
-        EdgeCenterCm:= (Penumbra[twcRight].Calc+Penumbra[twcLeft].Calc)/2;
+      begin                                                                     //first test edge-based center for twAppliedEdgeLevel
+      twCenterPosValid:= Penumbra[twcLeft].Valid and Penumbra[twcRight].Valid;  //a valid center position is found when both edges are valid
+      NearOrigin      := twCenterPosValid;                                      //now local var NearOrigin gets preliminary value from twCenterPosValid
+      if NearOrigin then                                                        //----CenterNearOrigin definition----
+        begin                                                                   //nearorigin only true when activated and center position smaller than CalcWidth_cm
+        EdgeCenterCm:= (Penumbra[twcRight].Calc+Penumbra[twcLeft].Calc)/2;      //set local EdgeCenterCm as edge-based center position
         NearOrigin  := (wCenterDefinition[FieldClass]=CenterNearOrigin) and (Abs(EdgeCenterCm)<=CalcWidth_cm);
         end;
       end;
-    if ((wCenterDefinition[FieldClass]=CenterOrigin) or NearOrigin) and
+    if ((wCenterDefinition[FieldClass]=CenterOrigin) or NearOrigin) and         //----CenterOrigin and CenterNearOrigin definition----
        (twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft ].Calc<=0)  and
-       (twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc>=0) then         //check center several definitions
+       (twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc>=0) then
       begin
-      twCenterPosCm    := 0;                                                    //origin within borders; (near) origin wanted
+      twCenterPosCm    := 0;                                                    //origin within borders; (near) origin wanted, override previous result
       twCenterPosDefUse:= dUseOrigin;
       end
     else if twCenterPosValid and (wCenterDefinition[FieldClass]<>CenterMax) then
-      begin
+      begin                                                                     //----CenterPenumbra definition----
       twCenterPosCm    := EdgeCenterCm;                                         //fallback is edge when not NearOrigin
-      twCenterPosDefUse:= GetRelatedPositionType(twAppliedEdgeLevel);
+      twCenterPosDefUse:= GetRelatedPositionType(twAppliedEdgeLevel);           //report type of found center when valid
       end
-    else
+    else                                                                        //fallback when no valid center established
       begin
-      twCenterPosCm    := twPosCm[twmaxArr];
       QfitMaxPos(ASource);
-      twCenterPosCm    := wSource[ASource].twMaxPosCm;
+      twCenterPosCm    := twMaxPosCm;                                           //----CenterMax definition----
       twCenterPosDefUse:= dUseMax;
       end;
-    twCenterPosValid:= True;
-    twCenterArr     := NearestPosition(twCenterPosCm,ASource);
-    twWidthCm       := GetFieldWidthCm(ASource,twAppliedEdgeLevel);
-    if not twDerivativeValid then
-      twLevelPos[dDerivative]:= twLevelPos[twAppliedEdgeLevel];
-   end; {with}
+    twCenterPosValid:= True;                                                    //at this point always a valid center is found
+    twCenterArr     := NearestPosition(twCenterPosCm,ASource);                  //set array index for center
+    twWidthCm       := GetFieldWidthCm(ASource,twAppliedEdgeLevel);             //set measured field width based on twAppliedEdgeLevel
+    end; {with}
  end; {if}
 end; {~findedge}
 
