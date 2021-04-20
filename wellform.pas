@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 19/04/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 20/04/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -1779,7 +1779,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     for o:= CenterPenumbra to CenterMax do
       begin
       AddItem(twcCenterTypeNames[o],nil);
-      if LeftStr(twcCenterTypeNames[o],1)=ab[Ord(f)] then                       //DefCoFDefaults='B,O,L,M'
+      if LeftStr(twcCenterTypeNames[o],1)=ab[Ord(f)] then                       //DefCoFDefaults='B,O,M,O,B,O'
         ItemIndex:= Items.Count-1;
       end;
     OnChange     := @SyncSetCenterOfField;
@@ -1799,7 +1799,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     for n:= NormOnCenter to NormOnInFieldArea do
       begin
       AddItem(twcNormalisationNames[n],nil);
-      if LeftStr(twcNormalisationNames[n],1)=ac[Ord(f)] then                    //DefNormDefaults='C,O,M,C'
+      if LeftStr(twcNormalisationNames[n],1)=ac[Ord(f)] then                    //DefNormDefaults='C,O,M,O,C,O'
         ItemIndex:= Items.Count-1;
       end;
     OnChange     := @SyncSetNormalisation;
