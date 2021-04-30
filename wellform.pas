@@ -4041,6 +4041,7 @@ end; {~wmchangecbchain}
 {03/07/2020 exchanged ordering of test on locking with length test}
 {14/09/2020 addengine}
 {17/11/2020 support automated continuous reading of multiple data sets in single text data set file format}
+{30/04/2021 fail for next scan in iba-multiscan resolved}
 {$push}{$warn 5024 off:wellform.pas(860,31) Hint: Parameter "AlParam" not used}
 procedure TAnalyseForm.WMDRAWCLIPBOARD(AwParam:WParam;
                                        AlParam:LParam);
@@ -4085,10 +4086,8 @@ if (PageControl.ActivePage=AnalysisTab)    and
           else
             begin
            {$IFDEF PRELOAD}
-            PreloadStream.Clear;
-            PreloadStream.WriteString(RawDataEditor.Lines.Text);                  //copy editor to stream
             Engines[UsedEngine].FileName:= DefaultName;
-            PreloadTransfer(Self);
+            PreloadTransfer(Self);                                              //preloadstream unchanged and still available
            {$ELSE}
             RawDataEditor.Modified:= False;
            {$ENDIF}
