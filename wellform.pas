@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 20/04/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 30/04/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -1518,7 +1518,7 @@ var k         : PlotItems;
 
 begin
 inherited;
-if DefaultFormatSettings.DecimalSeparator<>'.' then
+if DefaultFormatSettings.DecimalSeparator<>'.' then                             //BistroMath is very strict on the decimal separator
   FatalError('needs "." (period) as decimal separator in the regional settings');
 {$IFDEF PRELOAD}
 PreLoadStream      := TStringStream.Create('');
@@ -1544,7 +1544,7 @@ PrevWndProc        := Windows.WNDPROC(SetWindowLongPtr(Self.Handle, GWL_WNDPROC,
 {$IFDEF Windows}
 NextClipboardOwner:= SetClipboardViewer(Self.Handle);
 {$ENDIF}
-FileIterator:= TFileIterator.Create(Self);
+FileIterator:= TFileIterator.Create(Self);                                      //fileiterator has multiple uses
 with FileIterator do
   begin
   Options     := [fiPath,fiRecurseFolders];
@@ -1644,7 +1644,7 @@ for k:= Low(PlotItems) to High(PlotItems) do
   PlotSeries[k].Title  := aa[Ord(k)];
   PlotLabels[k].Caption:= aa[Ord(k)]+':';
   end;
-{$IFDEF form2pdf}
+{$IFDEF form2pdf}                                                               //form2pdf
 if FormToPDF=0 then
   begin
  {$IFDEF form2pdfcurrent}
@@ -1658,7 +1658,7 @@ if FormToPDF=0 then
  {$ENDIF}
   end;
 {$ENDIF}
-{$IFDEF SelfTest}
+{$IFDEF SelfTest}                                                               //selftest
 SelfTestItem        := TMenuItem.Create(HelpMenu);
 SelfTestItem.Caption:= 'Selftest';
 SelfTestItem.Enabled:= FileExists('selftest01_theoretical.txt');
@@ -1667,7 +1667,7 @@ OnClose             := @FormClose;
 SelftestLevel       := 0;
 HelpMenu.Insert(1,SelfTestItem);
 {$ENDIF}
-for i:= 1 to NumSpecialModes do with SpecialMode[i] do
+for i:= 1 to NumSpecialModes do with SpecialMode[i] do                          //add specialmodes to processing menu
   begin
   MenuItem:= TMenuItem.Create(ProcessingMenu);
   MenuItem.AutoCheck:= True;
@@ -2234,8 +2234,10 @@ end; {setdefaultpanel}
 
 
 {10/01/2017 code path for event}
+{30/04/2021 added updatesettings}
 procedure TAnalyseForm.SetCaption(Sender:TObject);
 begin
+UpdateSettings(Sender);
 SetCaption;
 end; {~setcaption}
 
