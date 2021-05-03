@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 30/04/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 03/05/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -3402,6 +3402,7 @@ if Result>0 then
     FileOpenDialog    .Filename:= Engines[UsedEngine].FileName;
     DetectedFileType           := Engines[UsedEngine].LastDetectedFileType;
     UsedDataTopLine            := Engines[UsedEngine].ParserTopLine;            //restore full state including starting point for reading
+    Engines[UsedEngine].LoadAliasList(AliasListEditor.Strings);
     if ProcessSetTempRefItem.Checked then
       PassRefOrg(UsedEngine);                                                   //pass dsRefOrg from TempRefEngine to UsedEngine (if applicable)
     ClearScreen(Self);
@@ -9013,9 +9014,31 @@ end;{~aliaslistpreparecanvas}
 
 {01/09/2020 forgot to copy from Delphi}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{03/05/2021 pass new list to all enegines and do reload when not frozen}
 procedure TAnalyseForm.AliasTabExit(Sender: TObject);
+var i,j: Integer;
+
+  procedure ReloadEngine(AEngine:Integer);
+  begin
+  SelectEngine(AEngine);
+  if not Engines[AEngine].Freeze then
+    Reload(self);
+  end;
+
 begin
-Engines[UsedEngine].LoadAliasList(AliasListEditor.Strings);
+i:= AliasListEditor.RowCount;
+j:= UsedEngine;
+if (PageControl.ActivePage=AnalysisTab) or (i=0) or (not AliasListEditor.IsEmptyRow(i-1)) then
+  begin                                                                         //adding an emty row trigers onexit
+  i:= Length(Engines);
+  while i>0 do
+    begin
+    Dec(i);
+    if i<>j then
+      ReloadEngine(i);
+    end;
+  ReloadEngine(j);
+  end;
 end; {~aliastabexit}
 
 

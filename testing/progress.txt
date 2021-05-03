@@ -431,6 +431,10 @@ version 4.06.2
 -removed strange ...else TakeReferenceOrg the TakeReferenceOrg... from PrepareProfile: should be done only in LoadReference
 
 
+068	03/05/2021	aliaslist changes not updated by all files in history list	solved
+-Only after a explicite reload a new reference was loaded
+-Extended AliasTabExit event which does a reload for complete history
+
 ======tested=======
 29/05/2020	unlocking critical options
 -enables ProcessAutoscalingItem
