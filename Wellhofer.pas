@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 20/04/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 03/05/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -13620,14 +13620,15 @@ This complex procedure tries all in-memory options first and then searches on di
 {05/10/2020 changed to ((not wCheckRefCurveString) and wTakeCurrentRefSource) or CompareCurveIDStrings)}
 {14/12/2020 review of checkreforg}
 {14/01/2020 PriorityMessage: LogLevel=-1}
+{03/05/2021 refer to MeasCurveIDstg when making reffilestring (s); check also against RefCurveIDstg}
 function TWellhoferData.LoadReference(AFileName            :String ='';
                                       SetCurrentAsRefSource:Boolean=False): Boolean;
-var r                                : TWellhoferData;
-    s,MeasCurveIDstg,RefOrgCurveIDstg: RawByteString;
-    FromDisk,SameID,GenName,UseOrg   : Boolean;
-    ReportedSrc                      : twcDataSource;
+var r                                              : TWellhoferData;
+    s,MeasCurveIDstg,RefCurveIDstg,RefOrgCurveIDstg: RawByteString;
+    FromDisk,SameID,GenName,UseOrg                 : Boolean;
+    ReportedSrc                                    : twcDataSource;
     {$IFDEF MULTIREF_INDEX}
-    RefScanNr                        : Integer;
+    RefScanNr                                      : Integer;
     {$ENDIF}
 
   procedure LogMessage(ContextStg,ReferenceStg,ResultStg:String;
@@ -13679,15 +13680,15 @@ var r                                : TWellhoferData;
   var NoTest: Boolean;
   begin
   NoTest:= (not wCheckRefCurveString) and wTakeCurrentRefSource;
-  Result:= wSource[dsRefOrg].twValid and (not wSource[dsRefOrg].twLocked)
-            and
-          (( NoTest or ReferenceValid(dsRefOrg)                                             ) or
+  Result:= wSource[dsRefOrg].twValid         and
+           (not wSource[dsRefOrg].twLocked) and
+          (( NoTest or ReferenceValid(dsRefOrg)                                            ) or
            ((not ArrayScanRefOk) and
              CompareIDs(MeasCurveIDstg              ,RefOrgCurveIDstg,
-                         wSource[dsMeasured].twDevice,wSource[dsRefOrg].twDevice)           ) or
+                        wSource[dsMeasured].twDevice,wSource[dsRefOrg].twDevice)           ) or
            ( ArrayScanRefOk      and
              CompareIDs(wSource[dsMeasured].twFileIDstring,wSource[dsRefOrg].twFileIDstring,
-                         wSource[dsMeasured].twDevice      ,wSource[dsRefOrg].twDevice     )) );
+                        wSource[dsMeasured].twDevice      ,wSource[dsRefOrg].twDevice     )) );
   if LogLevel>1 then
     LogMessage('Use Current Ref'+ifthen(ArrayScanRefOk,Format(' scan %d',[wSource[dsMeasured].twScanNr]),''),
                GetCurveIDString(dsRefOrg),'ok',Result);
@@ -13725,7 +13726,7 @@ var r                                : TWellhoferData;
   if wCheckRefIgnoreLinac then
     Result:= MakeCurveName(False,True,wDefaultIgnoreSet+[twiLinac],True,ASource)
   else
-    Result:= ApplyAliasList(wSource[ASource].twCurveIDString);
+    Result:= MakeCurveName(False,True,wDefaultIgnoreSet,True,ASource);
   end;
 
 begin
@@ -13734,8 +13735,8 @@ Inc(FActiveCnt);
 Result          := wSource[dsMeasured].twValid and (not FFrozen);
 FromDisk        := False;
 MeasCurveIDstg  := LocalCurveID(dsMeasured);
+RefCurveIDstg   := ifthen(wSource[dsReference].twValid,wSource[dsReference].twCurveIDString,MeasCurveIDstg);
 RefOrgCurveIDstg:= wSource[dsRefOrg  ].twCurveIDString;
-UseOrg          := CheckRefOrg;
 {$IFDEF MULTIREF_INDEX}
 RefScanNr:= 0;
 {$ENDIF}
@@ -13749,8 +13750,9 @@ if Result then
     s:= FMultiScanList[0]
   else
  {$ENDIF}
-    s:= ReferenceDirectory+ifthen(FArrayScanRefOk,wSource[dsMeasured].twFileIDString,wSource[dsMeasured].twCurveIDString);
+    s:= ReferenceDirectory+ifthen(FArrayScanRefOk,wSource[dsMeasured].twFileIDString,MeasCurveIDstg);
   StatusMessage('LoadReference->'+s,True,1);
+  UseOrg:= CheckRefOrg and (RefCurveIDstg=MeasCurveIDstg);
   if not UseOrg then
     begin
     if GenName then with wSource[dsMeasured] do
@@ -13765,7 +13767,7 @@ if Result then
       else
       {$ENDIF}
         UseOrg:= CheckRefOrg or
-                ( CheckMultiRef(True) and (SetCurrentAsRefSource or wTakeCurrentRefSource or (FRefOrgFileName=s)) );
+                (CheckMultiRef(True) and (SetCurrentAsRefSource or wTakeCurrentRefSource or (FRefOrgFileName=s)) );
       if (not UseOrg) or (AFileName='') then
         AFileName:= ReferenceDirectory+ifthen(FArrayScanRefOk,twFileIDString,twCurveIDString);
       end;
