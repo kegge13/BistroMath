@@ -3077,6 +3077,7 @@ object AnalyseForm: TAnalyseForm
         AutoCheck = True
         Caption = 'Accept multiple sca&ns (open/drop/clipboard)'
         ShortCut = 16462
+        OnClick = ShowMenuItemStatus
       end
       object FileSaveAsReferenceItem: TMenuItem
         Tag = 4
