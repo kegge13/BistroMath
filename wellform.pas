@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 03/05/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 04/05/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -849,7 +849,7 @@ type
                                         const AFileInfo: TFileInfo);
     procedure OnInventorySelect        (Sender         : TObject;
                                         aCol, aRow     : Integer);
-    procedure InventoryGridDblClick    (Sender         : TObject);                //changed also at runtime
+    procedure InventoryGridDblClick    (Sender         : TObject);              //changed also at runtime
     procedure InventorySetRefDirClick  (Sender         : TObject);
     procedure InventoryDirBoxAccept    (Sender         : TObject;
                                         var Value      : String);
@@ -869,14 +869,14 @@ type
                                         ACol,ARow      : Integer;
                                         var CanSelect  : Boolean);
     procedure ModListRadioButtonClick  (Sender         : TObject);
-    procedure FormKeyDown              (Sender         : TObject;                 //user interface for keyboard (shortcuts)
+    procedure FormKeyDown              (Sender         : TObject;               //user interface for keyboard (shortcuts)
                                         var Key        : Word;
                                         AShift         : TShiftState);
     procedure FormKeyUp                (Sender         : TObject;
                                         var Key        : Word);
     procedure FormKeyPress             (Sender         : TObject;
                                         var Key        : Char);
-    procedure RunAboutBox              (Sender         : TObject);                //show about panel
+    procedure RunAboutBox              (Sender         : TObject);              //show about panel
    {$IFDEF SelfTest}
     procedure SelfTest                 (Sender         : TObject);
     procedure FormClose                (Sender         : TObject;
@@ -2033,7 +2033,17 @@ if PanelElements.AddMode>0 then
 SetConfigName('');                                                              //set config name to default: bistromath.ini
 for i:= 1 to ParamCount do                                                      //handle configuration other params to overrule configuration
   begin
-  if i<ParamCount then
+  if LowerCase(ParamStr(i))=DefAdvanced then
+    begin
+    AdvancedModeItem.Checked:= True;
+    UImodeChange(Self);
+    end
+  else if ParamStr(i)='-md5' then
+    begin
+    ClipBoard.AsText:= MakeChecksum;
+    Application.Terminate;
+    end
+  else if i<ParamCount then
     begin
     if LowerCase(ParamStr(i))=DefRefPath then
       TempPath     := ParamStr(Succ(i))
@@ -2041,11 +2051,6 @@ for i:= 1 to ParamCount do                                                      
       CommonAppData:= AppendPathDelim(ParamStr(Succ(i)))
     else if LowerCase(ParamStr(i))=DefPreset then
       PresetName   := ParamStr(Succ(i));
-    end
-  else if LowerCase(ParamStr(i))=DefAdvanced then
-    begin
-    AdvancedModeItem.Checked:= True;
-    UImodeChange(Self);
     end;
   end;
 ModListUpdate(Sender);
@@ -4098,9 +4103,9 @@ if (PageControl.ActivePage=AnalysisTab)    and
          except
           SetMessageBar(InvalidStg);
          end; {try}
-        if FileMultipleInputItem.Checked        and FileMultipleInputItem.Enabled and
+        if FileMultipleInputItem.Enabled        and FileMultipleInputItem.Checked and
           (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then
-          begin                                                                 //there are more data in this file, not being of multil-scan type format
+          begin                                                                 //there are more data in this file, not being of multi-scan type format
           LocalDataTopLine:= Engines[UsedEngine].Parser.CurrentLineNumber;      //local file pointer is updated from last read line
           WaitLoop(100);                                                        //some delay for multiple data sets in single date set text format file
           end
@@ -9402,6 +9407,7 @@ end; {~exceptmessage}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {15/09/2020 historylist}
 {16/09/2020 SelectEngine}
+{04/05/2021 added paging support for multiple-single-scan files}
 procedure TAnalyseForm.FormKeyDown(Sender :TObject;
                                    var Key:Word;
                                    AShift :TShiftState);
@@ -9426,9 +9432,9 @@ else
 {$ENDIF}
 if (not((Key=VK_ESCAPE) and Engines[UsedEngine].StopProcessing)) or b then
   inherited;
-if not b then with Engines[UsedEngine],wSource[dsMeasured] do
+if not b then
   begin
-  if (Key in PlusKeys+MinusKeys+HomeKeys) then
+  if (Key in PlusKeys+MinusKeys+HomeKeys) then                                  //-------------next scan-----------
     begin
     if AShift=[ssCtrl] then
       begin
@@ -9437,39 +9443,45 @@ if not b then with Engines[UsedEngine],wSource[dsMeasured] do
       else
         SetMessageBar('No history available');
       end
-    else if twOriginalFormat in twcMultiFiles then
-      begin
-      b                := True;
-      wMultiScanLooping:= not (ssAlt in AShift);
-      while b and
-            (( (Key in PlusKeys )          and (wMultiScanNr<=wMultiScanMax) ) or
-             ( (Key in MinusKeys+HomeKeys) and (wMultiScanNr>=1            ) )    ) do
+    else with Engines[UsedEngine],wSource[dsMeasured] do
+      if twOriginalFormat in twcMultiFiles then                              //support
         begin
-        wMultiScanStep:= ifthen(Key in PlusKeys,1,-1);
-        i             := wMultiScanNr;
-        wMultiScanNr  := ifthen(Key=VK_HOME,1,wMultiScanNr+wMultiScanStep);
-        if wMultiScanMax>1 then
-          wMultiScanNr:= Succ((wMultiScanNr+wMultiScanMax-1) mod wMultiScanMax);
-        b:= b and (ssAlt in AShift) and (wMultiScanNr<>1);
-        j:= wMultiScanNr;
-        if (i<>wMultiScanNr) then
+        b                := True;
+        wMultiScanLooping:= not (ssAlt in AShift);
+        while b and
+              (( (Key in PlusKeys )          and (wMultiScanNr<=wMultiScanMax) ) or
+               ( (Key in MinusKeys+HomeKeys) and (wMultiScanNr>=1            ) )    ) do
           begin
-          Engines[UsedEngine].Freeze:= False;                                   //otherwise nothing happens
-          Reload(Sender,not b);                                                 //due to looping wMultiScanNr might be changed
+          wMultiScanStep:= ifthen(Key in PlusKeys,1,-1);
+          i             := wMultiScanNr;
+          wMultiScanNr  := ifthen(Key=VK_HOME,1,wMultiScanNr+wMultiScanStep);
+          if wMultiScanMax>1 then
+            wMultiScanNr:= Succ((wMultiScanNr+wMultiScanMax-1) mod wMultiScanMax);
+          b:= b and (ssAlt in AShift) and (wMultiScanNr<>1);
+          j:= wMultiScanNr;
+          if (i<>wMultiScanNr) then
+            begin
+            Engines[UsedEngine].Freeze:= False;                                   //otherwise nothing happens
+            Reload(Sender,not b);                                                 //due to looping wMultiScanNr might be changed
+            end;
+          b:= b and (j=wMultiScanNr) and (wMultiScanNr<>wMultiScanMax);           //extra safety precaution
           end;
-        b:= b and (j=wMultiScanNr) and (wMultiScanNr<>wMultiScanMax);           //extra safety precaution
-        end;
+        end
+    else if (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then
+      begin
+      UsedDataTopLine:= ifthen(Key in PlusKeys,Engines[UsedEngine].Parser.CurrentLineNumber,0);
+      Reload(Sender);
       end
-    end
-  else if twValid then
+    end {key in pluskeys+minuskeys+homekeys}
+  else if Engines[UsedEngine].IsValid then
     begin
     i:= ifthen(Key in [VK_LEFT,VK_DOWN],-1,ifthen(Key in [VK_RIGHT,VK_UP],1,0));
     if PageControl.ActivePage=AnalysisTab then                                  //set AutoFocus true for DataPlot to avoid trigger of PageControlRequestChange
       begin
       if ssShift in AShift then i:= i* 2;
-      if ssCtrl  in AShift then i:= i*ifthen((ScanType in twcVertScans) and (AppliedFieldClass=fcElectron),1,5)*Round(GetDisplayedPositionScale);
+      if ssCtrl  in AShift then i:= i*ifthen((Engines[UsedEngine].ScanType in twcVertScans) and (AppliedFieldClass=fcElectron),1,5)*Round(GetDisplayedPositionScale);
       if ssAlt   in AShift then i:= i*20;
-      if Key in [VK_LEFT,VK_RIGHT] then
+      if Key in [VK_LEFT,VK_RIGHT] then                                         //-------------shift-----------
         begin
         CursorPosCm:= Round((CursorPosCm/ManualShiftStep_cm.Value+i)/i)*i*ManualShiftStep_cm.Value;
         Key     := 0;                                                           //block any further processing of the key
@@ -9482,7 +9494,7 @@ if not b then with Engines[UsedEngine],wSource[dsMeasured] do
           PlotPending:= False;
           end;
         end
-      else if {DataPlot.Zoomed and} (Key in [VK_DOWN,VK_UP]) then
+      else if {DataPlot.Zoomed and} (Key in [VK_DOWN,VK_UP]) then               //-------------zoomrange-----------
         begin
         if Engines[UsedEngine].wSource[dsCalculated].twIsGamma then
           HistogramLimit_num.Value:= Math.Max(0.5,HistogramLimit_num.Value+i/2)

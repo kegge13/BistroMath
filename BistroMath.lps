@@ -21,8 +21,8 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="WellForm"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="4047"/>
-        <CursorPos X="13" Y="4055"/>
+        <TopLine Value="2022"/>
+        <CursorPos X="27" Y="2025"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -76,8 +76,8 @@
       <Unit7>
         <Filename Value="Wellhofer.pas"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="11097"/>
-        <CursorPos Y="11112"/>
+        <TopLine Value="644"/>
+        <CursorPos X="36" Y="681"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
       </Unit7>
@@ -674,124 +674,121 @@
     </OtherDefines>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13807" TopLine="13785"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="757" Column="22" TopLine="721"/>
       </Position1>
       <Position2>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13773" TopLine="13751"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1520" TopLine="1503"/>
       </Position2>
       <Position3>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13831" TopLine="13809"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1552" Column="40" TopLine="1516"/>
       </Position3>
       <Position4>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13773" TopLine="13751"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1686" Column="36" TopLine="1650"/>
       </Position4>
       <Position5>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13807" TopLine="13785"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1955" Column="67" TopLine="1919"/>
       </Position5>
       <Position6>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13773" TopLine="13751"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1976" Column="67" TopLine="1940"/>
       </Position6>
       <Position7>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13626" Column="27" TopLine="13608"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2008" Column="19" TopLine="1987"/>
       </Position7>
       <Position8>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13731" Column="28" TopLine="13695"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2010" Column="31" TopLine="1987"/>
       </Position8>
       <Position9>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13740" Column="14" TopLine="13704"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2014" Column="16" TopLine="1987"/>
       </Position9>
       <Position10>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13623" Column="27" TopLine="13609"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2015" Column="58" TopLine="1987"/>
       </Position10>
       <Position11>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13627" Column="21" TopLine="13609"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2016" Column="46" TopLine="1987"/>
       </Position11>
       <Position12>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13675" Column="72" TopLine="13639"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2017" Column="24" TopLine="1987"/>
       </Position12>
       <Position13>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13687" Column="39" TopLine="13651"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2042" Column="8" TopLine="2018"/>
       </Position13>
       <Position14>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13738" Column="107" TopLine="13702"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2072" Column="7" TopLine="2036"/>
       </Position14>
       <Position15>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13623" Column="66" TopLine="13606"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2102" Column="24" TopLine="2066"/>
       </Position15>
       <Position16>
         <Filename Value="wellform.pas"/>
-        <Caret Line="9016" Column="39" TopLine="9000"/>
+        <Caret Line="7357" Column="37" TopLine="7338"/>
       </Position16>
       <Position17>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13789" Column="41" TopLine="13784"/>
+        <Filename Value="wellform.pas"/>
       </Position17>
       <Position18>
         <Filename Value="wellform.pas"/>
-        <Caret Line="9033" TopLine="9000"/>
+        <Caret Line="995" Column="115" TopLine="960"/>
       </Position18>
       <Position19>
         <Filename Value="wellform.pas"/>
-        <Caret Line="9013" Column="23" TopLine="9000"/>
+        <Caret Line="1074" Column="29" TopLine="1039"/>
       </Position19>
       <Position20>
         <Filename Value="wellform.pas"/>
-        <Caret Column="104"/>
+        <Caret Line="4031" Column="106" TopLine="3994"/>
       </Position20>
       <Position21>
         <Filename Value="wellform.pas"/>
-        <Caret Line="9017" Column="12" TopLine="8980"/>
+        <Caret Line="4755" Column="10" TopLine="4719"/>
       </Position21>
       <Position22>
         <Filename Value="wellform.pas"/>
-        <Caret Column="104"/>
+        <Caret Line="7011" Column="16" TopLine="6974"/>
       </Position22>
       <Position23>
         <Filename Value="wellform.pas"/>
-        <Caret Line="2237" Column="12" TopLine="2200"/>
+        <Caret Line="7117" TopLine="7105"/>
       </Position23>
       <Position24>
         <Filename Value="wellform.pas"/>
-        <Caret Line="4101" Column="21" TopLine="4067"/>
       </Position24>
       <Position25>
         <Filename Value="wellform.pas"/>
-        <Caret Line="352" Column="31" TopLine="326"/>
+        <Caret Line="1647" Column="2" TopLine="1624"/>
       </Position25>
       <Position26>
         <Filename Value="wellform.pas"/>
-        <Caret Line="2237" Column="12" TopLine="2200"/>
       </Position26>
       <Position27>
         <Filename Value="wellform.pas"/>
-        <Caret Line="4045" Column="12" TopLine="4008"/>
+        <Caret Line="1145" Column="26" TopLine="1108"/>
       </Position27>
       <Position28>
         <Filename Value="wellform.pas"/>
-        <Caret Line="7444" Column="12" TopLine="7404"/>
+        <Caret Line="1473" Column="24" TopLine="1438"/>
       </Position28>
       <Position29>
         <Filename Value="wellform.pas"/>
-        <Caret Line="7935" Column="12" TopLine="7898"/>
+        <Caret Line="1475" Column="23" TopLine="1438"/>
       </Position29>
       <Position30>
         <Filename Value="wellform.pas"/>
-        <Caret Line="2237" Column="12" TopLine="2215"/>
+        <Caret Line="1517" TopLine="1494"/>
       </Position30>
     </JumpHistory>
     <RunParams>
@@ -800,35 +797,28 @@
     </RunParams>
   </ProjectSession>
   <Debugging>
-    <BreakPoints Count="3">
+    <BreakPoints Count="2">
       <Item1>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="Wellhofer.pas"/>
-        <Line Value="16518"/>
-      </Item1>
-      <Item2>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="Wellhofer.pas"/>
-        <Line Value="13829"/>
-      </Item2>
-      <Item3>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="wellform.pas"/>
-        <Line Value="9033"/>
-      </Item3>
+        <Line Value="9038"/>
+      </Item1>
+      <Item2>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="wellform.pas"/>
+        <Line Value="9572"/>
+      </Item2>
     </BreakPoints>
     <Watches Count="11">
       <Item1>
-        <Expression Value="MeasCurveIDstg"/>
+        <Expression Value="UsedDataTopLine"/>
       </Item1>
       <Item2>
-        <Expression Value="s"/>
+        <Expression Value="stg"/>
       </Item2>
       <Item3>
         <Expression Value="useorg"/>
