@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 03/05/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 14/05/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -17913,6 +17913,7 @@ found twMaxPosCm and within the fit range then twMaxPosCM//twMaxValue to Xtop/Yt
 {27/08/2020 introduced ForceFitCenter; explicit dependency on wTopModelRadiusCm}
 {30/08/2020 set twMaxPosCm/twMaxValue if old value within fitrange and less than 1 cm from model.xtop}
 {01/09/2020 RangeCm=0 -> no fit}
+{14/05/2021 use maximum only for topmodel when it is a true FFF}
 procedure TWellhoferData.QfitMaxPos(ASource       :twcDataSource=dsMeasured;
                                     ForceFitCenter:Boolean      =False      );
 var Q                  : TQuadFit;
@@ -17922,7 +17923,7 @@ begin
 with wSource[ASource] do
   if twFastScan and ((ScanType in twcHoriScans) or (twMaxPosCm>twcPDDminTopCm)) then
     begin
-    FitCenterArr:= ifthen(ForceFitCenter,twCenterArr,twMaxArr);
+    FitCenterArr:= ifthen(ForceFitCenter or (not twFFFdetected),twCenterArr,twMaxArr);
     FitCenterCm := twPosCm[FitCenterArr];
     if ScanType in twcHoriScans then
       begin

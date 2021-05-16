@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 04/05/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 16/05/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -326,6 +326,9 @@ type
     added Ft_Default_SSD_Label, Ft_Default_SSD_Edit_Cm
     removed DefaultMRlinacSSD_cm
     added MeasMenuClick(Sender: TObject);
+  14/05/2021
+    ViewSwapXXitem -> SwapXXchecbox
+    added ViewTopModelItem
   }
 
   {=========== TAnalyseForm =====================}
@@ -369,7 +372,6 @@ type
     ViewMenu                    : TMenuItem;
     ViewDivisor1                : TMenuItem;
     ViewDivisor2                : TMenuItem;
-    ViewDivisor3                : TMenuItem;  {in use: A,B,C,D,F,G,H,I,K,L,M,N,O,P,R,S,T,U,V,W,X,Y,Z}
     ViewDivisor4                : TMenuItem;
     ViewMeasuredItem            : TMenuItem;  {M}            //OnClick = ViewItems
     ViewPointsItem              : TMenuItem;  {P}            //OnClick = ViewItems
@@ -377,6 +379,7 @@ type
     ViewReferenceItem           : TMenuItem;  {R}            //OnClick = ViewItems
     ViewBufferItem              : TMenuItem;  {B}            //OnClick = ViewItems
     ViewIndicatorsItem          : TMenuItem;  {I}            //OnClick = ViewItems
+    ViewTopModelItem            : TMenuItem;  {T}            //OnClick = ViewItems
     ViewPenumbraItem            : TMenuItem;  {E}
     ViewFFFIndicatorsItem       : TMenuItem;  {F}            //OnClick = ViewItems
     ViewValuesItem              : TMenuItem;  {V}            //OnClick = ViewItems
@@ -388,15 +391,11 @@ type
     ViewAutoUnzoomFFFitem       : TMenuItem;  {W}
     ViewAutoUnzoomPDDitem       : TMenuItem;  {Y}
     ViewLeftAxisLowZeroItem     : TMenuItem;  {K}            //OnClick = ViewItems
-    ViewRightAxisToGridItem     : TMenuItem;  {T}
+    ViewRightAxisToGridItem     : TMenuItem;  {G}
     ViewScaleElectronPDDrange   : TMenuItem;  {S}            //OnClick = SmartScaleElectronPDD
     ViewMillimetersItem         : TMenuItem;  {X}            //OnClick = OnDataRead
     ViewClearItem               : TMenuItem;  {End}          //OnClick = ClearScreen
     ViewBottomAxisAlwaysBlack   : TMenuItem;  {none}         //OnClick = OnDataRead                   >wUserAxisSign
-    ViewSwapGTItem              : TMenuItem;  {G}            //OnClick = OnDataRead
-    ViewSwapABItem              : TMenuItem;  {A}            //OnClick = OnDataRead
-    ViewSwapUDItem              : TMenuItem;  {D}            //OnClick = OnDataRead
-    ViewSwapLRItem              : TMenuItem;  {L}            //OnClick = OnDataRead
     ViewNoDefaultAnnotationItem : TMenuItem;  {O}            //OnClick = UImodeChange
     //measurement menu
     MeasMenu                    : TMenuItem;  {Shift in use: ',','+','.',1,2,3,A,B,C,D,E,G,H,I,L,M,N,O,P,R,S,T,U,W,Y,Z}
@@ -609,13 +608,6 @@ type
     ShiftGroupBox               : TGroupBox;
     ShiftStepLabel              : TStaticText;
     ManualShiftStep_cm          : TFloatSpinEditEx;
-    //-linac error groupbox
-    LinacErrorGroupBox          : TGroupBox;
-    LinacSymLabel               : TStaticText;
-    LinacSymInner_cm            : TFloatSpinEditEx;                             //>wLinacSymInnerRadiusCm
-    LinacSymOuter_cm            : TFloatSpinEditEx;                             //>wLinacSymOuterRadiusCm
-    LinacErrInvertABCheckBox    : TCheckBox;                                    //>wLinacSymSign
-    LinacErrInvertGTCheckBox    : TCheckBox;                                    //>wLinacSymSign
     //-merge groupbox
     MergeGroupBox               : TGroupBox;
     MergeProfShiftLabel         : TStaticText;
@@ -624,6 +616,14 @@ type
     MergePDDShiftLabel          : TStaticText;
     MergePDDShift_cm            : TFloatSpinEditEx;
     MergeMatchCheckBox          : TCheckBox;
+    //-mayneord groupbox
+    MayneordGroupBox            : TGroupBox;
+    MayneordDmaxLabel           : TStaticText;
+    MayneordDmax_cm             : TFloatSpinEditEx;
+    MayneordSSD1Label           : TStaticText;
+    MayneordSSD1_cm             : TFloatSpinEditEx;
+    MayneordSSD2Label           : TStaticText;
+    MayneordSSD2_cm             : TFloatSpinEditEx;
     //-gamma analysis groupbox
     GammaDepthCutoffLabel       : TStaticText;
     GammaDepthCutoff_mm         : TFloatSpinEditEx;
@@ -640,14 +640,26 @@ type
     GammaSettingsGroupBox       : TGroupBox;
     GammaLimitAreaLabel         : TLabel;
     GammaLocalDoseCheckBox      : TCheckBox;
-    //-mayneord groupbox
-    MayneordGroupBox            : TGroupBox;
-    MayneordDmaxLabel           : TStaticText;
-    MayneordDmax_cm             : TFloatSpinEditEx;
-    MayneordSSD1Label           : TStaticText;
-    MayneordSSD1_cm             : TFloatSpinEditEx;
-    MayneordSSD2Label           : TStaticText;
-    MayneordSSD2_cm             : TFloatSpinEditEx;
+    //-pddfit groupbox
+    PDDfitGroupBox              : TGroupBox;
+    PDDfitCheckBox              : TCheckBox;
+    FitCyclesLabel              : TStaticText;
+    FitCycles_num               : TSpinEditEx;
+    FitENRLabel                 : TStaticText;
+    FitENRlimit_ratio           : TFloatSpinEditEx;
+    FitENRweigthedCheckBox      : TCheckBox;
+    FitMaxTimeLabel             : TStaticText;
+    FitMaxTime_sec              : TFloatSpinEditEx;
+    FitMu3CheckBox              : TCheckBox;
+    FitMu4CheckBox              : TCheckBox;
+    FitMubPowerFixedCheckBox    : TCheckBox;
+    FitMubPowerLabel            : TStaticText;
+    FitMubPower_exp             : TFloatSpinEditEx;
+    FitMx2CheckBox              : TCheckBox;
+    FitRestartsLabel            : TStaticText;
+    FitRestarts_num             : TSpinEditEx;
+    FitZWeightLabel             : TStaticText;
+    FitZWeight_val              : TFloatSpinEditEx;
     //advanced settings tab
     AdvancedSettingsTab         : TTabSheet;
     AdvancedSettingsPanel       : TPanel;                                       //placeholder to set background color
@@ -670,26 +682,6 @@ type
     OriginMinLevel_perc         : TFloatSpinEditEx;                             //>twcOriginMinNormFraction
     PipsPixelSizeLabel          : TStaticText;
     PipsPixelSize_cm            : TFloatSpinEditEx;                             //>wPipsPixelCm
-    //--pddfitgroupbox
-    PDDfitGroupBox              : TGroupBox;
-    PDDfitCheckBox              : TCheckBox;
-    FitCyclesLabel              : TStaticText;
-    FitCycles_num               : TSpinEditEx;
-    FitENRLabel                 : TStaticText;
-    FitENRlimit_ratio           : TFloatSpinEditEx;
-    FitENRweigthedCheckBox      : TCheckBox;
-    FitMaxTimeLabel             : TStaticText;
-    FitMaxTime_sec              : TFloatSpinEditEx;
-    FitMu3CheckBox              : TCheckBox;
-    FitMu4CheckBox              : TCheckBox;
-    FitMubPowerFixedCheckBox    : TCheckBox;
-    FitMubPowerLabel            : TStaticText;
-    FitMubPower_exp             : TFloatSpinEditEx;
-    FitMx2CheckBox              : TCheckBox;
-    FitRestartsLabel            : TStaticText;
-    FitRestarts_num             : TSpinEditEx;
-    FitZWeightLabel             : TStaticText;
-    FitZWeight_val              : TFloatSpinEditEx;
     //-axis view groupbox
     AxisViewGroupBox            : TGroupBox;
     AxisViewFileTypeCheckBox    : TCheckBox;
@@ -710,6 +702,10 @@ type
     //-meas remapping groupbox
     MeasRemappingBox            : TGroupBox;
     MeasReMappingString         : TComboBox;
+    SwapGTcheckbox              : TCheckBox;                                    //OnClick = OnDataRead
+    SwapABcheckbox              : TCheckBox;                                    //OnClick = OnDataRead
+    SwapUDcheckbox              : TCheckBox;                                    //OnClick = OnDataRead
+    SwapLRcheckbox              : TCheckBox;                                    //OnClick = OnDataRead
     //-match settings groupbox
     MatchGroupBox               : TGroupBox;
     MatchRangeDividerLabel      : TLabel;
@@ -720,6 +716,13 @@ type
     MatchNormDelta_perc         : TFloatSpinEditEx;
     MatchInclusionLabel         : TLabel;
     MatchInclusionLimit_perc    : TFloatSpinEditEx;
+    //-linac symmetry error groupbox
+    LinacErrorGroupBox          : TGroupBox;
+    LinacErrInvertABCheckBox    : TCheckBox;
+    LinacErrInvertGTCheckBox    : TCheckBox;
+    LinacSymLabel               : TStaticText;
+    LinacSymInner_cm            : TFloatSpinEditEx;
+    LinacSymOuter_cm            : TFloatSpinEditEx;
     //configuration tab
     ConfigurationTab            : TTabSheet;
     ConfigurationPanel          : TPanel;
@@ -1193,7 +1196,7 @@ const DefAppName           ='BistroMath';
       DefChartAxB          =  1;
       DefChartAxR          =  2;                                                //DefChartAxT=3;
       DefMinFPCbuild       =690;
-      DefConfigRepairFile  ='BM700_renamed_elements.ini';
+      DefConfigRepairFile  ='BM751_renamed_elements.ini';
       XtypeFilter          = csNumeric+[EmptyXtype];
       PlotSeriesColors  : array[PlotItems] of TColor       = (clRed,clBlue,clGreen,clMaroon{,clNavy});
       PlotDataMapping   : array[PlotItems] of twcDataSource= (dsMeasured,dsCalculated,dsReference,dsBuffer);
@@ -2667,7 +2670,8 @@ end; {~presetload}
 {15/07/2020 GammaInFieldLimits,AppliedEdgeRefNorm}
 {21/07/2020 ReadGroup}
 {16/11/2020 FileMultipleInputItem}
-{23/02/2021 writegroup ComboBox added}
+{23/02/2021 readgroup ComboBox added}
+{14/05/2021 readgroup(MeasRemappingBox) added}
 procedure TAnalyseForm.PresetLoad(CF:TConfigStrings);
 var b: Boolean;
     i: Integer;
@@ -2749,6 +2753,7 @@ with CF do
   ReadGroup(EdgeDetectionGroupBox);
   ReadGroup(MayneordGroupBox);
   ReadGroup(PDDfitGroupBox);
+  ReadGroup(MeasRemappingBox);
   ReadGroup(LinacErrorGroupBox);
   ReadGroup(GammaSettingsGroupBox);
   ReadGroup(FieldTypesPanel);
@@ -2762,7 +2767,6 @@ with CF do
   ShortRead(SectionName,InsertOriginCheckBox);
   ShortRead(SectionName,FilterWidth_mm);
   ShortRead(SectionName,MeasRemapCoordinates);
-  ShortRead(SectionName,MeasReMappingString);
   ShortRead(SectionName,CalcPostFilterItem);
   ShortRead(SectionName,ForceMatchingCheckBox);
   ShortRead(SectionName,FitResultsLabelsCheckBox);
@@ -2842,6 +2846,8 @@ end; {~configsave}
 {15/09/2020 HistoryList}
 {16/11/2020 FileMultipleInputItem}
 {08/12/2020 ShowLockItemCheckBox}
+{23/02/2021 writegroup ComboBox added}
+{14/05/2021 writegroup(MeasRemappingBox) added}
 procedure TAnalyseForm.ConfigSave(AStream    :TStream;
                                   AFileName  :String='';
                                   PresetsOnly:Boolean=False);
@@ -2950,6 +2956,7 @@ with CF do
         end;
       WriteControl(Self,SectionName);
       WriteGroup(AxisViewGroupBox);
+      WriteGroup(MeasRemappingBox);
       WriteGroup(MergeGroupBox);
       WriteGroup(MatchGroupBox);
       WriteGroup(LinacErrorGroupBox);
@@ -3571,6 +3578,7 @@ end; {~showmenuitemstatus}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {26/09/2020 PenumbraSigmoids}
 {02/03/2021 FFFIndicators depend on FFFfeatures}
+{14/05/2021 applied ViewTopModelItem, added PlotIndicators}
 procedure TAnalyseForm.ViewItems(Sender:TObject);
 var b,c,r,f: Boolean;
     side   : twcSides;
@@ -3616,7 +3624,7 @@ for side:= twcLeft to twcRight do
   FFFIndicators[side]    .Active     := f;
   PenumbraSigmoids[side] .Active     := ViewPenumbraItem.Checked   and IndicatorsOk;
   end;
-TopModelSeries           .Active     := f and Engines[UsedEngine].wSource[FFFdataSource].twTopModel.Valid;
+TopModelSeries           .Active     := (f or ViewTopModelItem.Checked) and Engines[UsedEngine].wSource[FFFdataSource].twTopModel.Valid;
 Engines[UsedEngine].AutoLoadReference:= b;
 if Sender is TMenuItem then with Sender as TMenuItem do
   begin
@@ -3628,6 +3636,7 @@ if Sender is TMenuItem then with Sender as TMenuItem do
     LeftAxis.Range.Min   := ifthen(ViewLeftAxisLowZeroItem.Checked,0,PlotScaleMin);
     end;
   end;
+PlotIndicators;
 if r then
   PlotCursor(Sender);
 ShowMenuItemStatus(Sender);
@@ -3743,10 +3752,6 @@ ControlsEnable(FieldTypesTab       ,a);
 ControlsEnable(AdvancedSettingsTab ,a);
 ControlsEnable(ODconvTab           ,a);
 EnableMenuSystem(True);                                                         //reset all menus to available and change from here
-EnableMenu(ViewSwapGTItem          ,a);
-EnableMenu(ViewSwapABItem          ,a);
-EnableMenu(ViewSwapUDItem          ,a);
-EnableMenu(ViewSwapLRItem          ,a);
 EnableMenu(MeasMenu                ,b);
 EnableMenu(ReferenceMenu           ,b);
 EnableMenu(CalculationMenu         ,a);
@@ -3796,11 +3801,6 @@ ViewFFFIndicatorsItem     .Visible   := b;
 ViewValuesItem            .Visible   := b;
 ViewBottomAxisAlwaysBlack .Visible   := b;
 ViewDivisor2              .Visible   := a;
-ViewDivisor3              .Visible   := s;
-ViewSwapGTItem            .Visible   := a;
-ViewSwapABItem            .Visible   := a;
-ViewSwapUDItem            .Visible   := a;
-ViewSwapLRItem            .Visible   := a;
 ProcessSigmoid2BufferItem .Visible   := b;
 ProcessResetFitItem       .Visible   := b;
 ProcessMergeItem          .Visible   := s;
@@ -4589,10 +4589,10 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
       SwapAxis:= False
     else
       case ScanLeftSide[1] of
-       'G','T': SwapAxis:= ViewSwapGTItem.Checked;
-       'A','B': SwapAxis:= ViewSwapABItem.Checked;
-       'U','D': SwapAxis:= ViewSwapUDItem.Checked;
-       else     SwapAxis:= ViewSwapLRItem.Checked;
+       'G','T': SwapAxis:= SwapGTcheckbox.Checked;
+       'A','B': SwapAxis:= SwapABcheckbox.Checked;
+       'U','D': SwapAxis:= SwapUDcheckbox.Checked;
+       else     SwapAxis:= SwapLRcheckbox.Checked;
        end;
     with wSource[dsMeasured],twBeamInfo do
       begin
@@ -7823,14 +7823,14 @@ end; {~filesave}
 (*
 EvaluateInfoRecord implements the retrieval of data from TWellhoferData through
 identifiers defined in PanelElements:
-EvaluationXtypes=['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','s','S','T','u','w','X','x','Y','y','Z','z',EmptyXtype];
+EvaluationXtypes = ['a','b','c','C','d','D','e','F','f','G','i','I','K','L','l','M','m','N','n','p','P','q','Q','r','R','s','S','t','T','u','U','w','X','x','Y','y','Z','z',EmptyXtype];
 ------
 Parameters with the exclamation symbol have a left and right result. Therefore the left result is obtained as -"evaluation type" and the right results as +"evaluation type". When no sign is given the result will be the average of left and right value.
     a                Area ratio
                        wSource[Xsource].twSymAreaRatio
   ! b                Border position based on edges user choices
                        wSource[Xsource].twLevelPos[twUsedEdgeLevel].Penumbra[side].Calc;
-    c                Center position as defined by user's choices
+    c                Center position as defined by user choices
                       wSource[Xsource].twCenterPosCm as defined by choices
     C                Curvature of fit of top
                       wSource[Xsource].twTopModel.Qquad
@@ -7852,6 +7852,8 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                        wSource[Xsource].twLevelPos[dSigmoid].Penumbra[side].Calc;
   ! I                Sigmoid 50%,
                        wSource[Xsource].twLevelPos[dSigmoid50].Penumbra[side].Calc;
+    K                relative heigth of Top position for Top model.
+                      100*wSource[Xsource].twTopModel.Ytop/wSource[Xsource].twAbsNormVal
     L                Linac error
                        100*wSource[Xsource].twSymLinacError
     l                Elevation
@@ -7859,8 +7861,8 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                            (GetPosition(Xsource,twFlatArr[twcRight])-GetPosition(Xsource,twFlatArr[twcLeft]))/twAbsNormVal
     m                Relative maximum
                        100*wSource[Xsource].twTopModel.Ytop/max(1,wSource[Xsource].twAbsNormVal)
-    M                Top position
-                       wSource[Xsource].twTopModel.Xtop
+    M                position of maximum
+                       wSource[Xsource].twMaxPosCm
     N                Norm position
                        wSource[Xsource].twAbsNormPosCm
     n                Norm value
@@ -7870,18 +7872,22 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                          1: ApplyDynamicWidth:= False | according to standard definitions for conventional fields
                          2: ApplyDynamicWidth:= True  | based on relative dose of inflection point
                         (nothing) or other: value according to Field Types tab
+    P [10|20|20/10]  Percentage depth dose
+                       wSource[Xsource].twPDD10,twPDD20,twPDD20/twPDD10
   ! q                Slope of sigmoid model (always positive in this implementation)
                        Y[side]:= wSource[Xsource].twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope]/Ynorm
   ! Q                Sigmoid slope in the inflection point
                        Y[side]:= Abs(wSource[Xsource].twSigmoidFitData[side].twFitResult2)/Ynorm
-    P [10|20|20/10]  Percentage depth dose
-                       wSource[Xsource].twPDD10,twPDD20,twPDD20/twPDD10
   ! r [nn]           Profile Evaluation Point at fraction nn% of border relative to center of field
                        GetScaledQfValue((2*Ord(side)-1)*abs(n.mm)*edge,relative,scNormalised,Xsource)
   ! R [nn]           Profile Evaluation Point at fraction nn% of border, with border and center rounded to steps of 5 mm
     s                Symmetry
                        100*wSource[Xsource].twSymmetry
     S                Extended symmetry according to menu choices
+    T                Top position according to user choices
+    			wSource[Xsource].twTopModel.Xtop or wSource[Xsource].twFFFslopesTop
+    t                Top position for Top model.
+                       wSource[Xsource].twTopModel.Xtop
   ! u                Border at user value
                           wSource[Xsource].twLevelPos[dUser].Penumbra[side].Calc
   ! U                Border at user value using Sigmoid
@@ -7938,6 +7944,7 @@ In the ResultsInfoRecord (see also PanelElements) the result is returned, includ
 {16/10/2020 fill ConvStg with dose level of border for u,U}
 {05/03/2021 added 'Q'}
 {02/04/2021 X_actual,twActDet2NormRatio}
+{14/05/2021 implemented 'K', 't'}
 function TAnalyseForm.EvaluateInfoRecord(var ARec:ResultsInfoRecord): twcFloatType;
 var side     : twcSides;
     Ynorm,r,c: twcFloatType;
@@ -7988,7 +7995,7 @@ with Engines[UsedEngine],ARec do                                                
   Result   := X;
   Sidedness:= True;
   Ynorm    := Math.Max(0.01,wSource[USource].twAppliedNormVal);
-  Xedge    := GetRelatedPositionType(wSource[USource].twAppliedEdgeLevel);      //Xedge holds confirmed edge type, source Wellhofer with user's settings, and may be freely changed
+  Xedge    := GetRelatedPositionType(wSource[USource].twAppliedEdgeLevel);      //Xedge holds confirmed edge type, source Wellhofer with user settings, and may be freely changed
   if Xtype='S' then                                                             //Extended symmetry according to menu choices
     case ExtSym of
       ExtSymLinacError: Selection:= 'L';
@@ -8015,7 +8022,7 @@ with Engines[UsedEngine],ARec do                                                
            else
              Y[side]:= SetLengthUnits(Units_in_numerator)*wSource[Usource].twLevelPos[YLevel].Penumbra[side].Calc;
            end;
-      'c': begin //Center position as defined by user's choices
+      'c': begin //Center position as defined by user choices
            Result   := SetLengthUnits(Units_in_numerator)*wSource[USource].twCenterPosCm;
            Sidedness:= False;
            end;
@@ -8103,6 +8110,11 @@ with Engines[UsedEngine],ARec do                                                
                end
              else
                Y[side]:= Xerrorval;
+           end;
+      'K': begin
+           with wSource[Xsource] do
+             Result:= 100*ifthen(twTopModel.Valid,twTopModel.Ytop,0)/twAbsNormValue;
+           Sidedness:= False;
            end;
       'L': begin  //symlinacerror
            Result   := 100*wSource[USource].twSymLinacError;
@@ -8192,11 +8204,12 @@ with Engines[UsedEngine],ARec do                                                
            Result   := 100*wSource[Xsource].twSymmetry;
            Sidedness:= False;
            end;
+      't',
       'T': begin
            if SyntheticMade then Usource:= dsMeasured
            else                  Usource:= Xsource;
            with wSource[Usource] do
-             Result:= SetLengthUnits(Units_in_numerator)*ifthen(FFFpSubItems[CenterFFFTopModel].Checked,ifthen(twTopModel.Valid,twTopModel.Xtop,twMaxPosCm),twFFFslopesTop);
+             Result:= SetLengthUnits(Units_in_numerator)*ifthen((Selection='t') or FFFpSubItems[CenterFFFTopModel].Checked,ifthen(twTopModel.Valid,twTopModel.Xtop,twMaxPosCm),twFFFslopesTop);
            Sidedness:= False;
            end;
       'u',
@@ -8588,6 +8601,7 @@ end; {~dataplotextentchanged}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {10/11/2020 twFitnormalisation*RawLogisticFunction}
 {02/03/2021 FFFIndicators depend on FFFfeatures}
+{14/05/2021 implemented ViewTopModelItem}
 procedure TAnalyseForm.PlotIndicators;
 var F,Y1,Y2,PosL,PosR,PosM,tmpX: twcFloatType;
     InFieldColor               : TColor;
@@ -8601,7 +8615,7 @@ case SelectedPlot of
 with Engines[UsedEngine],wSource[FFFdataSource] do
   begin
   IndicatorsOk         := twValid      and (ScanType in twcHoriScans) and ((twFlatness<DefMaxFlatness) or (AppliedFieldClass<>fcStandard));
-  TopModelSeries.Active:= IndicatorsOk and FFFfeatures and ViewFFFIndicatorsItem.Checked and wSource[dsMeasured].twTopModel.Valid;
+  TopModelSeries.Active:= IndicatorsOk and ((FFFfeatures and ViewFFFIndicatorsItem.Checked) or ViewTopModelItem.Checked) and wSource[dsMeasured].twTopModel.Valid;
   if IndicatorsOk then
     begin
     F           := twPlotScaling;
@@ -8640,16 +8654,15 @@ with Engines[UsedEngine],wSource[FFFdataSource] do
            until PosL>=PosR;
            end;
       end;
-    if FFFfeatures then
-      begin
-      for side:= twcLeft to twcRight do with twFFFslope[side] do
-       if twFFFvalid then
-         begin
-         FFFIndicators[side].Clear;
-         FFFIndicators[side].Active:= True;
-         FFFIndicators[side].AddXY(tmpX*twPosCm[twFFFfirst],(twFFFoffset+twFFFgain*twPosCm[twFFFfirst])*F);
-         FFFIndicators[side].AddXY(tmpX*twPosCm[twFFFlast ],(twFFFoffset+twFFFgain*twPosCm[twFFFlast ])*F);
-         end;
+      if FFFfeatures then
+        for side:= twcLeft to twcRight do with twFFFslope[side] do
+         if twFFFvalid then
+           begin
+           FFFIndicators[side].Clear;
+           FFFIndicators[side].Active:= True;
+           FFFIndicators[side].AddXY(tmpX*twPosCm[twFFFfirst],(twFFFoffset+twFFFgain*twPosCm[twFFFfirst])*F);
+           FFFIndicators[side].AddXY(tmpX*twPosCm[twFFFlast ],(twFFFoffset+twFFFgain*twPosCm[twFFFlast ])*F);
+           end;
       if TopModelSeries.Active then
         with TopModelSeries.DomainExclusions do
           begin
@@ -8658,7 +8671,6 @@ with Engines[UsedEngine],wSource[FFFdataSource] do
           AddRange(twTopModel.Xmax*tmpX,Infinity            );
           ChangeZPosition(TopModelSeries,False);
           end;
-      end; {fff detected}
     end; {if indicatorsok}
   end;
 end; {~plotindicators}
@@ -9946,10 +9958,6 @@ if FileHistoryItem.Checked then
   HistoryListSizeClick(FileHistoryItem);
   end;
 CheckMenuItem(MeasUseFitModelItem       ,False);
-CheckMenuItem(ViewSwapGTItem            ,False);
-CheckMenuItem(ViewSwapABItem            ,False);
-CheckMenuItem(ViewSwapUDItem            ,False);
-CheckMenuItem(ViewSwapLRItem            ,False);
 CheckMenuItem(MeasInvertGTitem          ,True);
 CheckMenuItem(MeasInvertABitem          ,False);
 CheckMenuItem(MeasInvertUDitem          ,False);
