@@ -1,4 +1,4 @@
-unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-11/04/2021}
+unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-16/05/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -18,14 +18,14 @@ interface
 uses SysUtils,
      TOtools,TObaseDef,TOconfigStrings,TOnumparser,Wellhofer;
 
-     {
+{
 Parameters with the exclamation symbol have a left and right result. Therefore the left result is obtained as -"evaluation type" and the right results as +"evaluation type". When no sign is given the result will be the average of left and right value.
 
     a                Area ratio
                        wSource[Xsource].twSymAreaRatio
   ! b                Border position based on edges user choices
                        wSource[Xsource].twLevelPos[twUsedEdgeLevel].Penumbra[side].Calc;
-    c                Center position as defined by user's choices
+    c                Center position as defined by user choices
                       wSource[Xsource].twCenterPosCm as defined by choices
     C                Curvature of fit of top
                       wSource[Xsource].twTopModel.Qquad
@@ -47,6 +47,8 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                        wSource[Xsource].twLevelPos[dSigmoid].Penumbra[side].Calc;
   ! I                Sigmoid 50%,
                        wSource[Xsource].twLevelPos[dSigmoid50].Penumbra[side].Calc;
+    K                relative heigth of Top position for Top model.
+                      100*wSource[Xsource].twTopModel.Ytop/wSource[Xsource].twAbsNormVal
     L                Linac error
                        100*wSource[Xsource].twSymLinacError
     l                Elevation
@@ -54,8 +56,8 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                            (GetPosition(Xsource,twFlatArr[twcRight])-GetPosition(Xsource,twFlatArr[twcLeft]))/twAbsNormVal
     m                Relative maximum
                        100*wSource[Xsource].twTopModel.Ytop/max(1,wSource[Xsource].twAbsNormVal)
-    M                Top position
-                       wSource[Xsource].twTopModel.Xtop
+    M                position of maximum
+                       wSource[Xsource].twMaxPosCm
     N                Norm position
                        wSource[Xsource].twAbsNormPosCm
     n                Norm value
@@ -65,18 +67,22 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                          1: ApplyDynamicWidth:= False | according to standard definitions for conventional fields
                          2: ApplyDynamicWidth:= True  | based on relative dose of inflection point
                         (nothing) or other: value according to Field Types tab
+    P [10|20|20/10]  Percentage depth dose
+                       wSource[Xsource].twPDD10,twPDD20,twPDD20/twPDD10
   ! q                Slope of sigmoid model (always positive in this implementation)
                        Y[side]:= wSource[Xsource].twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope]/Ynorm
   ! Q                Sigmoid slope in the inflection point
                        Y[side]:= Abs(wSource[Xsource].twSigmoidFitData[side].twFitResult2)/Ynorm
-    P [10|20|20/10]  Percentage depth dose
-                       wSource[Xsource].twPDD10,twPDD20,twPDD20/twPDD10
   ! r [nn]           Profile Evaluation Point at fraction nn% of border relative to center of field
                        GetScaledQfValue((2*Ord(side)-1)*abs(n.mm)*edge,relative,scNormalised,Xsource)
   ! R [nn]           Profile Evaluation Point at fraction nn% of border, with border and center rounded to steps of 5 mm
     s                Symmetry
                        100*wSource[Xsource].twSymmetry
     S                Extended symmetry according to menu choices
+    T                Top position according to user choices
+    			wSource[Xsource].twTopModel.Xtop or wSource[Xsource].twFFFslopesTop
+    t                Top position for Top model.
+                       wSource[Xsource].twTopModel.Xtop
   ! u                Border at user value
                           wSource[Xsource].twLevelPos[dUser].Penumbra[side].Calc
   ! U                Border at user value using Sigmoid
@@ -103,9 +109,10 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
 {05/03/2021 added 'Q'}
 {31/03/2021 added 'Z','z'}
 {01/04/2021 added pa_Xactual}
+{14/05/2021 added 'K', 't'}
 const
   EmptyXtype           =  #0;
-  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','L','l','M','m','N','n','p','P','q','Q','r','R','s','S','T','u','U','w','X','x','Y','y','Z','z',EmptyXtype];
+  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','K','L','l','M','m','N','n','p','P','q','Q','r','R','s','S','t','T','u','U','w','X','x','Y','y','Z','z',EmptyXtype];
   DefEnergyUncertainty = 0.01; {MeV}
   DefPanel             = 'PanelElements';
   DefCondTxt           = 'cond:';

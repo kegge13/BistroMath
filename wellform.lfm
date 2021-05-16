@@ -1,7 +1,7 @@
 object AnalyseForm: TAnalyseForm
-  Left = 294
+  Left = 430
   Height = 565
-  Top = 166
+  Top = 65
   Width = 885
   AllowDropFiles = True
   AlphaBlendValue = 0
@@ -799,7 +799,7 @@ object AnalyseForm: TAnalyseForm
         object ShiftGroupBox: TGroupBox
           Left = 285
           Height = 48
-          Top = 1
+          Top = 0
           Width = 583
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
@@ -838,93 +838,17 @@ object AnalyseForm: TAnalyseForm
             Value = 0.01
           end
         end
-        object LinacErrorGroupBox: TGroupBox
-          Left = 285
-          Height = 51
-          Top = 56
-          Width = 583
-          HelpContext = 127
-          Anchors = [akTop, akLeft, akRight]
-          Caption = 'Linac symmetry error'
-          ClientHeight = 31
-          ClientWidth = 579
-          TabOrder = 2
-          object LinacErrInvertGTCheckBox: TCheckBox
-            Left = 29
-            Height = 19
-            Top = 1
-            Width = 95
-            HelpContext = 127
-            Alignment = taLeftJustify
-            Caption = 'Invert sign: GT'
-            ParentBidiMode = False
-            TabOrder = 1
-          end
-          object LinacErrInvertABCheckBox: TCheckBox
-            Left = 131
-            Height = 19
-            Top = 1
-            Width = 35
-            HelpContext = 127
-            Alignment = taLeftJustify
-            Caption = 'AB'
-            ParentBidiMode = False
-            TabOrder = 2
-          end
-          object LinacSymLabel: TStaticText
-            Left = 269
-            Height = 19
-            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
-            Top = 4
-            Width = 150
-            HelpContext = 127
-            Align = alCustom
-            Alignment = taRightJustify
-            Caption = 'Radius inner/outer (cm):'
-            Color = clDefault
-            ParentColor = False
-            TabOrder = 0
-          end
-          object LinacSymInner_cm: TFloatSpinEditEx
-            Left = 434
-            Height = 21
-            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
-            Top = 2
-            Width = 59
-            HelpContext = 127
-            AutoSize = False
-            MaxLength = 0
-            TabOrder = 3
-            DecimalPlaces = 1
-            Increment = 0.01
-            MaxValue = 30
-          end
-          object LinacSymOuter_cm: TFloatSpinEditEx
-            Left = 505
-            Height = 21
-            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
-            Top = 2
-            Width = 59
-            HelpContext = 127
-            AutoSize = False
-            MaxLength = 0
-            TabOrder = 4
-            DecimalPlaces = 1
-            Increment = 0.01
-            MaxValue = 30
-          end
-        end
         object MergeGroupBox: TGroupBox
           Left = 285
           Height = 49
-          Top = 114
+          Top = 57
           Width = 583
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Merge settings'
           ClientHeight = 29
           ClientWidth = 579
-          TabOrder = 3
+          TabOrder = 2
           object MergeMatchCheckBox: TCheckBox
             Left = 391
             Height = 19
@@ -1003,15 +927,15 @@ object AnalyseForm: TAnalyseForm
         end
         object GammaSettingsGroupBox: TGroupBox
           Left = 285
-          Height = 159
-          Top = 171
+          Height = 147
+          Top = 173
           Width = 583
           HelpContext = 136
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Gamma analysis settings'
-          ClientHeight = 139
+          ClientHeight = 127
           ClientWidth = 579
-          TabOrder = 4
+          TabOrder = 3
           object GammaLimitAreaLabel: TLabel
             Left = 11
             Height = 15
@@ -1208,17 +1132,17 @@ object AnalyseForm: TAnalyseForm
         end
         object MayneordGroupBox: TGroupBox
           Left = 285
-          Height = 109
-          Top = 338
+          Height = 49
+          Top = 115
           Width = 583
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Mayneord settings'
-          ClientHeight = 89
+          ClientHeight = 29
           ClientWidth = 579
-          TabOrder = 5
+          TabOrder = 4
           object MayneordDmaxLabel: TStaticText
-            Left = 22
+            Left = 32
             Height = 19
             Top = 4
             Width = 66
@@ -1231,9 +1155,9 @@ object AnalyseForm: TAnalyseForm
             TabOrder = 0
           end
           object MayneordSSD1Label: TStaticText
-            Left = 11
+            Left = 214
             Height = 19
-            Top = 31
+            Top = 4
             Width = 77
             HelpContext = 129
             Align = alCustom
@@ -1244,9 +1168,9 @@ object AnalyseForm: TAnalyseForm
             TabOrder = 1
           end
           object MayneordSSD2Label: TStaticText
-            Left = 10
+            Left = 374
             Height = 19
-            Top = 58
+            Top = 4
             Width = 79
             HelpContext = 129
             Align = alCustom
@@ -1257,7 +1181,7 @@ object AnalyseForm: TAnalyseForm
             TabOrder = 2
           end
           object MayneordDmax_cm: TFloatSpinEditEx
-            Left = 101
+            Left = 111
             Height = 21
             Top = 1
             Width = 64
@@ -1270,9 +1194,9 @@ object AnalyseForm: TAnalyseForm
             Value = 1.6
           end
           object MayneordSSD1_cm: TFloatSpinEditEx
-            Left = 101
+            Left = 304
             Height = 21
-            Top = 28
+            Top = 1
             Width = 64
             HelpContext = 127
             AutoSize = False
@@ -1284,9 +1208,9 @@ object AnalyseForm: TAnalyseForm
             Value = 100
           end
           object MayneordSSD2_cm: TFloatSpinEditEx
-            Left = 101
+            Left = 465
             Height = 21
-            Top = 55
+            Top = 1
             Width = 64
             HelpContext = 127
             AutoSize = False
@@ -1319,7 +1243,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Filter width (mm):'
           Color = clDefault
           ParentColor = False
-          TabOrder = 6
+          TabOrder = 5
         end
         object CalcWidthLabel: TStaticText
           Left = 10
@@ -1332,7 +1256,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Calculation width (mm):'
           Color = clDefault
           ParentColor = False
-          TabOrder = 7
+          TabOrder = 6
         end
         object ResampleGridLabel: TStaticText
           Left = 10
@@ -1345,7 +1269,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Resample grid (mm):'
           Color = clDefault
           ParentColor = False
-          TabOrder = 8
+          TabOrder = 7
         end
         object GlobalNormAdjustLabel: TStaticText
           Left = 10
@@ -1356,7 +1280,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Normalisation level (%):'
           Color = clDefault
           ParentColor = False
-          TabOrder = 9
+          TabOrder = 8
         end
         object UserBorderDoseLabel: TStaticText
           Left = 10
@@ -1369,7 +1293,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'User Dose Level (%):'
           Color = clDefault
           ParentColor = False
-          TabOrder = 10
+          TabOrder = 9
         end
         object XpenumbraLabel: TStaticText
           Left = 10
@@ -1382,7 +1306,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'X penumbra h/l (%):'
           Color = clDefault
           ParentColor = False
-          TabOrder = 11
+          TabOrder = 10
         end
         object EpenumbraLabel: TStaticText
           Left = 10
@@ -1395,7 +1319,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'E penumbra h/l (%):'
           Color = clDefault
           ParentColor = False
-          TabOrder = 12
+          TabOrder = 11
         end
         object DefaultEnergyLabel: TStaticText
           Left = 10
@@ -1408,7 +1332,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Default energy [MV/MeV]:'
           Color = clDefault
           ParentColor = False
-          TabOrder = 13
+          TabOrder = 12
         end
         object FilterWidth_mm: TFloatSpinEditEx
           Left = 173
@@ -1418,7 +1342,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 14
+          TabOrder = 13
           DecimalPlaces = 1
           MaxValue = 30
           Value = 6
@@ -1432,7 +1356,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 15
+          TabOrder = 14
           DecimalPlaces = 1
           MaxValue = 30
         end
@@ -1445,7 +1369,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 16
+          TabOrder = 15
           DecimalPlaces = 1
           MaxValue = 30
         end
@@ -1457,7 +1381,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 17
+          TabOrder = 16
           DecimalPlaces = 1
           MaxValue = 300
           MinValue = 2
@@ -1472,7 +1396,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 18
+          TabOrder = 17
           DecimalPlaces = 1
           MaxValue = 300
           MinValue = 2
@@ -1487,7 +1411,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 19
+          TabOrder = 18
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1502,7 +1426,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 20
+          TabOrder = 19
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1517,7 +1441,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 21
+          TabOrder = 20
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1532,7 +1456,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 22
+          TabOrder = 21
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1547,7 +1471,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 23
+          TabOrder = 22
           DecimalPlaces = 1
           Increment = 0.1
           MinValue = 0.01
@@ -1564,7 +1488,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Histogram/Gamma range:'
           Color = clDefault
           ParentColor = False
-          TabOrder = 24
+          TabOrder = 23
         end
         object HistogramLimit_num: TFloatSpinEditEx
           Left = 166
@@ -1575,7 +1499,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 25
+          TabOrder = 24
           MaxValue = 30
           MinValue = 0.05
           NullValue = 2
@@ -1592,24 +1516,249 @@ object AnalyseForm: TAnalyseForm
           Alignment = taLeftJustify
           Caption = 'Use nominal field size for IFA'
           ParentBidiMode = False
+          TabOrder = 25
+        end
+        object PDDfitGroupBox: TGroupBox
+          Left = 285
+          Height = 140
+          Top = 329
+          Width = 583
+          HelpContext = 129
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'PDD fit'
+          ClientHeight = 120
+          ClientWidth = 579
           TabOrder = 26
+          object PDDfitCheckBox: TCheckBox
+            Left = 37
+            Height = 19
+            Top = 1
+            Width = 108
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'Fit PDD to buffer'
+            ParentBidiMode = False
+            TabOrder = 11
+          end
+          object FitMu3CheckBox: TCheckBox
+            Left = 294
+            Height = 19
+            Top = 29
+            Width = 44
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'mu3'
+            TabOrder = 0
+          end
+          object FitMu4CheckBox: TCheckBox
+            Left = 294
+            Height = 19
+            Top = 48
+            Width = 44
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'mu4'
+            TabOrder = 1
+          end
+          object FitMx2CheckBox: TCheckBox
+            Left = 296
+            Height = 19
+            Top = 67
+            Width = 43
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'mx2'
+            TabOrder = 2
+          end
+          object FitMubPowerFixedCheckBox: TCheckBox
+            Left = 211
+            Height = 19
+            Top = 57
+            Width = 46
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'fixed'
+            TabOrder = 3
+          end
+          object FitENRweigthedCheckBox: TCheckBox
+            Left = 215
+            Height = 19
+            Top = 85
+            Width = 42
+            HelpContext = 129
+            Alignment = taLeftJustify
+            Caption = 'ENR'
+            TabOrder = 4
+          end
+          object FitZWeightLabel: TStaticText
+            Left = 6
+            Height = 19
+            Top = 31
+            Width = 119
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Z-weighting power:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 5
+          end
+          object FitMubPowerLabel: TStaticText
+            Left = 6
+            Height = 19
+            Top = 60
+            Width = 119
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'mub power (buildup):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 6
+          end
+          object FitENRLabel: TStaticText
+            Left = 6
+            Height = 19
+            Top = 88
+            Width = 119
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Error to Noise Ratio:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 7
+          end
+          object FitMaxTimeLabel: TStaticText
+            Left = 349
+            Height = 19
+            Top = 88
+            Width = 119
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Max. time (sec):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 8
+          end
+          object FitRestartsLabel: TStaticText
+            Left = 412
+            Height = 13
+            Top = 60
+            Width = 51
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Restarts:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 9
+          end
+          object FitCyclesLabel: TStaticText
+            Left = 420
+            Height = 13
+            Top = 31
+            Width = 43
+            HelpContext = 129
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Cycles:'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 10
+          end
+          object FitZWeight_val: TFloatSpinEditEx
+            Left = 131
+            Height = 21
+            Hint = 'Power value for Z weighting'
+            Top = 29
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            TabOrder = 12
+            Increment = 0.01
+            MaxValue = 2
+          end
+          object FitMubPower_exp: TFloatSpinEditEx
+            Left = 131
+            Height = 21
+            Hint = 'Upper limit for Error to Noise Ratio'
+            Top = 57
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            TabOrder = 13
+            Increment = 0.01
+            MaxValue = 10
+            MinValue = 0.5
+            Value = 1.15
+          end
+          object FitENRlimit_ratio: TFloatSpinEditEx
+            Left = 131
+            Height = 21
+            Hint = 'Upper limit for Error to Noise Ratio'
+            Top = 85
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            TabOrder = 14
+            MaxValue = 50
+            Value = 2
+          end
+          object FitMaxTime_sec: TFloatSpinEditEx
+            Left = 474
+            Height = 21
+            Top = 85
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            TabOrder = 15
+            MaxValue = 50
+          end
+          object FitCycles_num: TSpinEditEx
+            Left = 475
+            Height = 21
+            Top = 29
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            TabOrder = 16
+            MaxValue = 50
+          end
+          object FitRestarts_num: TSpinEditEx
+            Left = 475
+            Height = 21
+            Top = 57
+            Width = 59
+            HelpContext = 129
+            AutoSize = False
+            MaxLength = 0
+            TabOrder = 17
+            MaxValue = 50
+          end
         end
       end
     end
     object AdvancedSettingsTab: TTabSheet
       HelpContext = 129
       Caption = 'Advanced Settings'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       OnExit = AdvancedSettingsTabExit
       object AdvancedSettingsPanel: TPanel
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 129
         Align = alClient
-        ClientHeight = 467
+        ClientHeight = 494
         ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
@@ -1865,7 +2014,7 @@ object AnalyseForm: TAnalyseForm
         object MatchGroupBox: TGroupBox
           Left = 258
           Height = 87
-          Top = 220
+          Top = 247
           Width = 560
           HelpContext = 129
           Caption = 'Match settings'
@@ -1983,12 +2132,12 @@ object AnalyseForm: TAnalyseForm
         end
         object MeasRemappingBox: TGroupBox
           Left = 258
-          Height = 50
+          Height = 77
           Top = 161
           Width = 560
           HelpContext = 129
-          Caption = 'Axis remapping'
-          ClientHeight = 32
+          Caption = 'Axis swapping and remapping'
+          ClientHeight = 59
           ClientWidth = 556
           Font.Color = clWindowText
           Font.Height = -11
@@ -2007,6 +2156,48 @@ object AnalyseForm: TAnalyseForm
             ItemHeight = 13
             OnChange = MeasReMappingStringChange
             TabOrder = 0
+          end
+          object SwapGTcheckbox: TCheckBox
+            Left = 278
+            Height = 19
+            Top = 5
+            Width = 113
+            HelpContext = 129
+            Caption = 'Swap &GT indicators'
+            Checked = True
+            OnClick = OnDataRead
+            State = cbChecked
+            TabOrder = 1
+          end
+          object SwapABcheckbox: TCheckBox
+            Left = 278
+            Height = 19
+            Top = 30
+            Width = 112
+            HelpContext = 129
+            Caption = 'Swap &AB indicators'
+            OnClick = OnDataRead
+            TabOrder = 2
+          end
+          object SwapUDcheckbox: TCheckBox
+            Left = 419
+            Height = 19
+            Top = 5
+            Width = 114
+            HelpContext = 129
+            Caption = 'Swap &UD indicators'
+            OnClick = OnDataRead
+            TabOrder = 3
+          end
+          object SwapLRcheckbox: TCheckBox
+            Left = 419
+            Height = 19
+            Top = 30
+            Width = 112
+            HelpContext = 129
+            Caption = 'Swap &LR indicators'
+            OnClick = OnDataRead
+            TabOrder = 4
           end
         end
         object BadPenumbraLabel: TStaticText
@@ -2098,231 +2289,6 @@ object AnalyseForm: TAnalyseForm
           MaxValue = 30
           Value = 2
         end
-        object PDDfitGroupBox: TGroupBox
-          Left = 257
-          Height = 140
-          Top = 315
-          Width = 560
-          HelpContext = 129
-          Anchors = [akTop, akLeft, akRight]
-          Caption = 'PDD fit'
-          ClientHeight = 120
-          ClientWidth = 556
-          TabOrder = 16
-          object PDDfitCheckBox: TCheckBox
-            Left = 37
-            Height = 19
-            Top = 1
-            Width = 108
-            HelpContext = 129
-            Alignment = taLeftJustify
-            Caption = 'Fit PDD to buffer'
-            ParentBidiMode = False
-            TabOrder = 11
-          end
-          object FitMu3CheckBox: TCheckBox
-            Left = 294
-            Height = 19
-            Top = 29
-            Width = 44
-            HelpContext = 129
-            Alignment = taLeftJustify
-            Caption = 'mu3'
-            TabOrder = 0
-          end
-          object FitMu4CheckBox: TCheckBox
-            Left = 294
-            Height = 19
-            Top = 48
-            Width = 44
-            HelpContext = 129
-            Alignment = taLeftJustify
-            Caption = 'mu4'
-            TabOrder = 1
-          end
-          object FitMx2CheckBox: TCheckBox
-            Left = 296
-            Height = 19
-            Top = 67
-            Width = 43
-            HelpContext = 129
-            Alignment = taLeftJustify
-            Caption = 'mx2'
-            TabOrder = 2
-          end
-          object FitMubPowerFixedCheckBox: TCheckBox
-            Left = 211
-            Height = 19
-            Top = 57
-            Width = 46
-            HelpContext = 129
-            Alignment = taLeftJustify
-            Caption = 'fixed'
-            TabOrder = 3
-          end
-          object FitENRweigthedCheckBox: TCheckBox
-            Left = 215
-            Height = 19
-            Top = 85
-            Width = 42
-            HelpContext = 129
-            Alignment = taLeftJustify
-            Caption = 'ENR'
-            TabOrder = 4
-          end
-          object FitZWeightLabel: TStaticText
-            Left = 6
-            Height = 19
-            Top = 31
-            Width = 119
-            HelpContext = 129
-            Align = alCustom
-            Alignment = taRightJustify
-            Caption = 'Z-weighting power:'
-            Color = clDefault
-            ParentColor = False
-            TabOrder = 5
-          end
-          object FitMubPowerLabel: TStaticText
-            Left = 6
-            Height = 19
-            Top = 60
-            Width = 119
-            HelpContext = 129
-            Align = alCustom
-            Alignment = taRightJustify
-            Caption = 'mub power (buildup):'
-            Color = clDefault
-            ParentColor = False
-            TabOrder = 6
-          end
-          object FitENRLabel: TStaticText
-            Left = 6
-            Height = 19
-            Top = 88
-            Width = 119
-            HelpContext = 129
-            Align = alCustom
-            Alignment = taRightJustify
-            Caption = 'Error to Noise Ratio:'
-            Color = clDefault
-            ParentColor = False
-            TabOrder = 7
-          end
-          object FitMaxTimeLabel: TStaticText
-            Left = 349
-            Height = 19
-            Top = 88
-            Width = 119
-            HelpContext = 129
-            Align = alCustom
-            Alignment = taRightJustify
-            Caption = 'Max. time (sec):'
-            Color = clDefault
-            ParentColor = False
-            TabOrder = 8
-          end
-          object FitRestartsLabel: TStaticText
-            Left = 412
-            Height = 13
-            Top = 60
-            Width = 51
-            HelpContext = 129
-            Align = alCustom
-            Alignment = taRightJustify
-            Caption = 'Restarts:'
-            Color = clDefault
-            ParentColor = False
-            TabOrder = 9
-          end
-          object FitCyclesLabel: TStaticText
-            Left = 420
-            Height = 13
-            Top = 31
-            Width = 43
-            HelpContext = 129
-            Align = alCustom
-            Alignment = taRightJustify
-            Caption = 'Cycles:'
-            Color = clDefault
-            ParentColor = False
-            TabOrder = 10
-          end
-          object FitZWeight_val: TFloatSpinEditEx
-            Left = 131
-            Height = 21
-            Hint = 'Power value for Z weighting'
-            Top = 29
-            Width = 59
-            HelpContext = 129
-            AutoSize = False
-            MaxLength = 0
-            TabOrder = 12
-            Increment = 0.01
-            MaxValue = 2
-          end
-          object FitMubPower_exp: TFloatSpinEditEx
-            Left = 131
-            Height = 21
-            Hint = 'Upper limit for Error to Noise Ratio'
-            Top = 57
-            Width = 59
-            HelpContext = 129
-            AutoSize = False
-            MaxLength = 0
-            TabOrder = 13
-            Increment = 0.01
-            MaxValue = 10
-            MinValue = 0.5
-            Value = 1.15
-          end
-          object FitENRlimit_ratio: TFloatSpinEditEx
-            Left = 131
-            Height = 21
-            Hint = 'Upper limit for Error to Noise Ratio'
-            Top = 85
-            Width = 59
-            HelpContext = 129
-            AutoSize = False
-            MaxLength = 0
-            TabOrder = 14
-            MaxValue = 50
-            Value = 2
-          end
-          object FitMaxTime_sec: TFloatSpinEditEx
-            Left = 474
-            Height = 21
-            Top = 85
-            Width = 59
-            HelpContext = 129
-            AutoSize = False
-            MaxLength = 0
-            TabOrder = 15
-            MaxValue = 50
-          end
-          object FitCycles_num: TSpinEditEx
-            Left = 475
-            Height = 21
-            Top = 29
-            Width = 59
-            HelpContext = 129
-            AutoSize = False
-            MaxLength = 0
-            TabOrder = 16
-            MaxValue = 50
-          end
-          object FitRestarts_num: TSpinEditEx
-            Left = 475
-            Height = 21
-            Top = 57
-            Width = 59
-            HelpContext = 129
-            AutoSize = False
-            MaxLength = 0
-            TabOrder = 17
-            MaxValue = 50
-          end
-        end
         object HistoryListCheckBox: TCheckBox
           Left = 10
           Height = 19
@@ -2332,7 +2298,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Use history list              length:'
           OnClick = HistoryListSizeClick
           ParentBidiMode = False
-          TabOrder = 17
+          TabOrder = 16
         end
         object HistoryListSize_num: TSpinEditEx
           Left = 193
@@ -2342,7 +2308,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 18
+          TabOrder = 17
           OnChange = HistoryListSizeClick
           MaxValue = 99
           MinValue = 1
@@ -2358,7 +2324,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 19
+          TabOrder = 18
           Increment = 2
           MaxValue = 21
           MinValue = 3
@@ -2374,7 +2340,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           Caption = 'Put history data in frozen state'
           ParentBidiMode = False
-          TabOrder = 20
+          TabOrder = 19
         end
         object AutoSetDecPointCheckBox: TCheckBox
           Left = 10
@@ -2385,7 +2351,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           Caption = 'Auto set decimal separator for:'
           ParentBidiMode = False
-          TabOrder = 21
+          TabOrder = 20
         end
         object AutoDecPointList: TEdit
           Left = 192
@@ -2396,7 +2362,7 @@ object AnalyseForm: TAnalyseForm
           AutoSize = False
           OnExit = FileConvStartCheck
           OnKeyPress = FileConvNameMaskKeyPress
-          TabOrder = 22
+          TabOrder = 21
           Text = '.,'
         end
         object ShowLockItemCheckBox: TCheckBox
@@ -2408,7 +2374,83 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           Caption = 'Show "Lock Critical Items" in File menu'
           ParentBidiMode = False
+          TabOrder = 22
+        end
+        object LinacErrorGroupBox: TGroupBox
+          Left = 258
+          Height = 51
+          Top = 343
+          Width = 560
+          HelpContext = 127
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'Linac symmetry error'
+          ClientHeight = 31
+          ClientWidth = 556
           TabOrder = 23
+          object LinacErrInvertGTCheckBox: TCheckBox
+            Left = 29
+            Height = 19
+            Top = 1
+            Width = 95
+            HelpContext = 127
+            Alignment = taLeftJustify
+            Caption = 'Invert sign: GT'
+            ParentBidiMode = False
+            TabOrder = 1
+          end
+          object LinacErrInvertABCheckBox: TCheckBox
+            Left = 131
+            Height = 19
+            Top = 1
+            Width = 35
+            HelpContext = 127
+            Alignment = taLeftJustify
+            Caption = 'AB'
+            ParentBidiMode = False
+            TabOrder = 2
+          end
+          object LinacSymLabel: TStaticText
+            Left = 238
+            Height = 19
+            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
+            Top = 4
+            Width = 150
+            HelpContext = 127
+            Align = alCustom
+            Alignment = taRightJustify
+            Caption = 'Radius inner/outer (cm):'
+            Color = clDefault
+            ParentColor = False
+            TabOrder = 0
+          end
+          object LinacSymInner_cm: TFloatSpinEditEx
+            Left = 403
+            Height = 21
+            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
+            Top = 2
+            Width = 59
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            TabOrder = 3
+            DecimalPlaces = 1
+            Increment = 0.01
+            MaxValue = 30
+          end
+          object LinacSymOuter_cm: TFloatSpinEditEx
+            Left = 474
+            Height = 21
+            Hint = 'Inner and outer radius for linac ionization chamber symmetry'
+            Top = 2
+            Width = 59
+            HelpContext = 127
+            AutoSize = False
+            MaxLength = 0
+            TabOrder = 4
+            DecimalPlaces = 1
+            Increment = 0.01
+            MaxValue = 30
+          end
         end
       end
     end
@@ -3271,6 +3313,13 @@ object AnalyseForm: TAnalyseForm
         ShortCut = 66
         OnClick = Viewitems
       end
+      object ViewFFFIndicatorsItem: TMenuItem
+        AutoCheck = True
+        Caption = '&FFF indicators'
+        Checked = True
+        ShortCut = 70
+        OnClick = Viewitems
+      end
       object ViewIndicatorsItem: TMenuItem
         AutoCheck = True
         Caption = '&In-Field Aarea indicators'
@@ -3286,11 +3335,10 @@ object AnalyseForm: TAnalyseForm
         ShortCut = 69
         OnClick = Viewitems
       end
-      object ViewFFFIndicatorsItem: TMenuItem
+      object ViewTopModelItem: TMenuItem
         AutoCheck = True
-        Caption = '&FFF indicators'
-        Checked = True
-        ShortCut = 70
+        Caption = '&Top Model'
+        ShortCut = 84
         OnClick = Viewitems
       end
       object ViewValuesItem: TMenuItem
@@ -3361,10 +3409,10 @@ object AnalyseForm: TAnalyseForm
       end
       object ViewRightAxisToGridItem: TMenuItem
         AutoCheck = True
-        Caption = 'Right axis linked &to grid'
+        Caption = 'Right axis linked to &grid'
         Checked = True
         Hint = 'keep labels linked to grid while using <kUp> and <kDown>'
-        ShortCut = 84
+        ShortCut = 71
         OnClick = RightAxisToGridClick
       end
       object ViewScaleElectronPDDrange: TMenuItem
@@ -3385,40 +3433,6 @@ object AnalyseForm: TAnalyseForm
         OnClick = ClearScreen
       end
       object ViewDivisor2: TMenuItem
-        Caption = '-'
-      end
-      object ViewSwapGTItem: TMenuItem
-        AutoCheck = True
-        Caption = 'Swap &GT indicators'
-        HelpContext = 110
-        Hint = 'Mirror axis'
-        ShortCut = 71
-        OnClick = OnDataRead
-      end
-      object ViewSwapABItem: TMenuItem
-        AutoCheck = True
-        Caption = 'Swap &AB indicators'
-        HelpContext = 110
-        Hint = 'Mirror axis'
-        ShortCut = 65
-        OnClick = OnDataRead
-      end
-      object ViewSwapUDItem: TMenuItem
-        AutoCheck = True
-        Caption = 'Swap &Depth indicators'
-        HelpContext = 110
-        Hint = 'Mirror axis'
-        ShortCut = 68
-        OnClick = OnDataRead
-      end
-      object ViewSwapLRItem: TMenuItem
-        AutoCheck = True
-        Caption = 'Swap &LR indicators'
-        Hint = 'Mirror axis'
-        ShortCut = 76
-        OnClick = OnDataRead
-      end
-      object ViewDivisor3: TMenuItem
         Caption = '-'
       end
       object ViewBottomAxisAlwaysBlack: TMenuItem
