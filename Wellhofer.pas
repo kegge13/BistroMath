@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 14/05/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 18/05/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -3938,7 +3938,7 @@ Inherited;
 end; {~destroy}
 
 
-//----------TRadthData----------------------------------------------------------
+//----------TRadthData is base class--------------------------------------------
 
 {09/12/2015 added sharedparser}
 {29/03/2016 added FRegisteredFiles}
@@ -3986,6 +3986,7 @@ if FLocalParser then
 else
   FParser:= SharedParser;
 end; {~create}
+
 
 (* SetDefaults: set defaults for base class, needs to be extended by child class
 input  : none
@@ -4072,6 +4073,7 @@ Result:= Copy(Stg,Succ(Ord(ASide)*i),i);
 end; {~getscandirection}
 
 
+//the base class itself cannot hold any data
 function TRadthData.GetNumPoints: Integer;
 begin
 Result:= UndefinedInt;
@@ -4497,6 +4499,8 @@ Result   := False;
 end; {~writedata}
 {$pop}
 
+
+{$push}{$warn 5092 off}
 (* ReadResults: messaging on validity of read data
 input : information on location of failure
 needed: FParseOk
@@ -4506,7 +4510,6 @@ The introduction of FFormatOk makes the distinction between correct
 data but with too few data points possible.
 This helps to retain the correct conclusions on the file type.}
 {13/08/2016 InsertIdentity}
-{$push}{$warn 5092 off}
 function TRadthData.ReadResults(PostText:String=''): Boolean;
 begin
 if Length(PostText)>0 then
@@ -4522,6 +4525,7 @@ end;
 Result:= FParseOk;
 end; {~readresults}
 {$pop}
+
 
 {14/08/2016 binstream}
 destructor TRadthData.Destroy;
@@ -4540,6 +4544,7 @@ if FLocalParser then
    end;
 FStatusProc:= nil;
 end; {~destroy}
+
 
 //----------TRfaProfileData-----------------------------------------------------
 
@@ -5063,6 +5068,7 @@ with RfaData do
   end;
 Inherited;
 end; {~destroy}
+
 
 //----------TICprofiler_ascii-----------------------------------------------------
 
@@ -7496,6 +7502,7 @@ begin
 Finalize(FPIPSdata);
 Inherited;
 end; {~destroy}
+
 
 //----------TWmsData------------------------------------------------------------
 
@@ -10764,19 +10771,19 @@ var Stg         : String;
     end;
   end; {snc_ascii}
 
-    { SNC_clipboard
-    Delivery System	U09               Delivery System	U09
-    Energy	10 MV                     Energy	10 MV
-    Scan Type	Crossline               Scan Type	PDD
-    Depth	5.00                        Depth
-    Field	21cm x 16cm (Jaws)          Field	9.6cm x 10.4cm (Jaws)
-    Wedge	Open Field                  Wedge	Open Field
-    Comments	26x26 cr                Comments	10.4x9.6
-	    5.00 cm : ScanId=406             	9.6cm x 10.4cm : ScanId=397
-    -18.075	2.44                      0	80.71
-    -17.825	2.56                      0.25	113.77
-    ...
-    }
+  { SNC_clipboard
+  Delivery System	U09               Delivery System	U09
+  Energy	10 MV                     Energy	10 MV
+  Scan Type	Crossline               Scan Type	PDD
+  Depth	5.00                        Depth
+  Field	21cm x 16cm (Jaws)          Field	9.6cm x 10.4cm (Jaws)
+  Wedge	Open Field                  Wedge	Open Field
+  Comments	26x26 cr                Comments	10.4x9.6
+   5.00 cm : ScanId=406             	9.6cm x 10.4cm : ScanId=397
+  -18.075	2.44                      0	80.71
+  -17.825	2.56                      0.25	113.77
+  ...
+  }
 
   procedure SNC_clipboard;
   var FieldSize: array['X'..'Y'] of twcFloatType;
@@ -10864,7 +10871,7 @@ Dec(FActiveCnt);
 end; {~parse_wellhofer_snc_ascii}
 
 (*
-****BistroMath core function****
+****** BistroMath core function ******
 coordinates are recalculated as needed on basis wUserAxisSign[mAxis]
 twStepSize is calculated from coordinates
 twVector_ICD_cm is setup
@@ -14932,7 +14939,7 @@ if not Result then
       FailInfo:= 'prefilter';
       {$ENDIF}
       if Sbackup then
-        CopyCurve(wSource[ASource],tmpSCurve,True);  {make backup of source}
+        CopyCurve(wSource[ASource],tmpSCurve,True);                             //make backup of source
       {$IFDEF THREADED}
       if (not ((fSource in twcFilteredCopies) and (fDivisor in twcFilteredCopies))) and
          (twNumCpu>1) then {both need filtering, threading meaningful}
@@ -14957,7 +14964,7 @@ if not Result then
            end;
         Finalize(MathThreadList);
         end {both needed filtering}
-      else                                             {probably both are already done}
+      else                                                                      //probably both are already done
         begin
         PreEmptiveFilter(ASource ,fSource );
         PreEmptiveFilter(ADivisor,fDivisor);
@@ -14967,7 +14974,7 @@ if not Result then
       PreEmptiveFilter(ADivisor,fDivisor);
       {$ENDIF}
       end;
-    if aDivisor=ADestination then CopyCurve(wSource[fSource],dPtr^) {destination starts as aligned copy of fSrc, order critical!}
+    if aDivisor=ADestination then CopyCurve(wSource[fSource],dPtr^)             //destination starts as aligned copy of fSrc, order critical!
     else                          CopyCurve(fSource,ADestination);
     {$IFDEF COMPILED_DEBUG}
     FailInfo:= wSource[ADestination].twFileName;
@@ -15017,7 +15024,7 @@ if not Result then
       end; {with Destination}
     if Sbackup then
       begin
-      CopyCurve(tmpSCurve,wSource[ASource]);  {restore source}
+      CopyCurve(tmpSCurve,wSource[ASource]);                                    //restore source
       ClearCurve(tmpSCurve,True);
       end;
     if ADivisor=ADestination then
@@ -15027,7 +15034,7 @@ if not Result then
       end
     else if dBackup then
       begin
-      CopyCurve(tmpDCurve,wSource[ADivisor]);  {restore divisor}
+      CopyCurve(tmpDCurve,wSource[ADivisor]);                                   //restore divisor
       ClearCurve(tmpDCurve,True);
       end;
       {$IFDEF MEDIAN_SPEEDTEST}
@@ -15595,21 +15602,21 @@ var i       : Integer;                                              { I1 mu1  mu
             e_sum             := 0;
             for p:= NMreflection to NMshrinkage do
               Inc(NMsteps[p],CrawlReport.NMsteps[p]);
-            Inc(Restarts,CrawlReport.Restarts);         {repeat loop introduces by definition 1 extra restart but starts at -1}
+            Inc(Restarts,CrawlReport.Restarts);                                 //repeat loop introduces by definition 1 extra restart but starts at -1
             Inc(Cycles,CrawlReport.Cycles);
-            if twSNR>0 then                                                                    {twSNR is calculated in QuadFilter}
+            if twSNR>0 then                                                     //twSNR is calculated in QuadFilter
               begin
               SetLength(model,Succ(FNMPddLast));
               try
                 for i:= FNMPddFirst to FNMPddLast do
-                  model[i]:= TvSpddFunction(BestVertex,twPosCm[i])*FNMPddScaling;    {vullen wSource[FNMsource].twdata met fitwaarde}
+                  model[i]:= TvSpddFunction(BestVertex,twPosCm[i])*FNMPddScaling; //fill wSource[FNMsource].twdata with fit value
                 k:= Max(2,twPoints div (2*twcDefENRblocks));
-                for i:= FNMPddFirst+k to FNMPddLast-k do                        {This calculation differs from TvSpddFitErrorResult.}
+                for i:= FNMPddFirst+k to FNMPddLast-k do                        //this calculation differs from TvSpddFitErrorResult
                   begin
                   e:= 0;
                   for j:= i-k to i+k do
-                    e:= e+(model[j]-wSource[ASource].twData[j]);   {Here a local block is taken for every point.}
-                  e_sum:= e_sum+Sqr(e)/(2*k+1);          {In TvSpddFitErrorResult only overlapping blocks are observed, much faster.}
+                    e:= e+(model[j]-wSource[ASource].twData[j]);                //here a local block is taken for every point
+                  e_sum:= e_sum+Sqr(e)/(2*k+1);                                 //in TvSpddFitErrorResult only overlapping blocks are observed, much faster
                   end;
                 try
                   e_sum:= SqRT(e_sum/(FNMPddLast-FNMPddFirst-2*k+1))/(twMaxValue*twSNR);
@@ -15693,8 +15700,8 @@ if (not (FFrozen or FIndexingMode)) and Analyse(ASource) then
     end; {with}
   with wSource[FNMPddSource],twPddFitData[NM_Primary],twNMReport do if twFitValid then
     begin
-    twFitNormalisation:= 1;     {needed for PDDmaxNMFit}
-    Analyse(FNMPddSource); { -> PDDmaxNMFit; sets twMaxPosCm, twMaxValue}
+    twFitNormalisation:= 1;                                                     //needed for PDDmaxNMFit
+    Analyse(FNMPddSource);                                                      //-> PDDmaxNMFit; sets twMaxPosCm, twMaxValue
     try
       fMax:= TvSpddFunction(BestVertex,twMaxPosCm);
       if fMax>0 then
@@ -18194,6 +18201,7 @@ sets edge based values dependent on field class
 {16/10/2020 fallback detection still used d50-Derivative instead of fcFallBack-fcPrimary}
 {19/04/2021 implementation of CenterNearOrigin; now always center is defined}
 {20/04/2021 review}
+{18/05/2021 initialise EdgeCenterCm}
 function TWellhoferData.FindEdge(ASource:twcDataSource=dsMeasured): Boolean;
 var FieldClass   : twcFieldClass;
     SigmoidNeeded: Boolean;
@@ -18215,6 +18223,7 @@ if Result then
     if Inrange(GetFieldWidthCm(ASource,p),0.05,wSmallFieldLimitCm) then         //small when field size is non-zero and <= wSmallFieldLimitCm
       wSource[ASource].twSetFieldType:= fcSmall;
     end;
+  EdgeCenterCm                     := 0;
   FieldClass                       := wSource[ASource].twSetFieldType;          //set local FieldClass value
   SigmoidNeeded                    := (wSource[ASource].twAppliedEdgeLevel  in [dInflection,dSigmoid50]) or
                                       (wEdgeMethod[fcPrimary,FieldClass] in [dInflection,dSigmoid50]);
