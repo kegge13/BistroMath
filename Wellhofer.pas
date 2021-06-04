@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 01/06/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 04/06/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -18689,6 +18689,7 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {03/03/2021 twIsDiagonal now depends on fieldtypes}
 {08/03/2021 review of IFA definition,wNominalIFA,twcDefaultSSD_MRcm}
 {01/06/2021 apply wFFFMinFieldSizeCm for FFF detection}
+{04/06/2021 repeat FindEdge when FFF detected}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -18753,7 +18754,7 @@ var s: twcDataSource;
     begin
     with wSource[ASource] do                                                    //fcWedge,fcElectron,fcMRlinac already detected in FastScan
       begin
-      lc:= 0;                   {loop count for analysis cycle}
+      lc:= 0;                                                                   //lc: loop count for analysis cycle
       repeat
         Inc(lc);
         AutoCenter:= (not twIsRelative) and (not FCentered) and
@@ -18839,6 +18840,7 @@ var s: twcDataSource;
               QfitMaxPos(ASource);                                              //for filtered versions: rely on unfiltered result
             if twFFFdetected then           //------------------start FFF specific works-----------------------------------
               begin
+              FindEdge(ASource);                                                //FindEdge must be repeated with settings for FFF
               for side:= twcLeft to twcRight do {if (borders are symmetrical around origin) && (average twInFieldArr < 90%):  evaluate FFF slopes}
                 with twFFFslope[side] do
                   begin
