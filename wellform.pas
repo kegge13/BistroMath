@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 01/06/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 07/06/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -5030,10 +5030,11 @@ end; {~smartscaleelectronpdd}
 
 {15/02/2021}
 {18/02/2021 do not add empty engines immediately}
+{07/06/2021 check for legal value usedengine}
 procedure TAnalyseForm.SetHistoryListSize(NewLength:Word);
 var i,j: Integer;
 begin
-HistoryListSize_num.Value:= NewLength;
+HistoryListSize_num.Value:= Max(1,NewLength);
 j                        := Length(Engines);
 if NewLength<Length(Engines) then
   for i:= j-1 downto 0 do
@@ -5043,6 +5044,7 @@ if NewLength<Length(Engines) then
       Engines[i].Freeze:= HistoryListCheckBox.Checked;
 if TempRefEngine>=NewLength then
   ProcessUnsetTempRefClick(Self);
+UsedEngine:= Min(UsedEngine,HistoryListSize_num.Value-1);
 end; {~sethistorylistsize}
 
 
@@ -5050,8 +5052,9 @@ end; {~sethistorylistsize}
 {17/09/2020 HistoryListFreezeCheckBox}
 {18/09/2020 when unfrozen relaod current data if possible}
 {15/02/2021 handling engines size moved to SetHistoryListSize}
+{07/06/2021 do not remove Engine[0] from list, because of ownership ModalityLists}
 procedure TAnalyseForm.HistoryListSizeClick(Sender: TObject);
-var i  : Integer;
+var i,j: Integer;
     c,s: Boolean;
 begin
 c:= FileHistoryItem.Checked<>HistoryListCheckBox.Checked;                       //prevent reentrance by changing checked within procedure
@@ -5066,18 +5069,15 @@ if c or (Sender=HistoryListSize_num) then
   if c and (not s) then                                                         //when switched to checked a size of 2 is the smallest meaningful
     HistoryListSize_num.Value:= Max(2,HistoryListSize_num.Value);
   i:= Max(1,ifthen(FileHistoryItem.Checked,HistoryListSize_num.Value,1));
-  if UsedEngine>=i then
+  j:= UsedEngine;
+  SetHistoryListSize(i);                                                        //check also usedengine
+  if j>i then
     begin
-    if assigned(Engines[0]) then
-      FreeAndNil(Engines[0]);
-    Engines[0         ]:= Engines[UsedEngine];
-    Engines[UsedEngine]:= nil;
-    LoadEngine         := 0;
-    SelectEngine(0);
+    UsedEngine:= i-1;
+    SelectEngine(UsedEngine);
     end
   else if not (c or s or ClipBoardLock) then                                    //ClipBoardLock is set during FormCreate
     Reload(Sender);                                                             //reload current data in unfrozen state when meaningful
-  SetHistoryListSize(i);
   if not ClipBoardLock then                                                     //ClipBoardLock is set during FormCreate
     UpdateSettings(Sender);
   ShowMenuItemStatus(FileHistoryItem);
@@ -6629,15 +6629,22 @@ end; {~nametopreset}
 {04/11/2016 rebuild}
 {16/07/2020 handle empty lists}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{07/06/2021 check if ModalityFilmList is available}
 procedure TAnalyseForm.FillCheckListCombo;
 var i  : Integer;
     m,f: String;
 begin
-with Engines[UsedEngine].ModalityFilmList do
-  begin
-  m:= GetModalityList;
-  f:= GetFilmTypeList;
-  end;
+with Engines[UsedEngine] do
+  if assigned(ModalityFilmList) then
+    begin
+    m:= ModalityFilmList.GetModalityList;
+    f:= ModalityFilmList.GetFilmTypeList;
+    end
+  else
+    begin
+    m:= '';
+    f:= '';
+    end;
 i:= Length(UseDoseConvTable);
 while i>0 do
   begin
@@ -9126,6 +9133,7 @@ end; {~fitresultsgridclick}
 {08/11/2016}
 {29/07/2020 adjust number of columns}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{07/06/2021 check if list is available}
 procedure TAnalyseForm.ModListRadioButtonClick(Sender: TObject);
 var i: Integer;
     s: String;
@@ -9154,11 +9162,14 @@ ModListGrid           .RowCount  := 1;
 ModListGrid           .EditorMode:= False;
 ModListBeamRadioButton.Visible   := RefGenericBeamItem.Checked;
 ModListGrid.Rows[0]   .CommaText := s;
-if L^.DataCount>0 then
-  for i:= 0 to Pred(L^.DataCount) do
-    ModListGridFill(L^.CommaText[i])
-else
-  ModListAddClick(Sender);
+if assigned(L) then
+  begin
+  if L^.DataCount>0 then
+    for i:= 0 to Pred(L^.DataCount) do
+      ModListGridFill(L^.CommaText[i])
+  else
+    ModListAddClick(Sender);
+  end;
 ModListUpdate(Sender);
 end; {~modlistradiobuttonclick}
 
