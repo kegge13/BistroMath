@@ -1200,8 +1200,8 @@ const DefAppName           ='BistroMath';
       DefChartAxL          =  0;                                                //These values are only valid in standard setup of chart
       DefChartAxB          =  1;
       DefChartAxR          =  2;                                                //DefChartAxT=3;
-      DefMinFPCbuild       =690;
-      DefConfigRepairFile  ='BM751_renamed_elements.ini';
+      DefMinFPCbuild       =755;
+      DefConfigRepairFile  ='BM753_renamed_elements.ini';
       XtypeFilter          = csNumeric+[EmptyXtype];
       PlotSeriesColors  : array[PlotItems] of TColor       = (clRed,clBlue,clGreen,clMaroon{,clNavy});
       PlotDataMapping   : array[PlotItems] of twcDataSource= (dsMeasured,dsCalculated,dsReference,dsBuffer);
