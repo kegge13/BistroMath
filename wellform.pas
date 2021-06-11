@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 07/06/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 08/06/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -31,7 +31,7 @@ uses
 
 
 //Work-around for backward compatibility with for LCL v2.0.10 and below.
-//In a testversion of v2.0.12 OnMarkToText was set as deprecated.
+//In a testversion of LcL v2.0.12 OnMarkToText was set as deprecated.
 //but the object inspector v2.0.10 offers only OnMarkToText and the pre-production version of v2.0.12 only OnGetMarkText.
 //Therefore setting this at design time WAS become problematic. Instead this event now is set at runtime in FormCreate.
 //The solution below works in Laz v2.0.12, therefore I leave it as is for now. It will change with LcL 2.2
@@ -337,8 +337,9 @@ type
 
   { TAnalyseForm }
   TAnalyseForm = class(TForm)
+    //menu
     MainMenu                    : TMainMenu;
-    //file menu
+    //-file menu
     FileMenu                    : TMenuItem;
     FileOpenItem                : TMenuItem;  {Ctrl+O}       //OnClick = FileOpen
     FileOpenTempRefItem         : TMenuItem;  {Ctrl+Alt+O}   //OnClick = FileOpenTempRefClick
@@ -352,7 +353,7 @@ type
     FileHistoryItem             : TMenuItem;  {Ctrl+H}       //OnClick = HistoryListSizeClick, linked to HistoryListCheckBox
     FileExitItem                : TMenuItem;  {Alt+F4}       //OnClick = FileExitAction
     FileMultipleInputItem       : TMenuItem;
-    //processing menu
+    //-processing menu
     ProcessingMenu              : TMenuItem;
     ProcessingDivisor1          : TMenuItem;
     ProcessingDivisor2          : TMenuItem;
@@ -366,11 +367,11 @@ type
     ProcessClearMergeItem       : TMenuItem;  {Shift+Ctrl+O} //OnClick = ProcessMergeSourceClick
     ProcessMirrorMeasRefItem    : TMenuItem;  {Ctrl+X}       //OnClick = ProcessMirrorMeasRefClick
     ProcessSyntheticProfile     : TMenuItem;  {Ctrl+F}       //OnClick = Reload                      >wDefaultIgnoreSet
-    ProcessSetTempRefItem       : TMenuItem;  {Ctrl+T}       //Action = TempRefAction                >wCheckRefCurveString
+    ProcessSetTempRefItem       : TMenuItem;  {Ctrl+T}       //Action  = TempRefAction               >wCheckRefCurveString
     ProcessUnsetTempRefItem     : TMenuItem;  {Shift+Ctrl+T} //OnClick = ProcessUnsetTempRefClick
     ProcessIgnoreTUnameItem     : TMenuItem;  {Ctrl+U}       //OnClick = ProcessUpdateDataRead       >wCheckRefCurveString,wCheckRefIgnoreLinac
     ProcessCheckTempTypeItem    : TMenuItem;  {Ctrl+Y}       //OnClick = ProcessUpdateDataRead       >wCheckRefCurveString
-    //view menu
+    //-view menu
     ViewMenu                    : TMenuItem;
     ViewDivisor1                : TMenuItem;
     ViewDivisor2                : TMenuItem;
@@ -399,7 +400,7 @@ type
     ViewClearItem               : TMenuItem;  {End}          //OnClick = ClearScreen
     ViewBottomAxisAlwaysBlack   : TMenuItem;  {none}         //OnClick = OnDataRead                   >wUserAxisSign
     ViewNoDefaultAnnotationItem : TMenuItem;  {O}            //OnClick = UImodeChange
-    //measurement menu
+    //-measurement menu
     MeasMenu                    : TMenuItem;  {Shift in use: ',','+','-','.',1,2,3,A,B,C,D,E,G,H,I,L,M,N,O,P,R,S,T,U,W,Y,Z}
     MeasDivisor1                : TMenuItem;
     MeasDivisor2                : TMenuItem;
@@ -416,7 +417,7 @@ type
     MeasLocalPeakItem           : TMenuItem;  {Shift+L}      //OnClick = LocalPeakClick
     MeasMoveLeftItem            : TMenuItem;  {Shift+,}      //OnClick = MeasMoveClick
     MeasMoveRightItem           : TMenuItem;  {Shift+.}      //OnClick = MeasMoveClick
-    //submenu
+    //--submenu
     MeasGenStrategySubMenu      : TMenuItem;
     MeasBadPenumbraItem         : TMenuItem;  {Shift+A}      //OnClick = Reload
     MeasMissingPenumbraItem     : TMenuItem;  {Shift+I}      //OnClick = OnDataRead
@@ -426,24 +427,24 @@ type
     MeasGeneric_mm_Item         : TMenuItem;  {Shift+-}      //OnClick = Reload
     MeasPeakFFFSubMenu          : TMenuItem;
     MeasExtSymSubMenu           : TMenuItem;
-    //submenu
+    //--submenu
     MeasSSDsubmenu              : TMenuItem;
     MeasSDD2SSDItem             : TMenuItem;  {Shift+C}      //OnClick = Reload                       >wScaleSDD2SSD
     MeasScale2DefaultSSDitem    : TMenuItem;  {Shift+H}      //OnClick = ReadEditor                   >wScale2DefaultSSD
-    //submenu
+    //--submenu
     MeasSignalSubMenu           : TMenuItem;
     MeasBackgroundCorrItem      : TMenuItem;  {Shift+B}      //OnClick = Reload
     MeasOD2DoseConvItem         : TMenuItem;  {Shift+N}      //OnClick = ReadEditor
     MeasIon2DoseItem            : TMenuItem;  {Shift+Y}      //OnClick = Ionisation2DoseClick
     MeasReNormaliseDataItem     : TMenuItem;  {Shift+W}      //OnClick = ReadEditor                   >wRenormaliseData
-    //submenu
+    //--submenu
     MeasAxisSubMenu             : TMenuItem;
     MeasInvertGTitem            : TMenuItem;  {Shift+1}      //OnClick = ReadEditor
     MeasInvertABitem            : TMenuItem;  {Shift+2}      //OnClick = ReadEditor
     MeasInvertUDitem            : TMenuItem;  {Shift+3}      //OnClick = ReadEditor
     MeasRemapCoordinates        : TMenuItem;                 //OnClick = ReadEditor
     MeasPreserveDataItem        : TMenuItem;                 //OnClick = SetWellhoferValues;   Tag=4  >wAxisPreserveOnExport
-    //reference menu
+    //-reference menu
     ReferenceMenu               : TMenuItem;
     RefAutoLoadItem             : TMenuItem;  {Alt+L}        //OnClick = ViewItems
     RefDeviceSpecificItem       : TMenuItem;  {Alt+I}        //OnClick = ReferenceDevSpecClick        >wMeas2TankMapping
@@ -455,16 +456,16 @@ type
     RefAlignItem                : TMenuItem;  {Alt+M}        //OnClick = Reload
     RefAlignTopforFFF           : TMenuItem;  {Alt+F}        //OnClick = Reload
     RefNormaliseItem            : TMenuItem;  {Alt+N}        //OnClick = OnDataRead
-    //submenu
+    //--submenu
     RefCalcSubMenu              : TMenuItem;
     RefUseDivideByItem          : TMenuItem;  {Alt+D}        //OnClick = CalcSubMenuClick
     RefUseGammaItem             : TMenuItem;  {Alt+G}        //OnClick = CalcSubMenuClick
     RefUseAddToItem             : TMenuItem;  {Alt+A}        //OnClick = CalcSubMenuClick
     RefUseUnrelatedToItem       : TMenuItem;  {Alt+U}        //OnClick = CalcSubMenuClick
-    //calculation menu
+    //-calculation menu
     CalculationMenu             : TMenuItem;
     CalcPostFilterItem          : TMenuItem;
-    //options menu
+    //-options menu
     OptionsMenu                 : TMenuItem;
     AdvancedModeItem            : TMenuItem;                 //OnClick = OptionModeClick
     SimpleModeItem              : TMenuItem;                 //OnClick = OptionModeClick
@@ -473,10 +474,10 @@ type
     ConfigSaveItem              : TMenuItem;                 //OnClick = ConfigSave
     ConfigSaveAsItem            : TMenuItem;                 //OnClick = ConfigSaveAsItemClick;   Tag=4
     ConfigAutoSaveItem          : TMenuItem;                 //autocheck only
-    //presets menu
+    //-presets menu
     PresetsMenu                 : TMenuItem;
     ConfigSavePresetAs          : TMenuItem;                 //OnClick = ConfigSaveAsItemClick
-    //help menu
+    //-help menu
     HelpMenu                    : TMenuItem;
     AboutItem                   : TMenuItem;                 //OnClick = OnMenu
     HelpItem                    : TMenuItem;                 //OnClick = OnMenu
@@ -492,7 +493,7 @@ type
     AliasListDelete             : TMenuItem;
     //tabs
     PageControl                 : TPageControl;
-    //analysis tab
+    //-analysis tab
     AnalysisTab                 : TTabSheet;
     DataPlot                    : TChart;                                       //set DataPlot.AutoFocus on to avoid trigger of PageControlRequestChange with VK_LEFT/RIGHT
     L_AxisTransforms            : TChartAxisTransformations;                    //needed to set the vertical axis otherwise than showing all data
@@ -505,11 +506,11 @@ type
     MeasNormAdjustEdit          : TFloatSpinEditEx;                             //mostly hidden feature for changing normalisation level
     PositionLabel               : TLabel;
     PositionValue               : TLabel;
-    //histogram tab
+    //-histogram tab
     HistogramTab                : TTabSheet;
     HistogramPlot               : TChart;                                       //set HistoGramPlot.AutoFocus on to avoid trigger of PageControlRequestChange with VK_LEFT/RIGHT
     Histogram                   : TBarSeries;
-    //fit results tab
+    //-fit results tab
     FitResultsTab               : TTabSheet;                                    //here model parameter values can be observed and copied after a pdd fit
     FitResultsPanel             : TPanel;                                       //only used to set background color
     FitResultsAllCheckBox       : TCheckBox;
@@ -517,7 +518,10 @@ type
     FitResultsHeaderCheckBox    : TCheckBox;
     FitresultsLabel             : TLabel;
     FitResultsLabelsCheckBox    : TCheckBox;
-    //FieldType tab
+    //-alias tab
+    AliasTab                    : TTabSheet;
+    AliasListEditor             : TValueListEditor;
+    //-Field Types tab
     FieldTypesTab               : TTabSheet;                                    //a series of settings is highly dependendent on the actual data being processed: the Field Types
     FieldTypesPanel             : TPanel;                                       //a place holder to ba able to set a background color
     Ft_DetectLabel              : TStaticText;                                  //twcFieldClass=(fcStandard,fcFFF,fcSmall,fcMRlinac,fcWedge,fcElectron);
@@ -540,7 +544,7 @@ type
     FFFMinEdgeDif_mm            : TFloatSpinEditEx;                             //>wFFFMinEdgeDifCm
     FFFInFieldExtLabel          : TStaticText;
     FFFInFieldExt_cm            : TFloatSpinEditEx;                             //>twcFFFInFieldExtCm
-    //-Edge groupbox
+    //--Edge groupbox
     EdgeDetectionGroupBox       : TGroupBox;
     EdgeDetectionCheckBox       : TCheckBox;                                    //>wEdgeDetect
     EdgeDetectionError_mm       : TFloatSpinEditEx;                             //>wEdgeFallBackCm
@@ -552,39 +556,7 @@ type
     EdgeWedge90ShiftFactor      : TFloatSpinEditEx;                             //>wWedge90ShiftFactor
     EdgeMRlinacListLabel        : TStaticText;
     EdgeMRlinacTUcsvList        : TEdit;                                        //>wMRlinacTUlist
-    //inventory tab
-    InventoryTab                : TTabSheet;
-    InventoryAltAxisCheckBox    : TCheckBox;                                    //>wMeas2TankMapping
-    InventoryDirBox             : TDirectoryEdit;                               //InventoryDirBoxAccept
-    InventoryGrid               : TStringGrid;
-    InventoryRadioRef           : TRadioButton;                                 //InventoryDirBoxChange
-    InventoryRadioData          : TRadioButton;                                 //InventoryDirBoxChange
-    InventoryRadioSelf          : TRadioButton;                                 //InventoryDirBoxChange
-    InventorySetRefDirButton    : TButton;                                      //InventorySetRefDirClick
-    //alias tab
-    AliasTab                    : TTabSheet;
-    AliasListEditor             : TValueListEditor;
-    //file conversion tab
-    FileConversionTab           : TTabSheet;
-    FileConversionPanel         : TPanel;                                       //placeholder to set background color
-    FileConvDestinationLabel    : TStaticText;
-    FileConvDestinationTypeLabel: TStaticText;
-    FileConvSourceLabel         : TStaticText;
-    FileConvSourceTypeLabel     : TStaticText;
-    FileConvSourcePath          : TDirectoryEdit;
-    FileConvSourceListBox       : TListBox;
-    FileConvSourceRecursive     : TCheckBox;
-    FileConvIon2DoseCheckBox    : TCheckBox;
-    FileConvDestinationPath     : TDirectoryEdit;
-    FileConvDestinationListBox  : TListBox;
-    FileConvSamePath            : TCheckBox;
-    FileConvLowerCase           : TCheckBox;
-    FileConvMakeFileName        : TCheckBox;
-    FileConvOverWrite           : TCheckBox;
-    FileConvNameMask            : TEdit;
-    FileConvStartButton         : TButton;
-    FileConvList                : TMemo;
-    //settings tab
+    //-settings tab
     SettingsTab                 : TTabSheet;
     SettingsPanel               : TPanel;                                       //placeholder to set background color
     FilterWidthLabel            : TStaticText;
@@ -609,11 +581,11 @@ type
     HistogramLimit_num          : TFloatSpinEditEx;
     InsertOriginCheckBox        : TCheckBox;
     Nominal_IFA_CheckBox        : TCheckBox;                                    //>wNominalIFA
-    //-shift settings groupbox
+    //--shift settings groupbox
     ShiftGroupBox               : TGroupBox;
     ShiftStepLabel              : TStaticText;
     ManualShiftStep_cm          : TFloatSpinEditEx;
-    //-merge groupbox
+    //--merge groupbox
     MergeGroupBox               : TGroupBox;
     MergeProfShiftLabel         : TStaticText;
     MergeProfShift_cm           : TFloatSpinEditEx;
@@ -621,7 +593,7 @@ type
     MergePDDShiftLabel          : TStaticText;
     MergePDDShift_cm            : TFloatSpinEditEx;
     MergeMatchCheckBox          : TCheckBox;
-    //-mayneord groupbox
+    //--mayneord groupbox
     MayneordGroupBox            : TGroupBox;
     MayneordDmaxLabel           : TStaticText;
     MayneordDmax_cm             : TFloatSpinEditEx;
@@ -629,7 +601,7 @@ type
     MayneordSSD1_cm             : TFloatSpinEditEx;
     MayneordSSD2Label           : TStaticText;
     MayneordSSD2_cm             : TFloatSpinEditEx;
-    //-gamma analysis groupbox
+    //--gamma analysis groupbox
     GammaDepthCutoffLabel       : TStaticText;
     GammaDepthCutoff_mm         : TFloatSpinEditEx;
     GammaDistNormLabel          : TStaticText;
@@ -645,7 +617,7 @@ type
     GammaSettingsGroupBox       : TGroupBox;
     GammaLimitAreaLabel         : TLabel;
     GammaLocalDoseCheckBox      : TCheckBox;
-    //-pddfit groupbox
+    //--pddfit groupbox
     PDDfitGroupBox              : TGroupBox;
     PDDfitCheckBox              : TCheckBox;
     FitCyclesLabel              : TStaticText;
@@ -665,7 +637,7 @@ type
     FitRestarts_num             : TSpinEditEx;
     FitZWeightLabel             : TStaticText;
     FitZWeight_val              : TFloatSpinEditEx;
-    //advanced settings tab
+    //-advanced settings tab
     AdvancedSettingsTab         : TTabSheet;
     AdvancedSettingsPanel       : TPanel;                                       //placeholder to set background color
     AdvancedModeStartCheckBox   : TCheckBox;
@@ -687,7 +659,7 @@ type
     OriginMinLevel_perc         : TFloatSpinEditEx;                             //>twcOriginMinNormFraction
     PipsPixelSizeLabel          : TStaticText;
     PipsPixelSize_cm            : TFloatSpinEditEx;                             //>wPipsPixelCm
-    //-axis view groupbox
+    //--axis title groupbox
     AxisViewGroupBox            : TGroupBox;
     AxisViewFileTypeCheckBox    : TCheckBox;
     AxisViewCollAngleCheckBox   : TCheckBox;
@@ -699,19 +671,19 @@ type
     AxisViewDetLength_num       : TSpinEditEx;
     AxisViewComLengthLabel      : TLabel;
     AxisViewComLength_num       : TSpinEditEx;
-    //-colors groupbox
+    //--colors groupbox
     ColorsBox                   : TGroupBox;
     PlotColorPanel              : TPanel;
     GridColorPanel              : TPanel;
     UIColorPanel                : TPanel;
-    //-meas remapping groupbox
+    //--axis swapping and remapping groupbox
     MeasRemappingBox            : TGroupBox;
     MeasReMappingString         : TComboBox;
     SwapGTcheckbox              : TCheckBox;                                    //OnClick = OnDataRead
     SwapABcheckbox              : TCheckBox;                                    //OnClick = OnDataRead
     SwapUDcheckbox              : TCheckBox;                                    //OnClick = OnDataRead
     SwapLRcheckbox              : TCheckBox;                                    //OnClick = OnDataRead
-    //-match settings groupbox
+    //--match settings groupbox
     MatchGroupBox               : TGroupBox;
     MatchRangeDividerLabel      : TLabel;
     MatchRangeDivider_num       : TSpinEditEx;
@@ -721,14 +693,14 @@ type
     MatchNormDelta_perc         : TFloatSpinEditEx;
     MatchInclusionLabel         : TLabel;
     MatchInclusionLimit_perc    : TFloatSpinEditEx;
-    //-linac symmetry error groupbox
+    //--linac symmetry error groupbox
     LinacErrorGroupBox          : TGroupBox;
     LinacErrInvertABCheckBox    : TCheckBox;
     LinacErrInvertGTCheckBox    : TCheckBox;
     LinacSymLabel               : TStaticText;
     LinacSymInner_cm            : TFloatSpinEditEx;
     LinacSymOuter_cm            : TFloatSpinEditEx;
-    //configuration tab
+    //-configuration tab
     ConfigurationTab            : TTabSheet;
     ConfigurationPanel          : TPanel;
     ModListAddButton            : TButton;
@@ -738,7 +710,42 @@ type
     ModListFilmRadioButton      : TRadioButton;
     ModListGrid                 : TStringGrid;
     ModListNormRadioButton      : TRadioButton;
-    //use dose conversion tab
+    //-logging tab
+    LogTab                      : TTabSheet;
+    LogTabMemo                  : TMemo;                                        //LogTabMemo.Tag is used for maximum number of lines, initial value 500
+    //-raw data tab
+    RawDataTab                  : TTabSheet;                                    //shows the data as received on the clipboard or from file. binary data are converted to text format
+    RawDataEditor               : TMemo;
+    //-inventory tab
+    InventoryTab                : TTabSheet;
+    InventoryAltAxisCheckBox    : TCheckBox;                                    //>wMeas2TankMapping
+    InventoryDirBox             : TDirectoryEdit;                               //InventoryDirBoxAccept
+    InventoryGrid               : TStringGrid;
+    InventoryRadioRef           : TRadioButton;                                 //InventoryDirBoxChange
+    InventoryRadioData          : TRadioButton;                                 //InventoryDirBoxChange
+    InventoryRadioSelf          : TRadioButton;                                 //InventoryDirBoxChange
+    InventorySetRefDirButton    : TButton;                                      //InventorySetRefDirClick
+    //-file conversion tab
+    FileConversionTab           : TTabSheet;
+    FileConversionPanel         : TPanel;                                       //placeholder to set background color
+    FileConvDestinationLabel    : TStaticText;
+    FileConvDestinationTypeLabel: TStaticText;
+    FileConvSourceLabel         : TStaticText;
+    FileConvSourceTypeLabel     : TStaticText;
+    FileConvSourcePath          : TDirectoryEdit;
+    FileConvSourceListBox       : TListBox;
+    FileConvSourceRecursive     : TCheckBox;
+    FileConvIon2DoseCheckBox    : TCheckBox;
+    FileConvDestinationPath     : TDirectoryEdit;
+    FileConvDestinationListBox  : TListBox;
+    FileConvSamePath            : TCheckBox;
+    FileConvLowerCase           : TCheckBox;
+    FileConvMakeFileName        : TCheckBox;
+    FileConvOverWrite           : TCheckBox;
+    FileConvNameMask            : TEdit;
+    FileConvStartButton         : TButton;
+    FileConvList                : TMemo;
+    //-signal adapt tab
     ODconvTab                   : TTabSheet;
     ODConversionPanel           : TPanel;
     UseBackgroundValueLabel     : TStaticText;
@@ -749,12 +756,6 @@ type
     UseBackGroundBox            : TGroupBox;
     UseDoseAddButton            : TButton;
     UseDoseDelButton            : TButton;
-    //logging tab
-    LogTab                      : TTabSheet;
-    LogTabMemo                  : TMemo;                                        //LogTabMemo.Tag is used for maximum number of lines, initial value 500
-    //raw data tab
-    RawDataTab                  : TTabSheet;                                    //shows the data as received on the clipboard or from file. binary data are converted to text format
-    RawDataEditor               : TMemo;
     //other elements
     StatusBar                   : TStatusBar;
     FileSaveDialog              : TSaveDialog;
@@ -955,8 +956,8 @@ type
     DataFromEditor        : Boolean;
     IndicatorsOk          : Boolean;
     CurveString           : String;
-    ConfigName            : String;
-    SectionName           : String;
+    ConfigName            : String;                                             //name of default configuration file
+    IniSectionName        : String;                                             //name of section in ini files for this form
     CursorPosCm           : twcFloatType;
     MeasNormAdjustFactor  : twcFloatType;                                       //last value of MeasNormAdjustEdit/100
     ZoomRange             : Single;
@@ -970,7 +971,7 @@ type
     FileConvDestType      : twcFileType;
     FileConvOkCount       : Integer;
     FileConvMultCount     : Integer;                                            //counts found extra scans in multiscan file
-    PlotPending           : Boolean;
+    PlotPending           : Boolean;                                            //keep track of grapph plot activities
     PrevTab               : TTabSheet;
     DoseCLastRow          : Integer;
     DoseCLastModality     : String;
@@ -980,22 +981,22 @@ type
    {$IFDEF SelfTest}
     SelftestLevel         : Byte;
    {$ENDIF}
-    OnDataReadBusy        : Boolean;
+    OnDataReadBusy        : Boolean;                                            //true if OnDataRead is triggered
     SyntheticMade         : Boolean;
     SwapAxis              : Boolean;
     PresetName            : String;
     PrevKey               : Char;
     ModMode               : ModModeType;
-    ShiftStepCount        : Integer;
-    AdvancedModeOk        : Boolean;
-    MinClipBoardBytes     : Integer;
-    MultiScanList         : Boolean;
+    ShiftStepCount        : Integer;                                            //count manual shift steps in same direction
+    AdvancedModeOk        : Boolean;                                            //check if advancedmode items can be enabled in during startup
+    MinClipBoardBytes     : Integer;                                            //ignore clipboard when too small
     ClipBoardLock         : Boolean;
-    LastProfileZoomState  : Boolean;                                            //preserves the zoomstate for profiles when automatically is unzoomd for pdd's
-    InventoryListReady    : Boolean;                                            //See Files tab
+    LastProfileZoomState  : Boolean;                                            //preserves the zoomstate for profiles when automatically is unzoomed for pdd's
     SelectedFitCol        : Integer;                                            //remember last clicked column in FitResultsTab}
-    FFFdataSource         : twcDataSource;
+    FFFdataSource         : twcDataSource;                                      //maps on one of standard sources to plot TopModel
     FKeyboardReady        : Boolean;                                            //check with onkeyup event when there are no more keys to be processed
+    InventoryListReady    : Boolean;                                            //See Files tab
+    InventoryMultiScanList: Boolean;                                            //true if file with multiple scan is added to inventory
     InventoryReader       : TWellhoferData;
     AppliedFieldClass     : twcFieldClass;
     AppliedEdgeRefNorm    : twcDoseLevel;
@@ -1946,12 +1947,12 @@ SM2_Infotype                              := 1;
 AppliedFieldClass                         := fcStandard;
 FFFfeatures                               := False;
 AppliedEdgeRefNorm                        := d50;
-PlotPending                               := False;
-OnDataReadBusy                            := False;
+PlotPending                               := False;                             //state init
+OnDataReadBusy                            := False;                             //state init
 SelectedSeries                            := nil;
 ModMode                                   := ModMNorm;
 Visible                                   := True;
-MultiScanList                             := False;
+InventoryMultiScanList                    := False;
 PrevKey                                   := #0;                                //keyboard handling
 AdvancedModeOk                            := True;
 InventoryListReady                        := True;                              //see Files tab
@@ -1999,7 +2000,7 @@ with Engines[UsedEngine] do
   AutoLoadReference:= True;
   end;
 CurveString        := '';
-SectionName        := Name;
+IniSectionName     := Name;                                                     //name of form (analyseform)
 DataChanged        := True;
 DataFromEditor     := False;
 HistogramSource    := dsCalculated;
@@ -2416,11 +2417,11 @@ var s,t,y  : String;
     v      : TStringList;
     i,j,k,p: Integer;
 begin
-i     := CF.ReadInteger(SectionName,Application.Title,0);
-Result:= (not CF.ValueExists(SectionName,DefConfigRepairFile)) and (i<DefMinFPCbuild) and ConfigRepairFound;
+i     := CF.ReadInteger(IniSectionName,Application.Title,0);
+Result:= (not CF.ValueExists(IniSectionName,DefConfigRepairFile)) and (i<DefMinFPCbuild) and ConfigRepairFound;
 if Result then for p:= 0 to 1 do
   begin
-  y:= ifthen(p=0,SectionName,twcWellhoferKey);
+  y:= ifthen(p=0,IniSectionName,twcWellhoferKey);
   CF.WriteInteger(y,DefConfigRepairFile,1);
   CF.WriteInteger(y,Application.Title,BMBuildNumber);
   m:= TMemIniFile.Create(DefConfigRepairFile);
@@ -2438,7 +2439,7 @@ if Result then for p:= 0 to 1 do
       begin
       t:= Copy(v.Strings[i],j+1);                                               //take new key starting at j+1
       if Length(t)>0 then                                                       //if not empty
-        CF.WriteString(y,t,CF.ReadString(SectionName,s,''));                    //copy value part of old key
+        CF.WriteString(y,t,CF.ReadString(IniSectionName,s,''));                 //copy value part of old key
       CF.DeleteKey(y,s);                                                        //remove old key
       end;
     end;
@@ -2542,34 +2543,34 @@ with CF do
   ConfigRepair(CF);
   Engines[UsedEngine].ReadConfig(CF);                                           //read wellhoferdata first
   GetWellhoferValues;                                                           //and transfer back from wellhofer
-  ReadControl(Self,SectionName);
-  WriteMenuShortCuts:= ReadBool(SectionName,'ShortCuts',False);
-  LogTabMemo.Tag    := EnsureRange(ReadInteger(SectionName,DefLogMaxLines,500),20,10000);
-  for i:= 1 to NumSpecialModes do ShortRead(SectionName,SpecialMode[i].MenuItem);
-  ReadInteger(SectionName,'MinClipBoardBytes',MinClipBoardBytes);
-  ShortRead(SectionName,AdvancedModeStartCheckBox);
-  ShortRead(SectionName,ShowLockItemCheckBox);
-  ShortRead(SectionName,HistoryListCheckBox);
-  ShortRead(SectionName,HistoryListFreezeCheckBox);
-  ShortRead(SectionName,HistoryListSize_num);
-  ShortRead(SectionName,PipsPixelSize_cm);
-  ShortRead(SectionName,ConfigAutoSaveItem);
-  ShortRead(SectionName,FileConvSourcePath);
-  ShortRead(SectionName,FileConvDestinationPath);
-  ShortRead(SectionName,FileConvNameMask);
-  ShortRead(SectionName,FileConvSourceListBox);
-  ShortRead(SectionName,FileConvLowerCase);
-  ShortRead(SectionName,FileConvMakeFileName);
-  ShortRead(SectionName,FileConvOverWrite);
-  ShortRead(SectionName,FileConvSourceRecursive);
-  ShortRead(SectionName,ShowWarningCheckBox);
-  ShortRead(SectionName,AddDateTimeCheckBox);
-  ShortRead(SectionName,BadPenumbraWidth_cm);
-  ShortRead(SectionName,AutoSetDecPointCheckBox);
-  ShortRead(SectionName,AutoDecPointList);
-  ShortRead(SectionName,InventoryDirBox);
-  ShortRead(SectionName,FileConvSourcePath);
-  ShortRead(SectionName,FileConvDestinationPath);
+  ReadControl(Self,IniSectionName);
+  WriteMenuShortCuts:= ReadBool(IniSectionName,'ShortCuts',False);
+  LogTabMemo.Tag    := EnsureRange(ReadInteger(IniSectionName,DefLogMaxLines,500),20,10000);
+  for i:= 1 to NumSpecialModes do ShortRead(IniSectionName,SpecialMode[i].MenuItem);
+  ReadInteger(IniSectionName,'MinClipBoardBytes',MinClipBoardBytes);
+  ShortRead(IniSectionName,AdvancedModeStartCheckBox);
+  ShortRead(IniSectionName,ShowLockItemCheckBox);
+  ShortRead(IniSectionName,HistoryListCheckBox);
+  ShortRead(IniSectionName,HistoryListFreezeCheckBox);
+  ShortRead(IniSectionName,HistoryListSize_num);
+  ShortRead(IniSectionName,PipsPixelSize_cm);
+  ShortRead(IniSectionName,ConfigAutoSaveItem);
+  ShortRead(IniSectionName,FileConvSourcePath);
+  ShortRead(IniSectionName,FileConvDestinationPath);
+  ShortRead(IniSectionName,FileConvNameMask);
+  ShortRead(IniSectionName,FileConvSourceListBox);
+  ShortRead(IniSectionName,FileConvLowerCase);
+  ShortRead(IniSectionName,FileConvMakeFileName);
+  ShortRead(IniSectionName,FileConvOverWrite);
+  ShortRead(IniSectionName,FileConvSourceRecursive);
+  ShortRead(IniSectionName,ShowWarningCheckBox);
+  ShortRead(IniSectionName,AddDateTimeCheckBox);
+  ShortRead(IniSectionName,BadPenumbraWidth_cm);
+  ShortRead(IniSectionName,AutoSetDecPointCheckBox);
+  ShortRead(IniSectionName,AutoDecPointList);
+  ShortRead(IniSectionName,InventoryDirBox);
+  ShortRead(IniSectionName,FileConvSourcePath);
+  ShortRead(IniSectionName,FileConvDestinationPath);
   if SectionExists(AliasText) then
     begin
     ReadSectionValues(AliasText,t);
@@ -2593,32 +2594,32 @@ with CF do
       Engines[UsedEngine].LoadAliasList(AliasListEditor.Strings);
       end;
     end;
-  ZoomRange:= Clip(ReadFloat(SectionName,ZoomText,DefZoomRange),1.005,DefZoomRange+0.2);
+  ZoomRange:= Clip(ReadFloat(IniSectionName,ZoomText,DefZoomRange),1.005,DefZoomRange+0.2);
   ReadDialog(FileOpenDialog);
   ReadDialog(FileSaveDialog);
   PresetLoad(CF);
-  ReadSpecialModes(SectionName);
+  ReadSpecialModes(IniSectionName);
   if SectionExists('SpecialModes') then
    begin
    ReadSectionValues('SpecialModes',SpecialModeValues);
    ReadSpecialModes('SpecialModes');
    end;
-  FillCheckListCombo;  {transfers modalitydata, just read above, to UseDoseConvTable}
-  for i:= 0 to OD2doseTableMax do if ValueExists(SectionName,DCname(0,i)) then
+  FillCheckListCombo;                                                           //transfers modalitydata, just read above here, to UseDoseConvTable
+  for i:= 0 to OD2doseTableMax do if ValueExists(IniSectionName,DCname(0,i)) then
     begin
     while Length(UseDoseConvTable)<Pred(i) do
       UseDoseAddButtonClick(Self);
     with UseDoseConvTable[i] do
       begin
-      ShortRead(SectionName,DCDoseBox    );
-      ShortRead(SectionName,DCBgBox      );
-      ShortRead(SectionName,DCModalityBox);
-      ShortRead(SectionName,DCFilmTypeBox);
-      ShortRead(SectionName,DCEdit       );
+      ShortRead(IniSectionName,DCDoseBox    );
+      ShortRead(IniSectionName,DCBgBox      );
+      ShortRead(IniSectionName,DCModalityBox);
+      ShortRead(IniSectionName,DCFilmTypeBox);
+      ShortRead(IniSectionName,DCEdit       );
       end;
     end;
   AdvancedModeItem.Checked:= AdvancedModeStartCheckBox.Checked and AdvancedModeOk;
-  SetWellhoferValues(Self);  {first transfer settings to wellhofer}
+  SetWellhoferValues(Self);                                                     //first transfer settings to wellhofer
   if AdvancedModeOk then
     UImodeChange(Self);
   try
@@ -2658,6 +2659,7 @@ if FileExists(AFileName) then
   end;
 end; {~presetload}
 
+
 //presetload is also called by configload(cf)
 {21/09/2015 menumessagebar}
 {15/12/2105 penwidth}
@@ -2686,7 +2688,7 @@ var b: Boolean;
   begin
   for i:= 0 to Pred(AMenu.Count) do
     begin
-    CF.ShortRead(SectionName,AMenu.Items[i]);
+    CF.ShortRead(IniSectionName,AMenu.Items[i]);
     if AMenu.Items[i].Checked then
       CalcSubMenuClick(AMenu.Items[i]);
     end;
@@ -2702,16 +2704,16 @@ var b: Boolean;
      {$IFDEF COMPILED_DEBUG}
       begin
      {$ENDIF}
-      CF.ShortRead(SectionName,AMenu.Items[i]);
+      CF.ShortRead(IniSectionName,AMenu.Items[i]);
      {$IFDEF COMPILED_DEBUG}
-      SetMessageBar(Format('%s %s: %s',[ifthen(CF.ValueExists(SectionName,AMenu.Items[i].Name),'found','missing'),AMenu.Items[i].Name,ifthen(AMenu.Items[i].Checked,CheckedText,UnCheckedText)]));
+      SetMessageBar(Format('%s %s: %s',[ifthen(CF.ValueExists(IniSectionName,AMenu.Items[i].Name),'found','missing'),AMenu.Items[i].Name,ifthen(AMenu.Items[i].Checked,CheckedText,UnCheckedText)]));
       end;
      {$ENDIF}
   end;
 
   procedure ReadColor(APanel:TPanel);
   begin
-  with APanel do Color:= CF.ReadInteger(SectionName,Name,Color);
+  with APanel do Color:= CF.ReadInteger(IniSectionName,Name,Color);
   end;
 
   procedure ReadGroup(AGroup:TWinControl);
@@ -2723,15 +2725,15 @@ var b: Boolean;
       begin
       Dec(i);
       if Controls[i] is TCheckBox then
-        CF.ShortRead(SectionName,TCheckBox(Controls[i]))
+        CF.ShortRead(IniSectionName,TCheckBox(Controls[i]))
       else if Controls[i] is TComboBox then
-        CF.ShortRead(SectionName,TComboBox(Controls[i]))
+        CF.ShortRead(IniSectionName,TComboBox(Controls[i]))
       else if Controls[i] is TSpinEditEx then
-        CF.ShortRead(SectionName,TSpinEditEx(Controls[i]))
+        CF.ShortRead(IniSectionName,TSpinEditEx(Controls[i]))
       else if Controls[i] is TFloatSpinEditEx then
-        CF.ShortRead(SectionName,TFloatSpinEditEx(Controls[i]))
+        CF.ShortRead(IniSectionName,TFloatSpinEditEx(Controls[i]))
       else if Controls[i] is TEdit then
-        CF.ShortRead(SectionName,TEdit(Controls[i]));
+        CF.ShortRead(IniSectionName,TEdit(Controls[i]));
       end;
     end;
   end;
@@ -2746,12 +2748,12 @@ with CF do
   ReadColor(PlotColorPanel);
   ReadColor(GridColorPanel);
   ReadColor(UIColorPanel  );
-  ShortRead(SectionName,FileMultipleInputItem);
+  ShortRead(IniSectionName,FileMultipleInputItem);
   Readmenu(ViewMenu);
   Readmenu(MeasMenu);
   Readmenu(ReferenceMenu);
   RefCalcSubMenuRead(RefCalcSubMenu);
-  SyncSetExtSym(ExtSymType(ReadInteger(SectionName,'ExtSym',Max(0,Min(Ord(ExtSym),Ord(ExtSymElevation))))));
+  SyncSetExtSym(ExtSymType(ReadInteger(IniSectionName,'ExtSym',Max(0,Min(Ord(ExtSym),Ord(ExtSymElevation))))));
   ReadGroup(AxisViewGroupBox);
   ReadGroup(MergeGroupBox);
   ReadGroup(MatchGroupBox);
@@ -2763,26 +2765,26 @@ with CF do
   ReadGroup(GammaSettingsGroupBox);
   ReadGroup(FFFDetectionGroupBox);
   ReadGroup(FieldTypesPanel);
-  ShortRead(SectionName,SimpleModeItem);
-  ShortRead(SectionName,ProcessCheckTempTypeItem);
-  ShortRead(SectionName,ProcessIgnoreTUnameItem);
-  ShortRead(SectionName,FileIgnoreClipboardItem);
-  ShortRead(SectionName,UserBorderDose_perc);
-  ShortRead(SectionName,HistogramLimit_num);
-  ShortRead(SectionName,ManualShiftStep_cm);
-  ShortRead(SectionName,InsertOriginCheckBox);
-  ShortRead(SectionName,FilterWidth_mm);
-  ShortRead(SectionName,MeasRemapCoordinates);
-  ShortRead(SectionName,CalcPostFilterItem);
-  ShortRead(SectionName,ForceMatchingCheckBox);
-  ShortRead(SectionName,FitResultsLabelsCheckBox);
-  ShortRead(SectionName,FitResultsHeaderCheckBox);
-  ShortRead(SectionName,LogLevelEdit);
+  ShortRead(IniSectionName,SimpleModeItem);
+  ShortRead(IniSectionName,ProcessCheckTempTypeItem);
+  ShortRead(IniSectionName,ProcessIgnoreTUnameItem);
+  ShortRead(IniSectionName,FileIgnoreClipboardItem);
+  ShortRead(IniSectionName,UserBorderDose_perc);
+  ShortRead(IniSectionName,HistogramLimit_num);
+  ShortRead(IniSectionName,ManualShiftStep_cm);
+  ShortRead(IniSectionName,InsertOriginCheckBox);
+  ShortRead(IniSectionName,FilterWidth_mm);
+  ShortRead(IniSectionName,MeasRemapCoordinates);
+  ShortRead(IniSectionName,CalcPostFilterItem);
+  ShortRead(IniSectionName,ForceMatchingCheckBox);
+  ShortRead(IniSectionName,FitResultsLabelsCheckBox);
+  ShortRead(IniSectionName,FitResultsHeaderCheckBox);
+  ShortRead(IniSectionName,LogLevelEdit);
   end;
 with DataPlot do
   for i:= 0 to Pred(SeriesCount) do if Series[i] is TLineSeries then
     with Series[i] as TLineSeries do
-      LinePen.Width:= CF.ReadInteger(SectionName,Name,LinePen.Width);
+      LinePen.Width:= CF.ReadInteger(IniSectionName,Name,LinePen.Width);
 ViewItems(Self);
 SettingsTabExit(Self);
 AdvancedSettingsTabExit(Self);
@@ -2881,13 +2883,13 @@ var CF : TConfigStrings;
     if AMenu.Items[i].Count>0           then
       WriteMenu(AMenu.Items[i])
     else if AMenu.Items[i].Caption<>'-' then
-      CF.ShortWrite(SectionName,AMenu.Items[i]);
+      CF.ShortWrite(IniSectionName,AMenu.Items[i]);
   end;
 
   procedure RemoveKey(AName:String);
   begin
-  if CF.ValueExists(SectionName,AName) then
-    CF.DeleteKey(SectionName,AName);
+  if CF.ValueExists(IniSectionName,AName) then
+    CF.DeleteKey(IniSectionName,AName);
   end;
 
   procedure WriteGroup(AGroup:TWinControl);
@@ -2899,15 +2901,15 @@ var CF : TConfigStrings;
       begin
       Dec(i);
       if Controls[i] is TCheckBox then
-        CF.ShortWrite(SectionName,TCheckBox(Controls[i]))
+        CF.ShortWrite(IniSectionName,TCheckBox(Controls[i]))
       else if Controls[i] is TComboBox then
-        CF.ShortWrite(SectionName,TComboBox(Controls[i]))
+        CF.ShortWrite(IniSectionName,TComboBox(Controls[i]))
       else if Controls[i] is TSpinEditEx then
-        CF.ShortWrite(SectionName,TSpinEditEx(Controls[i]))
+        CF.ShortWrite(IniSectionName,TSpinEditEx(Controls[i]))
       else if Controls[i] is TFloatSpinEditEx then
-        CF.ShortWrite(SectionName,TFloatSpinEditEx(Controls[i]))
+        CF.ShortWrite(IniSectionName,TFloatSpinEditEx(Controls[i]))
       else if Controls[i] is TEdit then
-        CF.ShortWrite(SectionName,TEdit(Controls[i]));
+        CF.ShortWrite(IniSectionName,TEdit(Controls[i]));
       end;
     end;
   end;
@@ -2951,8 +2953,8 @@ with CF do
     if Length(AFileName)>0 then
       WriteString(DefComments,'file',ExtractFileName(AFileName));
     WriteDateTime(DefComments,'time',Now);
-    WriteInteger(SectionName,Application.Title,BMBuildNumber);
-    WriteBool(SectionName,'ShortCuts',WriteMenuShortCuts);
+    WriteInteger(IniSectionName,Application.Title,BMBuildNumber);
+    WriteBool(IniSectionName,'ShortCuts',WriteMenuShortCuts);
     if not PresetsOnly then                                                     //general settings
       begin
       if SpecialModeValues.Count>0 then
@@ -2961,38 +2963,38 @@ with CF do
         for i:= 0 to Pred(SpecialModeValues.Count) do
           WriteString(SM,SpecialModeValues.Names[i],SpecialModeValues.Values[SpecialModeValues.Names[i]]);
         end;
-      WriteControl(Self,SectionName);
+      WriteControl(Self,IniSectionName);
       WriteGroup(AxisViewGroupBox);
       WriteGroup(MeasRemappingBox);
       WriteGroup(MergeGroupBox);
       WriteGroup(MatchGroupBox);
       WriteGroup(LinacErrorGroupBox);
       WriteGroup(GammaSettingsGroupBox);
-      WriteInteger(SectionName,DefLogMaxLines,LogTabMemo.Tag);
+      WriteInteger(IniSectionName,DefLogMaxLines,LogTabMemo.Tag);
       for i:= 1 to NumSpecialModes do
-        ShortWrite(SectionName,SpecialMode[i].MenuItem);
-      ShortWrite(SectionName,AdvancedModeStartCheckBox);
-      ShortWrite(SectionName,ShowLockItemCheckBox);
-      ShortWrite(SectionName,HistoryListCheckBox);
-      ShortWrite(SectionName,HistoryListFreezeCheckBox);
-      ShortWrite(SectionName,HistoryListSize_num);
-      ShortWrite(SectionName,PipsPixelSize_cm);
-      ShortWrite(SectionName,HistogramLimit_num);
-      ShortWrite(SectionName,AutoSetDecPointCheckBox);
-      ShortWrite(SectionName,AutoDecPointList);
-      ShortWrite(SectionName,ManualShiftStep_cm);
-      WriteFloat(SectionName,ZoomText,ZoomRange);
-      WriteInteger(SectionName,'MinClipBoardBytes',MinClipBoardBytes);
+        ShortWrite(IniSectionName,SpecialMode[i].MenuItem);
+      ShortWrite(IniSectionName,AdvancedModeStartCheckBox);
+      ShortWrite(IniSectionName,ShowLockItemCheckBox);
+      ShortWrite(IniSectionName,HistoryListCheckBox);
+      ShortWrite(IniSectionName,HistoryListFreezeCheckBox);
+      ShortWrite(IniSectionName,HistoryListSize_num);
+      ShortWrite(IniSectionName,PipsPixelSize_cm);
+      ShortWrite(IniSectionName,HistogramLimit_num);
+      ShortWrite(IniSectionName,AutoSetDecPointCheckBox);
+      ShortWrite(IniSectionName,AutoDecPointList);
+      ShortWrite(IniSectionName,ManualShiftStep_cm);
+      WriteFloat(IniSectionName,ZoomText,ZoomRange);
+      WriteInteger(IniSectionName,'MinClipBoardBytes',MinClipBoardBytes);
       WriteDialog(FileOpenDialog);
       WriteDialog(FileSaveDialog);
       j:= Length(UseDoseConvTable);
       for i:= 1 to Pred(j) do with UseDoseConvTable[i] do
         begin
-        ShortWrite(SectionName,DCDoseBox    );
-        ShortWrite(SectionName,DCBgBox      );
-        ShortWrite(SectionName,DCModalityBox);
-        ShortWrite(SectionName,DCFilmTypeBox);
-        ShortWrite(SectionName,DCEdit       );
+        ShortWrite(IniSectionName,DCDoseBox    );
+        ShortWrite(IniSectionName,DCBgBox      );
+        ShortWrite(IniSectionName,DCModalityBox);
+        ShortWrite(IniSectionName,DCFilmTypeBox);
+        ShortWrite(IniSectionName,DCEdit       );
         end;
       while j<OD2doseTableMax do
         begin
@@ -3004,32 +3006,32 @@ with CF do
       with AliasListEditor do if RowCount>1 then
         for i:= 1 to Pred(RowCount) do
           WriteString(AliasText,Keys[i],Values[Keys[i]]);
-      WriteInteger(SectionName,MeasExtSymSubMenu.Name,Ord(ExtSym));
-      ShortWrite(SectionName,BadPenumbraWidth_cm);
-      ShortWrite(SectionName,ProcessCheckTempTypeItem);
-      ShortWrite(SectionName,ProcessIgnoreTUnameItem);
-      ShortWrite(SectionName,FileConvSourcePath);
-      ShortWrite(SectionName,FileConvDestinationPath);
-      ShortWrite(SectionName,FileConvNameMask);
-      ShortWrite(SectionName,FileConvSamePath);
-      ShortWrite(SectionName,FileConvLowerCase);
-      ShortWrite(SectionName,FileConvMakeFileName);
-      ShortWrite(SectionName,FileConvOverWrite);
-      ShortWrite(SectionName,FileConvSourceRecursive);
-      ShortWrite(SectionName,AxisViewFileTypeCheckBox);
-      ShortWrite(SectionName,AxisViewSSDCheckBox);
-      ShortWrite(SectionName,AxisViewDetNameCheckBox);
-      ShortWrite(SectionName,AxisViewDetLength_num);
-      ShortWrite(SectionName,AxisViewCollAngleCheckBox);
-      ShortWrite(SectionName,AxisViewCommentsCheckBox);
-      ShortWrite(SectionName,AxisViewComLength_num);
-      ShortWrite(SectionName,AddDateTimeCheckBox);
-      ShortWrite(SectionName,ShowWarningCheckBox);
-      ShortWrite(SectionName,ConfigAutoSaveItem);
-      ShortWrite(SectionName,LogLevelEdit);
-      ShortWrite(SectionName,InventoryDirBox);
-      ShortWrite(SectionName,FileConvSourcePath);
-      ShortWrite(SectionName,FileConvDestinationPath);
+      WriteInteger(IniSectionName,MeasExtSymSubMenu.Name,Ord(ExtSym));
+      ShortWrite(IniSectionName,BadPenumbraWidth_cm);
+      ShortWrite(IniSectionName,ProcessCheckTempTypeItem);
+      ShortWrite(IniSectionName,ProcessIgnoreTUnameItem);
+      ShortWrite(IniSectionName,FileConvSourcePath);
+      ShortWrite(IniSectionName,FileConvDestinationPath);
+      ShortWrite(IniSectionName,FileConvNameMask);
+      ShortWrite(IniSectionName,FileConvSamePath);
+      ShortWrite(IniSectionName,FileConvLowerCase);
+      ShortWrite(IniSectionName,FileConvMakeFileName);
+      ShortWrite(IniSectionName,FileConvOverWrite);
+      ShortWrite(IniSectionName,FileConvSourceRecursive);
+      ShortWrite(IniSectionName,AxisViewFileTypeCheckBox);
+      ShortWrite(IniSectionName,AxisViewSSDCheckBox);
+      ShortWrite(IniSectionName,AxisViewDetNameCheckBox);
+      ShortWrite(IniSectionName,AxisViewDetLength_num);
+      ShortWrite(IniSectionName,AxisViewCollAngleCheckBox);
+      ShortWrite(IniSectionName,AxisViewCommentsCheckBox);
+      ShortWrite(IniSectionName,AxisViewComLength_num);
+      ShortWrite(IniSectionName,AddDateTimeCheckBox);
+      ShortWrite(IniSectionName,ShowWarningCheckBox);
+      ShortWrite(IniSectionName,ConfigAutoSaveItem);
+      ShortWrite(IniSectionName,LogLevelEdit);
+      ShortWrite(IniSectionName,InventoryDirBox);
+      ShortWrite(IniSectionName,FileConvSourcePath);
+      ShortWrite(IniSectionName,FileConvDestinationPath);
       Engines[UsedEngine].WriteConfig(CF);
       end; {not presetsonly}
     WriteGroup(MayneordGroupBox);
@@ -3040,26 +3042,26 @@ with CF do
     with DataPlot do
       for i:= 0 to Pred(SeriesCount) do if Series[i] is TLineSeries then
         with Series[i] as TLineSeries do
-          WriteInteger(SectionName,Name,LinePen.Width);
-    ShortWrite(SectionName,SimpleModeItem);
-    ShortWrite(SectionName,InsertOriginCheckBox);
-    ShortWrite(SectionName,FilterWidth_mm);
-    ShortWrite(SectionName,FileIgnoreClipboardItem);
-    ShortWrite(SectionName,FileMultipleInputItem);
+          WriteInteger(IniSectionName,Name,LinePen.Width);
+    ShortWrite(IniSectionName,SimpleModeItem);
+    ShortWrite(IniSectionName,InsertOriginCheckBox);
+    ShortWrite(IniSectionName,FilterWidth_mm);
+    ShortWrite(IniSectionName,FileIgnoreClipboardItem);
+    ShortWrite(IniSectionName,FileMultipleInputItem);
     WriteMenu(ViewMenu);
     WriteMenu(MeasMenu);
     WriteMenu(ReferenceMenu);
-    ShortWrite(SectionName,CalcPostFilterItem);
-    ShortWrite(SectionName,UserBorderDose_perc);
-    ShortWrite(SectionName,PDDfitCheckBox);
-    ShortWrite(SectionName,ForceMatchingCheckBox);
-    ShortWrite(SectionName,InventoryAltAxisCheckBox);
-    ShortWrite(SectionName,FitResultsLabelsCheckBox);
-    ShortWrite(SectionName,FitResultsHeaderCheckBox);
-    WriteHex(SectionName,PlotColorPanel.Name,PlotColorPanel.Color,6);
-    WriteHex(SectionName,GridColorPanel.Name,GridColorPanel.Color,6);
-    WriteHex(SectionName,UIColorPanel  .Name,UIColorPanel  .Color,6);
-    WriteShortCuts(SectionName,MainMenu);
+    ShortWrite(IniSectionName,CalcPostFilterItem);
+    ShortWrite(IniSectionName,UserBorderDose_perc);
+    ShortWrite(IniSectionName,PDDfitCheckBox);
+    ShortWrite(IniSectionName,ForceMatchingCheckBox);
+    ShortWrite(IniSectionName,InventoryAltAxisCheckBox);
+    ShortWrite(IniSectionName,FitResultsLabelsCheckBox);
+    ShortWrite(IniSectionName,FitResultsHeaderCheckBox);
+    WriteHex(IniSectionName,PlotColorPanel.Name,PlotColorPanel.Color,6);
+    WriteHex(IniSectionName,GridColorPanel.Name,GridColorPanel.Color,6);
+    WriteHex(IniSectionName,UIColorPanel  .Name,UIColorPanel  .Color,6);
+    WriteShortCuts(IniSectionName,MainMenu);
     PanelElements.ConfigSave(CF);
    except
     ExceptMessage('ConfigSave!');
@@ -5023,7 +5025,7 @@ with Engines[UsedEngine] do
   b:= ViewScaleElectronPDDrange.Checked and IsValid and (ScanType in twcVertScans) and (AppliedFieldClass=fcElectron);
   DataPlot.BottomAxis.Range.UseMax:= not b;
   if b then
-    DataPlot.BottomAxis.Range.Max:= GetDisplayedPositionScale(NiceStep(2*wSource[dsMeasured].twLevelPos[d50].Penumbra[twcRight].Calc,[2,4,5]));
+    DataPlot.BottomAxis.Range.Max:= GetDisplayedPositionScale(NiceStep(2*wSource[dsMeasured].twLevelPos[d50].Limit[twcRight].CalcPos,[2,4,5]));
   end;
 end; {~smartscaleelectronpdd}
 
@@ -5744,7 +5746,7 @@ else
       FileIterator.OnTerminate        := nil;
       FileIterator.Options            := [fiPath];
       InventoryAltAxisCheckBox.Enabled:= MeasRemappingString.Text<>twcMeasAxisStandard;
-      MultiScanList                   := False;
+      InventoryMultiScanList          := False;
       if      InventoryRadioRef .Checked then Sender:= InventoryRadioRef
       else if InventoryRadioSelf.Checked then Sender:= InventoryRadioSelf
       else if InventoryRadioData.Checked then Sender:= InventoryRadioData;
@@ -6197,7 +6199,7 @@ begin
 if assigned(InventoryReader) then with InventoryReader do
   begin
   s:= FileName;
-  if MultiScanList then
+  if InventoryMultiScanList then
     s:= s+DefMultiScanSep+Num2Stg(wMultiScanNr,1+Trunc(Log10(wMultiScanMax)),'0');
   if Length(s)>0 then
     begin
@@ -6207,9 +6209,9 @@ if assigned(InventoryReader) then with InventoryReader do
     InventoryGrid.RowCount:= Succ(i);
     if i=1 then
       InventoryGrid.FixedRows:= 1; {can only be set when number of rows > fixedrows}
-    b:= MultiScanList xor (wMultiScanMax=1);
+    b:= InventoryMultiScanList xor (wMultiScanMax=1);
     AddCellText(0,i,ExtractFileName(s));
-    AddCellText(1,i,Num2Stg(ifthen(MultiScanList,1,wMultiScanMax)));
+    AddCellText(1,i,Num2Stg(ifthen(InventoryMultiScanList,1,wMultiScanMax)));
     AddCellText(2,i,Linac);
     AddCellText(3,i,ifthen(b,wSource[dsMeasured].twBeamInfo.twBModality+FormatParameter(Energy,3),'-'));
     AddCellText(4,i,ifthen(b,Format('%sx%s',[FormatParameter(FieldGT_cm),FormatParameter(FieldAB_cm)]),'-'));
@@ -6338,7 +6340,7 @@ else
   else
     s:= AppendPathDelim(InventoryDirBox.Directory)+s;
   DataFromEditor:= False;  {read into wellhofer only}
-  MultiScanList:= Engines[UsedEngine].GetFiletype(s) in twcMultiFiles;
+  InventoryMultiScanList:= Engines[UsedEngine].GetFiletype(s) in twcMultiFiles;
   if Sender=InventoryPopDelItem then
     begin
     if SubSelect then
@@ -6356,7 +6358,7 @@ else
         SetMessageBar(s+' could not be deleted');
       end;
     end
-  else if SubSelect or (not MultiScanList) then
+  else if SubSelect or (not InventoryMultiScanList) then
     begin {transfer file/scan to editor}
     DataFileOpen(s,not SubSelect);
     PageControl.ActivePage:= Analysistab;
@@ -6472,7 +6474,7 @@ end; {~inventorydirboxchange}
 procedure TAnalyseForm.InventoryDBChgAction(Sender:TObject);
 var LastNumber: Integer;
 begin
-if MultiScanList then
+if InventoryMultiScanList then
   begin
   InventoryReaderSetup;
   with InventoryReader do
@@ -6528,7 +6530,7 @@ InventoryRadioData      .Checked   := InventoryRadioData.Checked and TestPath(Co
 InventorySetRefDirButton.Enabled   := InventoryRadioRef .Checked and (not TestPath(Engines[UsedEngine].ReferenceDirectory));
 InventoryGrid           .OnDblClick:= @InventoryGridDblClick;
 InventoryGrid           .Font.Color:= clWindowText;
-MultiScanList                      := False;
+InventoryMultiScanList             := False;
 InventoryListReady                 := True;
 OnInventorySelect(Sender,0,1);
 {$IFDEF THREAD_FILES}
@@ -8050,7 +8052,7 @@ with Engines[UsedEngine],ARec do                                                
            if (Ylevel=dUser) and (Xedge=dUseSigmoid50) then
              Y[side]:= SetLengthUnits(Units_in_numerator)*GetNormalisedRevLogistic(Side,USource,UserBorderDose_perc.Value)
            else
-             Y[side]:= SetLengthUnits(Units_in_numerator)*wSource[Usource].twLevelPos[YLevel].Penumbra[side].Calc;
+             Y[side]:= SetLengthUnits(Units_in_numerator)*wSource[Usource].twLevelPos[YLevel].Limit[side].CalcPos;
            end;
       'c': begin //Center position as defined by user choices
            Result   := SetLengthUnits(Units_in_numerator)*wSource[USource].twCenterPosCm;
@@ -8076,14 +8078,14 @@ with Engines[UsedEngine],ARec do                                                
            if ScanType in twcVertScans then
              Xsign:= 1;
            YLevel:= String2DosePoint(ConvStg,dUser);
-           if YLevel<>dUser then with wSource[USource].twLevelPos[YLevel].Penumbra[side] do
-             Y[side]:= ifthen(Valid,SetLengthUnits(Units_in_numerator)*Calc,0)
+           if YLevel<>dUser then with wSource[USource].twLevelPos[YLevel].Limit[side] do
+             Y[side]:= ifthen(Valid,SetLengthUnits(Units_in_numerator)*CalcPos,0)
            else
              Y[side]:= SetLengthUnits(Units_in_numerator)*GetPenumbraValue(USource,X,Side);
            end;
       'e': begin
            YLevel := dDerivative;
-           Y[side]:= SetLengthUnits(Units_in_numerator)*wSource[USource].twLevelPos[Ylevel].Penumbra[side].Calc; //Derivative Edge
+           Y[side]:= SetLengthUnits(Units_in_numerator)*wSource[USource].twLevelPos[Ylevel].Limit[side].CalcPos; //Derivative Edge
            Xedge  := dUseDerivative;
            end;
       'F': begin
@@ -8122,7 +8124,7 @@ with Engines[UsedEngine],ARec do                                                
              if AssureSigmoidData(USource) then
                begin
                Ylevel := dInflection;
-               Y[side]:= SetLengthUnits(Units_in_numerator)*ifthen(twLevelPos[Ylevel].Penumbra[side].Valid,twLevelPos[Ylevel].Penumbra[side].Calc,0);   //sigmoid penumbra
+               Y[side]:= SetLengthUnits(Units_in_numerator)*ifthen(twLevelPos[Ylevel].Limit[side].Valid,twLevelPos[Ylevel].Limit[side].CalcPos,0);   //sigmoid penumbra
                end
              else
                Y[side]:= Xerrorval;
@@ -8136,7 +8138,7 @@ with Engines[UsedEngine],ARec do                                                
                begin
                Ylevel := dSigmoid50;
                Xedge  := dUseSigmoid50;
-               Y[side]:= SetLengthUnits(Units_in_numerator)*twLevelPos[Ylevel].Penumbra[side].Calc;
+               Y[side]:= SetLengthUnits(Units_in_numerator)*twLevelPos[Ylevel].Limit[side].CalcPos;
                end
              else
                Y[side]:= Xerrorval;
@@ -8213,7 +8215,7 @@ with Engines[UsedEngine],ARec do                                                
              begin
              Ylevel:= wSource[Xsource].twAppliedEdgeLevel;
              c     := wSource[Xsource].twCenterPosCm;                           //center [cm]
-             r     := wSource[Xsource].twLevelPos[YLevel].Penumbra[side].Calc-c;//radius of field [cm]
+             r     := wSource[Xsource].twLevelPos[YLevel].Limit[side].CalcPos-c;//radius of field [cm]
              if (Selection='R') and (Abs(r)>=1) then
                begin
                Divisor:= ifthen(r>5.5,1,2);                                     //round to 1 cm when r>5.5 or to 0.5 cm for r<=5.5
@@ -8257,11 +8259,11 @@ with Engines[UsedEngine],ARec do                                                
              r:= 50;
              end
            else
-             with wSource[Xsource],twLevelPos[dUser],Penumbra[side] do
+             with wSource[Xsource],twLevelPos[dUser],Limit[side] do
                begin
                if not Valid then
                  FindLevelPos(Xsource,Ylevel,True);
-               Y[side]:= SetLengthUnits(Units_in_numerator)*Calc;
+               Y[side]:= SetLengthUnits(Units_in_numerator)*CalcPos;
                r:= 100*Level/twAbsNormValue;
                end;
           if (Side=twcLeft) and (Length(ConvStg)>0) and (CountChars(ConvStg,'0123456789.')=Length(ConvStg)) then
@@ -8567,8 +8569,8 @@ with DataPlot,Engines[UsedEngine] do if IsValid then
     with wSource[dsMeasured] do
       if DataPlotZoomed and (not ViewZoomItem.Checked) and
         (d or
-         (p and ((twLevelPos[d90].Penumbra[twcLeft ].Calc*x<BottomAxis.Range.Min) or
-                 (twLevelPos[d90].Penumbra[twcRight].Calc*x>BottomAxis.Range.Max)    ))) then
+         (p and ((twLevelPos[d90].Limit[twcLeft ].CalcPos*x<BottomAxis.Range.Min) or
+                 (twLevelPos[d90].Limit[twcRight].CalcPos*x>BottomAxis.Range.Max)    ))) then
         DataPlotUnZoom;
     ZoomWanted            := DataPlotZoomed;
     ViewUnZoomItem.Enabled:= ZoomWanted;
@@ -9089,6 +9091,7 @@ if (PageControl.ActivePage=AnalysisTab) or (i=0) or (not AliasListEditor.IsEmpty
 end; {~aliastabexit}
 
 
+//put fit results on the clipboard
 {=> FitResultsGrid}
 {28/06/2016 SelectedFitCol}
 {13/03/2018 return to AnalysisTab}
@@ -9569,6 +9572,7 @@ if not b then
 end; {~formkeydown}
 
 
+{$push}{$warn 5024 off:parameters not used}{$warn 5057 off:Msg not initialised}
 {check with onkeyup event when there are no more keys to be processed
 BOOL PeekMessage(
   LPMSG lpMsg,
@@ -9588,7 +9592,6 @@ hWnd: A handle to the window whose messages are to be retrieved.
   If hWnd is -1, PeekMessage retrieves only messages on the current thread's message queue whose hwnd value is NULL,
   that is, thread messages as posted by PostMessage (when the hWnd parameter is NULL) or PostThreadMessage.}
 {17/01/2018}
-{$push}{$warn 5024 off:parameters not used}{$warn 5057 off:Msg not initialised}
 procedure TAnalyseForm.FormKeyUp(Sender :TObject;
                                  var Key:Word);
 var {$IFDEF Windows}
@@ -10271,12 +10274,12 @@ if TestResult(LoadSelftestFile('selftest14_wedge.wtx'),'Wedge profile') then    
   begin
 //  Engines[UsedEngine].Derive(0,dsMeasured,dsBuffer);
   ViewItems(Self);
-  CursorPosCm:= Engines[UsedEngine].wSource[dsMeasured].twLevelPos[dDerivative].Penumbra[twcLeft].Calc;
+  CursorPosCm:= Engines[UsedEngine].wSource[dsMeasured].twLevelPos[dDerivative].Limit[twcLeft].CalcPos;
   PlotCursor(Sender);
   FloatResult(CursorPosCm,-15.77,0.2,'Left edge');
   FloatResult(PlotValues[pReference].Caption,165,70,Format('Reference at %0.2f cm',[CursorPosCm]));   {88}
   FloatResult(PlotValues[pBuffer   ].Caption,150,90,Format('Derived at %0.2f cm',[CursorPosCm]));     {89}
-  CursorPosCm:= Engines[UsedEngine].wSource[dsMeasured].twLevelPos[dDerivative].Penumbra[twcRight].Calc;
+  CursorPosCm:= Engines[UsedEngine].wSource[dsMeasured].twLevelPos[dDerivative].Limit[twcRight].CalcPos;
   PlotCursor(Sender);
   FloatResult(CursorPosCm,15.65,0.2,'Right edge');                                                    {90}
   FloatResult(PlotValues[pBuffer].Caption,-7,5,Format('Derived at %0.2f cm',[CursorPosCm]));          {91}

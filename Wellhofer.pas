@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 04/06/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 11/06/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -424,6 +424,7 @@ positions for each data point from the 3D coordinates.}
 {18/08/2020 added fcMRlinac}
 {13/10/2020 added fcElectron}
 {19/04/2021 added CenterNearOrigin}
+{10/06/2021 twcArrayLimitRec: Penumbra renamed to Limit; twcArrayLimit: added CalcRangeFirst and CalcRangeLast}
 type
   twcChannels       =(FieldCh,RefCh);
   twcFieldClass     =(fcStandard,fcFFF,fcSmall,fcMRlinac,fcWedge,fcElectron);
@@ -447,7 +448,7 @@ type
                       snGenericProfile,snFanLine,snPlane,snUndefined);              {order of first 3 is critical and assumed in code}
   twcScalingType    =(scNormalised,scAvgNorm,scPlotScaling,scMaximum);
   twcBeamType       =(Photons,Electrons,Protons,Other);
-  twcFloatType      = Double;                                                      //was Extended in Delphi7
+  twcFloatType      = Double;                                                   //was Extended in Delphi7
   twcStartStopType  =(Start,Stop);
   twcFloatArray     = array of twcFloatType;
   twcFloatArrayPtr  = ^twcFloatArray;
@@ -458,13 +459,15 @@ type
   twcAliasArray     = array of twcAliasRec;
   twcSides          = (twcLeft,twcRight);
   twcArrayLimit     = record
-                       Calc   : twcFloatType;
-                       Nearest: Integer;
-                       Valid  : Boolean;
+                       CalcPos       : twcFloatType;                            //interpolated position with some model
+                       CalcRangeFirst: Integer;                                 //report which range is used
+                       CalcRangeLast : Integer;
+                       Nearest       : Integer;                                 //report nearest point to wanted
+                       Valid         : Boolean;
                       end;
   twcArrayLimitRec  = record
-                       Level   : twcFloatType;
-                       Penumbra: array[twcSides] of twcArrayLimit;
+                       Level: twcFloatType;
+                       Limit: array[twcSides] of twcArrayLimit;
                       end;
   twcTankAxisChar   = 'X'..'Z';
   twcXYZset         = set of twcTankAxisChar;
@@ -2888,6 +2891,9 @@ type
      function  GetPenumbraWidth(ASource            :twcDataSource;
                                 ASide              :twcSides;
                                 DynamicWidth       :Boolean=False             ): twcFloatType;
+     function  GetPenumbraString(ASource           :twcDataSource;
+                                 ADoseLevel        :twcDoseLevel;
+                                 ASide             :twcSides                  ): String;
      function  ReadRfb(AFileName                   :String                    ): Boolean;     overload;
      function  ReadRfb(AStream                     :TStream                   ): Boolean;     overload;
      function  ReadData(AStringList                :TStrings;
@@ -8681,7 +8687,7 @@ with wSource[ASource] do
     begin
     Level:= 0;
     for s:= twcleft to twcRight do
-      Penumbra[s].Valid:= False;
+      Limit[s].Valid:= False;
     end;
   if InitFitData then
     for s:= twcleft to twcRight do
@@ -9361,8 +9367,8 @@ function TWellhoferData.GetPenumbraValue(ASource   :twcDataSource;
                                          ADoseLevel:twcDoseLevel;
                                          ASide     :twcSides): twcFloatType;
 begin
-with wSource[ASource].twLevelPos[ADoseLevel].Penumbra[ASide] do
- Result:= ifthen(Valid,Calc,0);
+with wSource[ASource].twLevelPos[ADoseLevel].Limit[ASide] do
+ Result:= ifthen(Valid,CalcPos,0);
 end; {~getpenumbravalue}
 
 
@@ -9439,6 +9445,16 @@ if not DynamicWidth then
   Result:= GetLevelDistance(dHigh,dLow,ASide,Asource);
 end; {~getpenumbrawidth}
 {$pop}
+
+
+{11/06/2021}
+function TWellhoferData.GetPenumbraString(ASource   :twcDataSource;
+                                          ADoseLevel:twcDoseLevel;
+                                          ASide     :twcSides): String;
+begin
+with wSource[ASource],twLevelPos[ADoseLevel].Limit[ASide] do
+  Result:= Format('%0.3f (%0.2f|%0.2f|%0.2f) cm',[CalcPos,twPosCm[CalcRangeFirst],twPosCm[Nearest],twPosCm[CalcRangeLast]]);
+end; {~getpenumbrastring}
 
 
 {29/09/2016}
@@ -14230,9 +14246,9 @@ with wSource[ASource] do if twValid and (not FFrozen) then
       begin
       twInFieldPosCm[s]:= twInFieldPosCm[s]+cm;
       for p:= dLow to dTemp do
-        with twLevelPos[p].Penumbra[s] do
+        with twLevelPos[p].Limit[s] do
         if Valid then
-          Calc:= Calc+cm;
+          CalcPos:= CalcPos+cm;
       with twSigmoidFitData[s] do
         if twFitValid then
           begin
@@ -14267,11 +14283,11 @@ var Cm                 : twcFloatType;
 
     function TestEdge(ASide :twcSides     ): Boolean;
     begin
-    Result:= (wSource[ASource   ].twLevelPos[MEdgeType].Penumbra[ASide].Valid and
-              wSource[AReference].twLevelPos[REdgeType].Penumbra[ASide].Valid    );
+    Result:= (wSource[ASource   ].twLevelPos[MEdgeType].Limit[ASide].Valid and
+              wSource[AReference].twLevelPos[REdgeType].Limit[ASide].Valid    );
     if Result then
-      Cm:= wSource[AReference].twLevelPos[REdgeType].Penumbra[ASide].Calc-
-           wSource[ASource   ].twLevelPos[MEdgeType].Penumbra[ASide].Calc;
+      Cm:= wSource[AReference].twLevelPos[REdgeType].Limit[ASide].CalcPos-
+           wSource[ASource   ].twLevelPos[MEdgeType].Limit[ASide].CalcPos;
     end;
 
 begin
@@ -14690,14 +14706,14 @@ if not FFrozen then
     NormValue          := 1;
    end;
   MatchOk              := (ShiftRange>0) and ((MatchLimitR-MatchLimitL)/ShiftCostFunctionStep>5);
-  if wSource[ASource   ].twLevelPos[d50].Penumbra[twcLeft].Valid and
-     wSource[AReference].twLevelPos[d50].Penumbra[twcLeft].Valid     then
-    Result:= wSource[AReference].twLevelPos[d50].Penumbra[twcLeft].Calc-
-             wSource[ASource   ].twLevelPos[d50].Penumbra[twcLeft].Calc
-  else if wSource[ASource   ].twLevelPos[d50].Penumbra[twcRight].Valid and
-          wSource[AReference].twLevelPos[d50].Penumbra[twcRight].Valid     then
-    Result:= wSource[AReference].twLevelPos[d50].Penumbra[twcRight].Calc-
-             wSource[ASource   ].twLevelPos[d50].Penumbra[twcRight].Calc
+  if wSource[ASource   ].twLevelPos[d50].Limit[twcLeft].Valid and
+     wSource[AReference].twLevelPos[d50].Limit[twcLeft].Valid     then
+    Result:= wSource[AReference].twLevelPos[d50].Limit[twcLeft].CalcPos-
+             wSource[ASource   ].twLevelPos[d50].Limit[twcLeft].CalcPos
+  else if wSource[ASource   ].twLevelPos[d50].Limit[twcRight].Valid and
+          wSource[AReference].twLevelPos[d50].Limit[twcRight].Valid     then
+    Result:= wSource[AReference].twLevelPos[d50].Limit[twcRight].CalcPos-
+             wSource[ASource   ].twLevelPos[d50].Limit[twcRight].CalcPos
   else
     begin
     Result    := (MatchLimitL+MatchLimitR-GetPos(ASource,True)-GetPos(ASource,False))/2;
@@ -14816,7 +14832,7 @@ var IgnoreSet: twcIgnoreSet;
                         Offset :twcFloatType): twcFloatType;
   begin
   with wSource[tSource] do
-    Result:= twLevelPos[twAppliedEdgeLevel].Penumbra[tSide].Calc+OffSet;
+    Result:= twLevelPos[twAppliedEdgeLevel].Limit[tSide].CalcPos+OffSet;
   end;
 
 begin
@@ -15128,7 +15144,7 @@ if Result then
     CopyCurve(ASource,ADestination);
   with wSource[ASource] do
     begin
-    R50ion:= twLevelPos[d50].Penumbra[twcRight].Calc;
+    R50ion:= twLevelPos[d50].Limit[twcRight].CalcPos;
     if R50ion<=10 then R50dose:= 1.029*R50ion-0.06
     else               R50dose:= 1.059*R50ion-0.37;
     ln_R50:= ln(R50dose);
@@ -15679,7 +15695,7 @@ if (not (FFrozen or FIndexingMode)) and Analyse(ASource) then
         end;
       twSNR:= wSource[s].twSNR;
       end;
-    f50:= twLevelPos[d50].Penumbra[twcRight].Calc;
+    f50:= twLevelPos[d50].Limit[twcRight].CalcPos;
     Stg:= GetLastMessage;
     i  := Pos(', '+Copy(twForNMreport,1,4),Stg);
     if i>0 then
@@ -16119,7 +16135,7 @@ begin
 with wSource[ASource] do if BordersValid(ASource,dInflection) then
   begin
   for s:= twcLeft to twcRight do
-    difCm[s]:= abs(cm-twLevelPos[d50].Penumbra[s].Calc);
+    difCm[s]:= abs(cm-twLevelPos[d50].Limit[s].CalcPos);
   if difCm[twcLeft]<difCm[twcRight] then
     s:= twcLeft
   else
@@ -16233,6 +16249,7 @@ end; {~rawlogisticderivative}
 {18/06/2020 x= InflectionMajor * power((y-High)/(Low-y),1/Slope) WolframAlpha online}
 {19/06/2020 checks}
 {10/11/2020 introduce twFitnormalisation}
+{10/06/2021 protect against negative or zero a[sigmoid_LowVal]}
 function TWellhoferData.RevRawLogisticFunction(const a      :TaFunctionVertex;
                                                const FxRaw  :TaVertexDataType;
                                                const shiftCm:twcFloatType=0): TaVertexDataType;
@@ -16244,7 +16261,7 @@ else
   if Length(a)=SigmoidDim then
     try
       InflectionLevel:= RawLogisticFunction(a,a[sigmoid_InflectionMajor]);
-      if (FxRaw/a[sigmoid_LowVal]>1.1) and (FxRaw/a[sigmoid_HighVal]<0.9) and
+      if (FxRaw/Max(0.01,a[sigmoid_LowVal])>1.1) and (FxRaw/a[sigmoid_HighVal]<0.9) and
          InRange(FxRaw/InflectionLevel,1-twcMaxLogisticRange,1+twcMaxLogisticRange) then
         Result:= a[sigmoid_InflectionMajor]*Power((FxRaw-a[sigmoid_HighVal])/(a[sigmoid_LowVal]-FxRaw),1/a[sigmoid_Slope])+shiftCm
       else
@@ -16275,6 +16292,7 @@ end; {~getnormalisedrevlogistic}
 {13/07/2020 twFitOffsetCm}
 {10/11/2020 introduce twFitnormalisation}
 {12/11/2020 scaled error calculation}
+{10/06/2021 float division replaced with integer div to decide on which side is applicable}
 function TWellhoferData.SigmoidFitErrorResult(var a:TaFunctionVertex): TaVertexDataType;  {callback function for edge fit}
 
 var i            : Integer;
@@ -16285,7 +16303,7 @@ begin
 Result:= 0;
 with wSource[FNMEdgeSource] do if assigned(a) then
   begin
-  if Round((FNMEdgeFirst+FNMEdgeLast)/2)<twCenterArr then
+  if (FNMEdgeFirst+FNMEdgeLast) div 2 < twCenterArr then                        //div much faster then round(float division) and good enough
     s:= twcLeft
   else
     s:= twcRight;
@@ -16367,6 +16385,7 @@ end; {~sigmoidfiterrorresult}
 {12/11/2020 scaled error limit (h)}
 {17/02/2021 singleamoebe}
 {05/03/2021: added twFitResult1,2 for optional model results}
+{11/06/2021 implemented CalcRangeFirst and CalcRangeLast}
 function TWellhoferData.SigmoidPenumbraFit(ASource     :twcDataSource=dsMeasured;
                                            ApplyModel  :Boolean      =False;
                                            ADestination:twcDataSource=dsMeasured): Boolean;
@@ -16374,7 +16393,6 @@ var s : twcSides;
     l : array[twcSides] of twcFloatType;
     i : Integer;
     m : twcFloatType;
-    LM: String;
     NM: TaNMsimplex;
 
   function RunNelderMead(ASide :twcSides;
@@ -16383,7 +16401,6 @@ var s : twcSides;
       h,f: twcFloatType;
       v  : TaFunctionVertex;
       i  : Integer;
-      Stg: String;
   begin
   NM           := TaNMsimplex.Create(@SigmoidFitErrorResult,SigmoidDim,1,fitCalcErrorDef);
   FNMEdgeSource:= ASource;
@@ -16405,7 +16422,7 @@ var s : twcSides;
         Restarts  := 0;
         Seconds   := 0;
         twFitModel:= penumbraSigmoid;
-        twFitValid:= twLevelPos[dDerivative].Penumbra[ASide].Valid;
+        twFitValid:= twLevelPos[dDerivative].Limit[ASide].Valid;
         Result    := ARange+twStepSizeCm;
         if twFitValid then
           begin
@@ -16415,11 +16432,11 @@ var s : twcSides;
               FNMreset:= False;
               SetLength(BestVertex,SigmoidDim);
               try
-                twFitOffsetCm := twCenterPosCm;
-                h             := GetPenumbraValue(ASource,dDerivative,ASide);                                //edge already evaluated from derivative
-                FNMEdgeFirst  := NearestPosition(h-wInflectionSigmoidRadiusCm,FNMEdgeSource);
-                FNMEdgeLast   := NearestPosition(h+wInflectionSigmoidRadiusCm,FNMEdgeSource);
-                f             := ifthen((FNMEdgeFirst<twCenterArr) and (FNMEdgeLast>twCenterArr),0.1,1.7);   //slope estimation factor
+                twFitOffsetCm:= twCenterPosCm;
+                h            := GetPenumbraValue(ASource,dDerivative,ASide);                                 //edge already evaluated from derivative
+                FNMEdgeFirst := NearestPosition(h-wInflectionSigmoidRadiusCm,FNMEdgeSource);
+                FNMEdgeLast  := NearestPosition(h+wInflectionSigmoidRadiusCm,FNMEdgeSource);
+                f            := ifthen((FNMEdgeFirst<twCenterArr) and (FNMEdgeLast>twCenterArr),0.1,1.7);    //slope estimation factor
                if ASide=twcLeft then                                                                         //stay away from top, hold symmetrical
                   begin
                   while (FNMEdgeLast>twCenterArr+1) and (twData[FNMEdgeLast]/twData[twCenterArr]<0.95) do
@@ -16499,33 +16516,33 @@ var s : twcSides;
          {$ENDIF}
           if twFitValid then
             begin
-            with twLevelPos[dInflection].Penumbra[ASide] do
+            with twLevelPos[dInflection].Limit[ASide] do
               begin
-              h           := BestVertex[sigmoid_Slope];                                                       //just for short-writing in next line
-              Calc        := BestVertex[sigmoid_InflectionMajor]*power((h-1)/(h+1),1/h)+twFitOffsetCm;        //inflection point: x=B*((C-1)/(C+1))^(1/C)
-              Nearest     := NearestPosition(Calc,FNMEdgeSource);
-              Valid       := True;
-              twFitResult1:= Calc;                                                                            //infection point
-              twFitResult2:= twFitNormalisation*RawLogisticDerivative(BestVertex,twFitResult1,twFitOffsetCm); //slope in inflection point
-              if wEdgeDetect then
+              h             := BestVertex[sigmoid_Slope];                                                       //just for short-writing in next line
+              CalcPos       := BestVertex[sigmoid_InflectionMajor]*power((h-1)/(h+1),1/h)+twFitOffsetCm;        //inflection point: x=B*((C-1)/(C+1))^(1/C)
+              CalcRangeFirst:= FNMEdgeFirst;                                                                    //reporting
+              CalcRangeLast := FNMEdgeLast;
+              Nearest       := NearestPosition(CalcPos,FNMEdgeSource);
+              Valid         := True;
+              twFitResult1  := CalcPos;                                                                         //infection point
+              twFitResult2  := twFitNormalisation*RawLogisticDerivative(BestVertex,twFitResult1,twFitOffsetCm); //slope in inflection point
+              if (LogLevel>2) and (ASource=dsMeasured) then
                 begin
-                h:= GetQfittedValue(Calc,ASource);
-                if h>0.01*twMaxValue then Stg:= FormatFloat(' (0.0 %)',100*SqRt(BestScore)/h)
-                else                      Stg:= '';
-                if ASide=twcRight then
-                  LM:= LastMessage;
-                if (LogLevel>2) and (ASource=dsMeasured) then
-                  StatusMessage(Format('%s %s: %0.2f cm %s ',[LM,ifthen(ASide=twcLeft,'left','right'),Calc,Stg]));
+                StatusMessage(Format('inflection point %s: %s',[ifthen(ASide=twcLeft,'left','right'),GetPenumbraString(ASource,dInflection,ASide)]));
                 end;
              {$IFDEF SIGMOID_REPORT}
               h:= twFitOffsetCm;
              {$ENDIF}
               end;  {with}
-            with twLevelPos[dSigmoid50].Penumbra[ASide] do
+            with twLevelPos[dSigmoid50].Limit[ASide] do
               begin
-              Calc   := GetNormalisedRevLogistic(ASide,Asource);
-              Nearest:= NearestPosition(Calc,FNMEdgeSource);
-              Valid  := True;
+              CalcPos       := GetNormalisedRevLogistic(ASide,Asource);
+              CalcRangeFirst:= FNMEdgeFirst;
+              CalcRangeLast := FNMEdgeLast;
+              Nearest       := NearestPosition(CalcPos,FNMEdgeSource);
+              Valid         := True;
+              if (LogLevel>2) and (ASource=dsMeasured) then
+                StatusMessage(Format('sigmoid 50%% %s: %s',[ifthen(ASide=twcLeft,'left','right'),GetPenumbraString(ASource,dSigmoid50,ASide)]));
               end;
             end; {fitvalid}
            end; {fitvalid}
@@ -16546,8 +16563,6 @@ if not (FIndexingMode or FFrozen) then
   with wSource[ASource] do
     if (ScanType in twcHoriScans) and twDerivativeValid and (not (twIsRelative or twisDerivative)) and BordersValid(ASource) then
       begin
-      if wEdgeDetect then
-        LM:= Copy(LastMessage,1,Pos(']',LastMessage))+Format(' Sigmoid[%s] ',[twDataHistoryStg]);
       FillChar(l,SizeOf(l),0);
       for i:= 0 to 1 do
         for s:= twcLeft to twcRight do
@@ -16709,6 +16724,7 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
  -when WedgeData was true, m for left side was obtained from right peak statistics
  -loops stopped at k=1 but had exit approval for k=0 situation}
 {18/02/2021 limitations on edge range: twcDefEdgeRangeCm}
+{11/06/2021 implemented CalcRangeFirst and CalcRangeLast}
 function TWellhoferData.Derive(cm          :twcFloatType =twcDefaultValue;
                                ASource     :twcDataSource=dsMeasured;
                                ADestination:twcDataSource=dsCalculated;
@@ -16933,7 +16949,7 @@ if (not FFrozen) and wSource[ASource].twValid then
     Pc:= EnsureRange(Pc,Succ(twScanFirst),Pred(twScanLast));
     while ((Pc-i)>twScanFirst) and ((Pc+i)<twScanLast) and (abs(twData[Pc-i])+abs(twData[Pc+i])>abs(twData[Pc])) do
       Inc(i);
-    PeakWidth        := ifthen(Y>=PeakRatio,3,0.5)*abs(twPosCm[Pc+i]-twPosCm[Pc-i]);
+    PeakWidth:= ifthen(Y>=PeakRatio,3,0.5)*abs(twPosCm[Pc+i]-twPosCm[Pc-i]);
     try
       twDerivativeValid:= (DataPtr^[twScanFirst]/twMaxValue<twcDeriveMinMax) or (DataPtr^[twScanLast ]/twMaxValue<twcDeriveMinMax);
      except
@@ -16956,9 +16972,8 @@ if (not FFrozen) and wSource[ASource].twValid then
           Dec(i);
         repeat
           Pc:= Sampler.BinCounts[i];
-          StatusMessage(Format('->Derivative[%d] bin[%*d]: %6.2f .. %6.2f: %d',
-                        [Ord(ASource),P2,i,
-                         DeadBandLow+i*Y,DeadBandLow+Succ(i)*Y,Pc]));
+          StatusMessage(Format('->Derivative[%s] bin[%*d]: %6.2f .. %6.2f: %d',
+                               [twcDataSourceNames[ASource],P2,i,DeadBandLow+i*Y,DeadBandLow+Succ(i)*Y,Pc]));
           Inc(i);
         until ((i>j) and (Pc<2)) or (i>P1);
         end; {loglevel}
@@ -17023,30 +17038,34 @@ if (not FFrozen) and wSource[ASource].twValid then
            end                                                                  //run sampler for wedgeddata left side
         else
            j:= twcDeriveStatsBinDiv;
-        Penumbra[twcLeft ].Valid:= (Sampler.LargestBin<(Pred(j)*Sampler.NumBins) div j);
-        m                       := Sampler.CountAbove[Sampler.LargestBin];      //data points above dead band for left side
+        Limit[twcLeft ].Valid:= (Sampler.LargestBin<(Pred(j)*Sampler.NumBins) div j);
+        m                    := Sampler.CountAbove[Sampler.LargestBin];         //data points above dead band for left side
         if WedgedData then
            RunSampler(twMinArr-i,twMinArr+i);                                   //run sampler again for wedgeddata right side
-        Penumbra[twcRight].Valid:= (Sampler.LargestBin>Sampler.NumBins div j);
-        if not Penumbra[twcRight].Valid then
+        Limit[twcRight].Valid:= (Sampler.LargestBin>Sampler.NumBins div j);
+        if not Limit[twcRight].Valid then
           twMinArr:= EnsureRange(twMinArr,Min(twMaxArr+5,twDataLast),twDataLast)
-        else if not Penumbra[twcLeft].Valid then
+        else if not Limit[twcLeft].Valid then
           twMaxArr:= EnsureRange(twMaxArr,twDataFirst,Max(twMinArr-5,twDataFirst));
         Level  := 0;              //=================================fit of peaks==============================
         RangeCm:= twcDefEdgeRangeCm*twSDD2SSDratio*twSSD_cm/100;
-        with Penumbra[twcLeft] do if Valid then                                 //left side
+        with Limit[twcLeft] do if Valid then                                    //left side
           begin
           Nearest:= twMaxArr;
           Valid  := False;
           k      := 2;
           while (Nearest<twMinArr) and (not Valid) and (k>=0) do                //try to fit peak, reduce points when needed
             begin
-            i    := Max(twScanFirst,Nearest-k);
-            while twPosCm[Nearest]-twPosCm[i]>RangeCm do Inc(i);
-            j    := Min(Nearest+k,twScanLast);
-            while twPosCm[j]-twPosCm[Nearest]>RangeCm do Dec(j);
-            m    := Min(m,Succ(j-i));
-            Calc := twPosCm[twMaxArr];
+            i             := Max(twScanFirst,Nearest-k);
+            while twPosCm[Nearest]-twPosCm[i]>RangeCm do
+              Inc(i);
+            j             := Min(Nearest+k,twScanLast);
+            while twPosCm[j]-twPosCm[Nearest]>RangeCm do
+              Dec(j);
+            m             := Min(m,Succ(j-i));
+            CalcPos       := twPosCm[twMaxArr];
+            CalcRangeFirst:= i;
+            CalcRangeLast := j;
             if (k=0) and (i=twMaxArr) then
               Valid:= True
             else if m>2 then                                                    //enough points available
@@ -17057,7 +17076,7 @@ if (not FFrozen) and wSource[ASource].twValid then
               Y    := Q.TopX;
               Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-k)],twPosCm[Min(Nearest+k,twScanLast)]);
               if Valid then
-                Calc:= Y;                                                       //best possible calculation when enough points availabe
+                CalcPos:= Y;                                                    //best possible calculation when enough points availabe
               end
             else
               k:= 1;
@@ -17065,11 +17084,11 @@ if (not FFrozen) and wSource[ASource].twValid then
             end;
           if wCenterDefinition[twSetFieldType]=CenterPenumbra then
             begin
-            twCenterPosCm    := Calc;
+            twCenterPosCm    := CalcPos;
             twCenterPosDefUse:= dUseDerivative;
             end;
           end;
-        with Penumbra[twcRight] do if Valid then                                //repeat for right side
+        with Limit[twcRight] do if Valid then                                   //repeat for right side
           begin
           Nearest:= twMinArr;
           Valid  := False;
@@ -17077,12 +17096,16 @@ if (not FFrozen) and wSource[ASource].twValid then
           m      := Sampler.CountBelow[Sampler.LargestBin];                     //data points below dead band
           while (Nearest>twMaxArr) and (not Valid) and (k>=0) do
             begin
-            i    := Max(twScanFirst,Nearest-k);
-            while twPosCm[Nearest]-twPosCm[i]>RangeCm do Inc(i);
-            j    := Min(Nearest+k,twScanLast);
-            while twPosCm[j]-twPosCm[Nearest]>RangeCm do Dec(j);
-            m    := Min(m,Succ(j-i));
-            Calc := twPosCm[MinArr];
+            i             := Max(twScanFirst,Nearest-k);
+            while twPosCm[Nearest]-twPosCm[i]>RangeCm do
+              Inc(i);
+            j             := Min(Nearest+k,twScanLast);
+            while twPosCm[j]-twPosCm[Nearest]>RangeCm do
+              Dec(j);
+            m             := Min(m,Succ(j-i));
+            CalcPos       := twPosCm[MinArr];
+            CalcRangeFirst:= i;
+            CalcRangeLast := j;
             if (k=0) and (j=MinArr) then
               Valid:= True
             else if m>2 then                                                    //enough points available
@@ -17094,21 +17117,18 @@ if (not FFrozen) and wSource[ASource].twValid then
               Y    := Q.TopX;
               Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-k)],twPosCm[Min(Nearest+k,twScanLast)]);
               if Valid then
-                Calc := Y;                                                      //best possible calculation when enough points availabe
+                CalcPos:= Y;                                                    //best possible calculation when enough points availabe
               end
             else
               k:= 1;
             Dec(k);
             end;
           if wCenterDefinition[twSetFieldType]=CenterPenumbra then
-            twCenterPosCm:= (Calc+twCenterPosCm)/2;
+            twCenterPosCm:= (CalcPos+twCenterPosCm)/2;
           twAppliedEdgeLevel:= dDerivative;
           end;
         if LogLevel>2 then
-          StatusMessage(Format('->Derivative curve[%d]: %0.3f cm (%d) / %0.3f cm (%d)',
-                        [Ord(ASource),
-                        Penumbra[twcLeft ].Calc,Penumbra[twcLeft ].Nearest,
-                        Penumbra[twcRight].Calc,Penumbra[twcRight].Nearest]));
+          StatusMessage(Format('->Derivative[%s]: %s / %s',[twcDataSourceNames[ASource],GetPenumbraString(ASource,dDerivative,twcLeft),GetPenumbraString(ASource,dDerivative,twcRight)]));
         end; {dEdge}
       FreeAndNil(Q);
       FreeAndNil(Sampler);
@@ -17120,7 +17140,7 @@ if (not FFrozen) and wSource[ASource].twValid then
     if wCenterDefinition[twSetFieldType]=CenterPenumbra then
       begin
       with twLevelPos[dDerivative] do
-        twCenterPosValid:= Penumbra[twcLeft].Valid and Penumbra[twcRight].Valid;
+        twCenterPosValid:= Limit[twcLeft].Valid and Limit[twcRight].Valid;
       if not twCenterPosValid then
         begin
         twCenterPosCm    := EnsureRange(0,twFirstDataPosCm,twLastDataPosCm);
@@ -17625,7 +17645,7 @@ function TWellhoferData.GetFieldWidthCm(ASource:twcDataSource=dsMeasured;
                                         ALevel :twcDoseLevel =d50      ): twcFloatType;
 begin
 if BordersValid(ASource,ALevel) then with wSource[ASource].twLevelPos[ALevel] do
-  Result:= Abs(Penumbra[twcRight].Calc-Penumbra[twcLeft].Calc)
+  Result:= Abs(Limit[twcRight].CalcPos-Limit[twcLeft].CalcPos)
 else
   Result:= 0;
 end; {~getfieldwithcm}
@@ -17636,7 +17656,7 @@ function TWellhoferData.GetFieldCenterCm(ASource:twcDataSource=dsMeasured;
                                          ALevel :twcDoseLevel =d50      ): twcFloatType;
 begin
 if BordersValid(ASource,ALevel) then with wSource[ASource].twLevelPos[ALevel] do
-  Result:= (Penumbra[twcRight].Calc+Penumbra[twcLeft].Calc)/2
+  Result:= (Limit[twcRight].CalcPos+Limit[twcLeft].CalcPos)/2
 else
   Result:= 0;
 end; {~getfieldcentercm}
@@ -17646,7 +17666,7 @@ function TWellhoferData.BordersValid(ASource:twcDataSource=dsMeasured;
                                      ALevel :twcDoseLevel =d50): Boolean;
 begin
 with wSource[ASource].twLevelPos[ALevel] do
-  Result:= Penumbra[twcLeft].Valid and Penumbra[twcRight].Valid;
+  Result:= Limit[twcLeft].Valid and Limit[twcRight].Valid;
 end; {~bordersvalid}
 
 
@@ -17657,8 +17677,8 @@ function TWellhoferData.GetLevelDistance(Level1,Level2:twcDoseLevel;
 
 begin
 with wSource[ASource] do
-  if twLevelPos[Level1].Penumbra[ASide].Valid and twLevelPos[Level2].Penumbra[ASide].Valid then
-    Result:= Abs(twLevelPos[Level1].Penumbra[ASide].Calc-twLevelPos[Level2].Penumbra[ASide].Calc)
+  if twLevelPos[Level1].Limit[ASide].Valid and twLevelPos[Level2].Limit[ASide].Valid then
+    Result:= Abs(twLevelPos[Level1].Limit[ASide].CalcPos-twLevelPos[Level2].Limit[ASide].CalcPos)
   else
     Result:= 0;
 end; {~getleveldistance}
@@ -18041,6 +18061,7 @@ To improve speed, old results are checked to see if a certain actual level is al
             twEdgeDefUse depends no longer on (wCenterDefinition[FieldClass]=CenterPenumbra)}
 {05/11/2020 do not initialise Lpos and Rpos anymore for findcalcrange}
 {19/02/2021 alternative version findcalcrange}
+{10/06/2021 implemented CalcRangeFirst and CalcRangeLast}
 function TWellhoferData.FindLevelPos(ASource          :twcDataSource=dsMeasured;
                                      ALevel           :twcDoseLevel =d50;
                                      Symmetric        :Boolean      =True): Boolean;
@@ -18081,7 +18102,7 @@ with wSource[ASource] do
           end;
         end;
       StepOutward:= DosePoint2Value(ALevel)<0.65;                               //for high levels an outward search is preferred; otherwise: start low
-      with twLevelPos[ALevel].Penumbra[twcLeft] do //lllllllllllllllllllll LEFT side llllllllllllllllllllllllllllllllllllll
+      with twLevelPos[ALevel].Limit[twcLeft] do //lllllllllllllllllllll LEFT side llllllllllllllllllllllllllllllllllllll
         begin
         if StepOutward then
           begin  //-------step outward------
@@ -18127,12 +18148,14 @@ with wSource[ASource] do
         if Valid then
           begin
           FindCalcRange(WantedLevel,Nearest,twcLeft,Lpos,Rpos,ASource);
-          Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
+          CalcPos       := CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
+          CalcRangeFirst:= Lpos;
+          CalcRangeLast := Rpos;
           end
         else
-          Calc:= twPosCm[Nearest];
+          CalcPos:= twPosCm[Nearest];
         end;  {left}
-      with twLevelPos[ALevel].Penumbra[twcRight] do   //rrrrrrrrrrrrrrrrrrrrrrrrr RIGHT side rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+      with twLevelPos[ALevel].Limit[twcRight] do   //rrrrrrrrrrrrrrrrrrrrrrrrr RIGHT side rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
         begin
         if StepOutward then
           begin  //-------step outward------
@@ -18178,19 +18201,19 @@ with wSource[ASource] do
         if Valid then
           begin
           FindCalcRange(WantedLevel,Nearest,twcRight,Lpos,Rpos,ASource);
-          Calc:= CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
+          CalcPos       := CalcValue(Lpos,Rpos,WantedLevel,ASource,True);
+          CalcRangeFirst:= Lpos;
+          CalcRangeLast := Rpos;
           end
         else
-          Calc:= twPosCm[Nearest];
+          CalcPos:= twPosCm[Nearest];
         end; {right}
       twLevelPos[ALevel].Level:= ifthen(Result,WantedLevel,0);                  //if not valid the Level is set to zero.
       end; {b}
     end; {inrange}
   if LogLevel>2 then with twLevelPos[ALevel] do
-    StatusMessage(Format('->FindLevelPos curve[%d] at level %0.1f: %0.3f cm (%d) / %0.3f cm (%d)',
-                  [Ord(ASource),Level,
-                   Penumbra[twcLeft ].Calc,Penumbra[twcLeft ].Nearest,
-                   Penumbra[twcRight].Calc,Penumbra[twcRight].Nearest]));
+    StatusMessage(Format('->FindLevelPos[%s] at normalised level %0.2f: %s / %s',
+                  [twcDataSourceNames[ASource],Level/twAbsNormValue,GetPenumbraString(ASource,ALevel,twcLeft),GetPenumbraString(ASource,ALevel,twcRight)]));
   end; {with}
 Result:= Result or AcceptMissingPenumbra;
 end; {~findlevelpos}
@@ -18286,17 +18309,17 @@ if Result then
     begin
     with twLevelPos[twAppliedEdgeLevel] do
       begin                                                                     //first test edge-based center for twAppliedEdgeLevel
-      twCenterPosValid:= Penumbra[twcLeft].Valid and Penumbra[twcRight].Valid;  //a valid center position is found when both edges are valid
+      twCenterPosValid:= Limit[twcLeft].Valid and Limit[twcRight].Valid;        //a valid center position is found when both edges are valid
       NearOrigin      := twCenterPosValid;                                      //now local var NearOrigin gets preliminary value from twCenterPosValid
       if NearOrigin then                                                        //----CenterNearOrigin definition----
         begin                                                                   //nearorigin only true when activated and center position smaller than CalcWidth_cm
-        EdgeCenterCm:= (Penumbra[twcRight].Calc+Penumbra[twcLeft].Calc)/2;      //set local EdgeCenterCm as edge-based center position
+        EdgeCenterCm:= (Limit[twcRight].CalcPos+Limit[twcLeft].CalcPos)/2;      //set local EdgeCenterCm as edge-based center position
         NearOrigin  := (wCenterDefinition[FieldClass]=CenterNearOrigin) and (Abs(EdgeCenterCm)<=CalcWidth_cm);
         end;
       end;
     if ((wCenterDefinition[FieldClass]=CenterOrigin) or NearOrigin) and         //----CenterOrigin and CenterNearOrigin definition----
-       (twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft ].Calc<=0)  and
-       (twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc>=0) then
+       (twLevelPos[twAppliedEdgeLevel].Limit[twcLeft ].CalcPos<=0)  and
+       (twLevelPos[twAppliedEdgeLevel].Limit[twcRight].CalcPos>=0) then
       begin
       twCenterPosCm    := 0;                                                    //origin within borders; (near) origin wanted, override previous result
       twCenterPosDefUse:= dUseOrigin;
@@ -18394,9 +18417,9 @@ with wSource[ASource] do
         begin
         for p:= dLow to dDerivative do with twLevelPos[p] do                    //preserve dInflection
           begin
-          Level                   := 0;
-          Penumbra[twcLeft ].Valid:= False;
-          Penumbra[twcRight].Valid:= False;
+          Level                := 0;
+          Limit[twcLeft ].Valid:= False;
+          Limit[twcRight].Valid:= False;
           end;
         lTmp          := Sign(twScanLength);
         i             := twDataFirst;
@@ -18541,11 +18564,11 @@ with wSource[ASource] do
                       begin
                       if wFieldTypeDetection[fcWedge] and (twSetFieldType<>fcElectron) then
                         begin
-                        lTmp:= (twLevelPos[d50].Penumbra[twcLeft].Calc+twLevelPos[d50].Penumbra[twcRight].Calc)/2;
+                        lTmp:= (twLevelPos[d50].Limit[twcLeft].CalcPos+twLevelPos[d50].Limit[twcRight].CalcPos)/2;
                         if BordersValid(ASource,d50) and BordersValid(ASource,d90) and
                           ((WedgeAngle>0) or
-                           (wWedge90ShiftFactor*twLevelPos[d90].Penumbra[twcRight].Calc<lTmp) or
-                           (wWedge90ShiftFactor*twLevelPos[d90].Penumbra[twcLeft ].Calc>lTmp)    ) then
+                           (wWedge90ShiftFactor*twLevelPos[d90].Limit[twcRight].CalcPos<lTmp) or
+                           (wWedge90ShiftFactor*twLevelPos[d90].Limit[twcLeft ].CalcPos>lTmp)    ) then
                           begin
                           twSetFieldType:= fcWedge;
                           FindEdge(ASource);                                    //repeat with changed field type
@@ -18690,6 +18713,7 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {08/03/2021 review of IFA definition,wNominalIFA,twcDefaultSSD_MRcm}
 {01/06/2021 apply wFFFMinFieldSizeCm for FFF detection}
 {04/06/2021 repeat FindEdge when FFF detected}
+{11/06/2021 more reporting}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -18904,7 +18928,7 @@ var s: twcDataSource;
               ProfileNormalisation(fcFFF);
               end; {twfffdetected}              //------------------------------ end FFF specific works----------------------------
             if twInFieldAreaOk and (LogLevel>2) then
-              StatusMessage(Format('->In-Field area curve[%d]: %0.1f cm',[Ord(ASource),abs(twPosCm[twInFieldArr[twcRight]]-twPosCm[twInFieldArr[twcLeft]])]));
+              StatusMessage(Format('->In-Field area[%s]: %0.2f cm',[twcDataSourceNames[ASource],abs(twPosCm[twInFieldArr[twcRight]]-twPosCm[twInFieldArr[twcLeft]])]));
             end; {not isrelative}
           lMin:= twMaxValue;
           lMax:= 0;
@@ -18972,11 +18996,11 @@ var s: twcDataSource;
           lMax         := (GetPenumbraValue(ASource,lDP,twcRight)-GetPenumbraValue(ASource,lDP,twcLeft))/2;
           twPosIntegral:= Integrate(twCenterPosCm-lMax,twCenterPosCm+lMax,ASource,True)/twAbsNormVal;
          {$ENDIF}
-          if Sign(twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft].Calc)+Sign(twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc)=0 then
+          if Sign(twLevelPos[twAppliedEdgeLevel].Limit[twcLeft].CalcPos)+Sign(twLevelPos[twAppliedEdgeLevel].Limit[twcRight].CalcPos)=0 then
             begin {------ calculation of twSymLinacError: left and right border should at least have opposite sign ----------}
-            lSize      := (twSSD_cm+twVector_ICD_cm[Start].m[Beam])*Sign(twLevelPos[twAppliedEdgeLevel].Penumbra[twcRight].Calc)/100;
-            j          := twLevelPos[twAppliedEdgeLevel].Penumbra[twcLeft].Nearest;
-            RightOutArr:= Min(NearestPosition(wLinacSymOuterRadiusCm*lSize,ASource),twLevelPos[d50].Penumbra[twcRight].Nearest);
+            lSize      := (twSSD_cm+twVector_ICD_cm[Start].m[Beam])*Sign(twLevelPos[twAppliedEdgeLevel].Limit[twcRight].CalcPos)/100;
+            j          := twLevelPos[twAppliedEdgeLevel].Limit[twcLeft].Nearest;
+            RightOutArr:= Min(NearestPosition(wLinacSymOuterRadiusCm*lSize,ASource),twLevelPos[d50].Limit[twcRight].Nearest);
             RightInArr := NearestPosition(wLinacSymInnerRadiusCm*lSize,ASource);
             lTmp1      := 0;
             ltmp2      := 0;

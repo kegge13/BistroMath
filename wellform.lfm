@@ -1,7 +1,7 @@
 object AnalyseForm: TAnalyseForm
-  Left = 430
+  Left = 515
   Height = 565
-  Top = 65
+  Top = 208
   Width = 885
   AllowDropFiles = True
   AlphaBlendValue = 0
