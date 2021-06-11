@@ -5455,15 +5455,14 @@ end; {~processsettemprefclick}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {29/09/2020 TempRefEngine}
 {30/09/2020 UnSetReferenceOrg for all engines}
+{11/06/2021 do not isvalid test before UnSetReferenceOrg}
 procedure TAnalyseForm.ProcessUnsetTempRefClick(Sender:TObject);
 var i: Integer;
 begin
 ProcessUnsetTempRefItem.Checked:= True;
 ProcessSetTempRefItem  .Checked:= False;
 for i:= 0 to Length(Engines)-1 do
-  with Engines[i] do
-    if IsValid then
-      UnSetReferenceOrg;
+  Engines[i].UnSetReferenceOrg;
 TempRefEngine:= -1;
 ViewItems(Sender);
 end; {~processunsettemprefclick}
