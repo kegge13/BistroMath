@@ -8718,7 +8718,7 @@ procedure TWellhoferData.ClearCurve(var ACurveRec:twCurveDataRec;
 var r: twcNMpddFits;
     s: twcSides;
 begin
-with ACurveRec,twBeamInfo do
+with ACurveRec,twBeamInfo do if Length(twData)>0 then
   begin
   Freeze            := False;
   twBEnergy         := twcDefaultEnergy_MeV;
@@ -9453,7 +9453,10 @@ function TWellhoferData.GetPenumbraString(ASource   :twcDataSource;
                                           ASide     :twcSides): String;
 begin
 with wSource[ASource],twLevelPos[ADoseLevel].Limit[ASide] do
-  Result:= Format('%0.3f (%0.2f|%0.2f|%0.2f) cm',[CalcPos,twPosCm[CalcRangeFirst],twPosCm[Nearest],twPosCm[CalcRangeLast]]);
+  if Valid then
+   Result:= Format('%0.3f (%0.2f|%0.2f|%0.2f) cm',[CalcPos,twPosCm[CalcRangeFirst],twPosCm[Nearest],twPosCm[CalcRangeLast]])
+else
+  Result:= '-';
 end; {~getpenumbrastring}
 
 
@@ -16523,10 +16526,10 @@ var s : twcSides;
               CalcRangeFirst:= FNMEdgeFirst;                                                                    //reporting
               CalcRangeLast := FNMEdgeLast;
               Nearest       := NearestPosition(CalcPos,FNMEdgeSource);
-              Valid         := True;
+              Valid         := InRange(Nearest,CalcRangeFirst,CalcRangeLast);
               twFitResult1  := CalcPos;                                                                         //infection point
               twFitResult2  := twFitNormalisation*RawLogisticDerivative(BestVertex,twFitResult1,twFitOffsetCm); //slope in inflection point
-              if (LogLevel>2) and (ASource=dsMeasured) then
+              if Valid and (LogLevel>2) and (ASource=dsMeasured) then
                 begin
                 StatusMessage(Format('inflection point %s: %s',[ifthen(ASide=twcLeft,'left','right'),GetPenumbraString(ASource,dInflection,ASide)]));
                 end;
@@ -16540,8 +16543,8 @@ var s : twcSides;
               CalcRangeFirst:= FNMEdgeFirst;
               CalcRangeLast := FNMEdgeLast;
               Nearest       := NearestPosition(CalcPos,FNMEdgeSource);
-              Valid         := True;
-              if (LogLevel>2) and (ASource=dsMeasured) then
+              Valid         := InRange(Nearest,CalcRangeFirst,CalcRangeLast);
+              if Valid and (LogLevel>2) and (ASource=dsMeasured) then
                 StatusMessage(Format('sigmoid 50%% %s: %s',[ifthen(ASide=twcLeft,'left','right'),GetPenumbraString(ASource,dSigmoid50,ASide)]));
               end;
             end; {fitvalid}
