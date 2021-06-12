@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 11/06/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 12/06/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -16728,6 +16728,7 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
  -loops stopped at k=1 but had exit approval for k=0 situation}
 {18/02/2021 limitations on edge range: twcDefEdgeRangeCm}
 {11/06/2021 implemented CalcRangeFirst and CalcRangeLast}
+{12/06/2021 use ADestination (instead of ASource) in GetPenumbraString}
 function TWellhoferData.Derive(cm          :twcFloatType =twcDefaultValue;
                                ASource     :twcDataSource=dsMeasured;
                                ADestination:twcDataSource=dsCalculated;
@@ -17131,7 +17132,7 @@ if (not FFrozen) and wSource[ASource].twValid then
           twAppliedEdgeLevel:= dDerivative;
           end;
         if LogLevel>2 then
-          StatusMessage(Format('->Derivative[%s]: %s / %s',[twcDataSourceNames[ASource],GetPenumbraString(ASource,dDerivative,twcLeft),GetPenumbraString(ASource,dDerivative,twcRight)]));
+          StatusMessage(Format('->Derivative[%s]: %s / %s',[twcDataSourceNames[ASource],GetPenumbraString(ADestination,dDerivative,twcLeft),GetPenumbraString(ADestination,dDerivative,twcRight)]));
         end; {dEdge}
       FreeAndNil(Q);
       FreeAndNil(Sampler);
