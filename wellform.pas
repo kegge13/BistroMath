@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 08/06/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 15/06/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -5033,19 +5033,20 @@ end; {~smartscaleelectronpdd}
 {15/02/2021}
 {18/02/2021 do not add empty engines immediately}
 {07/06/2021 check for legal value usedengine}
+{15/06/2021 first unset tempref}
 procedure TAnalyseForm.SetHistoryListSize(NewLength:Word);
 var i,j: Integer;
 begin
 HistoryListSize_num.Value:= Max(1,NewLength);
 j                        := Length(Engines);
+if TempRefEngine>=NewLength then
+  ProcessUnsetTempRefClick(Self);
 if NewLength<Length(Engines) then
   for i:= j-1 downto 0 do
     if i>=NewLength then
       FreeAndNil(Engines[i])
     else
       Engines[i].Freeze:= HistoryListCheckBox.Checked;
-if TempRefEngine>=NewLength then
-  ProcessUnsetTempRefClick(Self);
 UsedEngine:= Min(UsedEngine,HistoryListSize_num.Value-1);
 end; {~sethistorylistsize}
 
