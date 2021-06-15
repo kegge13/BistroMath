@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 12/06/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 15/06/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2674,8 +2674,8 @@ const
 type
   TWellhoferData=class(TRadthData)
     private
-     FActiveCnt      : Integer;         {business counter, should be 0 before admitting new data or analysis}
-     FAliasList      : twcAliasArray;
+     FActiveCnt      : Integer;                                                 //business counter, should be 0 before admitting new data or analysis
+     FAliasList      : twcAliasArray;                                           //list of alias strings
      FAlignRef       : Boolean;
      FArrayScanRefOk : Boolean;
      FArrayScanRefUse: Boolean;
@@ -9672,9 +9672,7 @@ if Result then
         ExceptMessage('WH.SetReferenceOrg:FRefOrgSrc2!');
        end;
       FRefOrgSrc:= TStringStream.Create('');
-      end
-    else
-      FRefOrgSrc.Size:= 0;
+      end;
     AWellhofer.Parser.Strings.SaveToStream(FRefOrgSrc);                         //copy awellhofer to self.FRefOrgSrc
     FRefOrgSrcType:= AWellhofer.FileFormat;
     end; {text}
@@ -9698,11 +9696,12 @@ end; {~setreferenceorg}
 {21/07/2017 completely clear wSource[RefOrg}
 {10/02/2020 clear FRefOrg2D_OriVal}
 {30/09/2020 clear also FRefOrgSrc}
+{15/06/2021 added exta check on FRefOrgSrc existence, should not be needed}
 procedure TWellhoferData.UnSetReferenceOrg;
 begin
-FRefOrgSrc.Size := 0;
+if assigned(FRefOrgSrc) then
+  FRefOrgSrc.Size:= 0;                                                          //clear underlying data
 FRefOrg2D_OriVal:= 0;
-FRefOrgSrc.Size := 0;                                                           //clear underlying data
 ClearCurve(dsRefOrg);
 end; {~unsetreferenceorg}
 
@@ -18392,6 +18391,7 @@ The major output results are mostly preliminary and include:
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
 {04/03/2021 twIsDiagonal is evaluated anyway, but may be dropped for certain fieldtypes}
+{14/06/2021 logging of twAbsNormPos}
 procedure TWellhoferData.FastScan(ASource:twcDataSource=dsMeasured);
 var i,j                : Integer;
     lMin,lTmp,vmin,vmax: twcFloatType;
@@ -18636,6 +18636,9 @@ with wSource[ASource] do
               end; {vmax>0 and vmax>vmin}
             if not twValid then
               StatusMessage(Format(twForMinMax,[twAbsNormPosCm,twAbsNormValue]))
+            else if LogLevel>2 then
+              StatusMessage(Format('Norm[%s]: %0.2f @%0.2f cm (strategy: %s)',
+                                   [twcDataSourceNames[ASource],twAbsNormValue,twAbsNormPosCm,LowerCase(twcPositionUseNames[twAbsNormDefUse])]));
            except
             twValid:= False;
            end {twvalid, legal scan}
