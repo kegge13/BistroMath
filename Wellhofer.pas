@@ -2676,42 +2676,42 @@ type
     private
      FActiveCnt      : Integer;                                                 //business counter, should be 0 before admitting new data or analysis
      FAliasList      : twcAliasArray;                                           //list of alias strings
-     FAlignRef       : Boolean;
-     FArrayScanRefOk : Boolean;
-     FArrayScanRefUse: Boolean;
-     FDefaultSSDcm   : twcFloatType;
-     FAutoLoadRef    : Boolean;
-     FCalcWidth_cm   : twcFloatType;
-     FCentered       : Boolean;
-     FFilterWidth_cm : twcFloatType;
+     FAlignRef       : Boolean;                                                 //property AlignReference: see function LoadReference
+     FArrayScanRefOk : Boolean;                                                 //property ArrayScanRefOk: structured multiscan files as reference possible (FArrayScanRefOk -> w2D_ArrayRefList
+     FArrayScanRefUse: Boolean;                                                 //property ArrayScanRefUse: use structured multiscan files as reference
+     FDefaultSSD_cm  : twcFloatType;                                            //property DefaultSSD_cm
+     FAutoLoadRef    : Boolean;                                                 //property AutoLoadReference, set by user
+     FCalcWidth_cm   : twcFloatType;                                            //property CalcWidth_cm: range used for dose point calculations and CenterNearOrigin
+     FCentered       : Boolean;                                                 //true when measured profile is centered
+     FFilterWidth_cm : twcFloatType;                                            //property FilterWidth_cm: range for quadfilter and medianfilter
      FLastFileType   : twcFileType;
      FLastMultiFile  : String;
-     FFrozen         : Boolean;
-     FMatchOverride  : Boolean;
+     FFrozen         : Boolean;                                                 //property Freeze: when frozen, data are kept in that state until new data are read
+     FMatchOverride  : Boolean;                                                 //property MatchOverride: force matching as alignment method
      FModNormList    : TModNormList;
      FModNormLocal   : Boolean;
      FModFilmList    : TModFilmList;
      FModFilmLocal   : Boolean;
      FModBeamList    : TModTextList;
      FModBeamLocal   : Boolean;
-     Fmcc            : TMccProfileData;
-     FMultiScanList  : twcMultiScanList;                                        //list of reference file names in multiscan file, element 0 is file itself
-     FPDDfit_simplex : TaNMsimplex;
-     FNoPenumbraOk   : Boolean;
-     FOrgExtension   : String;
+     Fmcc            : TMccProfileData;                                         //caching of last read mcc file
+     FMultiScanList  : twcMultiScanList;                                        //list of reference file names in (unstructured) multiscan file, element 0 is file itself
+     FPDDfit_simplex : TaNMsimplex;                                             //nelder-mead parameters for pdd fit (several variants)
+     FNoPenumbraOk   : Boolean;                                                 //property AcceptMissingPenumbra
+     FOrgExtension   : String;                                                  //standard extension for file type that was read
      FPenumbraH      : twcFloatType;
      FPenumbraL      : twcFloatType;
-     FReferenceDir   : String;
+     FReferenceDir   : String;                                                  //property ReferenceDirectory: path to reference files
      FRefOrgSrc      : TStream;
      FRefOrgFileName : String;
      FRefOrgSrcType  : twcFileType;
-     FRefOrg2D_OriVal: twcFloatType;                                             //preservere originvalue mcc-profile (when taken from other direction)
+     FRefOrg2D_OriVal: twcFloatType;                                            //preservere originvalue mcc-profile (when taken from other direction)
      FResampleGrid   : twcFloatType;
      FTempLevel      : twcFloatType;
      FUserLevel      : twcFloatType;
-     FZeroStepsOk    : Boolean;
-     FNMEdgeSource   : twcDataSource;
-     FTimeRepSource  : twcDataSource;
+     FZeroStepsOk    : Boolean;                                                 //property AcceptZeroSteps: accept non-contiguous data
+     FTimeRepSource  : twcDataSource;                                           //source used to retrieve time of measurement, defaults to dsMeasured
+     FNMEdgeSource   : twcDataSource;                                           //note which source is used for sigmoid model
      FNMEdgeFirst    : Integer;
      FNMEdgeLast     : Integer;
      FNMPddSource    : twcDataSource;
@@ -3162,7 +3162,7 @@ type
      property ArrayScanRefUse      :Boolean         read FArrayScanRefUse write SetArrayScanRefUse;
      property BeamType;
      property CalcWidth_cm         :twcFloatType    read FCalcWidth_cm    write SetCalcWidth;
-     property DefaultSSD_cm        :twcFloatType    read FDefaultSSDcm;
+     property DefaultSSD_cm        :twcFloatType    read FDefaultSSD_cm;
      property Energy               :twcFloatType    read wSource[dsMeasured].twBeamInfo.twBEnergy;
      property FieldGT_cm           :twcFloatType    read GetFieldGT       write SetFieldGT;
      property FieldAB_cm           :twcFloatType    read GetFieldAB       write SetFieldAB;
@@ -8557,10 +8557,10 @@ with wGeneralInfo,wCurveInfo,
   for k:= dsMeasured to twcLastRelated do
     wSource[k].twValid:= False;
   end;
-FDefaultSSDcm:= twcDefaultSSDcm[fcStandard];
-FCentered    := False;
-FParseOk     := False;
-Freeze       := False;
+FDefaultSSD_cm:= twcDefaultSSDcm[fcStandard];
+FCentered     := False;
+FParseOk      := False;
+Freeze        := False;
 end; {~setdefaults}
 
 
@@ -8728,7 +8728,7 @@ with ACurveRec,twBeamInfo do if Length(twData)>0 then
   twBGantry         := 0;
   twBGantryScale    := twCW_180_Down;
   twBCollimator     := 0;
-  twBSAD_cm         := FDefaultSSDcm;
+  twBSAD_cm         := FDefaultSSD_cm;
   twBApplicator     := '';
   twBASD            := 0;
   twBFieldLo        := Fill_FieldDescrArr(UndefinedVal/2);
@@ -9927,7 +9927,7 @@ with wCurveInfo,wSource[ASource],twBeamInfo do
     if (not (twiDiagonal in IgnoredParams)) and (not CreateMultiName) and twIsDiagonal then
       Stg:= Stg+'d';
     if not (twiSSD in IgnoredParams) then
-      Stg:= Stg+Format('_ssd%s',[Num2Stg(Round(ifthen(wRefAtDefaultSSD,FDefaultSSDcm,wSource[ASource].twSSD_cm)),3,'0')]);
+      Stg:= Stg+Format('_ssd%s',[Num2Stg(Round(ifthen(wRefAtDefaultSSD,FDefaultSSD_cm,wSource[ASource].twSSD_cm)),3,'0')]);
     if  not (((FieldDepth=0) and IgnoreZeroValue) or (twiDepth in IgnoredParams) ) then
       Stg:= Stg+Format('_d%sm',[Num2Stg(Round(10*FieldDepth),3,'0')]);
     if  ((WedgeAngle>0) or (twSetFieldType=fcWedge)) and (not (twiWedge in IgnoredParams)) then
@@ -11069,8 +11069,8 @@ with wCurveInfo do
     if wFieldTypeDetection[fcMRlinac] and (Pos(Linac,wMRlinacTUlist)>0) then
       twSetFieldType:= fcMRlinac;
     twSSD_cm          := Max(10,Abs(twSSD_cm));
-    FDefaultSSDcm     := Max(10,Abs(twcDefaultSSDcm[twSetFieldType]));
-    twSSD2NormRatio   := twSSD_cm/FDefaultSSDcm;
+    FDefaultSSD_cm    := Max(10,Abs(twcDefaultSSDcm[twSetFieldType]));
+    twSSD2NormRatio   := twSSD_cm/FDefaultSSD_cm;
     twSDD2SSDratio    := ifthen(Abs(twVector_ICD_cm[Start].m[Beam]-twVector_ICD_cm[Stop].m[Beam])<0.2,1+twVector_ICD_cm[Start].m[Beam]/twSSD_cm,1);
     twPosScaling      := Max(0.1,ifthen(wScaleSDD2SSD,Max(1,twSDD2SSDratio),1)*ifthen(wScale2DefaultSSD,twSSD2NormRatio,1));
     twActDet2NormRatio:= twSDD2SSDratio*twSSD2NormRatio/twPosScaling;
@@ -11601,7 +11601,7 @@ var StreamPos: Integer;
       twBWedge                    := to_int(2);                         {0 [degrees]}
       twBGantry                   := to_int(2);                         {0 [degrees]}
       twBCollimator               := to_int(2);                         {0 [degrees]}
-      wSource[dsMeasured].twSSD_cm:= to_double(2,0.1,FDefaultSSDcm);    {1000 [mm]}
+      wSource[dsMeasured].twSSD_cm:= to_double(2,0.1,FDefaultSSD_cm);   {1000 [mm]}
       twBSAD_cm                   := to_double(2,0.1,100);              {1000 [mm]}
       twBApplicator               := to_string;                         {Undefined}
       if FParseOk and ((Length(twBApplicator)=0) or (twBApplicator[1]<>#0)) then
@@ -11935,6 +11935,7 @@ combined with a specific import procedure within the twellhoferdata object.
 {09/10/2020 added Eclipse}
 {16/11/2020 ADataTopLine}
 {30/03/2021 formatok replaced with parseok}
+{16/06/2021 change of 30/03/2021 lets looping fail, do not test anymore on ..or (not xxx.ParseOk) or .. for multiscan files}
 function TWellhoferData.DualReadData(AStringList :TStrings;
                                      AStream     :TStream;
                                      AFileName   :String;
@@ -12033,7 +12034,7 @@ if FParseOk then
         if i=-1 then i:= Rfa.ScanMax
         else         Dec(i);
         end;
-    until FParseOk or (not wMultiScanLooping) or (not Rfa.ParseOk) or (Rfa.ScanNr<1) or (Rfa.ScanNr>Rfa.ScanMax) or (i<=0);
+    until FParseOk or (not wMultiScanLooping) or (Rfa.ScanNr<1) or (Rfa.ScanNr>Rfa.ScanMax) or (i<=0);
     if Rfa.ParseOk then
       begin
       AFileFormat  := Rfa.FileFormat;
@@ -12067,7 +12068,7 @@ if FParseOk then
         if i=-1 then i:= FMcc.ScanMax
         else         Dec(i);
         end;
-    until FParseOk or (not wMultiScanLooping) or (not FMcc.ParseOk) or (FMcc.ScanNr<1) or (FMcc.ScanNr>FMcc.ScanMax) or (i<=0);
+    until FParseOk or (not wMultiScanLooping) or (FMcc.ScanNr<1) or (FMcc.ScanNr>FMcc.ScanMax) or (i<=0);
     if FMcc.ParseOk then
       begin
       AFileFormat  := FMcc.FileFormat;
@@ -12095,7 +12096,7 @@ if FParseOk then
         if i=-1 then i:= SNA.ScanMax
         else         Dec(i);
         end;
-    until FParseOk or (not wMultiScanLooping) or (not SNA.ParseOk) or (SNA.ScanNr<1) or (SNA.ScanNr>SNA.ScanMax) or (i<=0);
+    until FParseOk or (not wMultiScanLooping) or (SNA.ScanNr<1) or (SNA.ScanNr>SNA.ScanMax) or (i<=0);
     if SNA.ParseOk then
       begin
       AFileFormat  := SNA.FileFormat;
@@ -12142,7 +12143,7 @@ if FParseOk then
       FParseOk:= w2CAD.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportW2CADProfile(w2CAD);
       if not FParseOk then
         w2CAD.ScanNr:= w2CAD.ScanNr+wMultiScanStep;
-    until FParseOk or (not w2CAD.ParseOk) or (w2CAD.ScanNr<1) or (w2CAD.ScanNr>w2CAD.ScanMax);
+    until FParseOk or (w2CAD.ScanNr<1) or (w2CAD.ScanNr>w2CAD.ScanMax);
     if w2CAD.ParseOk then
       begin
       AFileFormat  := w2CAD.FileFormat;
@@ -18832,7 +18833,7 @@ var s: twcDataSource;
           if not twIsRelative then
             begin  {parsedata: twPosScaling:= ifthen(twScaleProfile,twSDD2SSDratio,1)}
             lTmp1          := GetFieldWidthCm(ASource,twAppliedEdgeLevel);      //true field size
-            lTmp2          := lTmp1*twPosScaling*FDefaultSSDcm/(twSSD_cm*twSDD2SSDratio); //calculate "real" field size at SSD=100
+            lTmp2          := lTmp1*twPosScaling*FDefaultSSD_cm/(twSSD_cm*twSDD2SSDratio); //calculate "real" field size at SSD=100
             lSize          := GetFieldLength;                                   //nominal size from header
             twInFieldAreaOk:= BordersValid(ASource,twAppliedEdgeLevel) and twCenterPosValid;
             if (not wNominalIFA) or (Abs(lSize-lTmp2)>1) then                   //use only nominal when the difference with true field size < 1 cm
@@ -18866,7 +18867,7 @@ var s: twcDataSource;
              except
               twSetFieldType:= AppliedFieldType;
              end;
-            FDefaultSSDcm:= twcDefaultSSDcm[AppliedFieldType];                  //now fieldtype is set
+            FDefaultSSD_cm:= twcDefaultSSDcm[AppliedFieldType];                 //now fieldtype is set
             if not (ASource in twcFilteredCopies) then
               QfitMaxPos(ASource);                                              //for filtered versions: rely on unfiltered result
             if twFFFdetected then           //------------------start FFF specific works-----------------------------------

@@ -2,7 +2,7 @@ unit form2pdf;
 
 {$mode objfpc}{$H+}
 
-{Copyright Alan Chamberlain 2020
+{Copyright Alan Chamberlain 2021
 
 This unit renders the text and image components of a form to a PDF using the
 fcl-pdf package. The object is not to provide a pixel by pixel representation of
@@ -35,6 +35,7 @@ TGroupBox
 TPanel
 TRadioGroup
 TCheckGroup
+TScrollbox
 
 To use copy form2pdf.pas into your source directory and include Form2PDF in
 your uses clause. Any visual control can be passed as a parent eg. TTabControl.
@@ -57,7 +58,10 @@ History
            add consistent margin schema
 17/12/2020 use rounded rect for smoother appearance
            fix TStringGrid no columns bug
-18/12/2020 fix TStringGrid extend beyond end of control}
+18/12/2020 fix TStringGrid extend beyond end of control
+14/6/2021  add TScrollbox
+           fix groupbox (inc radiogroup and checkgroup) item spacing start
+           fix add metadata}
 
 interface
 
@@ -313,13 +317,11 @@ end;
 {TLabel}
 procedure LabelToPDF(cLabel:TLabel; APage:TPDFPage; IDX:integer; Margins:TMargins);
 var fSize,                     {font size}
-    DX,DY,                     {x and y pos to draw item}
-    DH         :integer;       {height and width to draw item}
+    DX,DY      :integer;       {x and y pos to draw item}
 begin
 if cLabel.Visible then
    begin
    SetControlFont(cLabel,APage,IDX,fSize);
-   DH := cLabel.Height;
    case cLabel.Alignment of
       taLeftJustify : DX := Margins.L + cLabel.Left;
       taCenter      : DX := Margins.L + cLabel.Left + Round((cLabel.Width
@@ -336,13 +338,11 @@ end;
 {TStaticText}
 procedure StaticTextToPDF(cLabel:TStaticText; APage:TPDFPage; IDX:integer; Margins:TMargins);
 var fSize,                     {font size}
-    DX,DY,                     {x and y pos to draw item}
-    DH         :integer;       {height and width to draw item}
+    DX,DY      :integer;       {x and y pos to draw item}
 begin
 if cLabel.Visible then
    begin
    SetControlFont(cLabel,APage,IDX,fsize);
-   DH := cLabel.Height;
    case cLabel.Alignment of
       taLeftJustify : DX := Margins.L + cLabel.Left;
       taCenter      : DX := Margins.L + cLabel.Left + Round((cLabel.Width
@@ -462,7 +462,7 @@ if cGroupBx.Visible then
 
    {draw components}
    Margins.L := Margins.L + cGroupBx.Left;
-   Margins.T := Margins.T + cGroupBx.Top + cGroupBx.Height - cGroupBx.ClientHeight;
+   Margins.T := DY + 2;
    for I:=0 to cGroupBx.ControlCount - 1 do
       ParseControls(cGroupBx.Controls[I],FDoc,APage,IDX,Margins);
    end;
@@ -1023,7 +1023,7 @@ if cRadioGrp.Visible then
 
    {draw components}
    Margins.L := Margins.L + cRadioGrp.Left;
-   Margins.T := Margins.T + cRadioGrp.Top + cRadioGrp.Height - cRadioGrp.ClientHeight;
+   Margins.T := DY + 2;
    for I:=0 to cRadioGrp.ControlCount - 1 do
       ParseControls(cRadioGrp.Controls[I],FDoc,APage,IDX,Margins);
    end;
@@ -1048,7 +1048,7 @@ if cCheckGrp.Visible then
 
    {draw components}
    Margins.L := Margins.L + cCheckGrp.Left;
-   Margins.T := Margins.T + cCheckGrp.Top + cCheckGrp.Height - cCheckGrp.ClientHeight;
+   Margins.T := DY + 2;
    for I:=0 to cCheckGrp.ControlCount - 1 do
       ParseControls(cCheckGrp.Controls[I],FDoc,APage,IDX,Margins);
    end;
@@ -1149,6 +1149,9 @@ if AControl is TRadioGroup then           {TRadioGroup}
 
 if AControl is TCheckGroup then           {TCheckGroup}
    RecurseControls(AControl,FDoc,Page,ftText,Margins);
+
+if AControl is TScrollbox then            {TScrollbox}
+   RecurseControls(AControl,FDoc,Page,ftText,Margins);
 end;
 
 
@@ -1157,6 +1160,7 @@ procedure RecurseControls(AControl:TControl; FDoc:TPDFDocument; Page:TPDFPage; f
 Terrible programming but use exit to emulate case and increase efficiency}
 var cForm      :TForm;
     cPageCtrl  :TPageControl;
+    cScrollbx  :TScrollbox;
     I          :integer;
 begin
 if AControl is TForm then                 {TForm}
@@ -1179,6 +1183,13 @@ if AControl is TPageControl then          {TPageControl}
 if AControl is TTabSheet then             {TTabSheet}
    begin
    TabSheetToPDF(TTabSheet(AControl),FDoc,Page,ftText,Margins);
+   exit;
+   end;
+if AControl is TScrollbox then
+   begin
+   cScrollBx := AControl as TScrollbox;
+   for I:=0 to cScrollbx.ControlCount - 1 do
+      ParseControls(cScrollbx.Controls[I],FDoc,Page,ftText,Margins);
    exit;
    end;
 if AControl is TGroupBox then             {TGroupBox}
@@ -1267,7 +1278,7 @@ if (Result = 0) then
       except
          Result := -2;
       end;
-      FDoc.Options := [poPageOriginAtTop];
+      FDoc.Options := [poPageOriginAtTop,poMetadataEntry];
       FDoc.FontDirectory := 'fonts';
       FDoc.DefaultUnitOfMeasure := uomPixels;
       FDoc.StartDocument;
@@ -1281,10 +1292,14 @@ if (Result = 0) then
    ftText := FDoc.Addfont('FreeSans.ttf','Regular');}
 
    {if user has not already set info then set defaults}
-   if FDoc.Infos.Title <> '' then FDoc.Infos.Title := Application.Title;
-   if FDoc.Infos.Author <> '' then FDoc.Infos.Author := 'Form2PDF';
-   if FDoc.Infos.Producer <> '' then FDoc.Infos.Producer := 'fpGUI Toolkit 1.4.1';
-   if FDoc.Infos.ApplicationName <> '' then FDoc.Infos.ApplicationName := ApplicationName;
+   if FDoc.Infos.Title = '' then
+      FDoc.Infos.Title := Application.Title;
+   if FDoc.Infos.Author = '' then
+      FDoc.Infos.Author := 'Form2PDF';
+   if FDoc.Infos.Producer = '' then
+      FDoc.Infos.Producer := 'fpGUI Toolkit 1.4.1';
+   if FDoc.Infos.ApplicationName = '' then
+      FDoc.Infos.ApplicationName := ApplicationName;
    FDoc.Infos.CreationDate := Now;
 
    if Assigned(AControl) then
@@ -1339,5 +1354,4 @@ finalization
 FreeAndNil(FDoc);
 
 end.
-
 

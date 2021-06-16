@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 15/06/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 16/06/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -9493,7 +9493,7 @@ if not b then
         SetMessageBar('No history available');
       end
     else with Engines[UsedEngine],wSource[dsMeasured] do
-      if twOriginalFormat in twcMultiFiles then                              //support
+      if twOriginalFormat in twcMultiFiles then                                 //support
         begin
         b                := True;
         wMultiScanLooping:= not (ssAlt in AShift);
@@ -9510,10 +9510,10 @@ if not b then
           j:= wMultiScanNr;
           if (i<>wMultiScanNr) then
             begin
-            Engines[UsedEngine].Freeze:= False;                                   //otherwise nothing happens
-            Reload(Sender,not b);                                                 //due to looping wMultiScanNr might be changed
+            Engines[UsedEngine].Freeze:= False;                                 //otherwise nothing happens
+            Reload(Sender,not b);                                               //due to looping wMultiScanNr might be changed
             end;
-          b:= b and (j=wMultiScanNr) and (wMultiScanNr<>wMultiScanMax);           //extra safety precaution
+          b:= b and (j=wMultiScanNr) and (wMultiScanNr<>wMultiScanMax);         //extra safety precaution
           end;
         end
     else if (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then
