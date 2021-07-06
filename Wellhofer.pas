@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 15/06/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 06/07/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -445,7 +445,7 @@ type
   twcTankAxis       =(X,Y,Z);
   twcMeasAxis       =(Inplane,Crossplane,Beam);
   twcScanTypes      =(snGT,snAB,snPDD,snAngle,snGenericHorizontal,snFreescan,
-                      snGenericProfile,snFanLine,snPlane,snUndefined);              {order of first 3 is critical and assumed in code}
+                      snGenericProfile,snFanLine,snPlane,snUndefined);          //order of first 3 is critical and assumed in code
   twcScalingType    =(scNormalised,scAvgNorm,scPlotScaling,scMaximum);
   twcBeamType       =(Photons,Electrons,Protons,Other);
   twcFloatType      = Double;                                                   //was Extended in Delphi7
@@ -777,7 +777,7 @@ type
      procedure   ExceptMessage(AString           :String             );
     protected
      FParser       : toTNumParser;
-     FParserTopLine: Integer;                                                   //storage of readdata value, can be asked for by UI to do reread
+     FParserTopLine: Integer;                                                   //property ParserTopLine: offset to start of header, used to read consequtive single file structures into one file
      FParseOk      : Boolean;
      procedure   SetDefaults;                                                      virtual;
      procedure   AddWarning(AWarning:String);                                      virtual;
@@ -1267,7 +1267,7 @@ type
      icpModality   : twcModalityChar;
      icpModel      : String;
      icpOrientation: String;
-     icpSetupAngle : twcFloatType;                                               //device setup angle from GT axis CW
+     icpSetupAngle : twcFloatType;                                              //device setup angle from GT axis CW
      icpPosGAOffsCm: twcCoordinate;
      icpPosCm      : twcFloatArray;
      icpScanLine   : twICPAlines;
@@ -1583,7 +1583,7 @@ swapping needed as described in axisdir
 }
 
 const
-  mccBEGIN                  ='BEGIN';
+  mccBEGIN                  ='BEGIN';                                           //strings found in mcc format
   mcc_SCAN_DATA             ='_SCAN_DATA';
   mccFORMAT                 ='FORMAT';
   mccFILE_CREATION_DATE     ='FILE_CREATION_DATE';
@@ -2702,25 +2702,25 @@ type
      FPenumbraH      : twcFloatType;
      FPenumbraL      : twcFloatType;
      FReferenceDir   : String;                                                  //property ReferenceDirectory: path to reference files
-     FRefOrgSrc      : TStream;
+     FRefOrgSrc      : TStream;                                                 //reference data are stored as raw data, for quick reread as the reference is shifted toward the measurement
      FRefOrgFileName : String;
      FRefOrgSrcType  : twcFileType;
      FRefOrg2D_OriVal: twcFloatType;                                            //preservere originvalue mcc-profile (when taken from other direction)
-     FResampleGrid   : twcFloatType;
-     FTempLevel      : twcFloatType;
-     FUserLevel      : twcFloatType;
+     FResampleGrid_cm: twcFloatType;
+     FTempDoseLevel  : twcFloatType;                                            //doselevel as fraction 0-1
+     FUserDoseLevel  : twcFloatType;                                            //user defined level
      FZeroStepsOk    : Boolean;                                                 //property AcceptZeroSteps: accept non-contiguous data
      FTimeRepSource  : twcDataSource;                                           //source used to retrieve time of measurement, defaults to dsMeasured
      FNMEdgeSource   : twcDataSource;                                           //note which source is used for sigmoid model
      FNMEdgeFirst    : Integer;
      FNMEdgeLast     : Integer;
-     FNMPddSource    : twcDataSource;
+     FNMPddSource    : twcDataSource;                                           //note which source is used for pdd model
      FNMPddFirst     : Integer;
      FNMPddLast      : Integer;
      FNMPddFit       : twcNMpddFits;
      FNMpddscaling   : TaVertexDataType;
      FNMreset        : Boolean;
-     FMultiRefIndex  : Boolean;
+     FMultiRefIndex  : Boolean;                                                 //index for unordered multi-scan data set
      FIndexingMode   : Boolean;
      function  ParseData(CheckFileTypeOnly            :Boolean      =False     ): Boolean; override;
      function  DualReadData(AStringList               :TStrings;
@@ -2776,8 +2776,8 @@ type
       wDefaultIgnoreSet         : twcIgnoreSet;
       wDetectorInfo             : twDetectorDesRec;
       wDiagonalDetection        : array[twcFieldClass] of Boolean;
-      wEdgeDetect               : Boolean;                                      {if set or wedge found, a derivative is calculated for edge detection}
-      wEdgeFallBackCm           : twcFloatType;                                 {when 50% level differs more, use edge}
+      wEdgeDetect               : Boolean;                                      //if set or wedge found, a derivative is calculated for edge detection
+      wEdgeFallBackCm           : twcFloatType;                                 //when 50% level differs more, use edge
       wEdgeMethod               : array[twcEdgeClass,twcFieldClass] of twcDoseLevel;
       wTakeCurrentRefSource     : Boolean;
       wEPenumbraH               : twcFloatType;
@@ -2787,7 +2787,7 @@ type
       wFFFMinFieldSizeCm        : twcFloatType;
       wFFFMinDoseDifPerc        : twcFloatType;
       wFFFMinEdgeDifCm          : twcFloatType;
-      wFullAnalysis             : Boolean;                                      {do limited analysis when false}
+      wFullAnalysis             : Boolean;                                      //do limited analysis when false
       wGeneralInfo              : twClinicRec;
       wGenericToPDD             : Boolean;
       wInflectionSigmoidRadiusCm: twcFloatType;
@@ -2796,8 +2796,8 @@ type
       wLinacSymOuterRadiusCm    : twcFloatType;
       wMeas2TankMapping         : twcMeasAxisStg;
       wMeterInfo                : twElectrometerDesRec;
-      wMultiScanNr              : Integer;                                      {1-based, support for multiple scans per file, see ptw}
-      wMultiScanStep            : Integer;                                      {-1 or +1}
+      wMultiScanNr              : Integer;                                      //1-based, support for multiple scans per file, see ptw
+      wMultiScanStep            : Integer;                                      //-1 or +1
       wMultiScanMax             : Integer;
       wMultiScanLooping         : Boolean;
       wNormalisation            : array[twcFieldClass] of twcNormalisation;
@@ -2851,9 +2851,9 @@ type
                          NumPoints                 :Integer=-1);                              overload;
      procedure InitCurve(var ACurveRec             :twCurveDataRec);
      procedure ClearCurve(var ACurveRec            :twCurveDataRec;
-                          CleanUp                  :Boolean=False             );               overload;
+                          CleanUp                  :Boolean=False             );              overload;
      procedure ClearCurve(ASource                  :twcDataSource;
-                          CleanUp                  :Boolean=False             );               overload;
+                          CleanUp                  :Boolean=False             );              overload;
      procedure ResetAnalysis(ASource               :twcDataSource=dsMeasured  );
      procedure Purge;                                                           //will clear all, except dsMeasured,dsReference and overhead
      procedure ResetMultiScanCounters;
@@ -3161,16 +3161,16 @@ type
      property ArrayScanRefOk       :Boolean         read FArrayScanRefOk;
      property ArrayScanRefUse      :Boolean         read FArrayScanRefUse write SetArrayScanRefUse;
      property BeamType;
-     property CalcWidth_cm         :twcFloatType    read FCalcWidth_cm    write SetCalcWidth;
+     property CalcWidth_cm         :twcFloatType    read FCalcWidth_cm          write SetCalcWidth;
      property DefaultSSD_cm        :twcFloatType    read FDefaultSSD_cm;
      property Energy               :twcFloatType    read wSource[dsMeasured].twBeamInfo.twBEnergy;
-     property FieldGT_cm           :twcFloatType    read GetFieldGT       write SetFieldGT;
-     property FieldAB_cm           :twcFloatType    read GetFieldAB       write SetFieldAB;
+     property FieldGT_cm           :twcFloatType    read GetFieldGT             write SetFieldGT;
+     property FieldAB_cm           :twcFloatType    read GetFieldAB             write SetFieldAB;
      property FieldLength;
      property FieldDepth;
      property FileName;
-     property FilterWidth_cm       :twcFloatType    read FFilterWidth_cm  write SetFilterWidth;
-     property Freeze               :Boolean         read FFrozen          write FFrozen;
+     property FilterWidth_cm       :twcFloatType    read FFilterWidth_cm        write SetFilterWidth;
+     property Freeze               :Boolean         read FFrozen                write FFrozen;
      property Identity;
      property IsValid              :Boolean         read wSource[dsMeasured].twValid;
      property LastDetectedFileType :twcFiletype     read FLastFiletype;
@@ -3185,10 +3185,10 @@ type
      property EngineReady          :Boolean         read GetReady;
      property ReferenceDirectory   :String          read FReferenceDir          write SetReferenceDir;
      property RegisteredFileTypes  :String          read GetRegisteredFileTypes;
-     property ResampleGridSize     :twcFloatType    read FResampleGrid          write SetResampleGrid;
+     property ResampleGridSize_cm  :twcFloatType    read FResampleGrid_cm       write SetResampleGrid;
      property ResetFit             :Boolean                                     write FNMreset;
      property ScanType;
-     property UserBorderDoseLevel  :twcFloatType    read FUserLevel             write SetUserLevel;
+     property UserBorderDoseLevel  :twcFloatType    read FUserDoseLevel         write SetUserLevel;
      property Warning;
      property WedgeAngle           :SmallInt        read wSource[dsMeasured].twBeamInfo.twBWedge;
      property ParseOk;
@@ -3210,9 +3210,9 @@ function GetRelatedPositionType(ADoseLevel:twcDoseLevel): twcPositionUseType;
 {31/05/2018 twcMccInsertOrigin}
 {07/03/2021 twcDefaultSSD_MRcm}
 {01/06/2021 twcGenericPos_mm}
-const
-  twcPddFitMubPower       :twcFloatType=   1.15; {amendment to pddfit model, 06/01/2015}
-  twcPddFitMubPowerFixed  :Boolean     = False;  {fixed value}
+const                                                                           //global, configurable, constants for this library
+  twcPddFitMubPower       :twcFloatType=   1.15;                                //amendment to pddfit model, 06/01/2015
+  twcPddFitMubPowerFixed  :Boolean     = False;                                 //do not optimise when true
   twcPddFitCostENRWeighted:Boolean     = True;
   twcGenericToElectron    :Boolean     = False;
   twcGenericPos_mm        :Boolean     = False;
@@ -3221,18 +3221,18 @@ const
   twcD50                  :twcFloatType=   0.5;
   twcD80                  :twcFloatType=   0.8;
   twcD90                  :twcFloatType=   0.9;
-  twcSamePositionRangeCm  :twcFloatType=   0.2;  {cm}
+  twcSamePositionRangeCm  :twcFloatType=   0.2;                                 //cm
   twcYtopQfitRelDif       :twcFloatType=   0.01;
   twcNCSInFieldAxis       :twcFloatType=   0.8;
   twcNCSInFieldDiagonal   :twcFloatType=   0.7;
   twcSearchNoiseFactor    :twcFloatType=   1.1;
   twcMinNormVal           :twcFloatType=   0.00000001;
-  twcSymCorrectionLimit   :twcFloatType=   2.0;  {maximum}
-  twcSymCorrectionLevel   :twcFloatType=   0.1;  {minimal fraction of normval to apply symmetry correction}
+  twcSymCorrectionLimit   :twcFloatType=   2.0;                                 //maximum
+  twcSymCorrectionLevel   :twcFloatType=   0.1;                                 //minimal fraction of normval to apply symmetry correction
   twcDefaultEnergy_MeV    :twcFloatType=   6.0;
-  twcOmniPro7MinRatioPerc :twcFloatType=  10;    {ratio in omnipro_v7 data should exceed this level, otherwise normalisedfield is taken}
-  twcDeriveStatsBinDiv    :Integer     =  10;    {divide number of bands with this number; implications when in upper or lower region}
-  twcDeriveStatsBinWDiv   :Integer     =  30;    {same but alleviated for wedged profiles}
+  twcOmniPro7MinRatioPerc :twcFloatType=  10;                                   //ratio in omnipro_v7 data should exceed this level, otherwise normalisedfield is taken
+  twcDeriveStatsBinDiv    :Integer     =  10;                                   //divide number of bands with this number; implications when in upper or lower region
+  twcDeriveStatsBinWDiv   :Integer     =  30;                                   //same but alleviated for wedged profiles
   twcENRlimit             :twcFloatType=  2.0;
   twcNMseconds            :twcFloatType=  2.0;
   twcNMcycles             :Integer     =  0;
@@ -3240,21 +3240,21 @@ const
   twcNMdigits             :Integer     =  9;
   twcPDDpar               :array[pddfit_I1..pddfit_mx2] of Boolean= (True,True,True,True,True,True,True,True,True,True,True,True);
   twcDefaultICDstring     :String      ='-YX-Z';
-  twcWMSdetInfo           :Integer     =  10;    {-1 or 0..10=ord wmsComments= (wmhG1,wmhG2,wmhP0,wmhP1,wmhP2,wmhP3,wmhP4,wmhU1,wmhU2,wmhU3,wmhU4)}
-  twcDeriveMinMax         :twcFloatType=   0.90; {toegestane relatieve waarde van afgeleide in eerste en laatste punt}
-  twcDeriveBinFraction    :twcFloatType=   0.25; {maximum voor grootse bin}
-  twcDeriveLookAhead      :Integer     =   3;    {aantal punten dat vooruit gekeken wordt bij overschreiden bandlow en bandhigh}
-  twcGammaCutoffDepth     :twcFloatType=   0.5;  {cm}
-  twcGammaCutoffPercent   :twcFloatType=   5;    {%}
-  twcGammaLocalDosePerc   :Boolean     = True;   {relative to local dose}
-  twcGammaDosePercBase    :twcFloatType=   1.0;  {%}
-  twcGammaDistCmBase      :twcFloatType=   0.1;  {cm}
-  twcGammaDistCmStep      :twcFloatType=   0.02; {cm}
-  twcGammaSearchMultiplier:twcFloatType=   5;    {limit search to Gamma-value at distance 0 multiplied with this factor}
+  twcWMSdetInfo           :Integer     =  10;                                   //-1 or 0..10=ord wmsComments= (wmhG1,wmhG2,wmhP0,wmhP1,wmhP2,wmhP3,wmhP4,wmhU1,wmhU2,wmhU3,wmhU4)
+  twcDeriveMinMax         :twcFloatType=   0.90;                                //allowed relative value in first and last point of scan
+  twcDeriveBinFraction    :twcFloatType=   0.25;                                //maximum of largest bin
+  twcDeriveLookAhead      :Integer     =   3;                                   //number of points to look ahead after bandlow or bandhigh is passed
+  twcGammaCutoffDepth     :twcFloatType=   0.5;                                 //cm
+  twcGammaCutoffPercent   :twcFloatType=   5;                                   //%
+  twcGammaLocalDosePerc   :Boolean     = True;                                  //relative to local dose
+  twcGammaDosePercBase    :twcFloatType=   1.0;                                 //%
+  twcGammaDistCmBase      :twcFloatType=   0.1;                                 //cm
+  twcGammaDistCmStep      :twcFloatType=   0.02;                                //cm
+  twcGammaSearchMultiplier:twcFloatType=   5;                                   //limit search to Gamma-value at distance 0 multiplied with this facto
   twcMaxRelMatchDif       :twcFloatType=  10;
-  twcMatchRangeDivider    :Word        =   2;    {verkleiningsfactor range bij iteratie}
-  twcMatchStepsNumber     :Word        =   6;    {aantal schuifstappen dat binnen -range .. +range gemaakt wordt}
-  twcMatchNormDeltaPercent:twcFloatType=   2;    {grootte van delta-stap op normwaarde in %}
+  twcMatchRangeDivider    :Word        =   2;                                   //reduction factor range during iteration in match
+  twcMatchStepsNumber     :Word        =   6;                                   //number of shift steps
+  twcMatchNormDeltaPercent:twcFloatType=   2;                                   //grootte van delta-stap op normwaarde in %
   twcMatchInclusionLimit  :twcFloatType=   0.8;
   twcOriginMinNormFraction:twcFloatType=   0.95;
   twcOutlierPointLimit    :Integer     =   7;
@@ -3367,8 +3367,8 @@ case ADoseLevel of
  end;
 end;
 
-//----------TModalityObject------------------------------------------------------
 
+//----------TModalityObject------------------------------------------------------
 
 constructor TModalityObject.Create(AModality:String='');
 begin
@@ -8351,8 +8351,8 @@ wLinacSymInnerRadiusCm            :=  7.3;
 wLinacSymOuterRadiusCm            := 15.3;
 FPenumbraH                        := 80;
 FPenumbraL                        := 20;
-FUserLevel                        := twcD50;
-FTempLevel                        := 0;
+FUserDoseLevel                    := twcD50;
+FTempDoseLevel                    := 0;
 FLastMultiFile                    := '';
 wEdgeDetect                       := True;
 wApplyUserLevel                   := False;
@@ -8657,7 +8657,7 @@ if assigned(ADestination) then
   ADestination.FArrayScanRefUse          := FArrayScanRefUse;
   ADestination.MatchOverride             := MatchOverride;
   ADestination.ReferenceDirectory        := ReferenceDirectory;
-  ADestination.ResampleGridSize          := ResampleGridSize;
+  ADestination.ResampleGridSize_cm       := ResampleGridSize_cm;
   ADestination.UserBorderDoseLevel       := UserBorderDoseLevel;
   ADestination.FStatusProc               := FStatusProc;
   ADestination.FRegisteredFiles          := FRegisteredFiles;
@@ -8937,7 +8937,7 @@ with CF do
   twcDefaultEnergy_MeV       := ReadFloat(Section   ,twcEnergyKey              ,6);
   w2D_ArrayRefList.CommaText := ReadString(Section  ,twcMultiScanKey+'list'    ,'' );
   twcOutlierPointLimit       := ReadInteger(Section ,twcFilterKey+'Limit'      ,7  );
-  ResampleGridSize           := ReadFloat(Section   ,twcGridKey                ,0.0);
+  ResampleGridSize_cm        := ReadFloat(Section   ,twcGridKey                ,0.0);
   CalcWidth_cm               := ReadFloat(Section   ,twcCalcKey                ,0.2);
   wFFFMinFieldSizeCm         := ReadFloat(Section   ,'FFFMinFieldCm'           ,wFFFMinFieldSizeCm);
   wFFFMinDoseDifPerc         := ReadFloat(Section   ,'FFFMinDoseDif'           ,wFFFMinDoseDifPerc);
@@ -9074,7 +9074,7 @@ with CF do
   WriteBool(Section  ,twcFilterKey+'Outlier'     ,wOutlierFilter                         );
   WriteString(Section,twcMultiScanKey+'list'     ,w2D_ArrayRefList.CommaText             );
   WriteInteger(Section,twcFilterKey+'Limit'      ,twcOutlierPointLimit                   );
-  WriteString(Section,twcGridKey                 ,Num2Stg(ResampleGridSize          ,0,3));
+  WriteString(Section,twcGridKey                 ,Num2Stg(ResampleGridSize_cm       ,0,3));
   WriteString(Section,'FFFMinFieldCm'            ,Num2Stg(wFFFMinFieldSizeCm        ,0,1));
   WriteString(Section,'FFFMinDoseDif'            ,Num2Stg(wFFFMinDoseDifPerc        ,0,1));
   WriteString(Section,'FFFMinEdgeDifCm'          ,Num2Stg(wFFFMinEdgeDifCm          ,0,1));
@@ -9135,8 +9135,8 @@ case Dosepoint of
   d20  : Result:= twcD20;      {0.2}
   d80  : Result:= twcD80;      {0.8}
   d90  : Result:= twcD90;      {0.9}
-  dTemp: Result:= FTempLevel;
-  dUser: Result:= FUserLevel;
+  dTemp: Result:= FTempDoseLevel;
+  dUser: Result:= FUserDoseLevel;
  else    Result:= twcD50;      {0.5}
  end;
 end; {~dosepoint2value}
@@ -9381,9 +9381,9 @@ begin
 DP:= String2DosePoint(ADoseLevel,dTemp);
 if DP=dTemp then
   try
-    Val(ADoseLevel,FTempLevel);
-    if FTempLevel>1 then
-      FTempLevel:= FTempLevel/100;
+    Val(ADoseLevel,FTempDoseLevel);
+    if FTempDoseLevel>1 then
+      FTempDoseLevel:= FTempDoseLevel/100;
     FindLevelPos(ASource,DP);
   except
     DP:= d50;
@@ -9401,9 +9401,9 @@ begin
 ADoseLevel:= Abs(ADoseLevel);
 if ADoseLevel>1 then
   ADoseLevel:= ADoseLevel/100;
-if (ADoseLevel<>FTempLevel) or (not BordersValid(ASource,dTemp)) then
+if (ADoseLevel<>FTempDoseLevel) or (not BordersValid(ASource,dTemp)) then
   begin
-  FTempLevel:= ADoseLevel;
+  FTempDoseLevel:= ADoseLevel;
   FindLevelPos(ASource,dTemp);
   end;
 Result:= GetPenumbraValue(ASource,dTemp,ASide);
@@ -9425,14 +9425,14 @@ with wSource[ASource] do
       DynamicWidth:= SigmoidPenumbraFit(ASource);
     if DynamicWidth then
       begin
-      yRef        := GetNormalisedSigmoidLevel(GetPenumbraValue(ASource,dInflection,ASide),ASource);
-      FTempLevel  := PenumbraHi*yRef/50;
-      DynamicWidth:= FindLevelPos(ASource,dTemp,False);
+      yRef          := GetNormalisedSigmoidLevel(GetPenumbraValue(ASource,dInflection,ASide),ASource);
+      FTempDoseLevel:= PenumbraHi*yRef/50;
+      DynamicWidth  := FindLevelPos(ASource,dTemp,False);
       if DynamicWidth then
         begin
-        xHigh       := GetPenumbraValue(ASource,dTemp,ASide);
-        FTempLevel  := PenumbraLo*yRef/50;
-        DynamicWidth:= FindLevelPos(ASource,dTemp,False);
+        xHigh         := GetPenumbraValue(ASource,dTemp,ASide);
+        FTempDoseLevel:= PenumbraLo*yRef/50;
+        DynamicWidth  := FindLevelPos(ASource,dTemp,False);
         if DynamicWidth then
           begin
           xLow  := GetPenumbraValue(ASource,dTemp,ASide);
@@ -9493,7 +9493,7 @@ end; {~setreferencedir}
 
 procedure TWellhoferData.SetResampleGrid(cm:twcFloatType);
 begin
-FResampleGrid:= Max(0.0,cm);
+FResampleGrid_cm:= Max(0.0,cm);
 end; {~setresamplegrid}
 
 
@@ -9589,8 +9589,8 @@ end; {~setnopenumbraok}
 
 procedure TWellhoferData.SetUserLevel(ADoseFraction:twcFloatType);
 begin
-if (ADoseFraction>0) and (ADoseFraction<=1) then FUserLevel:= ADoseFraction
-else                                             FUserLevel:= -1;
+if (ADoseFraction>0) and (ADoseFraction<=1) then FUserDoseLevel:= ADoseFraction
+else                                             FUserDoseLevel:= -1;
 end; {~setuserlevel}
 
 
@@ -9771,6 +9771,10 @@ with wSource[ASource] do
 end; {~setarrayscanrefok}
 
 
+(*
+For unstructured multiple-scan files a list with curve id strings is built in FMultiScanList
+wMultiScanNr is set for the first matching scan
+*)
 {18/07/2016 wMultiScanReferences}
 {02/08/2016 preserve wMultiScanNr and data, force FArrayScanRefUse off}
 {03/08/2016 restore original scan always when curveidstring is correct}
@@ -11186,7 +11190,7 @@ with wCurveInfo do
     if Pos('film',LowerCase(wDetectorInfo.twDetType))>0 then
       twFilmData:= True;
     if wResampleData then
-      Resample(ResampleGridSize,dsMeasured,dsMeasured);
+      Resample(ResampleGridSize_cm,dsMeasured,dsMeasured);
     if ScanType in twcVertScans then
       begin
       i:= twDataLast;
@@ -13660,6 +13664,7 @@ This complex procedure tries all in-memory options first and then searches on di
 {14/12/2020 review of checkreforg}
 {14/01/2020 PriorityMessage: LogLevel=-1}
 {03/05/2021 refer to MeasCurveIDstg when making reffilestring (s); check also against RefCurveIDstg}
+{06/07/2021 Indexing mode only applicable when RefScanNr>0: r.wMultiScanNr:= ifthen(MultiRefIndex AND (RefScanNr>0),RefScanNr,wMultiScanNr)}
 function TWellhoferData.LoadReference(AFileName            :String ='';
                                       SetCurrentAsRefSource:Boolean=False): Boolean;
 var r                                              : TWellhoferData;
@@ -13850,7 +13855,7 @@ if Result then
         r.Parser.PreLoaded:= True;
         SetReferenceOrg(dsMeasured,True,r);                                        //transfer also the raw data from a possibly multi-dataset
         {$IFDEF MULTIREF_INDEX}
-        if MultiRefIndex and r.IndexMultiScan(s,GetCurveIDString) then             //IndexMultiScan will try to take the apropriate curve
+        if MultiRefIndex and r.IndexMultiScan(s,GetCurveIDString) then             //IndexMultiScan will try to take the apropriate curve and set r.wMultiScanNr
           FMultiScanList:= r.FMultiScanList;
         {$ENDIF}
         end;
@@ -13860,8 +13865,8 @@ if Result then
       {$IFDEF MULTIREF_INDEX}
       r.Filename      := s;
       r.ObjectCallSign:= 'multi-ref';                                              //just for debugging purposes
-      r.wMultiScanNr  := ifthen(MultiRefIndex,RefScanNr,wMultiScanNr);             //set which scan to read from multi-dataset
-      r.wMultiScanMax := RefScanNr;                                                //may speed up reading considerably
+      r.wMultiScanNr  := ifthen(MultiRefIndex and (RefScanNr>0),RefScanNr,wMultiScanNr); //set which scan to read from multi-dataset
+      r.wMultiScanMax := Max(r.wMultiScanNr,r.wMultiScanMax);
       StatusMessage(Format('->LoadReference %s [%d/%d]',[CompressedFilename(s),r.wMultiScanNr,r.wMultiScanMax]));
       {$ENDIF}
       try
