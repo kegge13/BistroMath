@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 16/06/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 29/06/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -3158,7 +3158,7 @@ with Engines[UsedEngine] do
     EdgeSigmoidRadius_cm      .Value  := wInflectionSigmoidRadiusCm;
     LinacSymInner_cm          .Value  := wLinacSymInnerRadiusCm;
     LinacSymOuter_cm          .Value  := wLinacSymOuterRadiusCm;
-    ResampleGrid_mm           .Value  := ResampleGridSize   *10;
+    ResampleGrid_mm           .Value  := ResampleGridSize_cm*10;
     OutlierFilterStatsCheckBox.Checked:= wOutlierFilter;
     CalcWidth_mm              .Value  := CalcWidth_cm       *10;
     FFFMinFieldSize_cm        .Value  := wFFFMinFieldSizeCm;
@@ -3288,7 +3288,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     wGenericToPDD             := MeasGenericToPDDItem           .Checked;
     MatchOverride             := ForceMatchingCheckBox          .Checked;
     wOutlierFilter            := OutlierFilterStatsCheckBox     .Checked;
-    ResampleGridSize          := ResampleGrid_mm                .Value/10;
+    ResampleGridSize_cm       := ResampleGrid_mm                .Value/10;
     Loglevel                  := LogLevelEdit                   .Value;
     wSmallFieldLimitCm        := EdgeSmallFieldWidth_cm         .Value;
     wWedge90ShiftFactor       := EdgeWedge90ShiftFactor         .Value;
