@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 29/06/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 16/07/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -10118,8 +10118,8 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
     ReadEditor(Self);
     FloatResult(Engines[UsedEngine].GetPenumbraWidth(dsMeasured,twcLeft),1.4,0.0001,'Left 85-15'); {22}
     end;
-  EdgeDetectionCheckBox.Checked:= False;
-  Engines[UsedEngine].ResampleGridSize:= 0.2;
+  EdgeDetectionCheckBox.Checked          := False;
+  Engines[UsedEngine].ResampleGridSize_cm:= 0.2;
   CheckMenuItem(MeasResampleItem,True);
   ReadEditor(Self);
   FloatResult(Engines[UsedEngine].GetPenumbraValue(dsMeasured,d50,twcRight),19.2,0.2,'Right, resampled'); {23}
