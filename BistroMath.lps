@@ -8,7 +8,7 @@
       <Unit0>
         <Filename Value="BistroMath.lpr"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="5"/>
+        <EditorIndex Value="6"/>
         <CursorPos X="35" Y="20"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
@@ -20,8 +20,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="WellForm"/>
-        <TopLine Value="10098"/>
-        <CursorPos X="29" Y="10122"/>
+        <CursorPos X="74" Y="6"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -41,7 +40,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="KlemLogo"/>
-        <EditorIndex Value="6"/>
+        <EditorIndex Value="7"/>
         <TopLine Value="64"/>
         <CursorPos X="25" Y="82"/>
         <UsageCount Value="200"/>
@@ -53,7 +52,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="3529"/>
         <CursorPos Y="3545"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit4>
       <Unit5>
         <Filename Value="wellform.lfm"/>
@@ -67,7 +66,7 @@
       </Unit5>
       <Unit6>
         <Filename Value="BistroMath_opt.inc"/>
-        <EditorIndex Value="7"/>
+        <EditorIndex Value="8"/>
         <CursorPos Y="5"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
@@ -76,8 +75,7 @@
         <Filename Value="Wellhofer.pas"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="13646"/>
-        <CursorPos X="25" Y="13658"/>
+        <CursorPos X="13" Y="15"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
       </Unit7>
@@ -99,17 +97,17 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1717"/>
         <CursorPos X="9" Y="1747"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit10>
       <Unit11>
         <Filename Value="fundamentals\flcInclude.inc"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="18" Y="7"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit11>
       <Unit12>
         <Filename Value="TOunits\TOtools.pas"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="5"/>
         <TopLine Value="50"/>
         <CursorPos X="17" Y="74"/>
         <UsageCount Value="100"/>
@@ -120,7 +118,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="319"/>
         <CursorPos X="54" Y="345"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit13>
       <Unit14>
         <Filename Value="TOunits\TOmath.pas"/>
@@ -214,7 +212,7 @@
       </Unit26>
       <Unit27>
         <Filename Value="PanelElements.pas"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="4"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
       </Unit27>
@@ -261,7 +259,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="450"/>
         <CursorPos X="23" Y="467"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit33>
       <Unit34>
         <Filename Value="C:\lazarus\lcl\include\customform.inc"/>
@@ -303,7 +301,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1143"/>
         <CursorPos Y="1165"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit39>
       <Unit40>
         <Filename Value="C:\lazarus\lcl\include\customedit.inc"/>
@@ -334,7 +332,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="909"/>
         <CursorPos X="26" Y="933"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit43>
       <Unit44>
         <Filename Value="C:\lazarus\lcl\grids.pas"/>
@@ -342,7 +340,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="9920"/>
         <CursorPos Y="9942"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit44>
       <Unit45>
         <Filename Value="C:\lazarus\fpc\3.0.4\source\rtl\inc\mathh.inc"/>
@@ -420,10 +418,10 @@
       </Unit54>
       <Unit55>
         <Filename Value="C:\lazarus\fpc\3.2.0\source\rtl\objpas\classes\classesh.inc"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="3"/>
         <TopLine Value="1079"/>
         <CursorPos X="24" Y="1112"/>
-        <UsageCount Value="17"/>
+        <UsageCount Value="22"/>
         <Loaded Value="True"/>
       </Unit55>
       <Unit56>
@@ -453,13 +451,13 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="28"/>
         <CursorPos X="47" Y="43"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit59>
       <Unit60>
         <Filename Value="C:\lazarus\fpc\3.2.0\source\rtl\objpas\sysutils\finah.inc"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="10" Y="34"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit60>
       <Unit61>
         <Filename Value="C:\lazarus\components\lazutils\lazfileutils.pas"/>
@@ -467,7 +465,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="34"/>
         <CursorPos X="8" Y="63"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit61>
       <Unit62>
         <Filename Value="C:\lazarus\lcl\graphics.pp"/>
@@ -475,7 +473,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="229"/>
         <CursorPos X="3" Y="248"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit62>
       <Unit63>
         <Filename Value="C:\lazarus\components\tachart\tatransformations.pas"/>
@@ -490,7 +488,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="58"/>
         <CursorPos Y="86"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit64>
       <Unit65>
         <Filename Value="C:\lazarus\lcl\interfaces\win32\win32proc.pp"/>
@@ -503,10 +501,11 @@
       <Unit66>
         <Filename Value="C:\lazarus\components\lazutils\lazutf8.pas"/>
         <UnitName Value="LazUTF8"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="3475"/>
-        <CursorPos Y="3496"/>
-        <UsageCount Value="1"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="2383"/>
+        <CursorPos Y="2409"/>
+        <UsageCount Value="14"/>
+        <Loaded Value="True"/>
       </Unit66>
       <Unit67>
         <Filename Value="C:\lazarus\fpc\3.2.0\source\rtl\win64\system.pp"/>
@@ -552,13 +551,13 @@
       <Unit73>
         <Filename Value="TOunits\TONelderMead_opt.inc"/>
         <EditorIndex Value="-1"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit73>
       <Unit74>
         <Filename Value="C:\lazarus\lcl\include\statuspanels.inc"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="21" Y="13"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit74>
       <Unit75>
         <Filename Value="C:\lazarus\lcl\interfaces\win32\win32wsstdctrls.pp"/>
@@ -605,7 +604,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="810"/>
         <CursorPos X="5" Y="831"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit80>
       <Unit81>
         <Filename Value="D:\temp\rc_lclwc\components\synedit\syneditpointclasses.pas"/>
@@ -613,7 +612,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1884"/>
         <CursorPos X="24" Y="1907"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit81>
       <Unit82>
         <Filename Value="D:\temp\rc_lclwc\components\synedit\syneditmarkup.pp"/>
@@ -621,7 +620,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="338"/>
         <CursorPos X="46" Y="344"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit82>
       <Unit83>
         <Filename Value="D:\temp\rc_lclwc\components\synedit\syntextdrawer.pp"/>
@@ -629,14 +628,14 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="553"/>
         <CursorPos X="5" Y="576"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit83>
       <Unit84>
         <Filename Value="D:\temp\rc_lclwc\components\synedit\synbeautifier.pas"/>
         <UnitName Value="SynBeautifier"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="3" Y="45"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit84>
       <Unit85>
         <Filename Value="D:\temp\rc_lclwc\components\tachart\tachartaxis.pas"/>
@@ -675,122 +674,122 @@
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13844" TopLine="13836"/>
+        <Caret Line="12078" TopLine="12055"/>
       </Position1>
       <Position2>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13878" TopLine="13839"/>
+        <Caret Line="13848" TopLine="13825"/>
       </Position2>
       <Position3>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13844" TopLine="13836"/>
+        <Caret Line="13876" TopLine="13853"/>
       </Position3>
       <Position4>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13868" TopLine="13836"/>
+        <Caret Line="12078" TopLine="12055"/>
       </Position4>
       <Position5>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13871" TopLine="13836"/>
+        <Caret Line="13883" TopLine="13860"/>
       </Position5>
       <Position6>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13864" Column="48" TopLine="13839"/>
+        <Caret Line="12078" TopLine="12055"/>
       </Position6>
       <Position7>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13878" TopLine="13839"/>
+        <Caret Line="13848" TopLine="13825"/>
       </Position7>
       <Position8>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13857" TopLine="13839"/>
+        <Caret Line="12078" TopLine="12055"/>
       </Position8>
       <Position9>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="10084" TopLine="10060"/>
+        <Caret Line="13859" TopLine="13836"/>
       </Position9>
       <Position10>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="10085" TopLine="10060"/>
+        <Caret Line="9677" TopLine="9654"/>
       </Position10>
       <Position11>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="10087" TopLine="10060"/>
+        <Caret Line="13883" TopLine="13860"/>
       </Position11>
       <Position12>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="10089" TopLine="10060"/>
+        <Caret Line="12078" TopLine="12055"/>
       </Position12>
       <Position13>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="10090" TopLine="10060"/>
+        <Caret Line="13848" TopLine="13825"/>
       </Position13>
       <Position14>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="10093" TopLine="10060"/>
+        <Caret Line="13876" TopLine="13853"/>
       </Position14>
       <Position15>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="10084" TopLine="10060"/>
+        <Caret Line="12078" TopLine="12055"/>
       </Position15>
       <Position16>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="10098" TopLine="10060"/>
+        <Caret Line="13872" Column="33" TopLine="13860"/>
       </Position16>
       <Position17>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13854" Column="40" TopLine="13835"/>
+        <Caret Line="12078" TopLine="12055"/>
       </Position17>
       <Position18>
         <Filename Value="Wellhofer.pas"/>
+        <Caret Line="13848" TopLine="13825"/>
       </Position18>
       <Position19>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="2862" Column="30" TopLine="2824"/>
+        <Caret Line="12078" TopLine="12055"/>
       </Position19>
       <Position20>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="9683" Column="21" TopLine="9644"/>
+        <Caret Line="13859" TopLine="13836"/>
       </Position20>
       <Position21>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="9795" Column="39" TopLine="9757"/>
+        <Caret Line="9676" Column="10" TopLine="9654"/>
       </Position21>
       <Position22>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13857" TopLine="13834"/>
+        <Caret Line="9677" Column="54" TopLine="9654"/>
       </Position22>
       <Position23>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="9788" Column="13" TopLine="9783"/>
       </Position23>
       <Position24>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="9795" Column="6" TopLine="9770"/>
+        <Caret Line="2705" Column="16" TopLine="2665"/>
       </Position24>
       <Position25>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="9867" TopLine="9821"/>
+        <Caret Line="2707" Column="16" TopLine="2667"/>
       </Position25>
       <Position26>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13878" TopLine="13855"/>
+        <Caret Line="8310" Column="38" TopLine="8294"/>
       </Position26>
       <Position27>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13865" Column="84" TopLine="13831"/>
+        <Caret Line="12077" TopLine="12054"/>
       </Position27>
       <Position28>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="9797" TopLine="9773"/>
+        <Caret Line="13847" TopLine="13824"/>
       </Position28>
       <Position29>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13879" TopLine="13856"/>
+        <Caret Line="13858" TopLine="13824"/>
       </Position29>
       <Position30>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="13869" TopLine="13856"/>
+        <Caret Line="9633" Column="50" TopLine="9586"/>
       </Position30>
     </JumpHistory>
     <RunParams>
@@ -799,31 +798,52 @@
     </RunParams>
   </ProjectSession>
   <Debugging>
-    <BreakPoints Count="2">
+    <BreakPoints Count="5">
       <Item1>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="Wellhofer.pas"/>
-        <Line Value="13880"/>
+        <Line Value="13883"/>
       </Item1>
       <Item2>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="Wellhofer.pas"/>
-        <Line Value="13870"/>
-      </Item2>
-    </BreakPoints>
-    <Watches Count="10">
-      <Item1>
-        <Expression Value="fmcc.scannr"/>
-      </Item1>
-      <Item2>
-        <Expression Value="fmcc.parseok"/>
+        <Line Value="13859"/>
       </Item2>
       <Item3>
-        <Expression Value="fmcc.scanmax"/>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="Wellhofer.pas"/>
+        <Line Value="13876"/>
+      </Item3>
+      <Item4>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="Wellhofer.pas"/>
+        <Line Value="13848"/>
+      </Item4>
+      <Item5>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="Wellhofer.pas"/>
+        <Line Value="9678"/>
+      </Item5>
+    </BreakPoints>
+    <Watches Count="13">
+      <Item1>
+        <Expression Value="measstg"/>
+      </Item1>
+      <Item2>
+        <Expression Value="refstg"/>
+      </Item2>
+      <Item3>
+        <Expression Value="linac"/>
       </Item3>
       <Item4>
         <Expression Value="fromdisk"/>
@@ -835,7 +855,7 @@
         <Expression Value="result"/>
       </Item6>
       <Item7>
-        <Expression Value="r.wMultiScanNr"/>
+        <Expression Value="filename"/>
       </Item7>
       <Item8>
         <Expression Value="wMultiScanNr"/>
@@ -844,8 +864,17 @@
         <Expression Value="wSource[dsmeasured].twSigmoidFitData[twcLeft].twFitResult1"/>
       </Item9>
       <Item10>
-        <Expression Value="wSource[dsmeasured].twSigmoidFitData[twcLeft].twFitResult2"/>
+        <Expression Value="s"/>
       </Item10>
+      <Item11>
+        <Expression Value="fparseok"/>
+      </Item11>
+      <Item12>
+        <Expression Value="fmcc.mccdata.tmLinac"/>
+      </Item12>
+      <Item13>
+        <Expression Value="FRefOrgFileName"/>
+      </Item13>
     </Watches>
   </Debugging>
 </CONFIG>

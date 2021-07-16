@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 06/07/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 16/07/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -9469,6 +9469,18 @@ if AMultiRefIndex then
 end; {~setmultirefindex}
 
 
+{05/06/2015}
+procedure TWellhoferData.SetArrayScanRefUse(AState:Boolean);
+begin
+if AState<>FArrayScanRefUse then
+  begin
+  FArrayScanRefUse:= AState;
+  if AState then
+    SetArrayScanRefOk;
+  end;
+end; {~setarrayscanrefuse}
+
+
 {10/09/2016 try..except}
 procedure TWellhoferData.SetReferenceDir(Directory:String);
 var Drive,OldDir: String;
@@ -9594,18 +9606,6 @@ else                                             FUserDoseLevel:= -1;
 end; {~setuserlevel}
 
 
-{05/06/2015}
-procedure TWellhoferData.SetArrayScanRefUse(AState:Boolean);
-begin
-if AState<>FArrayScanRefUse then
-  begin
-  FArrayScanRefUse:= AState;
-  if AState then
-    SetArrayScanRefOk;
-  end;
-end; {~setarrayscanrefuse}
-
-
 {13/07/2015 prevent usage of preloaded temporary reference}
 {21/07/2015 reforg used now}
 {30/12/2016 always invalidate reforg on change}
@@ -9630,6 +9630,7 @@ end; {~setautoloadref}
 {02/10/2020 accidently always dsMeasured was copied}
 {05/10/2020 copy also to dsReference}
 {14/12/2020 include if MultiRefIndex then...  for MultiscanList}
+{16/07/2021 set size of FRefOrgSrc to zero before savetostream}
 function TWellhoferData.SetReferenceOrg(ASource        :twcDataSource =dsMeasured;
                                         KeepAsReference:Boolean       =False;
                                         AWellhofer     :TWellhoferData=nil): Boolean;
@@ -9673,6 +9674,7 @@ if Result then
        end;
       FRefOrgSrc:= TStringStream.Create('');
       end;
+    FRefOrgSrc.Size:= 0;                                                        //when size>0, savetostream will fail
     AWellhofer.Parser.Strings.SaveToStream(FRefOrgSrc);                         //copy awellhofer to self.FRefOrgSrc
     FRefOrgSrcType:= AWellhofer.FileFormat;
     end; {text}
@@ -13665,6 +13667,7 @@ This complex procedure tries all in-memory options first and then searches on di
 {14/01/2020 PriorityMessage: LogLevel=-1}
 {03/05/2021 refer to MeasCurveIDstg when making reffilestring (s); check also against RefCurveIDstg}
 {06/07/2021 Indexing mode only applicable when RefScanNr>0: r.wMultiScanNr:= ifthen(MultiRefIndex AND (RefScanNr>0),RefScanNr,wMultiScanNr)}
+{16/07/2021 s:= ReferenceDirectory+ifthen(MULTIREFINDEX AND FArrayScanRefOk,wSource[dsMeasured].twFileIDString,MeasCurveIDstg)}
 function TWellhoferData.LoadReference(AFileName            :String ='';
                                       SetCurrentAsRefSource:Boolean=False): Boolean;
 var r                                              : TWellhoferData;
@@ -13786,7 +13789,7 @@ RefScanNr:= 0;
 {$ENDIF}
 if wCheckRefCurveString then ReportedSrc:= dsMeasured
 else                         ReportedSrc:= dsRefOrg;
-if Result then
+if Result then                                                                  //FArrayScanRefOk only meaningful when MultiRefIndex is true
   begin
   GenName:= AFileName='';
  {$IFDEF MULTIREF_INDEX}
@@ -13794,7 +13797,7 @@ if Result then
     s:= FMultiScanList[0]
   else
  {$ENDIF}
-    s:= ReferenceDirectory+ifthen(FArrayScanRefOk,wSource[dsMeasured].twFileIDString,MeasCurveIDstg);
+    s:= ReferenceDirectory+ifthen(MultiRefIndex and FArrayScanRefOk,wSource[dsMeasured].twFileIDString,MeasCurveIDstg);
   StatusMessage('LoadReference->'+s,True,1);
   UseOrg:= CheckRefOrg and (RefCurveIDstg=MeasCurveIDstg);
   if not UseOrg then
