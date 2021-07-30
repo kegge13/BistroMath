@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 16/07/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 29/07/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -1196,7 +1196,6 @@ const DefAppName           ='BistroMath';
       ExtraVersionInfo     = '';
       DefLogMaxLines       ='logmax';
       DefXsourceSelectors  ='MCRB';
-      DefaultFontSize      =  8;
       DefNumValueChars     =  9;
       DefChartAxL          =  0;                                                //These values are only valid in standard setup of chart
       DefChartAxB          =  1;
@@ -6668,6 +6667,7 @@ end; {~fillchecklistcombo}
 {12/07/2020 reviewed resultpanel.height and form height}
 {16/07/2020 positionlabel}
 {29/08/2020 LabelPlacingActive, changed form.height rule}
+{29/07/2021 sizes and positions not derived from defaultfontsize(=8) anymore}
 procedure TAnalyseForm.PlaceResultsLabels(ASize:ShortInt=0);
 var k                     : PlotItems;
     NumLines,h,l,w,i,j,p,q: Integer;
@@ -6704,25 +6704,25 @@ begin
 if CxUsedLineMax>0 then                                                         //depends on early initialisation in formcreate
   begin
   LabelPlacingActive := True;                                                   //avoid looping through formresize when height is changed
-  ASize              := Max(7,Min(ifthen(ASize=0,Round(Width*8/Constraints.MinWidth),ASize),12));
+  ASize              := Max(7,Min(ifthen(ASize=0,Round(Width*8/Constraints.MinWidth),ASize),20));
   Font.Size          := ASize;
-  h                  := Round( 13*ASize/DefaultFontSize);                       //height of elements
-  l                  := h+2;
-  w                  := Round( 36*ASize/DefaultFontSize);                       //base data width
+  h                  := Round(1.35*ASize*Font.PixelsPerInch/72);                //height of elements
+  l                  := h+1;                                                    //line spacing
+  w                  := Round(4.5*ASize);                                       //base data width
   NumLines           := Succ(Max(Ord(High(PlotItems)),PanelElements.RowMax));   //derive number text lines needed in resultspanel
   i                  := ResultsPanel.Height;
-  ResultsPanel.Height:= Round((NumLines*15+5)*ASize/DefaultFontSize);           //here the resultspanel height is set
-  Height             := ifthen(ResultsPanel.Height<i,                           //set height of form
-                               Height+ResultsPanel.Height-i,
-                               Max(Height,Constraints.MinHeight+Round((NumLines-CxDefaultRowCnt)*15*ASize/DefaultFontSize)));
-  p                  := Round(1.65*w);                                          //width value column
-  q                  := Round(125*ASize/DefaultFontSize);                       //width label column
+  ResultsPanel.Height:= Round(NumLines*(l+0.4));                                //here the resultspanel height is set
+  SetMessagebar(Format('Font size= %d, Line height=%d, #lines=%d, panel height=%d',[ASize,h,NumLines,ResultsPanel.Height]),3);
+  Height             := Min(Height+ResultsPanel.Height-i,Screen.Height);        //set height of form
+  Top                := Min(Top,Screen.Height-Height);
+  p                  := Round(1.7*w);                                           //width value column
+  q                  := Round(15.6*ASize);                                      //width label column
   for i:= 0 to CxUsedLineMax do
     SetCxResults(CxResults[i],1,q,2,p,4+i*l);
   with CxResults[0][CxMaxCol,CxValue] do
     j:= Left+Width+25;
-  p:= Round(75*ASize/DefaultFontSize);
-  w:= Round(1.1*w);
+  p:= Round(9.4*ASize);
+  w:= Round(1.3*w);
   for k:= Low(PlotItems) to High(PlotItems) do
     begin
     with PlotLabels[k] do
@@ -6746,7 +6746,7 @@ if CxUsedLineMax>0 then                                                         
       Font.Size:= ASize;
       Top      := PlotLabels[k].Top;
       Width    := w;
-      Left     := Parent.Width-Width-4;
+      Left     := Parent.Width-Width-(ASize div 2)-2;
       Height   := h;
       end;
     end;
@@ -6761,7 +6761,7 @@ if CxUsedLineMax>0 then                                                         
     end;
   with PositionLabel do
     begin
-    Font      := CxResults[0              ][0,CxTitle].Font;
+    Font.Size := ASize;
     Top       := CxResults[CxUsedLineMax  ][0,CxTitle].Top;
     Left      := PlotLabels[Low(PlotItems)]           .Left;
     Width     := PlotLabels[Low(PlotItems)]           .Width;
@@ -6770,14 +6770,13 @@ if CxUsedLineMax>0 then                                                         
     end;
   with PositionValue do
     begin
-    Font  := PositionLabel             .Font;
-    Top   := PositionLabel             .Top;
-    Left  := PlotValues[Low(PlotItems)].Left;
-    Width := PlotValues[Low(PlotItems)].Width;
-    Height:= h;
+    Font.Size:= ASize;
+    Top      := PositionLabel             .Top;
+    Left     := PlotValues[Low(PlotItems)].Left;
+    Width    := PlotValues[Low(PlotItems)].Width;
+    Height   := h;
     end;
-  Screen   .MenuFont.Size:= ASize;
-  StatusBar.Font    .Size:= ASize;
+  Screen.MenuFont.Size:= ASize;
   for i:= DefChartAxL to DefChartAxB do
     DataPlot.AxisList[i].Marks.LabelFont.Size:= ASize;
   DataPlot.BottomAxis.Title.LabelFont.Size:= ASize+2;
@@ -8341,7 +8340,8 @@ if Abs(AValue)>DefErrorLimit then Stg:= Format('%*s',[DefNumValueChars,'-'])
 else                              Stg:= Format('%*.*f%s',[DefNumValueChars,Decimals,AValue,AUnit]);
 if DefaultFormatSettings.DecimalSeparator<>'.' then
   ALabel.Caption:= AnsiReplaceStr(Stg,'.', DefaultFormatSettings.DecimalSeparator)
-else                          ALabel.Caption:= Stg;
+else
+  ALabel.Caption:= Stg;
 ALabel.Font.Color:= AColor;
 ALabel.Visible   := True;
 end; {~publishvalue}
