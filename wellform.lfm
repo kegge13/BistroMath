@@ -1,13 +1,13 @@
 object AnalyseForm: TAnalyseForm
-  Left = 515
+  Left = 675
   Height = 565
   Top = 208
-  Width = 885
+  Width = 984
   AllowDropFiles = True
   AlphaBlendValue = 0
   Caption = 'AnalyseForm'
   ClientHeight = 545
-  ClientWidth = 885
+  ClientWidth = 984
   Color = clScrollBar
   Constraints.MinHeight = 565
   Constraints.MinWidth = 885
@@ -25,7 +25,7 @@ object AnalyseForm: TAnalyseForm
     Left = 0
     Height = 522
     Top = 0
-    Width = 885
+    Width = 984
     HelpContext = 1
     ActivePage = AnalysisTab
     Align = alClient
@@ -41,18 +41,18 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 1
       Caption = 'Analysis'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 976
       object ResultsPanel: TPanel
         Left = 0
         Height = 93
         Top = 401
-        Width = 877
+        Width = 976
         HelpContext = 11
         Align = alBottom
         Alignment = taLeftJustify
         Anchors = []
         ClientHeight = 93
-        ClientWidth = 877
+        ClientWidth = 976
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -68,15 +68,17 @@ object AnalyseForm: TAnalyseForm
           ParentColor = False
         end
         object PositionValue: TLabel
-          Left = 606
+          Left = 900
           Height = 15
           Top = 79
-          Width = 5
-          Caption = '-'
+          Width = 22
+          Alignment = taRightJustify
+          AutoSize = False
+          Caption = '0'
           ParentColor = False
         end
         object MeasNormAdjustEdit: TFloatSpinEditEx
-          Left = 822
+          Left = 921
           Height = 17
           Top = 1
           Width = 52
@@ -96,7 +98,7 @@ object AnalyseForm: TAnalyseForm
         Left = 0
         Height = 401
         Top = 0
-        Width = 877
+        Width = 976
         HelpContext = 9
         AutoFocus = True
         AxisList = <        
@@ -804,17 +806,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 127
       Caption = 'Settings'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 976
       OnExit = SettingsTabExit
       object SettingsPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 976
         HelpContext = 127
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 976
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -823,12 +825,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 48
           Top = 0
-          Width = 583
+          Width = 682
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Shift settings (cm)'
           ClientHeight = 28
-          ClientWidth = 579
+          ClientWidth = 678
           Color = clBtnFace
           ParentColor = False
           TabOrder = 1
@@ -865,12 +867,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 49
           Top = 57
-          Width = 583
+          Width = 682
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Merge settings'
           ClientHeight = 29
-          ClientWidth = 579
+          ClientWidth = 678
           TabOrder = 2
           object MergeMatchCheckBox: TCheckBox
             Left = 391
@@ -952,12 +954,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 147
           Top = 173
-          Width = 583
+          Width = 682
           HelpContext = 136
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Gamma analysis settings'
           ClientHeight = 127
-          ClientWidth = 579
+          ClientWidth = 678
           TabOrder = 3
           object GammaLimitAreaLabel: TLabel
             Left = 11
@@ -1157,12 +1159,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 49
           Top = 115
-          Width = 583
+          Width = 682
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Mayneord settings'
           ClientHeight = 29
-          ClientWidth = 579
+          ClientWidth = 678
           TabOrder = 4
           object MayneordDmaxLabel: TStaticText
             Left = 32
@@ -1545,12 +1547,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 140
           Top = 329
-          Width = 583
+          Width = 682
           HelpContext = 129
           Anchors = [akTop, akLeft, akRight]
           Caption = 'PDD fit'
           ClientHeight = 120
-          ClientWidth = 579
+          ClientWidth = 678
           TabOrder = 26
           object PDDfitCheckBox: TCheckBox
             Left = 37
@@ -1772,17 +1774,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 129
       Caption = 'Advanced Settings'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 976
       OnExit = AdvancedSettingsTabExit
       object AdvancedSettingsPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 976
         HelpContext = 129
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 976
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -2403,12 +2405,12 @@ object AnalyseForm: TAnalyseForm
           Left = 258
           Height = 51
           Top = 343
-          Width = 560
+          Width = 659
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Linac symmetry error'
           ClientHeight = 31
-          ClientWidth = 556
+          ClientWidth = 655
           TabOrder = 23
           object LinacErrInvertGTCheckBox: TCheckBox
             Left = 29
@@ -3042,7 +3044,7 @@ object AnalyseForm: TAnalyseForm
     Left = 0
     Height = 23
     Top = 522
-    Width = 885
+    Width = 984
     HelpContext = 21
     Panels = <    
       item
