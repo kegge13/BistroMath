@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 29/07/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 01/08/2021}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -4318,6 +4318,7 @@ Fills graph and triggers display of analysis results (PublishResults).
 {24/02/2021 FFF detected added to bottom axis title}
 {02/03/2021 FFFfeatures}
 {03/03/2020 removed MeasDetectDiagItem}
+{01/08/2021 OnDataReadBusy:= True moved to earlier phase}
 procedure TAnalyseForm.OnDataRead(Sender:TObject);
 var i                           : Integer;
     m                           : twcMeasAxis;
@@ -4507,11 +4508,12 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
   with Engines[UsedEngine],wCurveInfo do                                        //==== current engine is Engines[UsedEngine] ====
     if IsValid and (not OnDataReadBusy) then                                    //do nothing if still busy
       begin
+      OnDataReadBusy     := True;                                               //set busy state early in process
+      tmpX               := GetDisplayedPositionScale;
+      Br                 := Format('%s%0.2f',[wSource[dsMeasured].twBeamInfo.twBModality,Energy]);
       MeasMenuClick(Sender);                                                    //update measurement menu
       if not Freeze then                                                        //if current engine is not in frozen state
         wApplyUserLevel  := MeasUserDoseItem.Checked;                           //keep unchanged otherwise
-      tmpX               := GetDisplayedPositionScale;
-      Br                 := Format('%s%0.2f',[wSource[dsMeasured].twBeamInfo.twBModality,Energy]);
       if assigned(UseDoseConvTable) then
         i:= Length(UseDoseConvTable)
       else
@@ -4572,7 +4574,6 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         if (not Freeze) and ReferenceValid then
           Analyse(dsReference);
         end;
-      OnDataReadBusy:= True;
       try
         Er         := ExtractFileName(MakeCurveName);
        except
@@ -9457,6 +9458,7 @@ end; {~exceptmessage}
 {15/09/2020 historylist}
 {16/09/2020 SelectEngine}
 {04/05/2021 added paging support for multiple-single-scan files}
+{01/07/2021 check OnDataReadBusy}
 procedure TAnalyseForm.FormKeyDown(Sender :TObject;
                                    var Key:Word;
                                    AShift :TShiftState);
@@ -9483,7 +9485,7 @@ if (not((Key=VK_ESCAPE) and Engines[UsedEngine].StopProcessing)) or b then
   inherited;
 if not b then
   begin
-  if (Key in PlusKeys+MinusKeys+HomeKeys) then                                  //-------------next scan-----------
+  if (Key in PlusKeys+MinusKeys+HomeKeys) and (not OnDataReadBusy) then         //-------------next scan-----------
     begin
     if AShift=[ssCtrl] then
       begin
