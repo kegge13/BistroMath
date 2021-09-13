@@ -18403,6 +18403,7 @@ The major output results are mostly preliminary and include:
 {04/03/2021 twIsDiagonal is evaluated anyway, but may be dropped for certain fieldtypes}
 {14/06/2021 logging of twAbsNormPos}
 {13/09/2021 twIsDiagonal:= wDiagonalDetection[twSetFieldType]}
+{13/09/2021 allowed vmax=vmin for relative profile: twValid := (vmax>0) and ((vmax>vmin) or ((vmax=vmin) and twIsRelative))}
 procedure TWellhoferData.FastScan(ASource:twcDataSource=dsMeasured);
 var i,j                : Integer;
     lMin,lTmp,vmin,vmax: twcFloatType;
@@ -18505,7 +18506,7 @@ with wSource[ASource] do
                 twMinArr:= i;
                 end;
               end;
-            twValid := (vmax>0) and (vmax>vmin);
+            twValid := (vmax>0) and ((vmax>vmin) or ((vmax=vmin) and twIsRelative));
             {$IFDEF COMPILED_DEBUG}
             FailInfo:= Format('p2 min=%0.1f max=%0.1f',[vmin,vmax]);
             {$ENDIF}
@@ -18644,7 +18645,7 @@ with wSource[ASource] do
                 end;
               twAvgNormValue  := twAbsNormValue;
               twAppliedNormVal:= twAbsNormValue; {may differ afterwards}
-              end; {vmax>0 and vmax>vmin}
+              end; {vmax>0 and vmax>=vmin}
             if not twValid then
               StatusMessage(Format(twForMinMax,[twAbsNormPosCm,twAbsNormValue]))
             else if LogLevel>2 then
