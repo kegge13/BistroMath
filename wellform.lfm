@@ -2,12 +2,12 @@ object AnalyseForm: TAnalyseForm
   Left = 675
   Height = 565
   Top = 208
-  Width = 984
+  Width = 885
   AllowDropFiles = True
   AlphaBlendValue = 0
   Caption = 'AnalyseForm'
   ClientHeight = 545
-  ClientWidth = 984
+  ClientWidth = 885
   Color = clScrollBar
   Constraints.MinHeight = 565
   Constraints.MinWidth = 885
@@ -25,7 +25,7 @@ object AnalyseForm: TAnalyseForm
     Left = 0
     Height = 522
     Top = 0
-    Width = 984
+    Width = 885
     HelpContext = 1
     ActivePage = AnalysisTab
     Align = alClient
@@ -41,18 +41,18 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 1
       Caption = 'Analysis'
       ClientHeight = 494
-      ClientWidth = 976
+      ClientWidth = 877
       object ResultsPanel: TPanel
         Left = 0
         Height = 93
         Top = 401
-        Width = 976
+        Width = 877
         HelpContext = 11
         Align = alBottom
         Alignment = taLeftJustify
         Anchors = []
         ClientHeight = 93
-        ClientWidth = 976
+        ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -78,7 +78,7 @@ object AnalyseForm: TAnalyseForm
           ParentColor = False
         end
         object MeasNormAdjustEdit: TFloatSpinEditEx
-          Left = 921
+          Left = 822
           Height = 17
           Top = 1
           Width = 52
@@ -98,7 +98,7 @@ object AnalyseForm: TAnalyseForm
         Left = 0
         Height = 401
         Top = 0
-        Width = 976
+        Width = 877
         HelpContext = 9
         AutoFocus = True
         AxisList = <        
@@ -375,17 +375,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 23
       Caption = 'Field Types'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 976
       OnExit = SetWellhoferValues
       object FieldTypesPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 976
         HelpContext = 23
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 976
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -3044,7 +3044,7 @@ object AnalyseForm: TAnalyseForm
     Left = 0
     Height = 23
     Top = 522
-    Width = 984
+    Width = 885
     HelpContext = 21
     Panels = <    
       item
