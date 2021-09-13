@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 16/07/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 13/09/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -302,20 +302,20 @@ const
   pddfitEnorm : array[pddfit_I1..pddfit_mx2     ] of Boolean  =(False,False,False,False,False,False,False,True,False,True,False,False);
 
 resourcestring
-  twForParseError   ='Parsing error at line %d: %s%s';
-  twForParseRead    ='%d points read%s';
-  twForMinPoints    ='Only %d points; at least %d required.%s';
-  twForBinRead1     ='Incorrect data in profile header';
-  twForBinRead2     ='File read error in profile data';
-  twForMinMax       ='Problem with maximum (%0.1f=%0.1f)';
-  twForMinScanLen   ='Length of scan %0.1f cm; at least %0.1f cm required.';
-  twForIllegalScan  ='Bi-directional or zero steps in scan at point %d.';
-  twForPointError   =' -->point %d expected';
-  twForUnsupported  ='Unsupported scan type: ';
-  twForMatch        ='->Match cost function(%0.3f)=%0.5f [step %0.3f cm]';
-  twForFileNotFound ='[ file %s not found ]';
-  twForFileNotRead  ='[ file %s not loaded ]';
-  twDiagonalFound   ='diagonal detected';
+  twForParseError   = 'Parsing error at line %d: %s%s';
+  twForParseRead    = '%d points read%s';
+  twForMinPoints    = 'Only %d points; at least %d required.%s';
+  twForBinRead1     = 'Incorrect data in profile header';
+  twForBinRead2     = 'File read error in profile data';
+  twForMinMax       = 'Problem with maximum (%0.1f=%0.1f)';
+  twForMinScanLen   = 'Length of scan %0.1f cm; at least %0.1f cm required.';
+  twForIllegalScan  = 'Bi-directional or zero steps in scan at point %d.';
+  twForPointError   = ' -->point %d expected';
+  twForUnsupported  = 'Unsupported scan type: ';
+  twForMatch        = '->Match cost function(%0.3f)=%0.5f [step %0.3f cm]';
+  twForFileNotFound = '[ file %s not found ]';
+  twForFileNotRead  = '[ file %s not loaded ]';
+  twDiagonalFound   = 'diagonal detected';
   twForNMreport     = 'ENR: %0.2f in %d cycles, %d restart%s, %0.1f s (amoebes: %d), max %0.2f at %0.2f cm';
   twMedianFilterStg = 'median-filtered';
   twQuadFilterStg   = 'quad-filtered';
@@ -13668,6 +13668,7 @@ This complex procedure tries all in-memory options first and then searches on di
 {03/05/2021 refer to MeasCurveIDstg when making reffilestring (s); check also against RefCurveIDstg}
 {06/07/2021 Indexing mode only applicable when RefScanNr>0: r.wMultiScanNr:= ifthen(MultiRefIndex AND (RefScanNr>0),RefScanNr,wMultiScanNr)}
 {16/07/2021 s:= ReferenceDirectory+ifthen(MULTIREFINDEX AND FArrayScanRefOk,wSource[dsMeasured].twFileIDString,MeasCurveIDstg)}
+{13/07/2021 LoadReference needs reliable FileType detection. This is only completed after full analysis.}
 function TWellhoferData.LoadReference(AFileName            :String ='';
                                       SetCurrentAsRefSource:Boolean=False): Boolean;
 var r                                              : TWellhoferData;
@@ -13779,11 +13780,11 @@ var r                                              : TWellhoferData;
 begin
 //wSource[RefOrg].twValid:= False; {test: force file-load}
 Inc(FActiveCnt);
-Result          := wSource[dsMeasured].twValid and (not FFrozen);
+Result          := wSource[dsMeasured].twValid and (not FFrozen) and Analyse(dsMeasured);
 FromDisk        := False;
 MeasCurveIDstg  := LocalCurveID(dsMeasured);
 RefCurveIDstg   := ifthen(wSource[dsReference].twValid,wSource[dsReference].twCurveIDString,MeasCurveIDstg);
-RefOrgCurveIDstg:= wSource[dsRefOrg  ].twCurveIDString;
+RefOrgCurveIDstg:= wSource[dsRefOrg].twCurveIDString;
 {$IFDEF MULTIREF_INDEX}
 RefScanNr:= 0;
 {$ENDIF}
@@ -18401,6 +18402,7 @@ The major output results are mostly preliminary and include:
 {17/09/2020 introduction of FFrozen}
 {04/03/2021 twIsDiagonal is evaluated anyway, but may be dropped for certain fieldtypes}
 {14/06/2021 logging of twAbsNormPos}
+{13/09/2021 twIsDiagonal:= wDiagonalDetection[twSetFieldType]}
 procedure TWellhoferData.FastScan(ASource:twcDataSource=dsMeasured);
 var i,j                : Integer;
     lMin,lTmp,vmin,vmax: twcFloatType;
@@ -18593,7 +18595,7 @@ with wSource[ASource] do
                        (lTmp<>UndefinedVal)                                                               and
                        ( (abs(twBeamInfo.twBCollimator-45) mod 90<25) or
                          (twWidthCm*twPosScaling/twSDD2SSDratio>lTmp*(1+twcDefAccNormDif)) ) then
-                      twIsDiagonal:= True;
+                      twIsDiagonal:= wDiagonalDetection[twSetFieldType];
                     end; {not relative}
                   end; {twhoriscans}
                 if (not Inrange(twCenterPosCm,twFirstScanPosCm,twLastScanPosCm)) or
@@ -18730,6 +18732,8 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {01/06/2021 apply wFFFMinFieldSizeCm for FFF detection}
 {04/06/2021 repeat FindEdge when FFF detected}
 {11/06/2021 more reporting}
+{13/09/2021 DoLinFit:= [twSetFieldType=fcStandard] -> (twSetFieldType<>fcSmall)}
+{13/09/2021 moved final twIsDiagonal check to after FFF detection}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -18770,7 +18774,7 @@ var s: twcDataSource;
         lDP                            : twcDoseLevel;
         side                           : twcSides;
         LinFit                         : TLinFit;
-        AutoCenter                     : Boolean;
+        AutoCenter,DoLinfit            : Boolean;
         AppliedFieldType               : twcFieldClass;
         CurrentCenterDef               : twcPositionUseType;
 
@@ -18824,17 +18828,6 @@ var s: twcDataSource;
         AppliedFieldType:= twSetFieldType; //+++++++++++++++++++from here the final FieldType is known++++++++++++++++++
         twAvgNormValue  := GetQfittedValue(twAbsNormPosCm,ASource);
         CurrentCenterDef:= twCenterPosDefUse;
-        if twIsDiagonal then
-          begin
-          twIsDiagonal:= wDiagonalDetection[AppliedFieldType];                  //actual detection of diagonal depends on fieldtype
-          if twIsDiagonal then
-            StatusMessage(twDiagonalFound)
-          else
-            begin
-            Warning:= twDiagonalFound;
-            StatusMessage(LastMessage);                                         //possibly conflicting situation
-            end
-          end; {twisdiagonal}
         if twCenterPosValid or AcceptMissingPenumbra then
           begin                                                                 //derive twInFieldArr[Left,Rigtht] as 80% of fieldwidth
           LinFit:= TLinFit.Create;                                              //this object is reused several times
@@ -18865,9 +18858,10 @@ var s: twcDataSource;
                    (100-(50*(twData[twInFieldArr[twcLeft]]+twData[twInFieldArr[twcRight]])/twData[twCenterArr])>wFFFMinDoseDifPerc) and
                    ((lTmp1=0) or (lTmp1>wFFFMinEdgeDifCm) or (lTmp2=0) or (lTmp2>wFFFMinEdgeDifCm)) then
                     begin
-                    twFFFdetected := True;
                     if AppliedFieldType=fcStandard then                         //when AppliedFieldType=fcMRlinac then keep it that way
                       twSetFieldType:= fcFFF;
+                    AppliedFieldType:= twSetFieldType;
+                    twFFFdetected   := True;
                     end;
                 end
               else
@@ -18875,6 +18869,17 @@ var s: twcDataSource;
              except
               twSetFieldType:= AppliedFieldType;
              end;
+            if twIsDiagonal then
+              begin
+              twIsDiagonal:= wDiagonalDetection[AppliedFieldType];              //actual detection of diagonal depends on fieldtype
+              if twIsDiagonal then
+                StatusMessage(twDiagonalFound)
+              else
+                begin
+                Warning:= twDiagonalFound;
+                StatusMessage(LastMessage);                                     //possibly conflicting situation
+                end
+              end; {twisdiagonal}
             FDefaultSSD_cm:= twcDefaultSSDcm[AppliedFieldType];                 //now fieldtype is set
             if not (ASource in twcFilteredCopies) then
               QfitMaxPos(ASource);                                              //for filtered versions: rely on unfiltered result
@@ -18949,11 +18954,12 @@ var s: twcDataSource;
           lMin:= twMaxValue;
           lMax:= 0;
           try   {search min, max and calculate straight lijn over in-field area}
-            if twSetFieldType=fcStandard then
+            DoLinfit:= (twSetFieldType<>fcSmall);
+            if DoLinfit then
               LinFit.Initialize;
             for i:= twInFieldArr[twcLeft] to twInFieldArr[twcRight] do          //IFA analysis based on array points, no interpolations
               begin
-              if twSetFieldType=fcStandard then
+              if DoLinfit then
                 LinFit.Add_XY(twPosCm[i],twData[i]);
               lMin:= Min(lMin,twData[i]);
               lMax:= Max(lMax,twData[i]);
