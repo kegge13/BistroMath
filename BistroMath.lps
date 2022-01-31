@@ -2,13 +2,14 @@
 <CONFIG>
   <ProjectSession>
     <PathDelim Value="\"/>
-    <Version Value="11"/>
+    <Version Value="12"/>
+    <ManyBuildModesSelection Value="Default,Debug,Release"/>
     <BuildModes Active="Release"/>
-    <Units Count="89">
+    <Units Count="90">
       <Unit0>
         <Filename Value="BistroMath.lpr"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="5"/>
         <CursorPos X="35" Y="20"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
@@ -20,8 +21,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="WellForm"/>
-        <TopLine Value="4716"/>
-        <CursorPos Y="4739"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos X="30" Y="22"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -41,7 +42,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="KlemLogo"/>
-        <EditorIndex Value="5"/>
+        <EditorIndex Value="6"/>
         <TopLine Value="64"/>
         <CursorPos X="25" Y="82"/>
         <UsageCount Value="200"/>
@@ -67,17 +68,16 @@
       </Unit5>
       <Unit6>
         <Filename Value="BistroMath_opt.inc"/>
-        <EditorIndex Value="6"/>
+        <EditorIndex Value="7"/>
         <CursorPos Y="5"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
       </Unit6>
       <Unit7>
         <Filename Value="Wellhofer.pas"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
+        <EditorIndex Value="2"/>
         <TopLine Value="18486"/>
-        <CursorPos X="84" Y="18509"/>
+        <CursorPos X="36" Y="18499"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
       </Unit7>
@@ -109,7 +109,7 @@
       </Unit11>
       <Unit12>
         <Filename Value="TOunits\TOtools.pas"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="4"/>
         <TopLine Value="50"/>
         <CursorPos X="17" Y="74"/>
         <UsageCount Value="100"/>
@@ -214,7 +214,7 @@
       </Unit26>
       <Unit27>
         <Filename Value="PanelElements.pas"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="3"/>
         <CursorPos X="25" Y="10"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
@@ -668,6 +668,15 @@
         <CursorPos X="10" Y="155"/>
         <UsageCount Value="5"/>
       </Unit88>
+      <Unit89>
+        <Filename Value="C:\lazarus\lcl\forms.pp"/>
+        <UnitName Value="Forms"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="423"/>
+        <CursorPos Y="449"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit89>
     </Units>
     <OtherDefines Count="1">
       <Define0 Value="DEBUG"/>
@@ -675,222 +684,220 @@
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="15108" TopLine="15085"/>
+        <Caret Line="18487" Column="19" TopLine="18448"/>
       </Position1>
       <Position2>
-        <Filename Value="wellform.pas"/>
-        <Caret Line="4739" TopLine="4716"/>
+        <Filename Value="Wellhofer.pas"/>
+        <Caret Line="18493" Column="19" TopLine="18454"/>
       </Position2>
       <Position3>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="15103" TopLine="15085"/>
+        <Caret Line="18498" Column="33" TopLine="18459"/>
       </Position3>
       <Position4>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="19149" TopLine="19126"/>
+        <Caret Line="18500" Column="21" TopLine="18461"/>
       </Position4>
       <Position5>
         <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18508" TopLine="18485"/>
+        <Caret Line="18509" Column="82" TopLine="18470"/>
       </Position5>
       <Position6>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="19165" TopLine="19142"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2080" Column="30" TopLine="2043"/>
       </Position6>
       <Position7>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="15108" TopLine="15085"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1114" Column="46" TopLine="1101"/>
       </Position7>
       <Position8>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18508" TopLine="18485"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2080" Column="32" TopLine="2052"/>
       </Position8>
       <Position9>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="19149" TopLine="19126"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1123" Column="19" TopLine="1101"/>
       </Position9>
       <Position10>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18508" TopLine="18485"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2080" Column="38" TopLine="2041"/>
       </Position10>
       <Position11>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18512" TopLine="18485"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="10433" Column="54" TopLine="10392"/>
       </Position11>
       <Position12>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="19165" TopLine="19142"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="10438" Column="19" TopLine="10398"/>
       </Position12>
       <Position13>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="15103" TopLine="15080"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1126" Column="19" TopLine="1101"/>
       </Position13>
       <Position14>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="19149" TopLine="19126"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="5383" Column="14" TopLine="5343"/>
       </Position14>
       <Position15>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18508" TopLine="18485"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="10379" Column="63" TopLine="10340"/>
       </Position15>
       <Position16>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="19165" TopLine="19142"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="10418" Column="12" TopLine="10379"/>
       </Position16>
       <Position17>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="15108" TopLine="15085"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="10436" Column="23" TopLine="10396"/>
       </Position17>
       <Position18>
         <Filename Value="wellform.pas"/>
-        <Caret Line="4739" TopLine="4716"/>
+        <Caret Line="10444" Column="34" TopLine="10404"/>
       </Position18>
       <Position19>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="15103" TopLine="15085"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="10450" Column="19" TopLine="10410"/>
       </Position19>
       <Position20>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="19149" TopLine="19126"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1123" Column="16" TopLine="1104"/>
       </Position20>
       <Position21>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18508" TopLine="18485"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2080" Column="38" TopLine="2041"/>
       </Position21>
       <Position22>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="19165" TopLine="19142"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="10433" TopLine="10392"/>
       </Position22>
       <Position23>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="15108" TopLine="15085"/>
+        <Filename Value="wellform.pas"/>
       </Position23>
       <Position24>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18406" Column="61" TopLine="18392"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="1123" Column="19" TopLine="1085"/>
       </Position24>
       <Position25>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18409" Column="24" TopLine="18392"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2080" Column="17" TopLine="2041"/>
       </Position25>
       <Position26>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18487" Column="19" TopLine="18448"/>
+        <Filename Value="C:\lazarus\lcl\forms.pp"/>
+        <Caret Line="1654" Column="27" TopLine="1633"/>
       </Position26>
       <Position27>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18493" Column="19" TopLine="18454"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="2050" Column="91" TopLine="2041"/>
       </Position27>
       <Position28>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18498" Column="33" TopLine="18459"/>
+        <Filename Value="wellform.pas"/>
       </Position28>
       <Position29>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18500" Column="21" TopLine="18461"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="335" Column="3" TopLine="300"/>
       </Position29>
       <Position30>
-        <Filename Value="Wellhofer.pas"/>
-        <Caret Line="18509" Column="82" TopLine="18470"/>
+        <Filename Value="wellform.pas"/>
+        <Caret Line="336" TopLine="326"/>
       </Position30>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
-      <Modes Count="0" ActiveMode=""/>
+      <Modes ActiveMode=""/>
     </RunParams>
   </ProjectSession>
   <Debugging>
-    <BreakPoints Count="7">
-      <Item1>
+    <BreakPoints>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="Wellhofer.pas"/>
         <Line Value="18875"/>
-      </Item1>
-      <Item2>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="wellform.pas"/>
-        <Line Value="4739"/>
-      </Item2>
-      <Item3>
+        <Line Value="4743"/>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="Wellhofer.pas"/>
         <Line Value="15108"/>
-      </Item3>
-      <Item4>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="Wellhofer.pas"/>
         <Line Value="15103"/>
-      </Item4>
-      <Item5>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="Wellhofer.pas"/>
         <Line Value="19166"/>
-      </Item5>
-      <Item6>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="Wellhofer.pas"/>
         <Line Value="19150"/>
-      </Item6>
-      <Item7>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="Wellhofer.pas"/>
         <Line Value="18509"/>
-      </Item7>
+      </Item>
     </BreakPoints>
-    <Watches Count="13">
-      <Item1>
+    <Watches>
+      <Item>
         <Expression Value="refsymcorrectitem.enabled"/>
-      </Item1>
-      <Item2>
+      </Item>
+      <Item>
         <Expression Value="refsymcorrectitem.checked"/>
-      </Item2>
-      <Item3>
+      </Item>
+      <Item>
         <Expression Value="linac"/>
-      </Item3>
-      <Item4>
+      </Item>
+      <Item>
         <Expression Value="stg"/>
-      </Item4>
-      <Item5>
+      </Item>
+      <Item>
         <Expression Value="sameid"/>
-      </Item5>
-      <Item6>
+      </Item>
+      <Item>
         <Expression Value="result"/>
-      </Item6>
-      <Item7>
+      </Item>
+      <Item>
         <Expression Value="filename"/>
-      </Item7>
-      <Item8>
+      </Item>
+      <Item>
         <Expression Value="wSource[asource].twValid"/>
-      </Item8>
-      <Item9>
+      </Item>
+      <Item>
         <Expression Value="scantype"/>
-      </Item9>
-      <Item10>
+      </Item>
+      <Item>
         <Expression Value="wsource[dsmeasured].twSetFieldType"/>
-      </Item10>
-      <Item11>
+      </Item>
+      <Item>
         <Expression Value="asource"/>
-      </Item11>
-      <Item12>
+      </Item>
+      <Item>
         <Expression Value="fmcc.mccdata.tmLinac"/>
-      </Item12>
-      <Item13>
+      </Item>
+      <Item>
         <Expression Value="FRefOrgFileName"/>
-      </Item13>
+      </Item>
     </Watches>
   </Debugging>
 </CONFIG>

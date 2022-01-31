@@ -20,7 +20,7 @@ object AnalyseForm: TAnalyseForm
   OnKeyPress = FormKeyPress
   OnKeyUp = FormKeyUp
   OnResize = FormResize
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.2.0.4'
   object PageControl: TPageControl
     Left = 0
     Height = 522
@@ -65,7 +65,6 @@ object AnalyseForm: TAnalyseForm
           Alignment = taRightJustify
           AutoSize = False
           Caption = 'Position:'
-          ParentColor = False
         end
         object PositionValue: TLabel
           Left = 900
@@ -75,7 +74,6 @@ object AnalyseForm: TAnalyseForm
           Alignment = taRightJustify
           AutoSize = False
           Caption = '0'
-          ParentColor = False
         end
         object MeasNormAdjustEdit: TFloatSpinEditEx
           Left = 822
@@ -175,12 +173,12 @@ object AnalyseForm: TAnalyseForm
         Color = clInactiveBorder
         object ErrorSeries: TLineSeries
           Active = False
-          Marks.AutoMargins = False
           AxisIndexX = 1
           AxisIndexY = 2
           LinePen.Style = psClear
           LinePen.Width = 0
           LineType = ltNone
+          Marks.AutoMargins = False
           Pointer.Brush.Color = clMedGray
           Pointer.HorizSize = 1
           Pointer.Pen.Color = clSkyBlue
@@ -205,11 +203,11 @@ object AnalyseForm: TAnalyseForm
     object HistogramTab: TTabSheet
       HelpContext = 17
       Caption = 'Histogram'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       object HistogramPlot: TChart
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 17
@@ -259,11 +257,11 @@ object AnalyseForm: TAnalyseForm
         )
         Align = alClient
         object Histogram: TBarSeries
-          Marks.Visible = False
           Title = 'Histogram'
           BarBrush.Color = clRed
           BarWidthPercent = 100
           MarkPositionCentered = True
+          Marks.Visible = False
         end
       end
     end
@@ -310,7 +308,6 @@ object AnalyseForm: TAnalyseForm
           Font.Color = clWindowText
           Font.Height = -8
           Font.Name = 'MS Sans Serif'
-          ParentColor = False
           ParentFont = False
         end
         object FitResultsAllCheckBox: TCheckBox
@@ -375,17 +372,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 23
       Caption = 'Field Types'
       ClientHeight = 494
-      ClientWidth = 976
+      ClientWidth = 877
       OnExit = SetWellhoferValues
       object FieldTypesPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 976
+        Width = 877
         HelpContext = 23
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 976
+        ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -806,17 +803,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 127
       Caption = 'Settings'
       ClientHeight = 494
-      ClientWidth = 976
+      ClientWidth = 877
       OnExit = SettingsTabExit
       object SettingsPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 976
+        Width = 877
         HelpContext = 127
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 976
+        ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -825,12 +822,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 48
           Top = 0
-          Width = 682
+          Width = 583
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Shift settings (cm)'
           ClientHeight = 28
-          ClientWidth = 678
+          ClientWidth = 579
           Color = clBtnFace
           ParentColor = False
           TabOrder = 1
@@ -867,12 +864,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 49
           Top = 57
-          Width = 682
+          Width = 583
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Merge settings'
           ClientHeight = 29
-          ClientWidth = 678
+          ClientWidth = 579
           TabOrder = 2
           object MergeMatchCheckBox: TCheckBox
             Left = 391
@@ -954,12 +951,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 147
           Top = 173
-          Width = 682
+          Width = 583
           HelpContext = 136
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Gamma analysis settings'
           ClientHeight = 127
-          ClientWidth = 678
+          ClientWidth = 579
           TabOrder = 3
           object GammaLimitAreaLabel: TLabel
             Left = 11
@@ -967,7 +964,6 @@ object AnalyseForm: TAnalyseForm
             Top = 1
             Width = 115
             Caption = 'Limit to ''In-Field area'''
-            ParentColor = False
           end
           object GammaLocalDoseCheckBox: TCheckBox
             Left = 306
@@ -1159,12 +1155,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 49
           Top = 115
-          Width = 682
+          Width = 583
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Mayneord settings'
           ClientHeight = 29
-          ClientWidth = 678
+          ClientWidth = 579
           TabOrder = 4
           object MayneordDmaxLabel: TStaticText
             Left = 32
@@ -1547,12 +1543,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 140
           Top = 329
-          Width = 682
+          Width = 583
           HelpContext = 129
           Anchors = [akTop, akLeft, akRight]
           Caption = 'PDD fit'
           ClientHeight = 120
-          ClientWidth = 678
+          ClientWidth = 579
           TabOrder = 26
           object PDDfitCheckBox: TCheckBox
             Left = 37
@@ -1755,6 +1751,8 @@ object AnalyseForm: TAnalyseForm
             MaxLength = 0
             TabOrder = 16
             MaxValue = 50
+            NullValue = 0
+            Value = 0
           end
           object FitRestarts_num: TSpinEditEx
             Left = 475
@@ -1766,6 +1764,8 @@ object AnalyseForm: TAnalyseForm
             MaxLength = 0
             TabOrder = 17
             MaxValue = 50
+            NullValue = 0
+            Value = 0
           end
         end
       end
@@ -1774,17 +1774,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 129
       Caption = 'Advanced Settings'
       ClientHeight = 494
-      ClientWidth = 976
+      ClientWidth = 877
       OnExit = AdvancedSettingsTabExit
       object AdvancedSettingsPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 976
+        Width = 877
         HelpContext = 129
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 976
+        ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -1872,7 +1872,6 @@ object AnalyseForm: TAnalyseForm
             Anchors = [akTop, akRight]
             AutoSize = False
             Caption = 'Maximum length:'
-            ParentColor = False
           end
           object AxisViewComLengthLabel: TLabel
             Left = 373
@@ -1885,7 +1884,6 @@ object AnalyseForm: TAnalyseForm
             Anchors = [akTop, akRight]
             AutoSize = False
             Caption = 'Maximum length:'
-            ParentColor = False
           end
           object AxisViewFileTypeCheckBox: TCheckBox
             Left = 18
@@ -1959,6 +1957,7 @@ object AnalyseForm: TAnalyseForm
             MaxLength = 0
             TabOrder = 6
             MaxValue = 30
+            NullValue = 0
             Value = 30
           end
           object AxisViewComLength_num: TSpinEditEx
@@ -1972,6 +1971,7 @@ object AnalyseForm: TAnalyseForm
             MaxLength = 0
             TabOrder = 7
             MaxValue = 30
+            NullValue = 0
             Value = 30
           end
         end
@@ -2060,7 +2060,6 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Range divider:'
-            ParentColor = False
           end
           object MatchStepFactorLabel: TLabel
             Left = 18
@@ -2072,7 +2071,6 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Step number:'
-            ParentColor = False
           end
           object MatchNormPercLabel: TLabel
             Left = 295
@@ -2084,7 +2082,6 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Normalisation range fraction (%):'
-            ParentColor = False
           end
           object MatchInclusionLabel: TLabel
             Left = 295
@@ -2096,7 +2093,6 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Inclusion lower limit (%):'
-            ParentColor = False
           end
           object MatchRangeDivider_num: TSpinEditEx
             Left = 103
@@ -2110,6 +2106,7 @@ object AnalyseForm: TAnalyseForm
             TabOrder = 0
             MaxValue = 10
             MinValue = 2
+            NullValue = 0
             Value = 2
           end
           object MatchSteps_num: TSpinEditEx
@@ -2124,6 +2121,7 @@ object AnalyseForm: TAnalyseForm
             TabOrder = 1
             MaxValue = 50
             MinValue = 2
+            NullValue = 0
             Value = 6
           end
           object MatchNormDelta_perc: TFloatSpinEditEx
@@ -2271,6 +2269,7 @@ object AnalyseForm: TAnalyseForm
           MaxLength = 0
           TabOrder = 12
           MaxValue = 4
+          NullValue = 0
           Value = 4
         end
         object PipsPixelSize_cm: TFloatSpinEditEx
@@ -2405,12 +2404,12 @@ object AnalyseForm: TAnalyseForm
           Left = 258
           Height = 51
           Top = 343
-          Width = 659
+          Width = 560
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Linac symmetry error'
           ClientHeight = 31
-          ClientWidth = 655
+          ClientWidth = 556
           TabOrder = 23
           object LinacErrInvertGTCheckBox: TCheckBox
             Left = 29
@@ -2482,23 +2481,23 @@ object AnalyseForm: TAnalyseForm
     object ConfigurationTab: TTabSheet
       HelpContext = 240
       Caption = 'Configuration'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       object ConfigurationPanel: TPanel
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 240
         Align = alClient
-        ClientHeight = 467
+        ClientHeight = 494
         ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
         object ModListGrid: TStringGrid
           Left = 1
-          Height = 465
+          Height = 492
           Top = 1
           Width = 497
           HelpContext = 240
@@ -2582,12 +2581,12 @@ object AnalyseForm: TAnalyseForm
     object LogTab: TTabSheet
       HelpContext = 300
       Caption = 'Messages'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       object LogTabMemo: TMemo
         Tag = 500
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 300
@@ -2623,12 +2622,12 @@ object AnalyseForm: TAnalyseForm
     object InventoryTab: TTabSheet
       HelpContext = 95
       Caption = 'Files'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       object InventoryGrid: TStringGrid
         AnchorSideLeft.Side = asrBottom
         Left = 178
-        Height = 481
+        Height = 508
         Top = -8
         Width = 703
         HelpContext = 95
@@ -2725,17 +2724,17 @@ object AnalyseForm: TAnalyseForm
     object FileConversionTab: TTabSheet
       HelpContext = 97
       Caption = 'Conversion'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       object FileConversionPanel: TPanel
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 97
         Align = alClient
         Caption = 'FileConversionPanel'
-        ClientHeight = 467
+        ClientHeight = 494
         ClientWidth = 877
         Color = clBtnFace
         ParentColor = False
@@ -2752,7 +2751,7 @@ object AnalyseForm: TAnalyseForm
         end
         object FileConvList: TMemo
           Left = 5
-          Height = 253
+          Height = 280
           Top = 207
           Width = 771
           HelpContext = 97
@@ -2929,34 +2928,35 @@ object AnalyseForm: TAnalyseForm
     object ODconvTab: TTabSheet
       HelpContext = 230
       Caption = 'Signal Adapt'
-      ClientHeight = 467
+      ClientHeight = 494
       ClientWidth = 877
       object ODConversionPanel: TPanel
         Left = 0
-        Height = 467
+        Height = 494
         Top = 0
         Width = 877
         HelpContext = 230
         Align = alClient
-        ClientHeight = 467
+        ClientHeight = 494
         ClientWidth = 877
         Color = clCream
         ParentColor = False
         TabOrder = 0
         object UseBackGroundBox: TGroupBox
           Left = 3
-          Height = 451
+          Height = 478
           Top = 0
           Width = 462
           HelpContext = 230
           Anchors = [akTop, akLeft, akBottom]
           Caption = 'Dose conversion and Background'
-          ClientHeight = 433
+          ClientHeight = 460
           ClientWidth = 458
           Color = clWhite
           Font.Color = clWindowText
           Font.Height = -11
           Font.Name = 'MS Sans Serif'
+          ParentBackground = False
           ParentColor = False
           ParentFont = False
           TabOrder = 0

@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.0.12/FPC 3.2.0: 01/08/2021}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-06/06/2020 | Lazarus 2.2.0/FPC 3.2.0: 31/01/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -331,6 +331,10 @@ type
     added ViewTopModelItem
   01/06/2021
     added FFFMinFieldSizeLabel,FFFMinFieldSize_cm,MeasGeneric_mm_Item
+  31/01/2022
+    Data type changed from Int64 to PtrInt
+    in function HelpHandler(Command:Word; Data:PtrInt; var CallHelp:Boolean): Boolean;
+    PtrInt is used in the THelpEvent (forms.pp) and avoids platform dependencies
   }
 
   {=========== TAnalyseForm =====================}
@@ -1121,9 +1125,9 @@ type
                               MoveUp       :Boolean=True           );
     {$IFDEF Windows}                                                                     //problematic on other platforms
     function  HelpHandler(Command          :Word;
-                          Data             :Int64;
+                          Data             :PtrInt;                                      //PtrInt is used in the THelpEvent (forms.pp) and avoids platform dependencies
                           var CallHelp     :Boolean                ): Boolean;
-    function  ExecuteHelp(Data             :Int64;
+    function  ExecuteHelp(Data             :PtrInt;
                           Command          :Word=HH_HELP_CONTEXT   ): Boolean;
     {$ENDIF}
   protected
@@ -10429,8 +10433,9 @@ end; {~selftest}
 // Call online-help
 //https://forum.lazarus.freepascal.org/index.php/topic,38487.msg261731.html#msg261731
 {01/06/2020}
+{31/01/2022 changed data type from Int64 to PtrInt to avoid platform dependenciea}
 function TAnalyseForm.HelpHandler(Command     :Word;
-                                  Data        :Int64;
+                                  Data        :PtrInt;
                                   var CallHelp:Boolean): Boolean;
 begin
 Result  := ExecuteHelp(Data);
@@ -10440,7 +10445,8 @@ end; {~helphandler}
 
 
 {01/06/2020}
-function TAnalyseForm.ExecuteHelp(Data   :Int64;
+{31/01/2022 changed data type from Int64 to PtrInt to avoid platform dependenciea}
+function TAnalyseForm.ExecuteHelp(Data   :PtrInt;
                                   Command:Word=HH_HELP_CONTEXT): Boolean;
 begin
 Result:= length(Application.HelpFile)>0;
