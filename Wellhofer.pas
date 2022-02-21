@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-05/06/2020 | FPC 3.2.0: 13/09/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-18/02/2022 | FPC 3.2.0: 13/09/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -3615,8 +3615,9 @@ else        Result:= TModalityNorm(Data[i]).NormRec.Value[AbsValue];
 end; {~getmodvalue}
 
 
+{16/02/2022: dropped override for zero result}
 function TModNormList.GetModDepth(AModality:String;
-                                  AbsDepth :Boolean    =True;
+                                  AbsDepth :Boolean     =True;
                                   ZeroValue:twcFloatType=0    ): twcFloatType;
 var i: integer;
 begin
@@ -3627,11 +3628,7 @@ else
 if i<0 then
   Result:= Zerovalue
 else
-  begin
-  Result:= TModalityNorm(Data[i]).NormRec.Depth[AbsDepth];
-  if Result=0 then
-    Result:= ZeroValue;
-  end;
+  Result:= TModalityNorm(Data[i]).NormRec.Depth[AbsDepth]; // dropped:  if Result=0 then Result:= ZeroValue;
 end; {~getmoddepth}
 
 
@@ -18735,6 +18732,7 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {11/06/2021 more reporting}
 {13/09/2021 DoLinFit:= [twSetFieldType=fcStandard] -> (twSetFieldType<>fcSmall)}
 {13/09/2021 moved final twIsDiagonal check to after FFF detection}
+{18/02/2022 In VerticalScans is assumed that the norm position is >0. This is the case for an open water interface. At angle 90/270 this might not be valid.}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -19056,7 +19054,6 @@ var s: twcDataSource;
     Result:= True;
     end; {horizontalscans}
 
-
     function VerticalScans: Boolean;
     var lDP  : twcDoseLevel;
         lTmp1: twcFloatType;
@@ -19120,7 +19117,7 @@ var s: twcDataSource;
           twAbsNormValue := twMaxValue*twRefNormFactor;
           twAbsNormDefUse:= dUseMax;
           end;
-      if not ((twRelNormPosCm>0) and InRange(twRelNormPosCm,twFirstDataPosCm,twLastDataPosCm)) then
+      if not InRange(twRelNormPosCm,twFirstDataPosCm,twLastDataPosCm) then      //18/02/2022 condition (twRelNormPosCm>0) removed
         begin
         twRelNormPosCm:= twPosCm[twMaxArr];
         twRelNormValue:= 100;
