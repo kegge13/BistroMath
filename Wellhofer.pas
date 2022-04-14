@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-14/04/2022 | FPC 3.2.0: 13/09/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-18/02/2022 | FPC 3.2.0: 13/09/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -425,12 +425,9 @@ positions for each data point from the 3D coordinates.}
 {13/10/2020 added fcElectron}
 {19/04/2021 added CenterNearOrigin}
 {10/06/2021 twcArrayLimitRec: Penumbra renamed to Limit; twcArrayLimit: added CalcRangeFirst and CalcRangeLast}
-{28/03/2022 added twcGammaScope}
-{11/04/2022 twcLimits,twcRange, twcFloatRange}
 type
-  twcLimits         =(ptFirst,ptLast);
   twcChannels       =(FieldCh,RefCh);
-  twcFieldClass     =(fcStandard,fcFFF,fcSmall,fcMRlinac,fcWedge,fcElectron);   //fieldtypes, linked to twcFieldClassNames
+  twcFieldClass     =(fcStandard,fcFFF,fcSmall,fcMRlinac,fcWedge,fcElectron);
   twcEdgeClass      =(fcPrimary,fcFallBack);
   twcFieldShape     =(Rectangular,Blocks,MLC,Circular);
   twcCenterType     =(CenterPenumbra,CenterOrigin,CenterNearOrigin,CenterMax);                                                         {ordering critical for user interface}
@@ -439,7 +436,6 @@ type
   twcPositionUseType=(dUseBorder,dUseDerivative,dUseInflection,dUseSigmoid50,dUseOrigin,dUseMax,dUseFFFtop,dUseFFFslopes,dUseUndefined,dUseConfigured); {TAnalyseForm relies on this order, check all code!}
   twcNMpddFits      =(NM_Primary,NM_Extrapolation);
   twcAutoCenter     =(AC_default,AC_on,AC_off);
-  twcGammaScope     =(gGammaComplete,gGammaLimited);
   twcNormalisation  =(NormOnCenter,NormOnOrigin,NormOnMax,NormOnInFieldArea);
   twcFieldSizeDesc  =(fInplane,fCrossplane);
   twcModalityChar   = 'C'..'X';
@@ -454,8 +450,6 @@ type
   twcBeamType       =(Photons,Electrons,Protons,Other);
   twcFloatType      = Double;                                                   //was Extended in Delphi7
   twcStartStopType  =(Start,Stop);
-  twcRange          = array[twcLimits] of Integer;
-  twcFloatRange     = array[twcLimits] of twcFloatType;
   twcFloatArray     = array of twcFloatType;
   twcFloatArrayPtr  = ^twcFloatArray;
   twcAliasRec       = record
@@ -543,11 +537,10 @@ var
  as specialised decendandants. They can finally be presented in one unified user-interface.
 *)
 {06/11/2016 new implementation}
-{31/03/2022 added Info}
 type
   TModalityObject=class(TObject)
     public
-      Modality,Info: String;
+      Modality: String;
      constructor Create(AModality:String='');
      procedure   Copy(ASource:TModalityObject);                     virtual;
      destructor Destroy;                                            override;
@@ -559,7 +552,7 @@ type
 
   TModalityList=class(TObject)
     private
-      FDataObj   : twModalityArr;
+      FData      : twModalityArr;
       FStatusProc: toExtMsgProc;
      function  GetModData(Index      :Integer                 ): TModalityObject;
      function  GetModDataCount                                 : Integer;
@@ -572,23 +565,17 @@ type
                               AEnergy  :twcFloatType          ): String;
      function  AddModData(ACommaText :String;
                           ASeparator :Char=','                ): Integer;            virtual;
-     function  DelModData(AModality  :String;
-                          AddedInfo  :String=''               ): Boolean;  overload; virtual;
+     function  DelModData(AModality  :String                  ): Boolean;  overload; virtual;
      function  DelModData(Index      :Integer                 ): Boolean;  overload; virtual;
      function  FindModData(AModality :String;
                            var RefObj:TModalityObject         ): Boolean;  overload; virtual;
-     function  FindModData(AModality :String;
-                           AddedInfo :String;
-                           var RefObj:TModalityObject         ): Boolean;  overload; virtual;
-     function  FindModData(AModality :String                  ): Integer;  overload; virtual;
-     function  FindModData(AModality :String;
-                           AddedInfo :String                  ): Integer;  overload; virtual;
+     function  FindModData(AModality :String                  ): Integer;  overload;
      function  GetModalityList                                 : String;             virtual;
      procedure SetStatusProcedure(AStatusProc:toExtMsgProc=nil);
      procedure ClearModData;
      destructor Destroy;                                                   override;
-     property DataObj[Index:Integer]    : TModalityObject read GetModData;
-     property DataObjArray              : twModalityArr   read FDataObj;
+     property Data[Index:Integer]       : TModalityObject read GetModData;
+     property DataArray                 : twModalityArr   read FData;
      property DataCount                 : Integer         read GetModDataCount;
      property CommaText[Index:Integer]  : String          read GetCommaText;
      property DivisorText[Index:Integer]: String          read GetDivisorText;
@@ -596,25 +583,10 @@ type
     end;
 
 //------modalitynorm---------------------------------------
-
-(*
-The twModNormRec contains two sets of normalisation points:
- false: absolute normalisation point
- true : relative normalisation point (for graph presentations)
-The primairy index for searching is the modality/energy.
-A norm record contains two lists to limit the applicability. When empty,
-the list is ignored. On searching records with non-empty lists are preferred.
-A non-resolvable caveat is that there may be overlapping definitions based on
-field class and linac name.
-AddModddata supports two fields with strings for field class names en linac names respectively.
-Use an alternative separator within those strings or no separator at all.
-*)
 type
   twModNormRec = record
-                  Depth     : array[False..True] of twcFloatType;
-                  Value     : array[False..True] of twcFloatType;
-                  FT_list   : set of twcFieldClass;
-                  Linac_list: String;
+                  Depth: array[False..True] of twcFloatType;
+                  Value: array[False..True] of twcFloatType;
                   end;
 
   TModalityNorm=class(TModalityObject)
@@ -633,20 +605,11 @@ type
      function  AddModData(ACommaText :String;
                           ASeparator :Char        =',' ): Integer;              override;
      function  FindModData(AModality :String;
-                                      AFieldType:twcFieldClass;
-                                      ALinac    :String): Integer;              overload; reintroduce;
-     function  FindModData(AModality :String;
-                           AFieldType:twcFieldClass;
-                           ALinac    :String;
-                           var RefObj:TModalityNorm    ): Boolean;              overload; reintroduce;
+                           var RefObj:TModalityNorm    ): Boolean;              reintroduce;
      function  GetModDepth(AModality :String;
-                           AFieldType:twcFieldClass;
-                           ALinac    :String;
                            AbsDepth  :Boolean     =True;
                            ZeroValue :twcFloatType=0   ): twcFloatType;
      function  GetModValue(AModality :String;
-                           AFieldType:twcFieldClass;
-                           ALinac    :String;
                            AbsValue  :Boolean     =True): twcFloatType;
      destructor Destroy;                                                        override;
     end;
@@ -1298,7 +1261,7 @@ type
      icpData       : twcFloatArray;
      icpEnergy     : twcFloatType;
      icpFieldCm    : twcFieldDescrArr;
-     icptFirstPoint : array[twICPAlines] of Integer;
+     icpFirstPoint : array[twICPAlines] of Integer;
      icpGantry     : Integer;
      icpMeasTime   : TDateTime;
      icpModality   : twcModalityChar;
@@ -1575,7 +1538,6 @@ BEGIN_SCAN_DATA
 		DETECTOR_REFERENCE_CALIBRATION=304400000.00
 		DETECTOR_HV=0.0
 		DETECTOR_REFERENCE_HV=350.0
-                FILTER=FFF
 		REF_FIELD_DEPTH=100.00
 		REF_FIELD_DEFINED=ISOCENTER
 		REF_FIELD_INPLANE=100.00
@@ -1620,7 +1582,6 @@ END_SCAN_DATA
 swapping needed as described in axisdir
 }
 
-{09/04/2022 added FILTER, tmFFF}
 const
   mccBEGIN                  ='BEGIN';                                           //strings found in mcc format
   mcc_SCAN_DATA             ='_SCAN_DATA';
@@ -1664,7 +1625,6 @@ const
   mcc_REFERENCE             ='_REFERENCE';
   mccREF_                   ='REF_';
   mccDETECTOR               ='DETECTOR';
-  mccFILTER                 ='FILTER';
   mcc_SUBCODE               ='_SUBCODE';
   mcc_RADIUS                ='_RADIUS';
   mcc_NAME                  ='_NAME';
@@ -1775,7 +1735,6 @@ Mephysto has created those, we are not responsible for the funny choice here J.}
                 tmScanInfo      : tmScanRec;
                 tmElectrometer  : tmElectroRec;
                 tmDetectors     : array[twcChannels] of tmDetectorRec;
-                tmFFF           : Boolean;                          {FILTER=FFF}
                 tmRefField      : tmRefFieldRec;
                 tmMedium        : String;                                {WATER}
                 tmMeasPreset    : String;                  {REFERENCE_DOSEMETER}
@@ -2517,87 +2476,86 @@ type
   {23/11/2017 added twFlatPosCm,twSymAreaRatio}
   {12/01/2018 added twAbsNormConfig to note used info from modlist}
   {27/01/2018 twAbsNormDefUse}
-  {15/05/2020 added twFirstScanPosCm,twScanPosCm[ptLast] for convenience}
+  {15/05/2020 added twFirstScanPosCm,twLastScanPosCm for convenience}
   {22/05/2020 twSigmoidDone}
   {21/07/2020 removed twIsWedgedProfile}
   {27/08/2020 reintroduced twMaxPosCm,twMaxValue; twTopModel now only used for fitresults of top}
   {23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff}
   {02/04/2021 added twActDet2NormRatio}
-  {28/03/2022 expanded twConfidenceLimit, added twGammaPassRate}
-  {11/04/2022 twcAnalysisRange added}
   twCurveDataRec=record
-    twAbsNormConfig   : Boolean;       {a configured value/position is used to normalise}
-    twAbsNormDefUse   : twcPositionUseType;
-    twAbsNormPosCm    : twcFloatType;
-    twAbsNormValue    : twcFloatType;
-    twAlignedTo       : twcDataSource; {profile is shifted to align with other source}
-    twAnalysed        : Boolean;       {analys is succesfully completed}
-    twAnalysisRange   : twcRange;
-    twAppliedNormVal  : twcFloatType;  {use this to override twAbsNormval}
-    twAvgNormValue    : twcFloatType;
-    twBackGround      : twcFloatType;  {background correction value}
-    twBeamInfo        : twBeamDesRec;
-    twCenterPosDefUse : twcPositionUseType;
-    twCenterPosCm     : twcFloatType;
-    twCenterPosValid  : Boolean;
-    twCenterArr       : Integer;
-    twComposite       : Boolean;      {true when twData does not represent the original data}
-    twConfidenceLimit : array[twcGammaScope] of twcFloatType; {gamma analysis}
-    twCoordinates     : twcCoordArray;{stored in measurement coordinates (ICD), conforms with vendors}
-    twCurveIDString   : String;       {standard description of data to check equivalence}
-    twData            : twcFloatArray;
-    twDataRange       : twcRange;     {see also twScanRange}
-    twDataHistoryStg  : String;       {description of history}
-    twDevice          : String;       {holds copy of radiation device}
-    twDerivativeValid : Boolean;
-    twExtraText       : TStringDynArray;
-    twFastScan        : Boolean;
-    twFFFdetected     : Boolean;
-    twFFFslope        : array[twcSides] of twFFFslopeRecord;
-    twFFFslopesTop    : twcFloatType;
-    twFileIDString    : String;
-    twFileName        : String;
-    twFilmData        : Boolean;
-    twFilterPoints    : Integer;
-    twFilterString    : String;
-    twDataPosCm       : twcFloatRange;  {twPosCm[twDataRange]}
-    twScanPosCm       : twcFloatRange;  {twPosCm[twScanRange]}
-    twFittedData      : Boolean;
-    twGammaPassRate   : array[twcGammaScope] of twcFloatType; {gamma analysis}
-    twInFieldAreaOk   : Boolean;
-    twInFieldRange    : array[twcSides] of Integer;
-    twInFieldPosCm    : array[twcSides] of twcFloatType;                        //theoretical values, not on array positions.
-    twFlatness        : twcFloatType;
-    twIsDerivative    : Boolean;
-    twIsDiagonal      : Boolean;
-    twIsFiltered      : Boolean;
-    twIsGamma         : Boolean;
-    twIsRelative      : Boolean;
-    twLevelPos        : twcLimitsArray;{bordervalues}
-    twLinSlope        : twcFloatType;  {slope of data within InField area}
-    twLocalPeak       : Boolean;       {search for local peak}
-    twLocked          : Boolean;       {when locked not used for standard routines}
-    twMayneordApplied : Boolean;
-    twMaxArr          : Integer;       {always maxpos in twData}
-    twMaxPosCm        : twcFloatType;  {might deviate from twMaxArr based value}
-    twMaxValue        : twcFloatType;  {might deviate from twMaxArr based value}
-    twMeasTime        : String;
-    twMeasDateTime    : TDateTime;
-    twMinArr          : Integer;
-    twMirrored        : Boolean;
-    tw2DoseConv       : Boolean;
-    twOD2doseFilm     : String;
-    twOriginPosValid  : Boolean;
-    twOriginalFormat  : twcFileType;
-    twPDD10           : twcFloatType;
-    twPDD20           : twcFloatType;
-    twPddFitData      : array[twcNMpddFits] of twFitRecord;
-    twPlotScaling     : twcFloatType;
-    twPoints          : Integer;
-    twPosCm           : twcFloatArray;
-    twPosCmExportSign : wmsIntType;   {on export the original sign, which may be changed by axis flipping, when the position is restored}
+    twAbsNormConfig  : Boolean;       {a configured value/position is used to normalise}
+    twAbsNormDefUse  : twcPositionUseType;
+    twAbsNormPosCm   : twcFloatType;
+    twAbsNormValue   : twcFloatType;
+    twAlignedTo      : twcDataSource; {profile is shifted to align with other source}
+    twAnalysed       : Boolean;       {analys is succesfully completed}
+    twAppliedNormVal : twcFloatType;  {use this to override twAbsNormval}
+    twAvgNormValue   : twcFloatType;
+    twBackGround     : twcFloatType;  {background correction value}
+    twBeamInfo       : twBeamDesRec;
+    twCenterPosDefUse: twcPositionUseType;
+    twCenterPosCm    : twcFloatType;
+    twCenterPosValid : Boolean;
+    twCenterArr      : Integer;
+    twComposite      : Boolean;      {true when twData does not represent the original data}
+    twConfidenceLimit: twcFloatType; {gamma analysis}
+    twCoordinates    : twcCoordArray;{stored in measurement coordinates (ICD), conforms with vendors}
+    twCurveIDString  : String;       {standard description of data to check equivalence}
+    twData           : twcFloatArray;
+    twDataFirst      : Integer;      {see also twScanFirst/Last}
+    twDataLast       : Integer;
+    twDataHistoryStg : String;       {description of history}
+    twDevice         : String;       {holds copy of radiation device}
+    twDerivativeValid: Boolean;
+    twExtraText      : TStringDynArray;
+    twFastScan       : Boolean;
+    twFFFdetected    : Boolean;
+    twFFFslope       : array[twcSides] of twFFFslopeRecord;
+    twFFFslopesTop   : twcFloatType;
+    twFileIDString   : String;
+    twFileName       : String;
+    twFilmData       : Boolean;
+    twFilterPoints   : Integer;
+    twFilterString   : String;
+    twFirstDataPosCm : twcFloatType;  {twPosCm[twDataFirst]}
+    twFirstScanPosCm : twcFloatType;  {twPosCm[twScanFirst]}
+    twFittedData     : Boolean;
+    twInFieldAreaOk  : Boolean;
+    twInFieldArr     : array[twcSides] of Integer;
+    twInFieldPosCm   : array[twcSides] of twcFloatType;                         //theoretical values, not on array positions.
+    twFlatness       : twcFloatType;
+    twIsDerivative   : Boolean;
+    twIsDiagonal     : Boolean;
+    twIsFiltered     : Boolean;
+    twIsGamma        : Boolean;
+    twIsRelative     : Boolean;
+    twLastDataPosCm  : twcFloatType;  {twPosCm[twDataLast]}
+    twLastScanPosCm  : twcFloatType;  {twPosCm[twScanLast]}
+    twLevelPos       : twcLimitsArray;{bordervalues}
+    twLinSlope       : twcFloatType;  {slope of data within InField area}
+    twLocalPeak      : Boolean;       {search for local peak}
+    twLocked         : Boolean;       {when locked not used for standard routines}
+    twMayneordApplied: Boolean;
+    twMaxArr         : Integer;       {always maxpos in twData}
+    twMaxPosCm       : twcFloatType;  {might deviate from twMaxArr based value}
+    twMaxValue       : twcFloatType;  {might deviate from twMaxArr based value}
+    twMeasTime       : String;
+    twMeasDateTime   : TDateTime;
+    twMinArr         : Integer;
+    twMirrored       : Boolean;
+    tw2DoseConv      : Boolean;
+    twOD2doseFilm    : String;
+    twOriginPosValid : Boolean;
+    twOriginalFormat : twcFileType;
+    twPDD10          : twcFloatType;
+    twPDD20          : twcFloatType;
+    twPddFitData     : array[twcNMpddFits] of twFitRecord;
+    twPlotScaling    : twcFloatType;
+    twPoints         : Integer;
+    twPosCm          : twcFloatArray;
+    twPosCmExportSign: wmsIntType;   {on export the original sign, which may be changed by axis flipping, when the position is restored}
    {$IFDEF POSINTEGRAL}
-    twPosIntegral     : twcFloatType;
+    twPosIntegral    : twcFloatType;
    {$ENDIF}
     twRelAvgInField   : twcFloatType;                                           //average value within in-field area
     twRelMinInField   : twcFloatType;
@@ -2610,7 +2568,8 @@ type
     twRelatedSource   : twcDataSource;
     twScanAngle       : twcFloatType;                                           //CW angle from AB-axis
     twScanDevice      : String;
-    twScanRange       : twcRange;
+    twScanFirst       : Integer;
+    twScanLast        : Integer;
     twScanNr          : Integer;
     twScanLength      : twcFloatType;
     twScanTypeString  : String;
@@ -2712,9 +2671,6 @@ const
 {07/03/2021 FDefaultSSDcm}
 {19/04/2021 renamed (F)CalcWidth to (F)CalcWidth_cm}
 {01/06/2021 added wFFFMinFieldSizeCm}
-{02/04/2022 added ReturnPassRate option to GammaAnalysis}
-{10/04/2022 added wFFFinFile: read/write FFF from/to file (OmniPro v6/7/8 and PTW only}
-{11/04/2022 replaced FNMPddFirst, FNMPddLast with twAnalysisRange}
 type
   TWellhoferData=class(TRadthData)
     private
@@ -2759,6 +2715,8 @@ type
      FNMEdgeFirst    : Integer;
      FNMEdgeLast     : Integer;
      FNMPddSource    : twcDataSource;                                           //note which source is used for pdd model
+     FNMPddFirst     : Integer;
+     FNMPddLast      : Integer;
      FNMPddFit       : twcNMpddFits;
      FNMpddscaling   : TaVertexDataType;
      FNMreset        : Boolean;
@@ -2825,7 +2783,6 @@ type
       wEPenumbraH               : twcFloatType;
       wEPenumbraL               : twcFloatType;
       wFieldTypeDetection       : array[twcFieldClass] of Boolean;
-      wFFFinFile                : Boolean;                                      //read/write FFF from/to file (OmniPro v6/7/8 and PTW only}
       wFFFPeakDef               : twcFFFPeakType;
       wFFFMinFieldSizeCm        : twcFloatType;
       wFFFMinDoseDifPerc        : twcFloatType;
@@ -3105,8 +3062,7 @@ type
      function  GammaAnalysis(ASource               :twcDataSource =dsMeasured;
                              AReference            :twcDataSource =dsReference;
                              ADestination          :twcDataSource =dsCalculated;
-                             ReturnPassRate        :Boolean       =False;
-                             ResultScope           :twcGammaScope=gGammaLimited;
+                             InFieldAreaOnly       :Boolean       =True;
                              AutoScaling           :Boolean       =True;
                              SourceScaling         :twcFloatType  =1;
                              PreFilter             :Boolean       =True;
@@ -3170,8 +3126,7 @@ type
      procedure PddFit(ASource                      :twcDataSource =dsMeasured;
                       ADestination                 :twcDataSource =dsCalculated);
      function  FindEdge(ASource                    :twcDataSource =dsMeasured ): Boolean;     //BistroMath core function
-     procedure FastScan(ASource                    :twcDataSource =dsMeasured;
-                        ClearAnalysis              :Boolean       =True       );              //BistroMath core function
+     procedure FastScan(ASource                    :twcDataSource =dsMeasured );              //BistroMath core function
      function  Analyse(ASource                     :twcDataSource =dsMeasured;                //BistroMath core function
                        AutoCenterProfile           :twcAutoCenter =AC_default ): Boolean;
      function  GetAdjustedFilterWidthCm(ASource    :twcDataSource =dsMeasured ): twcFloatType;
@@ -3456,14 +3411,14 @@ end; {~modalityformat}
 
 function TModalityList.GetModData(Index:Integer): TModalityObject;
 begin
-if InRange(Index,0,High(FDataObj)) then Result:= FDataObj[Index]
-else                                    Result:= nil;
+if InRange(Index,0,High(FData)) then Result:= FData[Index]
+else                                 Result:= nil;
 end; {~getmoddata}
 
 
 function TModalityList.GetCommaText(Index:Integer): String;
 begin
-Result:= DataObj[Index].Modality;
+Result:= Data[Index].Modality;
 end; {~getcommatext}
 
 
@@ -3475,48 +3430,34 @@ end; {~getdivisortext}
 
 function TModalityList.GetModDataCount: Integer;
 begin
-Result:= Length(FDataObj);
+Result:= Length(FData);
 end; {~getmoddatacount}
 
-
-{01/04/2022 new implementation supports modality+info}
+{$push}{$warn 5024 off: Parameter "ASeparator" not used}
 function TModalityList.AddModData(ACommaText:String;
                                   ASeparator:Char=','): Integer;
-var p  : toTNumParser;
-    b  : Boolean;
-    m,i: String;
+var b: Boolean;
 begin
-p            := toTNumParser.Create;
-p.CurrentLine:= ACommaText;
-m            := p.NextString(ASeparator);
-i            := p.NextString(ASeparator);
-Result       := Length(FDataObj);
-b            := False;
-try
-  FreeAndNil(p);
- except
-  ExceptMessage('TModNormList.AddModData!');
- end;
+Result:= Length(FData);
+b     := False;
 while (b=False) and (Result>0) do {check for record with same modality}
   begin
   Dec(Result);
-  if assigned(FDataObj[Result]) then
-    with FDataObj[Result] do
-      b:= (Modality=m) and (Info=i);
+  b:= FData[Result].Modality=ACommaText;
   end;
 if b then
   try
-    FreeAndNil(FDataObj[Result]);
+    FreeAndNil(FData[Result]);
   except
     ExceptMessage('TModalityList.AddModData!');
   end
 else
   begin
-  Result:= Length(FDataObj);
-  SetLength(FDataObj,Succ(Result));                                             //the dataobj itself is not created here; only space is created
+  Result:= Length(FData);
+  SetLength(FData,Succ(Result));
   end;
 end; {~addmoddata}
-
+{$pop}
 
 {07/11/2016}
 {19/01/2017 free last element (j) of FData, not FData[Index]}
@@ -3529,24 +3470,22 @@ if Result then
   j:= Pred(DataCount);
   while Index<j do
     begin
-    FDataObj[Index].Copy(FDataObj[Succ(Index)]);
+    FData[Index].Copy(FData[Succ(Index)]);
     Inc(Index);
     end;
   try
-    FreeAndNil(FDataObj[j]);
+    FreeAndNil(FData[j]);
    except
     ExceptMessage('TModalityList.DelModData!');
    end;
-  SetLength(FDataObj,j)
+  SetLength(FData,j)
   end;
 end; {~delmoddata}
 
 
-{31/03/2022: addedinfo}
-function TModalityList.DelModData(AModality:String;
-                                  AddedInfo:String=''): Boolean;
+function TModalityList.DelModData(AModality:String): Boolean;
 begin
-Result:= DelModData(FindModData(AModality,AddedInfo));
+Result:= DelModData(FindModData(AModality));
 end; {~delmoddata}
 
 
@@ -3556,41 +3495,7 @@ var i: Integer;
 begin
 i:= FindModData(AModality);
 Result:= i>=0;
-if Result then RefObj:= DataObj[i]
-else           RefObj:= nil;
-end; {~findmoddata}
-
-
-{31/03/2022}
-function TModalityList.FindModData(AModality:String;
-                                   AddedInfo:String): Integer;
-var i: Integer;
-    b: Boolean;
-begin
-i:= Length(FDataObj);
-b:= False;
-if i>0 then
-  begin
-  AddedInfo:= LowerCase(AddedInfo);
-  repeat
-    Dec(i);
-    b:= (FDataObj[i].Modality=AModality) and (FDataObj[i].Info=AddedInfo);
-  until b or (i=0);
-  end;
-if b then Result:= i
-else      Result:= -1;
-end; {~findmoddata}
-
-
-{31/03/2022}
-function TModalityList.FindModData(AModality :String;
-                                   AddedInfo :String;
-                                   var RefObj:TModalityObject): Boolean;
-var i: Integer;
-begin
-i     := FindModData(AModality,AddedInfo);
-Result:= (i>0);
-if Result then RefObj:= DataObj[i]
+if Result then RefObj:= Data[i]
 else           RefObj:= nil;
 end; {~findmoddata}
 
@@ -3599,12 +3504,12 @@ function TModalityList.FindModData(AModality:String): Integer;
 var i: Integer;
     b: Boolean;
 begin
-i:= DataCount;
+i:= Length(FData);
 b:= False;
 if i>0 then
   repeat
     Dec(i);
-    b:= (FDataObj[i].Modality=AModality);
+    b:= (FData[i].Modality=AModality);
   until b or (i=0);
 if b then Result:= i
 else      Result:= -1;
@@ -3620,7 +3525,7 @@ s:= '';
 while i>0 do
   begin
   Dec(i);
-  with DataObj[i] do
+  with Data[i] do
     if length(s)=0            then s:= Modality
     else if Pos(Modality,s)=0 then s:= s+','+Modality;
   end;
@@ -3631,17 +3536,17 @@ end; {~getmodalitylist}
 procedure TModalityList.ClearModData;
 var i: Integer;
 begin
-i:= DataCount;
+i:= Length(FData);
 while i>0 do
   begin
   Dec(i);
   try
-    FreeAndNil(FDataObj[i]);
+    FreeAndNil(FData[i]);
    except
     ExceptMessage('TModalityList.ClearModData!');
    end;
   end;
-Finalize(FDataObj);
+Finalize(FData);
 end; {~clearmoddata}
 
 
@@ -3697,89 +3602,61 @@ inherited Create(AStatusProc);
 end; {~create}
 
 
-{29/03/2022 local findmoddata}
-function TModNormList.GetModValue(AModality :String;
-                                  AFieldType:twcFieldClass;
-                                  ALinac    :String;
-                                  AbsValue  :Boolean=True): twcFloatType;
+function TModNormList.GetModValue(AModality:String;
+                                  AbsValue :Boolean=True): twcFloatType;
 var i: integer;
 begin
-if assigned(FDataObj) then
-  i:= FindModData(AModality,AFieldType,ALinac)
+if assigned(FData) then
+  i:= inherited FindModData(AModality)
 else
   i:= -1;
 if i<0 then Result:= -999
-else        Result:= TModalityNorm(DataObj[i]).NormRec.Value[AbsValue];
+else        Result:= TModalityNorm(Data[i]).NormRec.Value[AbsValue];
 end; {~getmodvalue}
 
 
 {16/02/2022: dropped override for zero result}
-{29/03/2022 local findmoddata}
-function TModNormList.GetModDepth(AModality :String;
-                                  AFieldType:twcFieldClass;
-                                  ALinac    :String;
-                                  AbsDepth  :Boolean     =True;
-                                  ZeroValue :twcFloatType=0    ): twcFloatType;
+function TModNormList.GetModDepth(AModality:String;
+                                  AbsDepth :Boolean     =True;
+                                  ZeroValue:twcFloatType=0    ): twcFloatType;
 var i: integer;
 begin
-if assigned(FDataObj) then
-  i:= FindModData(AModality,AFieldType,ALinac)
+if assigned(FData) then
+  i:= inherited FindModData(AModality)
 else
   i:= -1;
 if i<0 then
   Result:= Zerovalue
 else
-  Result:= TModalityNorm(DataObj[i]).NormRec.Depth[AbsDepth]; // dropped:  if Result=0 then Result:= ZeroValue;
+  Result:= TModalityNorm(Data[i]).NormRec.Depth[AbsDepth]; // dropped:  if Result=0 then Result:= ZeroValue;
 end; {~getmoddepth}
 
 
 {24/05/2017}
-{29/03/2022 extended implementation of TModalityNorm}
-{01/04/2022 needs different ordering: first analyse, then add to list}
-{02/04/2022 chopping off additional prefixes}
 function TModNormList.AddModData(ACommaText:String;
                                  ASeparator:Char=','): Integer;
-var p  : toTNumParser;
-    m,s: string;
-    c  : Char;
-    b  : Boolean;
-    f  : twcFieldClass;
-    r  : TModalityNorm;
-    j  : Integer;
+var p: toTNumParser;
+    s: string;
+    c: Char;
+    b: Boolean;
+    r: TModalityNorm;
 begin
-j:= Pos('_',ACommaText);                                                        {look for "01_" at front}
-if j<4 then
-  Delete(ACommaText,1,j);
 p:= toTNumParser.Create;
 p.SetDecPointChars([DefaultFormatSettings.DecimalSeparator]);
 p.CurrentLine:= ACommaText;
 c:= UpCase(p.CurrentLine[1]);
-m:= ModalityFormat(c,p.NextFloat);
+s:= ModalityFormat(c,p.NextFloat);
 if p.ConversionResult then
   begin
-  r               := TModalityNorm.Create(m);
-  with r,NormRec do
-     begin
+  r            := TModalityNorm.Create(s);
+  Result       := inherited AddModData(s,ASeparator);
+  FData[Result]:= r;
+  with r.NormRec do
      for b:= False to True do
        begin
        Depth[b]:= p.NextFloat(1000,0   ,False);
        Value[b]:= p.NextFloat(1000,0.01,False);
        end;
-     s   := LowerCase(p.NextString(ASeparator));
-     Info:= '';
-     if Length(s)>0 then
-       for f:= fcStandard to fcElectron do if Pos(LowerCase(twcFieldClassNames[f]),s)>0 then
-         begin
-         FT_list:= FT_list+[f];
-         Info   := Info+twcFieldClassNames[f];
-         end;
-     Linac_list:= p.NextString(ASeparator);
-     Modality  := m;
-     Info      := LowerCase(Info+Linac_list);
-     m         := m+ASeparator+Info;
-     end;
-  Result          := inherited AddModData(m,ASeparator);
-  FDataObj[Result]:= r;
   end
 else Result:= -1;
 try
@@ -3790,72 +3667,27 @@ try
 end; {~addmoddata}
 
 
-{29/03/2022 added}
-{02/04/2022 strategy changed to counting number of matches}
 function TModNormList.FindModData(AModality :String;
-                                  AFieldType:twcFieldClass;
-                                  ALinac    :String): Integer;
-var i,k,n,p,q: Integer;
-    m        : Boolean;
-    r        : TModalityNorm;
-begin
-i     := DataCount;
-n     := 0;
-m     := False;
-p     := -1;
-q     := -1;
-ALinac:= LowerCase(ALinac);
-if i>0 then
-  repeat
-    Dec(i);
-    r:= TModalityNorm(DataObj[i]);
-    m:= (r.Modality=AModality);
-    if m then {modality found}
-      begin
-      p:= i;
-      k:= ifthen(AFieldType in r.NormRec.FT_list,1,0)+ifthen(Pos(ALinac,r.NormRec.Linac_list.ToLower)>0,1,0);
-      if k>n then
-        begin
-        n:= k;
-        q:= i;
-        end; {k>n}
-      end; {m}
-  until (n=2) or (i=0);
-Result:= ifthen(q>0,q,p);
-end; {~findmoddata}
-
-
-{29/03/2022 local findmoddata}
-function TModNormList.FindModData(AModality :String;
-                                  AFieldType:twcFieldClass;
-                                  ALinac    :String;
                                   var RefObj:TModalityNorm): Boolean;
-var i: Integer;
+var r: TModalityObject;
 begin
-i:= FindModData(AModality,AFieldType,ALinac);
-Result:= i>=0;
-if Result then RefObj:= TModalityNorm(DataObj[i])
-else           RefObj:= nil;
+r     := nil;
+Result:= Inherited FindModData(AModality,r);
+RefObj:= TModalityNorm(r);
 end; {~findmoddata}
 
 
-{29/03/2022 extended implementation of TModalityNorm}
-{02/04/2022 strip last '-' in class names string}
 function TModNormList.GetCommaText(Index:Integer):String;
 var a: Boolean;
     s: String;
-    f: twcFieldClass;
 begin
 s:= '';
-if Index<DataCount then with DataObj[Index] as TModalityNorm do
+if Index<DataCount then with Data[Index] as TModalityNorm do
   with NormRec do
     begin
     for a:= False to True do
        s:= Format('%s,%0.3f,%0.3f',[s,Depth[a],Value[a]]);
-    s:= Format('%s%s,',[Modality,s]);
-    for f:= fcStandard to fcElectron do if f in FT_list then
-      s:= s+twcFieldClassNames[f]+'-';
-    s:= s.TrimRight('-')+','+StringReplace(Linac_list,',','-',[rfIgnoreCase]);
+    s:= Format('%s%s',[Modality,s]);
     end;
 Result:= s;
 end; {~getcommatext}
@@ -3908,7 +3740,7 @@ s:= '';
 while i>0 do
   begin
   Dec(i);
-  with DataObj[i] as TModalityFilm do
+  with Data[i] as TModalityFilm do
     if length(s)=0                    then s:= FilmRec.FilmType
     else if Pos(FilmRec.FilmType,s)=0 then s:= s+','+FilmRec.FilmType;
   end;
@@ -3933,9 +3765,9 @@ c:= UpCase(p.CurrentLine[1]);
 s:= ModalityFormat(c,p.NextFloat);
 if p.ConversionResult then
   begin
-  r               := TModalityFilm.Create(s);
-  Result          := inherited AddModData(s,ASeparator);
-  FDataObj[Result]:= r;
+  r            := TModalityFilm.Create(s);
+  Result       := inherited AddModData(s,ASeparator);
+  FData[Result]:= r;
   with r.FilmRec do
     begin
     if ACommaText.CountChar(ASeparator)=10 then
@@ -3988,7 +3820,7 @@ b:= False;
 if i>0 then
   repeat
     Dec(i);
-    with DataObj[i] as TModalityFilm  do
+    with Data[i] as TModalityFilm  do
       b:= (Modality=AModality) and ((AFilmType='') or (FilmRec.FilmType=AFilmType));
   until b or (i=0);
 if b then Result:=  i
@@ -4001,7 +3833,7 @@ var i: Integer;
     s: String;
 begin
 s:= '';
-if Index<DataCount then with DataObj[Index] as TModalityFilm do
+if Index<DataCount then with Data[Index] as TModalityFilm do
   begin
   for i:= 1 to twcOD2doseNumPar do
     s:= Format('%s,%0.3f',[s,FilmRec.OD2dose[i]]);
@@ -4055,7 +3887,7 @@ var i: integer;
 begin
 i:= Inherited FindModData(AModality);
 if i<0 then Result:= ''
-else        Result:= TModalityText(DataObj[i]).Value;
+else        Result:= TModalityText(Data[i]).Value;
 end; {~getmodvalue}
 
 
@@ -4075,10 +3907,10 @@ s:= ModalityFormat(c,p.NextFloat);
 if p.ConversionResult then
   begin
   p.NextChar;
-  r               := TModalityText.Create(s);
-  Result          := inherited AddModData(s,ASeparator);
-  FDataObj[Result]:= r;
-  r.Value         := p.RemainderOfLine;
+  r            := TModalityText.Create(s);
+  Result       := inherited AddModData(s,ASeparator);
+  FData[Result]:= r;
+  r.Value      := p.RemainderOfLine;
   end
 else
   Result:= -1;
@@ -4102,7 +3934,7 @@ end; {~findmoddata}
 
 function TModTextList.GetCommaText(Index:Integer):String;
 begin
-with DataObj[Index] as TModalityText do
+with Data[Index] as TModalityText do
   Result:= Format('%s,%s',[Modality,Value]);
 end; {~getcommatext}
 
@@ -5288,7 +5120,7 @@ icpFieldCm      := Default(twcFieldDescrArr);
 SetLength(icpPosCm,0);
 SetLength(icpData ,0);
 FillChar(icpCollimCm   ,SizeOf(icpCollimCm   ),0);
-FillChar(icptFirstPoint ,SizeOf(icptFirstPoint ),0);
+FillChar(icpFirstPoint ,SizeOf(icpFirstPoint ),0);
 end; {~setdefaults}
 
 
@@ -5495,7 +5327,7 @@ var Handled: Boolean;
   if w2Test(w2Text,False) then
     with FParser do
       begin
-      icptFirstPoint[Aline]:= Length(icpPosCm);
+      icpFirstPoint[Aline]:= Length(icpPosCm);
       Handled:= FParser.NextLine;
       while Handled and (not (w2Test(wICPADetectorLine) or w2Test(wICPAFrameLine))) do
         begin
@@ -5559,7 +5391,7 @@ if FParseOk and (not CheckFileTypeOnly) and (FileFormat=twcICprofilerAscii) then
        w2Fill('Positive',icPosDiag);
        w2Fill('Negative',icNegDiag);
      until (not FParseOk) or w2Test(wICPAFrameLine) or EndOfFile or
-           (icptFirstPoint[icNegDiag]-icptFirstPoint[icPosDiag] = Length(icpData)-icptFirstPoint[icNegDiag]);
+           (icpFirstPoint[icNegDiag]-icpFirstPoint[icPosDiag] = Length(icpData)-icpFirstPoint[icNegDiag]);
   end; {if FParseOk and fileformat}
 Result:= FParseOk and (CheckFileTypeOnly or ReadResults);  {ReadResults->GetNumPoints: sets scantype and angle}
 end; {~parsedata}
@@ -5598,8 +5430,8 @@ if ScanNr<>ScanNrOk then
         FScanType:= snAngle;
    end;
   end;
-if ScanNr=wICPAScanMax then Result:= Length(icpData)-icptFirstPoint[icNegDiag]
-else                        Result:= icptFirstPoint[twICPAlines(ScanNr)]-icptFirstPoint[twICPAlines(Pred(ScanNr))];
+if ScanNr=wICPAScanMax then Result:= Length(icpData)-icpFirstPoint[icNegDiag]
+else                        Result:= icpFirstPoint[twICPAlines(ScanNr)]-icpFirstPoint[twICPAlines(Pred(ScanNr))];
 end; {~getnumpoints}
 
 
@@ -6287,7 +6119,6 @@ end; {~create}
 
 
 {25/08/2015 tmCurveType}
-{09/04/2022 tmFFF}
 procedure TMccProfileData.SetDefaults;
 var i: twcChannels;
     t: twcTankAxis;
@@ -6319,8 +6150,7 @@ with MccData,tmElectrometer,tmRefField,tmScanInfo do
   tmFieldShape       := RECTANGULAR;
   tmGantry           :=    0;
   tmGantryUp         :=    0;
-  tmGantryCW         := True;
-  tmFFF              := False;
+  tmGantryCW         :=  True;
   tmCollimator       :=    0;
   tmScanDevice       :=   '';
   tmScanColor        :=    0;
@@ -6443,7 +6273,6 @@ end; {~setnumpoints}
 {20/03/2017 range checking applied}
 {10/02/2018 added trim to searchline}
 {01/06/2018 twcMccInsertOrigin}
-{09/04/2022 tmFFF}
 function TMccProfileData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
 var i,s,LastLine: Integer;
 
@@ -6586,7 +6415,7 @@ var i,s,LastLine: Integer;
     end;
   end;
 
-  procedure MccFill(MccText  :String;
+  procedure MccFill(MccText :String;
                     var ABool:Boolean;
                     AString  :String;
                     TrueTest :Boolean=True);              overload;
@@ -6799,7 +6628,6 @@ if (FParseOk and (not CheckFileTypeOnly) and (FileFormat=twcMccProfile)) then wi
         MccFill(mccRANGE+mcc_REFERENCE           ,tmElectrometer.tmElRange[RefCh]);     {RANGE_REFERENCE=AUTO}
         MccFill(''                               ,tmDetectors[FieldCh]);
         MccFill(mcc_REFERENCE                    ,tmDetectors[RefCh]);
-        MccFill(mccFilter                        ,tmFFF,'FFF');                         {FILTER=FFF}
         MccFill(mccSCAN                          ,tmScanInfo);
         MccFill(mccMEAS+mcc_MEDIUM               ,tmMedium);                            {MEAS_MEDIUM=WATER}
         MccFill(mccMEAS+mcc_PRESET               ,tmMeasPreset);                        {MEAS_PRESET=REFERENCE_DOSEMETER}
@@ -6879,7 +6707,6 @@ end; {~putprofile}
 
 
 {25/08/2015 tmCurveType,MccOrgScanType}
-{09/04/2022 tmFFF}
 {$push}{$warn 5092 off}
 function TMccProfileData.WriteData(AFileName  :String;
                                    AStringList:TStrings;
@@ -7010,8 +6837,6 @@ with AStringList,MccData,tmRefField,tmScanInfo do
     WriteMccString(2,mccCOLL+mcc_ANGLE                ,tmCollimator);                      {COLL_ANGLE=90.00}
     WriteMccString(2,mccCOLL+mcc_OFFSET+mcc_INPLANE   ,tmFieldOffset_mm[fInplane]);        {COLL_OFFSET_INPLANE=0.00}
     WriteMccString(2,mccCOLL+mcc_OFFSET+mcc_CROSSPLANE,tmFieldOffset_mm[fCrossplane]);     {COLL_OFFSET_CROSSPLANE=0.00}
-    if tmFFF then
-      WriteMccString(2,mccFILTER                      ,'FFF');                             {FILTER=FFF}
     if MccOrgFormat=twcMccProfile then
       begin
       WriteMccString(2,mccSCAN+mcc_DEVICE             ,tmScanDevice);                      {SCAN_DEVICE=MP3}
@@ -8467,7 +8292,6 @@ end; {~destroy}
 {22/10/2020 initialise wUserAxisSign to 1, not 0}
 {15/02/2021 initialise FAliasList}
 {01/06/2021 added wFFFMinFieldSizeCm}
-{10/04/2022 wFFFinFile}
 constructor TWellhoferData.Create(AModalityNormList:TModNormList =nil;
                                   AModalityFilmList:TModFilmList =nil;
                                   AModalityBeamList:TModTextList =nil;
@@ -8510,7 +8334,6 @@ FRefOrg2D_OriVal                  := 0;
 wScale2DefaultSSD                 := False;
 wEdgeFallBackCm                   := 0.2;
 wGenericToPDD                     := False;
-wFFFinFile                        := True;
 wMeas2TankMapping                 := twcMeasAxisStandard;
 wMultiScanNr                      :=  1;
 wMultiScanStep                    :=  1;
@@ -8763,7 +8586,6 @@ end; {~setdefaults}
 {03/03/2021 wDiagonalDetection added, DetectDiagonalScans removed}
 {07/03/2021 wNominalIFA}
 {01/06/2021 wFFFMinFieldSizeCm}
-{10/04/2022 wFFFinFile}
 (* wAutoShiftCm is not passed to load unshifted references *)
 procedure TWellhoferData.PassSettings(var ADestination:TWellhoferData;
                                       AObjectCallSign :String        ='';
@@ -8792,13 +8614,12 @@ if assigned(ADestination) then
   ADestination.wEPenumbraH               := wEPenumbraH;
   ADestination.wEPenumbraL               := wEPenumbraL;
   ADestination.wFullAnalysis             := wFullAnalysis;
+  ADestination.wFFFPeakDef               := wFFFPeakDef;
   ADestination.wMultiScanLooping         := wMultiScanLooping;
   ADestination.wFieldTypeDetection       := wFieldTypeDetection;
   ADestination.wSmallFieldLimitCm        := wSmallFieldLimitCm;
   ADestination.wSmallFieldFilterDivider  := wSmallFieldFilterDivider;
   ADestination.wWedge90ShiftFactor       := wWedge90ShiftFactor;
-  ADestination.wFFFinFile                := wFFFinFile;
-  ADestination.wFFFPeakDef               := wFFFPeakDef;
   ADestination.wFFFMinDoseDifPerc        := wFFFMinDoseDifPerc;
   ADestination.wFFFMinFieldSizeCm        := wFFFMinFieldSizeCm;
   ADestination.wFFFMinEdgeDifCm          := wFFFMinEdgeDifCm;
@@ -8889,7 +8710,6 @@ end; {~initcurve}
 {27/01/2018 twAbsNormDefUse}
 {27/04/2020 initialise option removed}
 {22/05/2020 twSigmoidDone}
-{09/04/2022 twSetFieldType:= fcStandard}
 procedure TWellhoferData.ClearCurve(var ACurveRec:twCurveDataRec;
                                     CleanUp      :Boolean=False);
 var r: twcNMpddFits;
@@ -8926,6 +8746,8 @@ with ACurveRec,twBeamInfo do if Length(twData)>0 then
   twCenterArr       := 0;
   twComposite       := False;
   twCurveIDString   := '';
+  twDataFirst       := 0;
+  twDataLast        := 0;
   twDataHistoryStg  := '';
   twDevice          := '';
   twFastScan        := False;
@@ -8943,16 +8765,11 @@ with ACurveRec,twBeamInfo do if Length(twData)>0 then
   twIsFiltered      := False;
   twIsGamma         := False;
   twSSD_cm          := twcDefaultSSDcm[fcStandard];
-  FillChar(twDataPosCm   ,SizeOf(twDataPosCm   ),0);
-  FillChar(twDataRange   ,SizeOf(twDataRange   ),0);
   FillChar(twFFFslope    ,SizeOf(twFFFslope    ),0);
-  FillChar(twInFieldRange,SizeOf(twInFieldRange),0);
+  FillChar(twInFieldArr  ,SizeOf(twInFieldArr  ),0);
   FillChar(twInFieldPosCm,SizeOf(twInFieldPosCm),0);
+  twTopModel        :=  Default(TQuadFitReport);
   Finalize(twExtraText);
-  twTopModel        := Default(TQuadFitReport);
-  twScanRange       := twDataRange;
-  twScanPosCm       := twDataPosCm;
-  twAnalysisRange   := twDataRange;
   twLocalPeak       := False;
   twAlignedTo       := twSelf;
   twMayneordApplied := False;
@@ -8965,6 +8782,8 @@ with ACurveRec,twBeamInfo do if Length(twData)>0 then
   twRelMaxInField   :=   0;
   twMinArr          :=   0;
   twRelMinInField   :=   0;
+  twFirstDataPosCm  :=   0;
+  twLastDataPosCm   :=   0;
   twOriginPosValid  := False;
   twPDD10           :=   0;
   twPDD20           :=   0;
@@ -8977,6 +8796,8 @@ with ACurveRec,twBeamInfo do if Length(twData)>0 then
   twRelNormPosCm    :=   0;
   twRelNormValue    :=   0;
   twScanDevice      := '';
+  twScanFirst       :=   0;
+  twScanLast        :=   0;
   twScanNr          :=   0;
   twScanLength      :=   0;
   twShiftCm         :=   0;
@@ -8996,7 +8817,6 @@ with ACurveRec,twBeamInfo do if Length(twData)>0 then
   twIsRelative      := False;
   twDerivativeValid := False;
   twResampled       := False;
-  twSetFieldType    := fcStandard;
   twSelf            := dsMeasured;
   twRelatedSource   := twSelf;
   twSymCorrected    := False;
@@ -9166,7 +8986,7 @@ with CF do
     twcPDDpar[i]             := ReadBool(Section   ,pddfitEnames[i]            ,twcPDDpar[i]);
   ReadModSection(twcDRefBeams,FModBeamList);
   ReadModSection(twcDrefKey  ,FModNormList);
-  //ReadModSection(twcDrefKey  ,FModFilmList); {patch <3.01, dropped in version 4.25 for extended normlist}
+  ReadModSection(twcDrefKey  ,FModFilmList); {patch <3.01}
   ReadModSection(twcDCKey    ,FModFilmList); {starting with v3.01}
   if IsLocal then
     try
@@ -9206,7 +9026,6 @@ end; {~readconfig}
 {16/05/2020 storage of wMultiScanNr removed}
 {07/03/2021 twcDefaultSSD_MRcm}
 {01/06/2021 wFFFMinFieldSizeCm}
-{01/04/2022 modality extended with unique number}
 procedure TWellhoferData.WriteConfig(CF:TConfigStrings=nil);
 var IsLocal: Boolean;
     i      : Integer;
@@ -9223,7 +9042,7 @@ var IsLocal: Boolean;
     begin
     s:= AModList.DivisorText[i];
     j:= s.IndexOf('|');                                                         //zero-based
-    CF.WriteString(AKey,Format('%.2d_',[i])+Copy(s,1,j),Copy(s,j+2));           //copy is 1-based
+    CF.WriteString(AKey,Copy(s,1,j),Copy(s,j+2));                               //copy is 1-based
     Inc(i);
     end;
   end;
@@ -9713,19 +9532,12 @@ FCalcWidth_cm:= Max(twcDefMinFilterWidthCm,cm);
 end; {~setcalcwidth}
 
 
-{06/04/2022 expanded}
 procedure TWellhoferData.ResetAnalysis(ASource:twcDataSource=dsMeasured);
 begin
 with wSource[ASource] do
   begin
-  twFastScan       := False;
-  twSigmoidDone    := False;
-  twDerivativeValid:= False;
-  twSymmetry       := 0;
-  twSymLinacError  := 0;
-  twSymAreaRatio   := 0;
-  FillChar(twConfidenceLimit,SizeOf(twConfidenceLimit),0);
-  FillChar(twGammaPassRate  ,SizeOf(twGammaPassRate  ),0);
+  twFastScan:= False;
+  twAnalysed:= False;
   end;
 end; {~resetanalysis}
 
@@ -10066,7 +9878,6 @@ end; {indexmultiscan}
 {23/07/2018 aliaslist also applied on wMeasDeviceInfo.twDeviceName}
 {21/07/2020 fcWedge}
 {07/03/2021 FDefaultSSDcm}
-{11/04/2022 implement FFF}
 function TWellhoferData.MakeCurveName(CreateMultiName :Boolean     =False;
                                       ApplyDeviceAlias:Boolean     =False;
                                       IgnoredParams   :twcIgnoreSet=[];
@@ -10099,8 +9910,6 @@ with wCurveInfo,wSource[ASource],twBeamInfo do
        Dec(i);
     if not (twiEnergy in IgnoredParams) then
       Stg:= Stg+Num2Stg(Round(tEnergy));
-    if wFFFinFile and ((twSetFieldType=fcFFF) or twFFFdetected) then
-      Stg:= Stg+'FFF';
     if CreateMultiName then
       Stg:= Stg+Format('_%s_',[ApplyAliasList(wMeasDeviceInfo.twDeviceName)])
     else if not (twiScanClass in IgnoredParams) then
@@ -10154,9 +9963,9 @@ with wSource[ASource] do
   begin
   if X>twPosCm[i] then
     Inc(i);
-  CheckSize(ASource,Succ(twPoints));                                            //set new size to all related data, including twDataRange[ptLast]
-  if (i<twDataRange[ptLast]) then
-    for j:= twDataRange[ptLast] downto Succ(i) do                                //push forward next data points}
+  CheckSize(ASource,Succ(twPoints));                                            //set new size to all related data, including twDataLast
+  if (i<twDataLast) then
+    for j:= twDataLast downto Succ(i) do                                        //push forward next data points}
       begin
       twCoordinates[j]:= twCoordinates[Pred(j)];
       twPosCm[j]      := twPosCm[Pred(j)];
@@ -10187,8 +9996,7 @@ end; {~getready}
 
 
 {27/12/2017 accept meaningful predefined values for limits}
-{14/01/2018 always set twDataRange[ptLast]}
-{11/04/2022 twAnalysisRange}
+{14/01/2018 always set twdatalast}
 procedure TWellhoferData.CheckSize(var ASource:twCurveDataRec;
                                    NumPoints  :Integer=-1);
 begin
@@ -10198,15 +10006,14 @@ with ASource do
     twPoints:= NumPoints;
   if Length(twData)<>twPoints then
     begin
-    twDataRange[ptLast]:= Pred(twPoints);
-    twScanRange[ptLast]:= twDataRange[ptLast];
-    if twDataRange[ptFirst]>0 then
-      twDataRange[ptFirst]:= Min(twDataRange[ptFirst],twDataRange[ptLast]);
-    twScanRange[ptFirst]:= Max(twDataRange[ptFirst],twScanRange[ptFirst]);
-    if (twScanRange[ptLast]=0) or (twScanRange[ptLast]>=twDataRange[ptLast]) then
-      twScanRange[ptLast]:= twDataRange[ptLast];
-    twFastScan     := False;
-    twAnalysisRange:= twScanRange;
+    twDataLast:= Pred(twPoints);
+    twScanLast:= twDataLast;
+    if twDataFirst>0 then
+      twDataFirst:= Min(twDataFirst,twDataLast);
+    twScanFirst:= Max(twDataFirst,twScanFirst);
+    if (twScanLast=0) or (twScanLast>=twDataLast) then
+      twScanLast:= twDataLast;
+    twFastScan:= False;
     SetLength(twCoordinates,twPoints);
     SetLength(twData       ,twPoints);
     SetLength(twPosCm      ,twPoints);
@@ -10295,10 +10102,10 @@ function TWellhoferData.GetPosition(ASource:twcDataSource;
 begin
 with wSource[ASource] do if twValid then
   begin
-  if InRange(i,twDataRange[ptFirst],twDataRange[ptLast]) then Result:= twPosCm[i]
-  else                                                        Result:= 0;
+  if InRange(i,twDataFirst,twDataLast) then Result:= twPosCm[i]
+  else                                      Result:= 0;
   end
-else                                                          Result:= 0;
+else                                        Result:= 0;
 end; {~getposition}
 
 
@@ -10329,7 +10136,6 @@ end; {~setaxisid}
 {29/07/2015 Make also 'nn/MMM/nnnn' and MMM/nn/nnnn' acceptable for twWellhoferAscii_v7}
 {01/09/2015 EvaluateFileType}
 {11/12/2018 twWellhoferAscii_v8}
-{09/04/2022 accept also a series of spaces instead of tab after WellhoferAscii_v8_ident}
 function TWellhoferData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
 const WellhoferAscii_v8_ident='Measurement time:';
 var Stg  : String;
@@ -10339,16 +10145,16 @@ Inc(FActiveCnt);
 FParseOk:= inherited ParseData(CheckFileTypeOnly);
 Stg     := CharSetReplaceAll(csNumeric,'n',IdentificationStg.ToLower.Replace('-','/').Replace('a','p'));
 for i:= 1 to 12 do
-  Stg.Replace(FParser.Months[i]+'/','nn/');                                                     //make also 'nn/MMM/nnnn' and MMM/nn/nnnn' acceptable
-i:= Max(Pos('n/nnnn ',Stg),Pos('n/nn ',Stg));                                                   //identification parameter
-j:= Pos('n:nn:nn',Stg);                                                                         //identification parameter
-k:= ifthen(Pos(WellhoferAscii_v8_ident,IdentificationStg)=1,Length(WellhoferAscii_v8_ident),0); //identification parameter
+  Stg.Replace(FParser.Months[i]+'/','nn/');                                                    //make also 'nn/MMM/nnnn' and MMM/nn/nnnn' acceptable
+i:= Max(Pos('n/nnnn ',Stg),Pos('n/nn ',Stg));                                                  //identification parameter
+j:= Pos('n:nn:nn',Stg);                                                                        //identification parameter
+k:=ifthen(Pos(WellhoferAscii_v8_ident,IdentificationStg)=1,Length(WellhoferAscii_v8_ident),0); //identification parameter
 if Pos('Clinic:',IdentificationStg)=1 then
   begin
   FileFormat:= twcWellhoferAscii_v6;
   Result    := CheckFileTypeOnly or Parse_Wellhofer_SNC_Ascii;
   end
-else if InRange(i,k+1,k+11) and InRange(j-i,4,15) then                                          //i,j,k used here for identification
+else if InRange(i,1+k,7+k) and InRange(j-i,4,15) then                                          //i,j,k used here for identification
   begin
   if k=0 then FileFormat:= twcWellhoferAscii_v7
   else        FileFormat:= twcWellhoferAscii_v8;
@@ -10378,7 +10184,6 @@ end; {~parsedata}
 {16/05/2020 applied FMultiScanCapable}
 {06/10/2020 fundamentals alternative}
 {21/10/2020 chop off " Accelerator" in v8 Linac name}
-{10/04/2022 wFFFinFile}
 function TWellhoferData.Parse_Wellhofer_SNC_ascii: Boolean;
 var Stg         : String;
     DataAxisID  : twcTankAxisID;
@@ -10434,7 +10239,7 @@ var Stg         : String;
   if FParseOk then with FParser do
     begin
     FParseOk:= Search(ASearchText,True);
-    Value   := NextInteger;
+    Value  := NextInteger;
     FParseOk:= ConversionResult or AcceptNAN;
     end;
   Result:= FParseOk;
@@ -10559,14 +10364,10 @@ var Stg         : String;
 
   procedure ParseModality;
   begin
-  with wSource[dsMeasured],twBeamInfo do
-    begin
+  with wSource[dsMeasured].twBeamInfo do
     if Pos('Photon',FParser.CurrentLine)+Pos('MV',FParser.CurrentLine)>0    then twBModality:= 'X'
     else if Pos('Ele',FParser.CurrentLine)+Pos('MeV',FParser.CurrentLine)>0 then twBModality:= 'E'
     else                                                                         twBModality:= 'P';
-    if wFFFinFile and (Pos('FFF',FParser.CurrentLine)>0) then
-      twSetFieldType:= fcFFF;
-    end;
   end;
 
   function ReadPoint(Nr            :Integer;
@@ -10704,13 +10505,13 @@ var Stg         : String;
       SearchLine(c,twDeviceRefPosition_cm[c],True,True);
     if SearchLine('Number Of Points:' ,i) then
       begin
-      SetNumPoints(dsMeasured,i);                                               //resize arrays, set twDataRange[ptFirst], twDataRange[ptLast]
+      SetNumPoints(dsMeasured,i);                                               //resize arrays, set twDataFirst, twDataLast
       SearchLine('Start'              ,twVector_ICD_cm[Start],True,True);
       SearchLine('End'                ,twVector_ICD_cm[Stop ],True,True);
       FParser.Search('Points');
       s:= ifthen(Pos('[mm]',FParser.CurrentLine)>0,0.1,1);
-      i:= twDataRange[ptFirst];
-      while FParseOk and (i<=twDataRange[ptLast]) do
+      i:= twDataFirst;
+      while FParseOk and (i<=twDataLast) do
         begin
         ReadPoint(i,False,s);
         Inc(i);
@@ -10831,57 +10632,57 @@ var Stg         : String;
     { SNC_ascii
     Tab-Delimited Scan Output
     FILE HEADER
-    File Name	6MV-20x20.snctxt
-    File Date	04/13/2022 13:48
-    File Export Version	3.2.5.26019
+    File Name	test 22_03_2012.snctxt
+    File Date	03/26/2012 18:01
+    File Export Version	1.4.0.3216
     File Version	2.0
     File Scan Count	1
     BEGIN SCAN
     Summary Comments
     Summary Beam Type	Photon
     Summary Energy (MV/MeV)	6.00
-    Summary FieldSize X (cm)	20
-    Summary FieldSize Y (cm)	20
+    Summary FieldSize X (cm)	40.00
+    Summary FieldSize Y (cm)	40.00
     Summary Wedge Type	Open Field
-    Summary Wedge Angle (degrees)	0
-    Summary Scan Type	Depth Scan
-    Is PDI to PDD	False
+    Summary Wedge Angle (degrees)	0.00
+    Summary Scan Type	Crossline
 
 
     BEGIN DOSE TABLE
-    Action	Normalize
-    	X (cm)	Y (cm)	Z (cm)	Relative Dose (%)
-    	0	0	-0.3	53.1799766647389
-    	0	0	-0.2	54.3451974120364
-    	0	0	-0.1	56.3092319896179
-        ...
-        0	0	29.6	26.266069601812
-    	0	0	29.7	26.1076678957559
-    	0	0	29.8	26.1523453592206
+    Action	Initial Scan
+	    X (cm)	Y (cm)	Z (cm)	Relative Dose (%)
+	    -25.971	-0.014	5	4.71918616758957
+	    -25.861	-0.014	5.001	4.80255899979677
+	    -25.751	-0.013	5.001	4.91166572174545
+    ...
+	    25.724	-0.004	5.001	5.03370666050066
+	    25.834	-0.005	5.001	4.97704821355911
+	    25.944	-0.005	5.001	4.88959523205777
+	    26	-0.005	5.001	4.79638982365823
     END DOSE TABLE
     SCAN HEADER
     FACILITY INFORMATION
-    Institution	Benoni Oncology
-    Delivery System	Siemens Primus
-    Delivery System Manufacturer	Siemens
-    Delivery System Model #	Primus
+    Institution	UMC
+    Delivery System	U3
+    Delivery System Manufacturer	Elekta
+    Delivery System Model #
     Delivery System Serial #
-    Field Detector Model #	PTW 31010 Field
+    Field Detector Model #	IC15 F
     Field Detector Serial #
-    Reference Detector Model #	PTW 31010 Ref
+    Reference Detector Model #	IC15 R
     Reference Detector Serial #
     SNC EQUIPMENT
-    Application Programming Interface	1.6.0.17109
-    Hardware Device Interface	1.6.0.17109
+    Application Programming Interface	1.4.0.3216
+    Hardware Device Interface	1.4.0.34714
     3D Scanner Model #	Not Available
-    3D Scanner Serial #	78548004
-    3D Scanner Firmware	0.0.9.7
+    3D Scanner Serial #
+    3D Scanner Firmware
     Drive Factor Diameter (pulse/mm)	1350
     Drive Factor Vertical (pulse/mm)	630
     Drive Factor Ring (pulse/mm)	706.67
     Electrometer Model #	Not Available
-    Electrometer Serial #	75687019
-    Electrometer Firmware	1010100
+    Electrometer Serial #
+    Electrometer Firmware
     Leveling Platform Model #	Not Available
     Leveling Platform Serial #	Not Available
     Lift Table Model #	Not Available
@@ -10892,61 +10693,50 @@ var Stg         : String;
     Beam Type	Photon
     Energy (MV / MeV)	6.00
     Gantry Angle (degrees)	0
-    Collimator Angle (degrees)	0
+    Collimator Angle (degrees)	0.00
     Collimation Type	Jaws
     Wedge Type	Open Field
-    Wedge Angle (degrees)	0
+    Wedge Angle (degrees)	0.00
     Wedge Direction
-    Field Size X (cm)	20
-    Field Size Y (cm)	20
-    Field Shape	Square
-    Measurement Unit	cm
-    Collimator Position Jaws X1 (cm)	10
-    Collimator Position Jaws X2 (cm)	10
-    Collimator Position Jaws Y1 (cm)	10
-    Collimator Position Jaws Y2 (cm)	10
+    Field Size X (cm)	40.00
+    Field Size Y (cm)	40.00
+    Collimator Position Jaws X1 (cm)
+    Collimator Position Jaws X2 (cm)
+    Collimator Position Jaws Y1 (cm)
+    Collimator Position Jaws Y2 (cm)
     Collimator Position MLC X1 (cm)
     Collimator Position MLC X2 (cm)
     Collimator Position MLC Y1 (cm)
     Collimator Position MLC Y2 (cm)
     SETUP PARAMETERS
-    Ring Center (cm)	25.1619638705146
-    Angle Offset (degrees)	4.14
-    Hysteresis Minus (cm)	0.102370107083245
-    Hysteresis Plus (cm)	-0.09939765253607
+    Ring Center (cm)	25.2190724278959
+    Angle Offset (degrees)	4.1
+    Hysteresis Minus (cm)	0.093802416407125
+    Hysteresis Plus (cm)	-0.094144434729505
     MEASUREMENT DETAILS
     Comments
-    Scan Id	1999
-    Scan Date	08/27/2012 12:48
-    Scan Type	Depth Scan
+    Scan Id	30
+    Scan Date	03/22/2012 16:28
+    Scan Type	Crossline
     Scan Medium	Water
-    Source to Surface Distance (cm)	100
-    Ion Chamber Equivalent Model
-    Scan Source	3D SCANNER
+    Source to Surface Distance (cm)	100.00
     Measurement Mode	Continuous
     Scan Speed (cm/s)	0.5 cm / second
-    Optimized Rotation	True
     Diameter Drive Scan Direction	False
     Half Beam	False
-    Additional Scan Range (cm)	0
+    Additional Scan Range (cm)	5.00
     Integrated Measurement	False
-    Effective Point of Measurement (cm)	0
-    Detector Bias Voltage (V)	0.00
-    Field Background Rate (counts/s)	0.00936397176772538
-    Reference Background Rate (counts/s)	0.00556407711510121
-    Normalization Value (Field/Reference)	1.70844030884624
-    Electrometer Temperature (degrees C)	6.7459262864616111111111111117
-    Probe Temperature (degrees C)	32.861829556725388888888888892
-    Pressure (mbar)	853.281537431229000
-    +5VA Sensor	5.07797050476074
-    Rate Type	FFF
-    Use High Current Mode	False
-    Use Adaptive Data Density	False
-    Overscan Amount	0
-    END SCAN
+    Effective Point of Measurement (cm)	0.177
+    Detector Bias Voltage (V)	299.77
+    Field Background Rate (counts/s)	0.00489790218161142
+    Reference Background Rate (counts/s)	0.00625953893882111
+    Normalisation Value (Field/Reference)	0.984774818258455
+    Electrometer Temperature (degrees C)	7.0010967095781666666666666672
+    Probe Temperature (degrees C)	31.999694819562055555555555558
+    Pressure (mbar)	1043.23940557632000
+    +5VA Sensor	5.07988929748535
     }
   {16/05/2020 implemented multiscan capability, never tested however}
-  {13/04/2022 review, added Rate Type}
   procedure SNC_ascii;
   var FieldSize: array['X'..'Y'] of twcFloatType;
       c        : Char;
@@ -11003,16 +10793,11 @@ var Stg         : String;
         SetNumPoints(dsMeasured,i);
         FParseOk:= not b;
         end;
-      SearchLine('Institution'           ,twClinic                         );
-      SearchLine('Delivery System'       ,Linac,''           ,False,False  );
-      SearchLine('Field Detector Model #',twDetType                        );
-      SearchLine('Gantry Angle'          ,twBGantry                        );
-      SearchLine('Collimator Angle'      ,twBCollimator                    );
-      SearchLine('Scan Date'             ,wSource[dsMeasured].twMeasTime,wSource[dsMeasured].twMeasDateTime,'mdy');
-      SearchLine('Scan Speed'            ,twDeviceSpeed_mm_s,True ,False,10);
-      SearchLine('Rate Type'             ,Stg,''            ,False,False   );
-      if wFFFinFile and (Pos('FFF',Stg)>0) then
-        twSetFieldType:= fcFFF;
+      SearchLine('Institution'    ,twClinic                    );
+      SearchLine('Delivery System',Linac        ,'',False,False);
+      SearchLine('Field'          ,twDetType                   );
+      SearchLine('Collimator'     ,twBCollimator               );
+      SearchLine('Scan Date'      ,wSource[dsMeasured].twMeasTime,wSource[dsMeasured].twMeasDateTime,'mdy');
       FieldGT_cm                  := FieldSize['Y'];
       FieldAB_cm                  := FieldSize['X'];
       wSource[dsMeasured].twDevice:= Linac;
@@ -11021,23 +10806,19 @@ var Stg         : String;
   end; {snc_ascii}
 
   { SNC_clipboard
-  Delivery System	Siemens Primus
-  Energy	6 MV (FFF)
-  Scan Type	PDD
-  Depth
-  Field	20cm x 20cm (Jaws)
-  Wedge	Open Field
-  Comments
-
-  	20cm x 20cm : ScanId=1999
-  0	59.47
-  0.1	64.61
-  0.2	71.95
-  0.3	78.06
+  Delivery System	U09               Delivery System	U09
+  Energy	10 MV                     Energy	10 MV
+  Scan Type	Crossline               Scan Type	PDD
+  Depth	5.00                        Depth
+  Field	21cm x 16cm (Jaws)          Field	9.6cm x 10.4cm (Jaws)
+  Wedge	Open Field                  Wedge	Open Field
+  Comments	26x26 cr                Comments	10.4x9.6
+   5.00 cm : ScanId=406             	9.6cm x 10.4cm : ScanId=397
+  -18.075	2.44                      0	80.71
+  -17.825	2.56                      0.25	113.77
   ...
   }
 
-  {14/04/2022 FFF support}
   procedure SNC_clipboard;
   var FieldSize: array['X'..'Y'] of twcFloatType;
       i        : Integer;
@@ -11064,8 +10845,6 @@ var Stg         : String;
     SearchLine('Delivery System',Linac,'',True,False);  {Delivery System	U09\t}
     wSource[dsMeasured].twDevice:= Linac;
     SearchLine('Energy',twBEnergy);
-    if wFFFinFile and (Pos('FFF',FParser.CurrentLine)>0) then
-        twSetFieldType:= fcFFF;
     SearchLine('Scan Type',twDesTypeString,twDesScanType,mAxis,ScanAngle);
     SetScanType(twDesScanType);
     SearchLine('Depth',Depth,False,True);
@@ -11084,19 +10863,18 @@ var Stg         : String;
            SetNumPoints(dsMeasured,Succ(i));
            twCoordinates[i]         := Default(twcCoordinate);
            twCoordinates[i].m[mAxis]:= NextFloat;
-           b                        := ConversionResult;
-           if b then
+           FParseOk:= ConversionResult;
+           if FParseOk then
              begin
              if mAxis<>Beam then
                twCoordinates[i].m[Beam]:= Depth;
              twData[i]:= NextFloat;
-             FParseOk := ConversionResult;
+             FParseOk:= ConversionResult;
              end;
            if not FParseOk then
              SetNumPoints(dsMeasured,i);
            end;
          end; {while}
-    FParseOk:= (i>10);
     if FParseOk and (not b) then
       begin
       SetNumPoints(dsMeasured,i);
@@ -11169,7 +10947,6 @@ reference is loaded
 {07/03/2021 detect fcMRlinac field type, twcDefaultSSD_MRcm}
 {31/03/2021 twSSD2NormRatio implemented}
 {02/04/2021 twActDet2NormRatio}
-{28/03/2022 twConfidenceLimit expanded}
 function TWellhoferData.PrepareProfile: Boolean;
 var i,j        : Integer;
     mAxis      : twcMeasAxis;
@@ -11238,28 +11015,24 @@ with wCurveInfo do
   wSource[dsCalculated].twValid:= False;
   with wSource[dsMeasured] do
     begin
-    twDevice                         := Linac;
-    twScanTypeString                 := twDesTypeString;
-    twFileName                       := FileName;
-    twValid                          := FParseOk;
-    twIsDiagonal                     := False;
-    twScanAngle                      := ScanAngle;
-    twIsGamma                        := False;
-    twIsRelative                     := False;
-    twInFieldAreaOk                  := False;
-    twFastScan                       := False;
-    twFilterPoints                   := 0;
-    twLinSlope                       := 0;
-    twAbsNormPosCm                   := 0;
-    twAbsNormConfig                  := False;
-    twLocalPeak                      := False;
-    twRefNormFactor                  := 1;
-    twScanDevice                     := '';
-    vmax                             := twData[0];
-    twConfidenceLimit[gGammaComplete]:= 0;
-    twConfidenceLimit[gGammaLimited ]:= 0;
-    twGammaPassRate[gGammaComplete]  := 0;
-    twGammaPassRate[gGammaLimited ]  := 0;
+    twDevice        := Linac;
+    twScanTypeString:= twDesTypeString;
+    twFileName      := FileName;
+    twValid         := FParseOk;
+    twIsDiagonal    := False;
+    twScanAngle     := ScanAngle;
+    twIsGamma       := False;
+    twIsRelative    := False;
+    twInFieldAreaOk := False;
+    twFastScan      := False;
+    twFilterPoints  := 0;
+    twLinSlope      := 0;
+    twAbsNormPosCm  := 0;
+    twAbsNormConfig := False;
+    twLocalPeak     := False;
+    twRefNormFactor := 1;
+    twScanDevice    := '';
+    vmax            := twData[0];
     if (twBeamInfo.twBModality='E') and wFieldTypeDetection[fcElectron] then
       begin
       twSetFieldType:= fcElectron;
@@ -11268,6 +11041,7 @@ with wCurveInfo do
       end
     else
       begin
+      twSetFieldType:= fcStandard;
       FPenumbraH    := wXPenumbraH;
       FPenumbraL    := wXPenumbraL;
       end;
@@ -11275,7 +11049,7 @@ with wCurveInfo do
       begin
       if (ScanType<>snPDD) and (ScanType<>snGenericHorizontal) then
         twDesScanType:= snUndefined;
-      for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+      for i:= twDataFirst to twDataLast do
         begin
         tmpCoord:= twCoordinates[i];
         for mAxis:= Inplane to Beam do
@@ -11285,14 +11059,14 @@ with wCurveInfo do
     for mAxis:= Inplane to Beam do                                              //wUserAxisSign is used to swap any axis to match the users display with other applications
       begin
       if wUserAxisSign[mAxis]<0 then
-        for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+        for i:= twDataFirst to twDataLast do
           twCoordinates[i].m[mAxis]:= -twCoordinates[i].m[mAxis];
       if wAutoShiftCm[mAxis]<>0 then
-        for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+        for i:= twDataFirst to twDataLast do
           twCoordinates[i].m[mAxis]:= twCoordinates[i].m[mAxis]+wAutoShiftCm[mAxis];
       end;
-    twVector_ICD_cm[Start]:= twCoordinates[twDataRange[ptFirst]];
-    twVector_ICD_cm[Stop ]:= twCoordinates[twDataRange[ptLast ]];
+    twVector_ICD_cm[Start]:= twCoordinates[twDataFirst];
+    twVector_ICD_cm[Stop ]:= twCoordinates[twDataLast ];
     for mAxis:= Inplane to Beam do                                              //will be used to derive scanangle in OmniPro v6 GTABUD coordinate system
       tmpCoord.m[mAxis]:= twVector_ICD_cm[Stop].m[mAxis]-twVector_ICD_cm[Start].m[mAxis];
     if wFieldTypeDetection[fcMRlinac] and (Pos(Linac,wMRlinacTUlist)>0) then
@@ -11306,6 +11080,7 @@ with wCurveInfo do
     twResampled       := False;
     twSelf            := dsMeasured;
     twAlignedTo       := dsMeasured;
+    twConfidenceLimit := 0;
     varAxisHex        := 0;
     twPosCmExportSign := 1;
     for mAxis:= Inplane to Beam do
@@ -11376,38 +11151,38 @@ with wCurveInfo do
         end;
       if twDesScanType in [snFreescan,snPDD] then
         begin
-        for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+        for i:= twDataFirst to twDataLast do
           begin
           twCoordinates[i].m[Beam      ]:= DistanceToRefPoint(twCoordinates[i])*Sign(twCoordinates[i].m[Beam]);
           twCoordinates[i].m[Inplane   ]:= wRefPoint.m[Inplane   ];
           twCoordinates[i].m[Crossplane]:= wRefPoint.m[Crossplane];
           end;
-        twVector_ICD_cm[Start]:= twCoordinates[twDataRange[ptFirst]];
-        twVector_ICD_cm[Stop ]:= twCoordinates[twDataRange[ptLast ]];
+        twVector_ICD_cm[Start]:= twCoordinates[twDataFirst];
+        twVector_ICD_cm[Stop ]:= twCoordinates[twDataLast];
         end;
       end;
     case twDesScanType of
       snGT,snAB,snPDD: begin
                        mAxis:= twcMeasAxis(Ord(twDesScanType));
-                       for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+                       for i:= twDataFirst to twDataLast do
                          twPosCm[i]:= twCoordinates[i].m[mAxis]/twPosScaling;
                        end;
       snFanLine      : begin
                        for mAxis:= Inplane to CrossPlane do
                          wRefPoint.m[mAxis]:= twVector_ICD_cm[Start].m[mAxis];
-                       for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+                       for i:= twDataFirst to twDataLast do
                          twPosCm[i]:= DistanceToRefPoint(twCoordinates[i])*Sign(twCoordinates[i].m[Beam]);
                        end;
       snGenericHorizontal,
       snFreeScan     : begin
                        wRefPoint:= twVector_ICD_cm[Start];
-                       for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+                       for i:= twDataFirst to twDataLast do
                          twPosCm[i]:= DistanceToRefPoint(twCoordinates[i]);
                        end;
-      snAngle        : for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+      snAngle        : for i:= twDataFirst to twDataLast do
                          twPosCm[i]:= wUserAxisSign[CrossPlane]*Sign(twCoordinates[i].m[Crossplane])*DistanceToRefPoint(twCoordinates[i]);
      end; {case}
-    twStepSizeCm          := Max(0.0001,GetDistance(twCoordinates[twDataRange[ptLast]],twCoordinates[twDataRange[ptFirst]])/Max(1,Pred(twPoints)));
+    twStepSizeCm          := Max(0.0001,GetDistance(twCoordinates[twDataLast],twCoordinates[twDataFirst])/Max(1,Pred(twPoints)));
     FScanType             := twDesScanType;
     CheckDataOrdering;                                            {sets also twPosFirst and twPosLast}
     wMeasDeviceInfo.twDeviceName:= AnsiReplaceStr(wMeasDeviceInfo.twDeviceName,chSpace,'');
@@ -11417,9 +11192,9 @@ with wCurveInfo do
       Resample(ResampleGridSize_cm,dsMeasured,dsMeasured);
     if ScanType in twcVertScans then
       begin
-      i:= twDataRange[ptLast];
+      i:= twDataLast;
       j:= 0;
-      while (i>twDataRange[ptFirst]) and (twData[i]=0) and twValid do
+      while (i>twDataFirst) and (twData[i]=0) and twValid do
         begin
         SetNumPoints(dsMeasured,twPoints-1);                                    //chop off zero-value points at the end
         twValid:= (twPoints>=twcDefMinProfilePoints);                           //introduced for Varian Eclipse pdd's
@@ -11429,7 +11204,7 @@ with wCurveInfo do
       if j>0 then
        StatusMessage(Format('chopped off last zero values (%d point%s)',[j,ifthen(j=1,'','s')]));
       end;
-    for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+    for i:= twDataFirst to twDataLast do
       if twData[i]>vmax then
         begin
         vmax    := twData[i];
@@ -11443,7 +11218,7 @@ with wCurveInfo do
       end;
     if e<>1 then
       begin
-      for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+      for i:= twDataFirst to twDataLast do
         twData[i]:= e*twData[i];
       StatusMessage(Format('%s data scaled with factor %0.3f',[twDataHistoryStg,e]));
       twDataHistoryStg:= Format('%0.3f*%s',[e,twDataHistoryStg]);
@@ -11483,10 +11258,10 @@ var i,j: Integer;
 begin
 with wSource[ASource] do
   begin
-  if twPosCm[twDataRange[ptLast]]<twPosCm[twDataRange[ptFirst]] then
+  if twPosCm[twDataLast]<twPosCm[twDataFirst] then
     begin
-    i:= twDataRange[ptFirst];
-    j:= twDataRange[ptLast ];
+    i:= twDataFirst;
+    j:= twDataLast;
     repeat
       v:= twPosCm[j];       twPosCm[j]      := twPosCm[i];       twPosCm[i]      := v;
       v:= twData[j];        twData[j]       := twData[i];        twData[i]       := v;
@@ -11495,10 +11270,10 @@ with wSource[ASource] do
       Dec(j);
     until i>=j;
     end;
-  twDataPosCm[ptFirst]:= twPosCm[twDataRange[ptFirst]];
-  twDataPosCm[ptLast ]:= twPosCm[twDataRange[ptLast ]];
-  twScanLength        := twDataPosCm[ptLast]-twDataPosCm[ptFirst];
-  twStepSign          := Sign(twScanLength);
+  twFirstDataPosCm:= twPosCm[twDataFirst];
+  twLastDataPosCm := twPosCm[twDataLast ];
+  twScanLength    := twLastDataPosCm-twFirstDataPosCm;
+  twStepSign      := Sign(twScanLength);
   end;
 end; {checkdataordering}
 
@@ -12867,8 +12642,6 @@ end; {~importrfaprofile}
 {07/11/2017 swap sign for both diagonals}
 {10/02/2018 reversed AxisOffset crossplane/inplane in Get_tmPosCm again}
 {16/05/2020 applied FMultiScanCapable}
-{09/04/2022 tmFFF}
-{10/04/2022 wFFFinFile}
 function TWellhoferData.ImportMccProfile(Mcc:TMccProfileData): Boolean;
 var i,n          : Integer;
     mAxis        : twcMeasAxis;
@@ -12904,8 +12677,6 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
   FFileName        := Mcc.FileName;
   n                := Length(tmScanSpeeds);
   i                := n;
-  if tmFFF and wFFFinFile then
-    twSetFieldType := fcFFF;
   twDeviceSpeed_mm_s:= 0;
   while i>0 do
     begin
@@ -13057,7 +12828,7 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
   twDesShift       := 0;
   twBASD           := 100;
   j                := SNA.GetNumPoints;
-  k                := SNA.icptFirstPoint[SNA.icpScanLine];
+  k                := SNA.icpFirstPoint[SNA.icpScanLine];
   SetNumPoints(dsMeasured,j);
   SetScanType(SNA.ScanType);
   if SNA.icpOrientation[1]='Y' then
@@ -13090,21 +12861,21 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
   Fprojection[Inplane   ]:= -Sin(a);
   Fprojection[Crossplane]:= Cos(a);
   Fprojection[Beam      ]:= 0;
-  twDevice               := Linac;
-  twMeasTime             := twDesModTime;
-  twIsDiagonal           := (ScanNr>2);
-  twSSD_cm               := SNA.icpSSDcm;
-  twDataRange[ptFirst]   := 0;
-  twDataRange[ptLast ]   := Pred(j);
+  twDevice    := Linac;
+  twMeasTime  := twDesModTime;
+  twIsDiagonal:= (ScanNr>2);
+  twSSD_cm    := SNA.icpSSDcm;
+  twDataFirst := 0;
+  twDataLast  := Pred(j);
   twScanNr    := SNA.ScanNr;
-  for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+  for i:= twDataFirst to twDataLast do
     begin
     twPosCm[i]:= SNA.icpPosCm[i+k];
     twData[i] := SNA.icpData[i+k];
     for mAxis:= Inplane to Beam do
       twCoordinates[i].m[mAxis]:= twPosCm[i]*Fprojection[mAxis]+SNA.icpPosGAOffsCm.m[mAxis];
     end;
-  twStepSizeCm:= Max(0.001,abs(twPosCm[twDataRange[ptLast]]-twPosCm[twDataRange[ptFirst]])/Max(1,twDataRange[ptLast]-twDataRange[ptFirst]));
+  twStepSizeCm:= Max(0.001,abs(twPosCm[twDataLast]-twPosCm[twDataFirst])/Max(1,twDataLast-twDataFirst));
   StatusMessage(SNA.LastMessage,True,2);
   Result:= True;
   end;
@@ -13368,8 +13139,6 @@ end; {~exportrfaprofile}
 {24/01/2017 also preserving preferred ptw axis directions}
 {07/11/2017 debug export for diagonals}
 {27/04/2020 Scalingfactor reviewed}
-{09/04/2022 tmFFF}
-{10/04/2022 wFFFinFile}
 function TWellhoferData.ExportMccProfile(Mcc          :TMccProfileData;
                                          ASource      :twcDataSource=dsMeasured;
                                          ScalingFactor:twcFloatType =1.0         ): Boolean;
@@ -13391,7 +13160,6 @@ with Mcc.MccData,tmScanInfo,wSource[ASource],twBeamInfo,wCurveInfo do
   tmScanDiagonal                  := mccNotDiagonal;
   tmScanAngle                     := -ScanAngle;
   tmScanDirection                 := 'POSITIVE';
-  tmFFF                           := (twSetFieldType in [fcFFF,fcMRlinac]) and wFFFinFile;
   tmAxisDir.c[tmTankAxis[Inplane]]:= -1;
   case FScanType of
     snAngle        : begin
@@ -13599,124 +13367,124 @@ end; {~exportwmsprofile}
 {23/11/2017 added twFlatPosCm,twSymAreaRatio}
 {12/01/2018 added twAbsNormConfig to note used info from modlist}
 {27/01/2018 twAbsNormDefUse}
-{15/05/2020 twFirstScanPosCm,twScanPosCm[ptLast]}
+{15/05/2020 twFirstScanPosCm,twLastScanPosCm}
 {22/05/2020 twSigmoidDone}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {23/02/2021 reintroduced twFFFdetected because MRLinac can also be fff}
 {02/04/2021 twActDet2NormRatio}
-{28/03/2022 added twGammaPassRate}
-{11/04/2022 twAnalysisRange}
 procedure TWellhoferData.CopyParameters(var ASource,ADestination:twCurveDataRec);
 begin
 with ADestination do
   begin
-  twAbsNormConfig    := ASource.twAbsNormConfig;
-  twAbsNormDefUse    := ASource.twAbsNormDefUse;
-  twAbsNormPosCm     := ASource.twAbsNormPosCm;
-  twAbsNormValue     := ASource.twAbsNormValue;
-  twAppliedNormVal   := ASource.twAppliedNormVal;
-  twAnalysed         := ASource.twAnalysed;
-  twAnalysisRange    := ASource.twAnalysisRange;
-  twAlignedTo        := ASource.twAlignedTo;
-  twAlignedTo        := ADestination.twSelf;
-  twAvgNormValue     := ASource.twAvgNormValue;
-  twBackGround       := ASource.twBackGround;
-  twBeamInfo         := ASource.twBeamInfo;
-  twCenterPosDefUse  := ASource.twCenterPosDefUse;
-  twCenterPosCm      := ASource.twCenterPosCm;
-  twCenterPosValid   := ASource.twCenterPosValid;
-  twCenterArr        := ASource.twCenterArr;
-  twComposite        := ASource.twComposite;
-  twConfidenceLimit  := ASource.twConfidenceLimit;
-  twGammaPassRate    := ASource.twGammaPassRate;
-  twCurveIDString    := ASource.twCurveIDString;
-  twDataRange        := ASource.twDataRange;
-  twDataHistoryStg   := ASource.twDataHistoryStg;
-  twDevice           := ASource.twDevice;
-  twDerivativeValid  := ASource.twDerivativeValid;
-  twSigmoidDone      := ASource.twSigmoidDone;
-  twSigmoidFitData   := ASource.twSigmoidFitData;
-  twExtraText        := ASource.twExtraText;
-  twFastScan         := ASource.twFastScan;
-  twSetFieldType     := ASource.twSetFieldType;
-  twFFFdetected      := ASource.twFFFdetected;
-  twFFFslopesTop     := ASource.twFFFslopesTop;
-  twFFFslope         := ASource.twFFFslope;
-  twFileIDString     := ASource.twFileIDString;
-  twFileName         := ASource.twFileName;
-  twFilmData         := ASource.twFilmData;
-  twFilterPoints     := ASource.twFilterPoints;
-  twFilterString     := ASource.twFilterString;
-  twDataPosCm        := ASource.twDataPosCm;
-  twFittedData       := ASource.twFittedData;
-  twInFieldAreaOk    := ASource.twInFieldAreaOk;
-  twInFieldRange     := ASource.twInFieldRange;
-  twInFieldPosCm     := ASource.twInFieldPosCm;
-  twFlatness         := ASource.twFlatness;
-  twIsDerivative     := ASource.twIsDerivative;
-  twIsFiltered       := ASource.twIsFiltered;
-  twIsDiagonal       := ASource.twIsDiagonal;
-  twIsGamma          := ASource.twIsGamma;
-  twIsRelative       := ASource.twIsRelative;
-  twScanPosCm        := ASource.twScanPosCm;
-  twLevelPos         := ASource.twLevelPos;
-  twLinSlope         := ASource.twLinSlope;
-  twLocalPeak        := ASource.twLocalPeak;
-  twLocked           := ASource.twLocked;
-  twMayneordApplied  := ASource.twMayneordApplied;
-  twMaxArr           := ASource.twMaxArr;
-  twMaxPosCm         := ASource.twMaxPosCm;
-  twMaxValue         := ASource.twMaxValue;
-  twMeasTime         := ASource.twMeasTime;
-  twMeasDateTime     := ASource.twMeasDateTime;
-  twMinArr           := ASource.twMinArr;
-  twMirrored         := ASource.twMirrored;
-  tw2DoseConv        := ASource.tw2DoseConv;
-  twOD2doseFilm      := ASource.twOD2doseFilm;
-  twOriginalFormat   := ASource.twOriginalFormat;
-  twOriginPosValid   := ASource.twOriginPosValid;
-  twPDD10            := ASource.twPDD10;
-  twPDD20            := ASource.twPDD20;
-  twPddFitData       := ASource.twPddFitData;
-  twPlotScaling      := ASource.twPlotScaling;
-  twPoints           := ASource.twPoints;
-  twPosCmExportSign  := ASource.twPosCmExportSign;
+  twAbsNormConfig   := ASource.twAbsNormConfig;
+  twAbsNormDefUse   := ASource.twAbsNormDefUse;
+  twAbsNormPosCm    := ASource.twAbsNormPosCm;
+  twAbsNormValue    := ASource.twAbsNormValue;
+  twAppliedNormVal  := ASource.twAppliedNormVal;
+  twAnalysed        := ASource.twAnalysed;
+  twAlignedTo       := ASource.twAlignedTo;
+  twAlignedTo       := ADestination.twSelf;
+  twAvgNormValue    := ASource.twAvgNormValue;
+  twBackGround      := ASource.twBackGround;
+  twBeamInfo        := ASource.twBeamInfo;
+  twCenterPosDefUse := ASource.twCenterPosDefUse;
+  twCenterPosCm     := ASource.twCenterPosCm;
+  twCenterPosValid  := ASource.twCenterPosValid;
+  twCenterArr       := ASource.twCenterArr;
+  twComposite       := ASource.twComposite;
+  twConfidenceLimit := ASource.twConfidenceLimit;
+  twCurveIDString   := ASource.twCurveIDString;
+  twDataFirst       := ASource.twDataFirst;
+  twDataLast        := ASource.twDataLast;
+  twDataHistoryStg  := ASource.twDataHistoryStg;
+  twDevice          := ASource.twDevice;
+  twDerivativeValid := ASource.twDerivativeValid;
+  twSigmoidDone     := ASource.twSigmoidDone;
+  twSigmoidFitData  := ASource.twSigmoidFitData;
+  twExtraText       := ASource.twExtraText;
+  twFastScan        := ASource.twFastScan;
+  twSetFieldType    := ASource.twSetFieldType;
+  twFFFdetected     := ASource.twFFFdetected;
+  twFFFslopesTop    := ASource.twFFFslopesTop;
+  twFFFslope        := ASource.twFFFslope;
+  twFileIDString    := ASource.twFileIDString;
+  twFileName        := ASource.twFileName;
+  twFilmData        := ASource.twFilmData;
+  twFilterPoints    := ASource.twFilterPoints;
+  twFilterString    := ASource.twFilterString;
+  twFirstDataPosCm  := ASource.twFirstDataPosCm;
+  twFirstScanPosCm  := ASource.twFirstScanPosCm;
+  twFittedData      := ASource.twFittedData;
+  twInFieldAreaOk   := ASource.twInFieldAreaOk;
+  twInFieldArr      := ASource.twInFieldArr;
+  twInFieldPosCm    := ASource.twInFieldPosCm;
+  twFlatness        := ASource.twFlatness;
+  twIsDerivative    := ASource.twIsDerivative;
+  twIsFiltered      := ASource.twIsFiltered;
+  twIsDiagonal      := ASource.twIsDiagonal;
+  twIsGamma         := ASource.twIsGamma;
+  twIsRelative      := ASource.twIsRelative;
+  twLastDataPosCm   := ASource.twLastDataPosCm;
+  twLastScanPosCm   := ASource.twLastScanPosCm;
+  twLevelPos        := ASource.twLevelPos;
+  twLinSlope        := ASource.twLinSlope;
+  twLocalPeak       := ASource.twLocalPeak;
+  twLocked          := ASource.twLocked;
+  twMayneordApplied := ASource.twMayneordApplied;
+  twMaxArr          := ASource.twMaxArr;
+  twMaxPosCm        := ASource.twMaxPosCm;
+  twMaxValue        := ASource.twMaxValue;
+  twMeasTime        := ASource.twMeasTime;
+  twMeasDateTime    := ASource.twMeasDateTime;
+  twMinArr          := ASource.twMinArr;
+  twMirrored        := ASource.twMirrored;
+  tw2DoseConv       := ASource.tw2DoseConv;
+  twOD2doseFilm     := ASource.twOD2doseFilm;
+  twOriginalFormat  := ASource.twOriginalFormat;
+  twOriginPosValid  := ASource.twOriginPosValid;
+  twPDD10           := ASource.twPDD10;
+  twPDD20           := ASource.twPDD20;
+  twPddFitData      := ASource.twPddFitData;
+  twPlotScaling     := ASource.twPlotScaling;
+  twPoints          := ASource.twPoints;
+  twPosCmExportSign := ASource.twPosCmExportSign;
  {$IFDEF POSINTEGRAL}
-  twPosIntegral      := ASource.twPosIntegral;
+  twPosIntegral     := ASource.twPosIntegral;
  {$ENDIF}
-  twRelatedSource    := ASource.twRelatedSource;
-  twRelAvgInField    := ASource.twRelAvgInField;
-  twRelMaxInField    := ASource.twRelMaxInField;
-  twRelMinInField    := ASource.twRelMinInField;
-  twRefNormFactor    := ASource.twRefNormFactor;
-  twRelNormPosCm     := ASource.twRelNormPosCm;
-  twRelNormValue     := ASource.twRelNormValue;
-  twResampled        := ASource.twResampled;
-  twPosScaling       := ASource.twPosScaling;
-  twScanAngle        := ASource.twScanAngle;
-  twScanDevice       := ASource.twScanDevice;
-  twScanTypeString   := ASource.twScanTypeString;
-  twScanRange        := ASource.twScanRange;
-  twScanNr           := ASource.twScanNr;
-  twScanLength       := ASource.twScanLength;
-  twSSD_cm           := ASource.twSSD_cm;
-  twSDD2SSDratio     := ASource.twSDD2SSDratio;
-  twSSD2NormRatio    := ASource.twSSD2NormRatio;
-  twActDet2NormRatio := ASource.twActDet2NormRatio;
-  twShiftCm          := ASource.twShiftCm;
-  twSNR              := ASource.twSNR;
-  twVector_ICD_cm    := ASource.twVector_ICD_cm;
-  twStepSizeCm       := ASource.twStepSizeCm;
-  twStepSign         := ASource.twStepSign;
-  twSymCorrected     := ASource.twSymCorrected;
-  twSymmetry         := ASource.twSymmetry;
-  twSymAreaRatio     := ASource.twSymAreaRatio;
-  twSymLinacError    := ASource.twSymLinacError;
-  twTag              := ASource.twTag;
-  twTopModel         := ASource.twTopModel;
-  twAppliedEdgeLevel := ASource.twAppliedEdgeLevel;
-  twValid            := ASource.twValid;
-  twWidthCm          := ASource.twWidthCm;
+  twRelatedSource   := ASource.twRelatedSource;
+  twRelAvgInField   := ASource.twRelAvgInField;
+  twRelMaxInField   := ASource.twRelMaxInField;
+  twRelMinInField   := ASource.twRelMinInField;
+  twRefNormFactor   := ASource.twRefNormFactor;
+  twRelNormPosCm    := ASource.twRelNormPosCm;
+  twRelNormValue    := ASource.twRelNormValue;
+  twResampled       := ASource.twResampled;
+  twPosScaling      := ASource.twPosScaling;
+  twScanAngle       := ASource.twScanAngle;
+  twScanDevice      := ASource.twScanDevice;
+  twScanTypeString  := ASource.twScanTypeString;
+  twScanFirst       := ASource.twScanFirst;
+  twScanLast        := ASource.twScanLast;
+  twScanNr          := ASource.twScanNr;
+  twScanLength      := ASource.twScanLength;
+  twSSD_cm          := ASource.twSSD_cm;
+  twSDD2SSDratio    := ASource.twSDD2SSDratio;
+  twSSD2NormRatio   := ASource.twSSD2NormRatio;
+  twActDet2NormRatio:= ASource.twActDet2NormRatio;
+  twShiftCm         := ASource.twShiftCm;
+  twSNR             := ASource.twSNR;
+  twVector_ICD_cm   := ASource.twVector_ICD_cm;
+  twStepSizeCm      := ASource.twStepSizeCm;
+  twStepSign        := ASource.twStepSign;
+  twSymCorrected    := ASource.twSymCorrected;
+  twSymmetry        := ASource.twSymmetry;
+  twSymAreaRatio    := ASource.twSymAreaRatio;
+  twSymLinacError   := ASource.twSymLinacError;
+  twTag             := ASource.twTag;
+  twTopModel        := ASource.twTopModel;
+  twAppliedEdgeLevel:= ASource.twAppliedEdgeLevel;
+  twValid           := ASource.twValid;
+  twWidthCm         := ASource.twWidthCm;
   end;
 end; {~copyparameters}
 
@@ -14152,8 +13920,6 @@ end; {~loadreference}
 {24/07/2015 Points are already shifted}
 {12/05/2016 wAxisPreserveOnExport}
 {03/06/2016 corrected wAxisPreserveOnExport}
-{09/04/2022 write " (FFF)" on energy line if applicable}
-{10/04/2022 wFFFinFile}
 function  TWellhoferData.WriteData(AFileName  :String;
                                    AStringList:TStrings;
                                    ASource    :twcDataSource=dsMeasured;
@@ -14249,10 +14015,8 @@ with wGeneralInfo,wSource[ASource],twBeamInfo,wCurveInfo,wMeterInfo,
     'X': Stg:= 'MV Photon';
     'E': Stg:= 'MeV Electron';
     'P': Stg:= 'MeV Proton';
-    else Stg:= 'Undefined';
+   else  Stg:= 'Undefined';
    end;
-  if wFFFinFile and (twSetFieldType in [fcFFF,fcMRlinac]) then
-    Stg:= Stg+' (FFF)';
   if Round(twBEnergy)=twBEnergy then i:= 0
   else                               i:= 1;
   Append(Format('Energy%s%0.*f %s'      ,[chTab,i,twBEnergy,Stg]));
@@ -14416,7 +14180,7 @@ end; {~writedata}
 {27/01/2018 sync reffiltered, twAbsNormDefUse
             when twAbsNormPosCm=0 do not shift this value, but recalculate twAbsNormval instead}
 {28/01/2018 twcCoupledSources}
-{15/05/2020 twFirstScanPosCm,twScanPosCm[ptLast]}
+{15/05/2020 twFirstScanPosCm,twLastScanPosCm}
 {17/06/2020 dSigmoid50 as new last element}
 {13/07/2020 twFitOffsetCm}
 {27/08/2020 twMaxPosCm}
@@ -14440,7 +14204,7 @@ with wSource[ASource] do if twValid and (not FFrozen) then
     begin
     for mAxis:= Inplane to Beam do
       begin
-      mShift.m[mAxis]:= cm*(twCoordinates[twDataRange[ptLast]].m[mAxis]-twCoordinates[twDataRange[ptFirst]].m[mAxis])/twScanlength;
+      mShift.m[mAxis]:= cm*(twCoordinates[twDataLast].m[mAxis]-twCoordinates[twDataFirst].m[mAxis])/twScanlength;
       mBool[mAxis]   := mShift.m[mAxis]<>0; {for efficiency purposes only}
       end;
     for s:= twcLeft to twcRight do with twFFFslope[s] do
@@ -14457,10 +14221,10 @@ with wSource[ASource] do if twValid and (not FFrozen) then
       end;
     twCenterPosCm   := twCenterPosCm   +cm;
     twMaxPosCm      := twMaxPosCm      +cm;
-    twDataPosCm[ptFirst]:= twDataPosCm[ptFirst]+cm;
-    twScanPosCm[ptFirst]:= twScanPosCm[ptFirst]+cm;
-    twDataPosCm[ptLast ]:= twDataPosCm[ptLast ]+cm;
-    twScanPosCm[ptLast ]:= twScanPosCm[ptLast ]+cm;
+    twFirstDataPosCm:= twFirstDataPosCm+cm;
+    twFirstScanPosCm:= twFirstScanPosCm+cm;
+    twLastDataPosCm := twLastDataPosCm +cm;
+    twLastScanPosCm := twLastScanPosCm +cm;
     for i:= 0 to Pred(twPoints) do
       begin
       twPosCm[i]:= twPosCm[i]+cm;
@@ -14468,8 +14232,8 @@ with wSource[ASource] do if twValid and (not FFrozen) then
         if mBool[mAxis] then
           twCoordinates[i].m[mAxis]:= twCoordinates[i].m[mAxis]+mShift.m[mAxis];
       end;
-    twVector_ICD_cm[Start]:= twCoordinates[twDataRange[ptFirst]];
-    twVector_ICD_cm[Stop ]:= twCoordinates[twDataRange[ptLast ]];
+    twVector_ICD_cm[Start]:= twCoordinates[twDataFirst];
+    twVector_ICD_cm[Stop ]:= twCoordinates[twDataLast ];
     twPDD10               := twPDD10  +cm;
     twPDD20               := twPDD20  +cm;
     twShiftCm             := twShiftCm+cm;
@@ -14577,7 +14341,7 @@ with wSource[ASource] do if twValid and (not FFrozen) then
   if b<>0 then
     begin
     twFastScan:= False;
-    for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+    for i:= twDataFirst to twDataLast do
       twData[i]:= twData[i]-b;
     end;
   end;
@@ -14614,7 +14378,7 @@ if Result then
         tw2DoseConv  := True;
         twOD2doseFilm:= FilmType;
         SetLength(n,twPoints);
-        for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+        for i:= twDataFirst to twDataLast do
           try
           t   := twData[i]/OD2dose[6];
           n[i]:= (((OD2dose[5]*t+OD2dose[4])*t+OD2dose[3])*t+OD2dose[2])*t+OD2dose[1];
@@ -14666,25 +14430,25 @@ if (not FFrozen) and wSource[ASource].twValid then
       tPtr:= @wSource[ADestination];
     with wSource[ASource] do
       begin
-      twVector_ICD_cm[Start]:= twCoordinates[twDataRange[ptFirst]];
-      twVector_ICD_cm[Stop ]:= twCoordinates[twDataRange[ptLast ]];
+      twVector_ICD_cm[Start]:= twCoordinates[twDataFirst];
+      twVector_ICD_cm[Stop ]:= twCoordinates[twDataLast];
       if StepCm<=0 then
         StepCm:= Max(0.001,twStepSizeCm);
       x            := NiceStep(StepCm,[1,2,3,4,5]);
       if Abs(x/StepCm-1)<0.01 then
         StepCm:= x;
       twStepSizeCm := StepCm;
-      j            := Ceil(twDataPosCm[ptFirst]/StepCm);
-      n            := Floor(twDataPosCm[ptLast]/StepCm)-j;
-      l            := twDataPosCm[ptLast]-twDataPosCm[ptFirst];
-      p0           := twDataPosCm[ptFirst];
+      j            := Ceil(twFirstDataPosCm/StepCm);
+      n            := Floor(twLastDataPosCm/StepCm)-j;
+      l            := twLastDataPosCm-twFirstDataPosCm;
+      p0           := twFirstDataPosCm;
       for t:= Inplane to Beam do
         dx.m[t]:= twVector_ICD_cm[Stop ].m[t]-twVector_ICD_cm[Start].m[t];      //obtain travel length on each axis
       end;
     CopyParameters(wSource[ASource],tPtr^);
     CheckSize(tPtr^,Succ(n));
-    tPtr^.twDataRange[ptFirst]:= 0;
-    tPtr^.twDataRange[ptLast ]:= n;
+    tPtr^.twDataFirst:= 0;
+    tPtr^.twDataLast := n;
     for i:= 0 to n do
       begin
       x               := (i+j)*StepCm;
@@ -14736,35 +14500,35 @@ if (not FFrozen)                                           and
     n:= Max(1,Pred(twPoints));
     for t:= Inplane to Beam do
       dx.m[t]:= (twVector_ICD_cm[Stop ].m[t]-twVector_ICD_cm[Start].m[t])/n;
-    while twDataPosCm[ptFirst]>wSource[ASource2].twDataPosCm[ptFirst] do
+    while twFirstDataPosCm>wSource[ASource2].twFirstDataPosCm do
       begin
       AddPoints(ADestination,1,True);
-      for i:= Max(0,twDataRange[ptFirst])+1 downto 1 do
+      for i:= Max(0,twDataFirst)+1 downto 1 do
          begin
          twPosCm[i-1]:= twPosCm[i]-twStepSizeCm;
          for t:= Inplane to Beam do
            twCoordinates[i-1].m[t]:= twCoordinates[i].m[t]-dx.m[t];
          end;
-      Inc(twDataRange[ptLast]);
-      twDataPosCm[ptFirst]:= twPosCm[twDataRange[ptFirst]];
-      twDataPosCm[ptLast ]:= twPosCm[twDataRange[ptLast ]];
+      Inc(twDataLast);
+      twFirstDataPosCm:= twPosCm[twDataFirst];
+      twLastDataPosCm := twPosCm[twDataLast];
       end;
-    while twDataPosCm[ptLast]<wSource[ASource2].twDataPosCm[ptLast] do
+    while twLastDataPosCm<wSource[ASource2].twLastDataPosCm do
       begin
       AddPoints(ADestination);
       n:= Pred(twPoints);
-      for i:= Min(twDataRange[ptLast]+1,Pred(twPoints)) to Pred(twPoints) do
+      for i:= Min(twDataLast+1,Pred(twPoints)) to Pred(twPoints) do
         begin
         twPosCm[i]:= twPosCm[Pred(i)]+twStepSizeCm;
         for t:= Inplane to Beam do
           twCoordinates[i].m[t]:= twCoordinates[Pred(i)].m[t]+dx.m[t];
         end;
-      Inc(twDataRange[ptLast]);
-      twDataPosCm[ptLast]:= twPosCm[twDataRange[ptLast]];
+      Inc(twDataLast);
+      twLastDataPosCm:= twPosCm[twDataLast];
       end;
-    twDataRange[ptLast]:= n;
-    twDataHistoryStg   := wSource[ASource1].twDataHistoryStg+'+'+wSource[ASource2].twDataHistoryStg;
-    for n:= 0 to twDataRange[ptLast] do
+    twDataLast      := n;
+    twDataHistoryStg:= wSource[ASource1].twDataHistoryStg+'+'+wSource[ASource2].twDataHistoryStg;
+    for n:= 0 to twDataLast do
       twData[n]:= GetQfittedValue(twPosCm[n],ASource1)+GetQfittedValue(twPosCm[n],ASource2)*Source2Scaling;
     QuadFilter(-1,ADestination,ADestination,False,True);
     twComposite    := True;
@@ -14818,8 +14582,8 @@ end; {~add}
   reviewed ShiftRange, minimal value>2
   reviewed initial result}
 {11/02/2017 with missinge penumbra ignore maximum and use mid of scans to initialise}
-{21/06/2017 replaced twDataRange[ptFirst]/Last with twScanFirst/Last to avoid non-useful data}
-{20/11/2018 until (Abs(s)<=twcMaxRelMatchDif) or (twScanRange[ptLast]-j-twScanFirst-i<30)}
+{21/06/2017 replaced twDataFirst/Last with twScanFirst/Last to avoid non-useful data}
+{20/11/2018 until (Abs(s)<=twcMaxRelMatchDif) or (twScanLast-j-twScanFirst-i<30)}
 {17/09/2020 introduction of FFrozen}
 function TWellhoferData.Match(ASource    :twcDataSource=dsReference;
                               AReference :twcDataSource=dsMeasured;
@@ -14842,7 +14606,7 @@ var s,ShiftCostFunctionStep,
                   LeftPos:Boolean     ): twcFloatType;
   begin
   with wSource[ACurve] do
-    Result:= twPosCm[ifthen(LeftPos,twScanRange[ptFirst],twScanRange[ptLast])];
+    Result:= twPosCm[ifthen(LeftPos,twScanFirst,twScanLast)];
   end;
 
   {27/04/2020 NormValue was used instead of vertnorm}
@@ -14930,21 +14694,21 @@ if not FFrozen then
       i            := 0;
       j            := 0;
       repeat
-        MatchLimitL:= twData[twScanRange[ptFirst]+i];  {first inspect and limit vertical range}
-        MatchLimitR:= twData[twScanRange[ptLast ]-j];
+        MatchLimitL:= twData[twScanFirst+i];  {first inspect and limit vertical range}
+        MatchLimitR:= twData[twScanLast -j];
         s          := MatchLimitL-MatchLimitR;
         if Abs(s)>twcMaxRelMatchDif then
           begin
           if s>0 then Inc(j)
           else        Inc(i);
           end;
-      until (Abs(s)<=twcMaxRelMatchDif) or (twScanRange[ptLast]-j-twScanRange[ptFirst]-i<30);
-      MatchLimitL:= twPosCm[twScanRange[ptFirst]+i];  {now adjust horizontal range}
-      MatchLimitR:= twPosCm[twScanRange[ptLast ]-j];
+      until (Abs(s)<=twcMaxRelMatchDif) or (twScanLast-j-twScanFirst-i<30);
+      MatchLimitL:= twPosCm[twScanFirst+i];  {now adjust horizontal range}
+      MatchLimitR:= twPosCm[twScanLast -j];
       end;
   ShiftCostFunctionStep:= Max(0.000001,Abs(Min(wSource[ASource].twStepSizeCm,wSource[AReference].twStepSizeCm)/2));
-  ShiftRange           := Min(Abs(wSource[ASource].twDataPosCm[ptLast ]-wSource[AReference].twDataPosCm[ptLast ]),
-                              Abs(wSource[ASource].twDataPosCm[ptFirst]-wSource[AReference].twDataPosCm[ptFirst]));
+  ShiftRange           := Min(Abs(wSource[ASource].twLastDataPosCm -wSource[AReference].twLastDataPosCm),
+                              Abs(wSource[ASource].twFirstDataPosCm-wSource[AReference].twFirstDataPosCm));
   try
     NormValue          := wSource[AReference].twAppliedNormVal/wSource[ASource].twAppliedNormVal;
    except
@@ -15012,7 +14776,7 @@ if not FFrozen then
     CopyCurve(ASource,ADestination);
   with wSource[ADestination] do
     begin
-    for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+    for i:= twDataFirst to twDataLast do
       Mult(twData[i]);
     Mult(twAvgNormValue);
     Mult(twAbsNormValue);
@@ -15090,8 +14854,8 @@ if Result then
   if (MakeCurveName(False,True,IgnoreSet,True,ASource)=MakeCurveName(False,True,IgnoreSet,True,Divisor)) and
      (GetEquivalentField(ASource)<GetEquivalentField(Divisor)) then
     begin
-    wSource[Divisor].twDataPosCm[ptFirst]:= Max(GetBorderPos(ASource,twcLeft ,-OfsCm),GetBorderPos(Divisor,twcLeft , OfsCm));
-    wSource[Divisor].twDataPosCm[ptLast ]:= Min(GetBorderPos(ASource,twcRight, OfsCm),GetBorderPos(Divisor,twcRight,-OfsCm));
+    wSource[Divisor].twFirstDataPosCm:= Max(GetBorderPos(ASource,twcLeft ,-OfsCm),GetBorderPos(Divisor,twcLeft , OfsCm));
+    wSource[Divisor].twLastDataPosCm := Min(GetBorderPos(ASource,twcRight, OfsCm),GetBorderPos(Divisor,twcRight,-OfsCm));
     Result:= Divide(ASource,Divisor,dsCalculated,AutoScaling,1,PreFilter,PostFilter,False); {output in calculated}
     end
   else
@@ -15113,18 +14877,17 @@ end; {~syntheticprofile}
   it is already composite.}
 {15/11/2016 repaired div0 problem}
 {05/12/2016 use 0 as lower limit for division}
-{20/06/2017 twScanRange[ptFirst]/Last adapted to twFirstPosCm/twlastPosCm}
+{20/06/2017 twScanFirst/Last adapted to twFirstPosCm/twlastPosCm}
 {06/12/2017 clipping corrected (ul)}
 {27/12/2017 make use of measfiltered when possible}
 {27/01/2018 use dsRefFiltered}
-{29/03/2018 decrease twScanRange[ptLast] for clipped data on end}
+{29/03/2018 decrease twScanLast for clipped data on end}
 {03/06/2018 initborders}
 {25/11/2018 autoscaling}
 {28/04/2020 initcurve}
 {29/04/2020 asource used instead of tsource in needbackup}
 {21/07/2020 GetAdjustedFilterWidthCm}
 {29/07/2020 MedianFilter called with wrong source}
-{11/04/2022 twAnalysisRange}
 function TWellhoferData.Divide(ASource     :twcDataSource=dsMeasured;
                                ADivisor    :twcDataSource=dsReference;
                                ADestination:twcDataSource=dsCalculated;
@@ -15267,14 +15030,14 @@ if not Result then
      end;
     with wSource[fDivisor] do
       begin
-      pmin:= twDataPosCm[ptFirst];
-      pmax:= twDataPosCm[ptLast ];
+      pmin:= twFirstDataPosCm;
+      pmax:= twLastDataPosCm;
       end;
     ul:= twcDefAccDivFactor*NormFactor;
     f := f*NormFactor;
     with wSource[ADestination] do
       begin
-      for i:= twDataRange[ptFirst] to twDataRange[ptLast] do {-------------------------main calculation------------------}
+      for i:= twDataFirst to twDataLast do {-------------------------main calculation------------------}
         try
           p:= twPosCm[i];
           r:= GetQfittedValue(p,fDivisor);
@@ -15288,15 +15051,15 @@ if not Result then
         except
           twData[i]:= 0;
         end;
-      i:= twDataRange[ptFirst];
-      while (twData[i]=0) and (i<twDataRange[ptLast]) do
+      i:= twDataFirst;
+      while (twData[i]=0) and (i<twDataLast) do
         Inc(i);
-      j:= twDataRange[ptLast];
+      j:= twDataLast;
       while (twData[j]=0) and (j>i)          do
         Dec(j);
-      twScanRange[ptFirst]:= i;
-      twScanRange[ptLast ]:= j;
-      end; {with destination}
+      twScanFirst    := i;
+      twScanLast     := j;
+      end; {with Destination}
     if Sbackup then
       begin
       CopyCurve(tmpSCurve,wSource[ASource]);                                    //restore source
@@ -15321,19 +15084,18 @@ if not Result then
       MedianFilter(GetAdjustedFilterWidthCm(fDivisor),ADestination,ADestination,False,True);
     with wSource[ADestination] do
       begin
-      twDataHistoryStg    := GetHistoryString(ADestination)+'/'+GetHistoryString(ADivisor);
-      twComposite         := True;
-      twFastScan          := False;
-      twAnalysed          := False;
-      twIsRelative        := IsRelative;
-      twDataRange         := twScanRange;
-      twAnalysisRange     := twScanRange;
-      twDataRange         := twScanRange;
-      twDataPosCm[ptFirst]:= twPosCm[twScanRange[ptFirst]];
-      twScanPosCm[ptFirst]:= twDataPosCm[ptFirst];
-      twDataPosCm[ptLast ]:= twPosCm[twScanRange[ptLast ]];
-      twScanPosCm[ptLast ]:= twDataPosCm[ptLast];
-      twRelatedSource     := ASource;
+      twDataHistoryStg:= GetHistoryString(ADestination)+'/'+GetHistoryString(ADivisor);
+      twComposite     := True;
+      twFastScan      := False;
+      twAnalysed      := False;
+      twIsRelative    := IsRelative;
+      twDataFirst     := twScanFirst;
+      twDataLast      := twScanLast;
+      twFirstDataPosCm:= twPosCm[twScanFirst];
+      twFirstScanPosCm:= twFirstDataPosCm;
+      twLastDataPosCm := twPosCm[twScanLast ];
+      twLastScanPosCm := twLastDataPosCm;
+      twRelatedSource := ASource;
       end;
     InitBorders(ADestination);
     Result:= Result and Analyse(ADestination);
@@ -15395,7 +15157,7 @@ if Result then
     if R50ion<=10 then R50dose:= 1.029*R50ion-0.06
     else               R50dose:= 1.059*R50ion-0.37;
     ln_R50:= ln(R50dose);
-    for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+    for i:= twDataFirst to twDataLast do
       wSource[ADestination].twData[i]:=
         twData[i]*
         (_a+_b*ln_R50+_c*Sqr(ln_R50)                   +_d*twPosCm[i]/R50dose)/
@@ -15570,7 +15332,6 @@ end; {~tvspddfunction}
 {$IFDEF ENR_WEIGHTED_PDDFIT}
 {12/01/2016 version including ENR}
 {27/07/2017 subtle speed improvements through efficiency}
-{11/04/2022 twAnalysisRange}
 function TWellhoferData.TvSpddFitErrorResult(var a:TaFunctionVertex): TaVertexDataType;
 var i,j,k,l: Integer;
     e      : TaVertexDataType;
@@ -15594,14 +15355,14 @@ else                                           z_class:= 2;
 Result:= 0;
 with wSource[FNMPddSource] do if assigned(a) then
   begin
-  i:= twAnalysisRange[ptFirst];
-  SetLength(model,Succ(twAnalysisRange[ptLast]));
+  i:= FNMPddFirst;
+  SetLength(model,Succ(FNMPddLast));
   try
     repeat
       model[i]:= TvSpddFunction(a,twPosCm[i])*FNMPddScaling;
       halt    := abs(model[i]/fitCalcErrorDef)>0.8;
       Inc(i);
-    until halt or (i>twAnalysisRange[ptLast]);
+    until halt or (i>FNMPddLast);
    except
      FNMreset:= True;
      halt    := True;
@@ -15610,12 +15371,12 @@ with wSource[FNMPddSource] do if assigned(a) then
      Result:= fitCalcErrorDef
   else
     begin {ifthen(Length(a)=pddfitOdim,(FNMPddLast-i)/Succ(FNMPddLast),1)*}
-    for i:= twAnalysisRange[ptFirst] to twAnalysisRange[ptLast] do
+    for i:= FNMPddFirst to FNMPddLast do
       Result:= Result+Sqr(model[i]-twData[i])/powered_z(twPosCm[i]); {point weighted error}
     if twcPddFitCostENRWeighted then
       begin
-      k:= Max(2,Succ(twAnalysisRange[ptLast]-twAnalysisRange[ptFirst]) div (2*twcDefENRblocks));
-      j:= twAnalysisRange[ptFirst]+k;
+      k:= Max(2,Succ(FNMPddLast-FNMPddFirst) div (2*twcDefENRblocks));
+      j:= FNMPddFirst+k;
       l:= Succ(2*k);
       repeat
         e:= 0;
@@ -15623,9 +15384,9 @@ with wSource[FNMPddSource] do if assigned(a) then
           e:= e+(model[i]-twData[i])/powered_z(twPosCm[i]); {ENR weighted error}
         Result:= Result+Sqr(e)/l;
         Inc(j);
-      until j>=twAnalysisRange[ptLast]-l;
+      until j>=FNMPddLast-l;
       end; {enrweighted}
-    Result:= SqRt(Result/Succ(twAnalysisRange[ptLast]-twAnalysisRange[ptFirst]));
+    Result:= SqRt(Result/Succ(FNMPddLast-FNMPddFirst));
     end; {else}
   end
 else
@@ -15641,7 +15402,7 @@ begin
 Result:= 0;
 with wSource[FNMPddSource] do if assigned(a) then
   begin
-  i:= twAnalysisRange[ptFirst];
+  i:= FNMPddFirst;
   repeat
     r:= TvSpddFunction(a,twPosCm[i]);
     try
@@ -15653,9 +15414,9 @@ with wSource[FNMPddSource] do if assigned(a) then
      end;
     Inc(i);
     e:= abs(Result/fitCalcErrorDef)>0.8;
-  until (i>twAnalysisRange[ptLast]) or e;
+  until (i>FNMPddLast) or e;
   if not e then
-    Result:= SqRt(Result/Max(1,i-twAnalysisRange[ptFirst]));
+    Result:= SqRt(Result/Max(1,i-FNMPddFirst));
   end
 else
   Result:= 0;
@@ -15726,7 +15487,6 @@ end; {~timereport}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
 {21/02/2021 avoid division by zero for twFitNormalisation altogether insteed of relying on try..except}
-{11/04/2022 twAnalysisRange}
 procedure TWellhoferData.PddFit(ASource     :twcDataSource=dsMeasured;
                                 ADestination:twcDataSource=dsCalculated);
 const Photonvertex   : array[0..pddfit_mubpower ] of TaVertexDataType=(110,  4,  -7,  15,   -10, 60,    260,  0.1 ); {I1, mu1..4, Ib, mub,mubpower}
@@ -15798,16 +15558,17 @@ var i       : Integer;                                              { I1 mu1  mu
     MaxRestarts              := Ceil(twcNMrestarts/Max(1,(Amoebes-1)/2));
     MaxCycles                := twcNMCycles;
     RandomChangeFraction     := 0.7;
-    twAnalysisRange          := twScanRange;
-    while (twPosCm[twAnalysisRange[ptFirst]]<FitLimit) and (twDataRange[ptLast]-twAnalysisRange[ptFirst]>10) do
-      Inc(twAnalysisRange[ptFirst]);
+    FNMPddFirst              := twScanFirst;
+    FNMPddLast               := twScanLast;
+    while (twPosCm[FNMPddFirst]<FitLimit) and (twDataLast-FNMPddFirst>10) do
+      Inc(FNMPddFirst);
     with twPddFitData[AReport],twNMReport do
       begin
       Cycles       := 0;
       Restarts     :=-1;
       Seconds      := 0;
       twFitModel   := AModel;
-      twFitValid   := (twPosCm[twAnalysisRange[ptFirst]]>=FitLimit);
+      twFitValid   := (twPosCm[FNMPddFirst]>=FitLimit);
       twFitOffsetCm:= 0;                                                        //not used for pdd model
       end; {with}
     Result:= twPddFitData[AReport].twFitValid;
@@ -15818,7 +15579,7 @@ var i       : Integer;                                              { I1 mu1  mu
                              [GetCurveIDString(FNMPddSource),
                               FormatDateTime('dd-mmm-yyyy hh:nn',twMeasDateTime),twNMfitStg,
                               twPddFitData[AReport].twNMReport.Seconds]));
-        {$IFDEF X_FIT_TEST}Dec(twDataRange[ptLast],400);{$ENDIF}
+        {$IFDEF X_FIT_TEST}Dec(twDataLast,400);{$ENDIF}
         with twPddFitData[AReport].twNMReport do
           begin
           Inc(Restarts);
@@ -15864,13 +15625,13 @@ var i       : Integer;                                              { I1 mu1  mu
           end;
         if fMaxRestarts>0 then
           fMaxRestarts:= fMaxRestarts-1;
-        {$IFDEF X_FIT_TEST}Inc(twDataRange[ptLast],400);{$ENDIF}
+        {$IFDEF X_FIT_TEST}Inc(twDataLast,400);{$ENDIF}
         twPddFitData[AReport].twNMReport.FitValid:= CrawlReport.FitValid;
         with twPddFitData[AReport],twNMReport do
           if FitValid then
             begin
-            twFitLowCm        := twPosCm[twAnalysisRange[ptFirst]];
-            twFitHighCm       := twPosCm[twAnalysisRange[ptLast ]];
+            twFitLowCm        := twPosCm[FNMPddFirst];
+            twFitHighCm       := twPosCm[FNMPddLast ];
             twFitNormalisation:= FNMPddScaling;
             BestVertex        := Copy(CrawlReport.BestVertex);
             BestScore         := CrawlReport.BestScore;
@@ -15883,12 +15644,12 @@ var i       : Integer;                                              { I1 mu1  mu
             Inc(Cycles,CrawlReport.Cycles);
             if twSNR>0 then                                                     //twSNR is calculated in QuadFilter
               begin
-              SetLength(model,Succ(twAnalysisRange[ptLast]));
+              SetLength(model,Succ(FNMPddLast));
               try
-                for i:= twAnalysisRange[ptFirst] to twAnalysisRange[ptLast] do
+                for i:= FNMPddFirst to FNMPddLast do
                   model[i]:= TvSpddFunction(BestVertex,twPosCm[i])*FNMPddScaling; //fill wSource[FNMsource].twdata with fit value
                 k:= Max(2,twPoints div (2*twcDefENRblocks));
-                for i:= twAnalysisRange[ptFirst]+k to twAnalysisRange[ptLast]-k do                        //this calculation differs from TvSpddFitErrorResult
+                for i:= FNMPddFirst+k to FNMPddLast-k do                        //this calculation differs from TvSpddFitErrorResult
                   begin
                   e:= 0;
                   for j:= i-k to i+k do
@@ -15896,9 +15657,9 @@ var i       : Integer;                                              { I1 mu1  mu
                   e_sum:= e_sum+Sqr(e)/(2*k+1);                                 //in TvSpddFitErrorResult only overlapping blocks are observed, much faster
                   end;
                 try
-                  e_sum:= SqRT(e_sum/(twAnalysisRange[ptLast]-twAnalysisRange[ptFirst]-2*k+1))/(twMaxValue*twSNR);
+                  e_sum:= SqRT(e_sum/(FNMPddLast-FNMPddFirst-2*k+1))/(twMaxValue*twSNR);
                  except
-                  e_sum:= SqRT(e_sum/(twAnalysisRange[ptLast]-twAnalysisRange[ptFirst]-2*k+1));
+                  e_sum:= SqRT(e_sum/(FNMPddLast-FNMPddFirst-2*k+1));
                  end;
                except
                  ENR:= 9e9;
@@ -15950,7 +15711,7 @@ if (not (FFrozen or FIndexingMode)) and Analyse(ASource) then
       SetLength(Stg,Pred(i));
     FNMPddSource  := ADestination;
     FTimeRepSource:= ADestination;
-    fmax          := twMaxPosCm-Max(0,twPosCm[twScanRange[ptFirst]]); {the pdd-model is strictly limited for z>=0}
+    fmax          := twMaxPosCm-Max(0,twPosCm[twScanFirst]); {the pdd-model is strictly limited for z>=0}
     if wSource[ASource].twBeamInfo.twBModality='E' then
       begin
       if fmax<twcPDDminTopCm then
@@ -15986,13 +15747,13 @@ if (not (FFrozen or FIndexingMode)) and Analyse(ASource) then
      except
       twFitNormalisation:= 1;
      end;
-    twDataRange[ptFirst]:= NearestPosition(twFitLowCm ,FNMPddSource);
-    twDataRange[ptLast ]:= NearestPosition(twFitHighCm,FNMPddSource);
-    twScanRange[ptFirst]:= twDataRange[ptFirst];
-    twScanRange[ptLast ]:= twDataRange[ptLast ];
+    twDataFirst:= NearestPosition(twFitLowCm ,FNMPddSource);
+    twDataLast := NearestPosition(twFitHighCm,FNMPddSource);
+    twScanFirst:= twDataFirst;
+    twScanLast := twDataLast;
     twfastScan := False;
-    i          := twDataRange[ptFirst];
-    while i<=twDataRange[ptLast] do
+    i          := twDataFirst;
+    while i<=twDataLast do
       begin
       try
         twData[i]:= TvSpddFunction(BestVertex,twPosCm[i])*twFitNormalisation;
@@ -16067,7 +15828,7 @@ with wSource[ASource],twBeamInfo do
     if Dmax_org_cm<0 then
       Dmax_org_cm:= twMaxPosCm;
     MaxTerm:= Sqr((SSD_new_cm+Dmax_org_cm)/(SSD_org_cm+Dmax_org_cm));
-    for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+    for i:= twDataFirst to twDataLast do
       twData[i]:= twData[i]*MaxTerm*Sqr((SSD_org_cm+twPosCm[i])/(SSD_new_cm+twPosCm[i]));
     twSSD_cm         := SSD_new_cm;
     twMayneordApplied:= True;
@@ -16095,7 +15856,7 @@ FNMPddFit   := AFit;
 NM          := TaNMsimplex.Create(@PDDfitMaxErrorResult,1);
 with NM,ResultData,wSource[ASource] do
   begin
-  if (not FFrozen) and twFittedData and (twMaxArr>twScanRange[ptFirst]) then  with twPddFitData[FNMPddFit] do
+  if (not FFrozen) and twFittedData and (twMaxArr>twScanFirst) then  with twPddFitData[FNMPddFit] do
     try
       Setlength(cm,1);
       MinScoreChangeFraction:= 1e-5;
@@ -16164,9 +15925,9 @@ var Q         : TQuadFit;
         Inc(P1);
         end;
      {$IFDEF DISCRETE_FIXED_DISTANCE}
-      while (P2<=twDataRange[ptLast]) and (Round(twcDefDiscretisationMult*Abs(twPosCm[P2]-twPosCm[Pc]))<kcm2) do  //alleviate truncation errors
+      while (P2<=twDataLast) and (Round(twcDefDiscretisationMult*Abs(twPosCm[P2]-twPosCm[Pc]))<kcm2) do  //alleviate truncation errors
      {$ELSE}
-      while (P2<=twDataRange[ptLast]) and (Abs(twPosCm[P2]-twPosCm[Pc])<cm2) do
+      while (P2<=twDataLast) and (Abs(twPosCm[P2]-twPosCm[Pc])<cm2) do
      {$ENDIF DISCRETE_FIXED_DISTANCE}
         begin
         Q.Add_XY(twPosCm[P2],DataPtr^[P2]);
@@ -16182,10 +15943,10 @@ var Q         : TQuadFit;
       begin
       Inc(Pc);
       i:= Pc+P1;
-      if InRange(i,twDataRange[ptFirst],twDataRange[ptLast]) then
+      if InRange(i,twDataFirst,twDataLast) then
         Add_XY(twPosCm[i],DataPtr^[i]);
       i:= Pc-P2;
-      if InRange(i,twDataRange[ptFirst],twDataRange[ptLast]) then
+      if InRange(i,twDataFirst,twDataLast) then
         Del_XY(twPosCm[i],DataPtr^[i]);
       end;
     end;
@@ -16225,7 +15986,7 @@ if (not FFrozen) and wSource[ASource].twValid then
       {$ELSE}
       cm2  := cm/2;
       {$ENDIF DISCRETE_FIXED_DISTANCE}
-      P1   := twDataRange[ptFirst];
+      P1   := twDataFirst;
       P2   := P1;
       Pc   := Pred(P1);
      {$ELSE}
@@ -16238,7 +15999,7 @@ if (not FFrozen) and wSource[ASource].twValid then
       if twFilterPoints>2 then
         begin
         Q:= TQuadFit.Create(twFilterPoints);
-        while Pc<twDataRange[ptLast] do
+        while Pc<twDataLast do
           try
             StepFilter;
             if Pc>=0 then
@@ -16344,11 +16105,11 @@ if (not FFrozen) and wSource[ASource].twValid then
       if MedianCnt>0 then
         begin
         SetLength(MedianList,MedianCnt);
-        for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+        for i:= twDataFirst to twDataLast do
           begin
           MedianCnt:= 0;                                                        //now mediancnt holds track of actually filled data in filter
           for j:= i-Mmid to i+Mmid do
-            AddFilter(DataPtr^[Max(twDataRange[ptFirst],Min(j,twDataRange[ptLast]))]);
+            AddFilter(DataPtr^[Max(twDataFirst,Min(j,twDataLast))]);
           twData[i]:= MedianList[Mmid];
           end;
         twValid       := True;
@@ -16541,7 +16302,6 @@ end; {~getnormalisedrevlogistic}
 {10/11/2020 introduce twFitnormalisation}
 {12/11/2020 scaled error calculation}
 {10/06/2021 float division replaced with integer div to decide on which side is applicable}
-{09/04/2022 handle scaling=0}
 function TWellhoferData.SigmoidFitErrorResult(var a:TaFunctionVertex): TaVertexDataType;  {callback function for edge fit}
 
 var i            : Integer;
@@ -16559,25 +16319,22 @@ with wSource[FNMEdgeSource] do if assigned(a) then
   i      := FNMEdgeFirst;
   ofs    := twSigmoidFitData[s].twFitOffsetCm;
   scaling:= twSigmoidFitData[s].twFitNormalisation;
-  if scaling>0 then
-    repeat
-      p:= twPosCm[i]-ofs;
-      if p<>0 then
-        try
-          r:= RawLogisticFunction(a,p);
-          if abs(r/fitCalcErrorDef)<0.9 then Result:= Result+Sqr(r-twData[i]/scaling)
-          else                               Result:= r;
-         except
-          Result  := fitCalcErrorDef;
-          FNMreset:= True;
-          r       := 0;
-         end
-      else
-        r:= 0;
-      Inc(i);
-    until (i>FNMEdgeLast) or (abs(Result/fitCalcErrorDef)>0.8)
-  else
-    Result:= fitCalcErrorDef;
+  repeat
+    p:= twPosCm[i]-ofs;
+    if p<>0 then
+      try
+        r:= RawLogisticFunction(a,p);
+        if abs(r/fitCalcErrorDef)<0.9 then Result:= Result+Sqr(r-twData[i]/scaling)
+        else                               Result:= r;
+       except
+        Result  := fitCalcErrorDef;
+        FNMreset:= True;
+        r       := 0;
+       end
+    else
+      r:= 0;
+    Inc(i);
+  until (i>FNMEdgeLast) or (abs(Result/fitCalcErrorDef)>0.8);
   if abs(Result/fitCalcErrorDef)<0.9 then
     Result:= Result/Succ(FNMEdgeLast-FNMEdgeFirst);
   if LogLevel>3 then
@@ -16608,7 +16365,7 @@ end; {~sigmoidfiterrorresult}
 {01/12/2015}
 {04/12/2015 initial BestVertex[edgefit_HighVal] set to FNMEdgelast/FNMEdgeFirst}
 {17/12/2015
-  limit area to twScanRange[ptFirst]..twScanRange[ptLast] for local peaks
+  limit area to twScanFirst..twScanLast for local peaks
   accurate estimate for low value}
 {09/06/2016 implementation of dInflection}
 {14/01/2017
@@ -16915,14 +16672,14 @@ if (not FFrozen) and (FirstPosCm<LastPosCm) then
       if (j<k) or ((j=k) and (not PositionWeighted)) then
         begin
         for i:= j to k do
-          Result:= Result+(twPosCm[Min(Succ(i),twScanRange[ptLast])]-twPosCm[Max(twScanRange[ptFirst],Pred(i))])*twData[i]*ifthen(PositionWeighted,twPosCm[i],1)/2;
+          Result:= Result+(twPosCm[Min(Succ(i),twScanLast)]-twPosCm[Max(twScanFirst,Pred(i))])*twData[i]*ifthen(PositionWeighted,twPosCm[i],1)/2;
         if PositionWeighted then
           Result:= Result/(LastPosCm-FirstPosCm);
         end;
       {$ELSE}
       if j<=k then
         for i:= j to k do
-          Result:= Result+(twPosCm[Min(Succ(i),twScanRange[ptLast])]-twPosCm[Max(twScanRange[ptFirst],Pred(i))])*twData[i]/2;
+          Result:= Result+(twPosCm[Min(Succ(i),twScanLast)]-twPosCm[Max(twScanFirst,Pred(i))])*twData[i]/2;
       {$ENDIF}
       end;
     end;
@@ -16956,7 +16713,7 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
 {22/07/2016 wCenterDefinition}
 {15/11/2016 twCenterPosDefUse}
 {22/11/2016 ReportDifferences added}
-{11/02/2017 check for missing penumbra: MaxArr=twScanRange[ptFirst] or MinArr=twScanRange[ptLast]}
+{11/02/2017 check for missing penumbra: MaxArr=twScanFirst or MinArr=twScanLast}
 {13/04/2017 wCenterDefinition should be used with appriate fieldclass}
 {13/06/2017 div0 save division could not handle case with extremely small value (orthovolt data)}
 {26/01/2018 use dsMeasured/dsRefFiltered}
@@ -16964,12 +16721,12 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
 {12/06/2018 repeated filtering on first derivative tended to shift the peak, not understood in code, probably peaks are too sharp with available points}
 {11/09/2018 preserve borders in quadfilter}
 {30/10/2019 Sampler size on create corrected}
-{10/04/2020 lowerbound set to twDataRange[ptFirst]: Pc:= Max(twDataRange[ptFirst],Pred(twScanRange[ptFirst])); }
+{10/04/2020 lowerbound set to twDataFirst: Pc:= Max(twDataFirst,Pred(twScanFirst)); }
 {24/05/2020 more discrete filterwidth limit in StepFilter}
 {14/07/2020 no check anymore on minimum filterwidth; any width>=0 is acceptable for StepFilter}
 {21/07/2020 GetAdjustedFilterWidthCm}
 {04/09/2020 at least 3 points symmetric in StepFilter; peak modelling only when more than 2 points outside dead band}
-{09/09/2020 out of range error repaired: Valid:= InRange(Y,twPosCm[Max(twScanRange[ptFirst],Nearest-n)],twPosCm[Min(Nearest+n,twScanRange[ptLast])])}
+{09/09/2020 out of range error repaired: Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-n)],twPosCm[Min(Nearest+n,twScanLast)])}
 {17/09/2020 introduction of FFrozen}
 {23/10/2020 review of peak statistics and peak fitting loops; errors introduced between 2016 en 2018
  -NumBins was again (a second time) reduced for right side
@@ -17021,9 +16778,9 @@ var L                   : TLinFit;
        Inc(P1);
        end;
     {$IFDEF DISCRETE_FIXED_DISTANCE}
-     while (P2<=twDataRange[ptLast]) and ((P2-P1<3) or (Round(twcDefDiscretisationMult*Abs(twPosCm[P2]-twPosCm[Pc]))<kcm2)) do  //alleviate 64 bit truncation errors
+     while (P2<=twDataLast) and ((P2-P1<3) or (Round(twcDefDiscretisationMult*Abs(twPosCm[P2]-twPosCm[Pc]))<kcm2)) do  //alleviate 64 bit truncation errors
     {$ELSE}
-     while (P2<=twDataRange[ptLast]) and ((P2-P1<3) or (Abs(twPosCm[P2]-twPosCm[Pc])<cm2)) do
+     while (P2<=twDataLast) and ((P2-P1<3) or (Abs(twPosCm[P2]-twPosCm[Pc])<cm2)) do
     {$ENDIF DISCRETE_FIXED_DISTANCE}
        begin
        L.Add_XY(twPosCm[P2],DataPtr^[P2]);
@@ -17039,10 +16796,10 @@ var L                   : TLinFit;
      begin
      Inc(Pc);
      i:= Pc+P1;
-     if InRange(i,twDataRange[ptFirst],twDataRange[ptLast]) then
+     if InRange(i,twDataFirst,twDataLast) then
        Add_XY(twPosCm[i],DataPtr^[i]);
      i:= Pc-P2;
-     if InRange(i,twDataRange[ptFirst],twDataRange[ptLast]) then
+     if InRange(i,twDataFirst,twDataLast) then
        Del_XY(twPosCm[i],DataPtr^[i]);
      end;
    end;
@@ -17104,7 +16861,7 @@ var L                   : TLinFit;
     repeat                                                                      //make histogram of values of derivative with largest bin below limit
       if Sampler.Samples>0 then
         Sampler.NumBins:= Round(1.5*Sampler.NumBins); {implicit initialise}
-      for i:= Max(twDataRange[ptFirst],AStart) to Min(AStop,twDataRange[ptLast]) do
+      for i:= Max(twDataFirst,AStart) to Min(AStop,twDataLast) do
         Sampler.Add_X(twData[i]);
     until (Sampler.BinFraction[Sampler.LargestBin]<twcDeriveBinFraction) or (Sampler.NumBins>Sampler.Samples div 2);
   end; {runsampler}
@@ -17144,7 +16901,7 @@ if (not FFrozen) and wSource[ASource].twValid then
     {$ELSE}
     cm2:= cm/2;
     {$ENDIF DISCRETE_FIXED_DISTANCE}
-    P1 := twDataRange[ptFirst];
+    P1 := twDataFirst;
     P2 := P1;
     Pc := Pred(P1);
    {$ELSE}
@@ -17153,7 +16910,7 @@ if (not FFrozen) and wSource[ASource].twValid then
     Pc := -P2-1;
   {$ENDIF FIXED_DISTANCE_DERIVATIVE}
     L:= TLinFit.Create;
-    while Pc<twDataRange[ptLast] do
+    while Pc<twDataLast do
       try
         StepFilter;
         if Pc>=0 then
@@ -17165,10 +16922,10 @@ if (not FFrozen) and wSource[ASource].twValid then
     {$IFDEF WELLHOFER_DUMPDATA}
     DumpData('Raw derivative',ADestination,ASource);
     {$ENDIF}
-    Pc:= Max(twDataRange[ptFirst],Pred(twScanRange[ptFirst]));                                    //may be local peak
+    Pc:= Max(twDataFirst,Pred(twScanFirst));                                    //may be local peak
     GlobalMin:= twData[Pc];
     GlobalMax:= GlobalMin;
-    while Pc<twScanRange[ptLast] do
+    while Pc<twScanLast do
       try
         Inc(Pc);
         Y:= twData[Pc];
@@ -17199,20 +16956,20 @@ if (not FFrozen) and wSource[ASource].twValid then
       Pc:= MinArr;
       end;
     i := 0;
-    Pc:= EnsureRange(Pc,Succ(twScanRange[ptFirst]),Pred(twScanRange[ptLast]));
-    while ((Pc-i)>twScanRange[ptFirst]) and ((Pc+i)<twScanRange[ptLast]) and (abs(twData[Pc-i])+abs(twData[Pc+i])>abs(twData[Pc])) do
+    Pc:= EnsureRange(Pc,Succ(twScanFirst),Pred(twScanLast));
+    while ((Pc-i)>twScanFirst) and ((Pc+i)<twScanLast) and (abs(twData[Pc-i])+abs(twData[Pc+i])>abs(twData[Pc])) do
       Inc(i);
     PeakWidth:= ifthen(Y>=PeakRatio,3,0.5)*abs(twPosCm[Pc+i]-twPosCm[Pc-i]);
     try
-      twDerivativeValid:= (DataPtr^[twScanRange[ptFirst]]/twMaxValue<twcDeriveMinMax) or (DataPtr^[twScanRange[ptLast]]/twMaxValue<twcDeriveMinMax);
+      twDerivativeValid:= (DataPtr^[twScanFirst]/twMaxValue<twcDeriveMinMax) or (DataPtr^[twScanLast ]/twMaxValue<twcDeriveMinMax);
      except
       twDerivativeValid:= False;
      end;
     if twDerivativeValid then                                                   //create histogram to find most populated band
       begin
-      Sampler:= THistogramSampler.Create(GlobalMin,GlobalMax,0,twDataRange[ptLast]);
+      Sampler:= THistogramSampler.Create(GlobalMin,GlobalMax,0,twDataLast);
       Q      := TQuadFit.Create;
-      RunSampler(twScanRange[ptFirst],twScanRange[ptLast]);
+      RunSampler(twScanFirst,twScanLast);
       if LogLevel>2 then
         begin
         DeadBandLow:= Sampler.BinRangeLow;
@@ -17240,11 +16997,11 @@ if (not FFrozen) and wSource[ASource].twValid then
       twValid        := True;
       twFastScan     := False;
       twIsDerivative := True;
-      P1             := twScanRange[ptFirst];
-      P2             := twScanRange[ptLast];
+      P1             := twScanFirst;
+      P2             := twScanLast;
       HighPassed     := False;
       LowPassed      := False;
-      if MaxArr<twScanRange[ptFirst]+twcDeriveLookAhead then
+      if MaxArr<twScanFirst+twcDeriveLookAhead then
         P1:= MaxArr
       else
         while (((twData[P1]>DeadBandLow)  and (not HighPassed) and (twData[P1]>twData[P1+twcDeriveLookAhead])) or
@@ -17257,7 +17014,7 @@ if (not FFrozen) and wSource[ASource].twValid then
           end;
       HighPassed     := False;
       LowPassed      := False;
-      if MinArr>twScanRange[ptLast]-twcDeriveLookAhead then
+      if MinArr>twScanLast-twcDeriveLookAhead then
         P2:= MinArr
       else
         while (((twData[P2]>DeadBandLow ) and (not HighPassed) and (twData[P2]>twData[P2-twcDeriveLookAhead])) or
@@ -17268,7 +17025,7 @@ if (not FFrozen) and wSource[ASource].twValid then
          else if twData[P2]>DeadBandHigh then HighPassed:= True;
          Dec(P2);
          end;
-      MinArr:= twScanRange[ptFirst];
+      MinArr:= twScanFirst;
       MaxArr:= MinArr;
       FindDeadBandMinMax(PeakAtMax);       //find max above dead band; set twMaxArr, twMinArr
       FindDeadBandMinMax(not PeakAtMax);   //find min below dead band
@@ -17297,9 +17054,9 @@ if (not FFrozen) and wSource[ASource].twValid then
            RunSampler(twMinArr-i,twMinArr+i);                                   //run sampler again for wedgeddata right side
         Limit[twcRight].Valid:= (Sampler.LargestBin>Sampler.NumBins div j);
         if not Limit[twcRight].Valid then
-          twMinArr:= EnsureRange(twMinArr,Min(twMaxArr+5,twDataRange[ptLast]),twDataRange[ptLast])
+          twMinArr:= EnsureRange(twMinArr,Min(twMaxArr+5,twDataLast),twDataLast)
         else if not Limit[twcLeft].Valid then
-          twMaxArr:= EnsureRange(twMaxArr,twDataRange[ptFirst],Max(twMinArr-5,twDataRange[ptFirst]));
+          twMaxArr:= EnsureRange(twMaxArr,twDataFirst,Max(twMinArr-5,twDataFirst));
         Level  := 0;              //=================================fit of peaks==============================
         RangeCm:= twcDefEdgeRangeCm*twSDD2SSDratio*twSSD_cm/100;
         with Limit[twcLeft] do if Valid then                                    //left side
@@ -17309,10 +17066,10 @@ if (not FFrozen) and wSource[ASource].twValid then
           k      := 2;
           while (Nearest<twMinArr) and (not Valid) and (k>=0) do                //try to fit peak, reduce points when needed
             begin
-            i             := Max(twScanRange[ptFirst],Nearest-k);
+            i             := Max(twScanFirst,Nearest-k);
             while twPosCm[Nearest]-twPosCm[i]>RangeCm do
               Inc(i);
-            j             := Min(Nearest+k,twScanRange[ptLast]);
+            j             := Min(Nearest+k,twScanLast);
             while twPosCm[j]-twPosCm[Nearest]>RangeCm do
               Dec(j);
             m             := Min(m,Succ(j-i));
@@ -17327,7 +17084,7 @@ if (not FFrozen) and wSource[ASource].twValid then
               for Pc:= i to j do                                                //test also that data are on penumbra
                Q.Add_XY(twPosCm[Pc],twData[Pc]);
               Y    := Q.TopX;
-              Valid:= InRange(Y,twPosCm[Max(twScanRange[ptFirst],Nearest-k)],twPosCm[Min(Nearest+k,twScanRange[ptLast])]);
+              Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-k)],twPosCm[Min(Nearest+k,twScanLast)]);
               if Valid then
                 CalcPos:= Y;                                                    //best possible calculation when enough points availabe
               end
@@ -17349,10 +17106,10 @@ if (not FFrozen) and wSource[ASource].twValid then
           m      := Sampler.CountBelow[Sampler.LargestBin];                     //data points below dead band
           while (Nearest>twMaxArr) and (not Valid) and (k>=0) do
             begin
-            i             := Max(twScanRange[ptFirst],Nearest-k);
+            i             := Max(twScanFirst,Nearest-k);
             while twPosCm[Nearest]-twPosCm[i]>RangeCm do
               Inc(i);
-            j             := Min(Nearest+k,twScanRange[ptLast]);
+            j             := Min(Nearest+k,twScanLast);
             while twPosCm[j]-twPosCm[Nearest]>RangeCm do
               Dec(j);
             m             := Min(m,Succ(j-i));
@@ -17368,7 +17125,7 @@ if (not FFrozen) and wSource[ASource].twValid then
                 Q.Add_XY(twPosCm[Pc],twData[Pc]);
               k    := Max(1,k div 2);
               Y    := Q.TopX;
-              Valid:= InRange(Y,twPosCm[Max(twScanRange[ptFirst],Nearest-k)],twPosCm[Min(Nearest+k,twScanRange[ptLast])]);
+              Valid:= InRange(Y,twPosCm[Max(twScanFirst,Nearest-k)],twPosCm[Min(Nearest+k,twScanLast)]);
               if Valid then
                 CalcPos:= Y;                                                    //best possible calculation when enough points availabe
               end
@@ -17396,7 +17153,7 @@ if (not FFrozen) and wSource[ASource].twValid then
         twCenterPosValid:= Limit[twcLeft].Valid and Limit[twcRight].Valid;
       if not twCenterPosValid then
         begin
-        twCenterPosCm    := EnsureRange(0,twDataPosCm[ptFirst],twDataPosCm[ptLast]);
+        twCenterPosCm    := EnsureRange(0,twFirstDataPosCm,twLastDataPosCm);
         twCenterPosDefUse:= dUseUndefined;
         end;
       end;
@@ -17445,7 +17202,7 @@ if Result then
     twRelatedSource  := ASource;
     Result           := twMirrored;
     Shift(0,AbsShift,ADestination);   {remove any shift}
-    for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+    for i:= twDataFirst to twDatalast do
       begin
       for mAxis:= Inplane to CrossPlane do
         twCoordinates[i].m[mAxis]:= -twCoordinates[i].m[mAxis];
@@ -17506,15 +17263,15 @@ var SumSource,SumDest: twcFloatType;
       InDest,InSource            : Boolean;
       i                          : Integer;
   begin
-  CurPos     := Min(wSource[aSource].twDataPosCm[ptFirst],wSource[ADestination].twDataPosCm[ptFirst]);
-  EndPos     := Max(wSource[aSource].twDataPosCm[ptLast ],wSource[ADestination].twDataPosCm[ptLast ]);
+  CurPos     := Min(wSource[aSource].twFirstDataPosCm,wSource[ADestination].twFirstDataPosCm);
+  EndPos     := Max(wSource[aSource].twLastDataPosCm ,wSource[ADestination].twLastDataPosCm );
   VerifiedPos:= CurPos-1;
   if (not Preparation) and (SumSource<>0) then c:= SumDest/SumSource
   else                                         c:= 1;
   while CurPos<EndPos do {first test scaling in overlap zone}
     begin
-    InSource:= InRange(CurPos,wSource[ASource     ].twDataPosCm[ptFirst],wSource[ASource     ].twDataPosCm[ptLast]);
-    InDest  := InRange(CurPos,wSource[ADestination].twDataPosCm[ptFirst],wSource[ADestination].twDataPosCm[ptLast]);
+    InSource:= InRange(CurPos,wSource[ASource     ].twFirstDataPosCm,wSource[ASource     ].twLastDataPosCm);
+    InDest  := InRange(CurPos,wSource[ADestination].twFirstDataPosCm,wSource[ADestination].twLastDataPosCm);
     if InDest and (CurPos>VerifiedPos) then
       begin
       i          := NearestPosition(CurPos,ADestination);
@@ -17635,22 +17392,19 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3298565/
   if InFieldAreaOnly AND (ScanType in twcHoriScans)
   set all invalid/out of range data points to -1 }
 {26/11/2018 autoscaling, prefilter before scaling}
-{28/03/2022 InFieldArea has become AnalysisScope:twcGammaScope=gGammaLimited, added nPass,nTotal,twGammaPassRate}
-{02/04/2022 added ReturnPassRate option}
-{12/04/2022 more efficient use of gammaanalysis}
 function TWellhoferData.GammaAnalysis(ASource        :twcDataSource=dsMeasured;
                                       AReference     :twcDataSource=dsReference;
                                       ADestination   :twcDataSource=dsCalculated;
-                                      ReturnPassRate :Boolean      =False;
-                                      ResultScope    :twcGammaScope=gGammaLimited;
+                                      InFieldAreaOnly:Boolean      =True;
                                       AutoScaling    :Boolean      =True;
                                       SourceScaling  :twcFloatType =1;
                                       PreFilter      :Boolean      =True;
                                       PostFilter     :Boolean      =True): twcFloatType;
 var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
     fSource,fReference                                      : twcDataSource;
-    i,Lpos,Rpos                                             : Integer;
+    i,Lpos,Rpos,a1,a2                                       : integer;
     Gamma,StartLimit,Limit,LastGamma,Distance,UniformScaling: twcFloatType;
+    t                                                       : TStatssampler;
     IsPDD                                                   : Boolean;
     Q                                                       : TQuadFit;
 
@@ -17702,7 +17456,7 @@ var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
           s:= x-twPosCm[j];                                                     //s is DTA for x and nearest point in reference
           if s<>0 then
             begin                                                               //interpolation
-            for k:= Max(twDataRange[ptFirst],Pred(j)) to Min(Succ(j),twDataRange[ptLast]) do
+            for k:= Max(twDataFirst,Pred(j)) to Min(Succ(j),twDataLast) do
               if (k=j) or ((twPosCm[k]-twPosCm[j])/s>1) then Add_XY(twPosCm[k],twData[k]);
             y:= FitLin(x);
             end;
@@ -17734,50 +17488,16 @@ var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
   Result:= LastGamma;
   end; {calcgamma}
 
-  procedure SetStats(AScope:twcGammaScope);
-  var t      : TStatssampler;
-      i,nPass: Integer;
-      Range  : twcRange;
-  begin
-  with wSource[ADestination] do
-    begin
-    t    := TStatsSampler.Create;
-    nPass:= 0;
-    if AScope=gGammaLimited then Range:= twAnalysisRange
-    else                         Range:= twScanRange;
-    for i:= Range[ptFirst] to Range[ptLast] do
-      begin
-      Gamma:= twData[i];
-      t.Add_X(Gamma);
-      if Gamma<=1 then
-        Inc(nPass);
-      end;
-    twConfidenceLimit[AScope]:= t.ConfidenceLimit;
-    twGammaPassRate[AScope]  := ifthen(nPass>0,100*nPass/t.Samples,0);
-    end;
-  FreeAndNil(t);
-  end; {setstats}
-
-  function GetResultValue: twcFloatType;
-  begin
-  with wSource[ADestination] do
-    begin
-    twAnalysisRange:= twcRange(wSource[ASource].twInFieldRange);
-    if twValid and twIsGamma then
-      Result:= ifthen(ReturnPassRate,twGammaPassRate[ResultScope],twConfidenceLimit[ResultScope])
-    else
-      Result:= 0;
-    end;
-  end; {getresultsvalue}
-
 {$push}{$warn 5091 off: Local variable "tmpDCurve" of a managed type does not seem to be initialized}
 begin
 Inc(FActiveCnt);
-IsPDD := ScanType in [snPDD,snFanline];
-if wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=0) then
+Gamma:= 0;
+IsPDD:= ScanType in [snPDD,snFanline];
+if wSource[ASource].twValid and wSource[AReference].twValid then
   begin
   if AlignReference then
     AlignCurves(AReference,ASource);
+  t             := TStatsSampler.Create;
   Q             := TQuadFit.Create;
   fSource       := Set_f(ASource);
   fReference    := Set_f(AReference);
@@ -17787,7 +17507,21 @@ if wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=
   CopyCurve(ASource,ADestination);
   with wSource[ASource] do
     begin
-    for i:= twScanRange[ptFirst] to twScanRange[ptLast] do
+    if InFieldAreaOnly and (ScanType in twcHoriScans) then
+      begin
+      a1:= twInFieldArr[twcLeft];
+      a2:= twInFieldArr[twcRight];
+      for i:= twDataFirst to a1         do
+        wSource[ADestination].twData[i]:= -1;                                   //clear data out of range
+      for i:= a2          to twDataLast do
+        wSource[ADestination].twData[i]:= -1;
+      end
+    else
+      begin
+      a1:= twScanFirst;
+      a2:= twScanLast;
+      end;
+    for i:= a1 to a2 do
       if (IsPDD       or (twData[i] >twcGammaCutoffPercent)) and
          ((not IsPDD) or (twPosCm[i]>twcGammaCutoffDepth)  ) and
          (GetQfittedValue(twPoscm[i],fReference)>0         ) then
@@ -17817,39 +17551,45 @@ if wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=
           Distance:= Distance+twcGammaDistCmStep;
           end;
         wSource[ADestination].twData[i]:= Gamma;
+        t.Add_X(Gamma);
         end
       else
         wSource[ADestination].twData[i]:= -1;
+    Gamma:= t.ConfidenceLimit;
     try
-      FreeAndNil(Q);
+      FreeAndNil(t);
      except
-      ExceptMessage('WH.GammaAnalysis:t,Q!');
+      ExceptMessage('WH.GammaAnalysis:t!');
      end;
     end; {with asource}
   with wSource[ADestination] do
     begin
-    while ((twDataRange[ptFirst]<twDataRange[ptLast ]) and (twData[twDataRange[ptFirst]]<0)) do
-      Inc(twDataRange[ptFirst]);
-    while ((twDataRange[ptLast] >twDataRange[ptFirst]) and (twData[twDataRange[ptLast ]]<0)) do
-      Dec(twDataRange[ptLast] );
-    twScanRange     := twDataRange;
-    twAnalysisRange := twcRange(wSource[ASource].twInFieldRange);
-    twDataHistoryStg:= twGammaCalcStg+'('+wSource[ASource].twDataHistoryStg+','+wSource[AReference].twDataHistoryStg+')';
-    twIsGamma       := True;
-    twIsRelative    := True;
-    twComposite     := True;
+    while ((twDataFirst<twDataLast ) and (twData[twDataFirst]<0)) do
+      Inc(twDataFirst);
+    while ((twDataLast >twDataFirst) and (twData[twDataLast ]<0)) do
+      Dec(twDataLast );
+    twScanFirst      := twDataFirst;
+    twScanLast       := twDataLast;
+    twDataHistoryStg := twGammaCalcStg+'('+wSource[ASource].twDataHistoryStg+','+wSource[AReference].twDataHistoryStg+')';
+    twIsGamma        := True;
+    twIsRelative     := True;
+    twComposite      := True;
+    twConfidenceLimit:= Gamma;
     end; {with adestination}
   RestoreData(fSource   ,tmpSCurve);
   RestoreData(fReference,tmpRCurve);
   if PostFilter then
     MedianFilter(0,ADestination,ADestination,False,True);
   wSource[ADestination].twRelatedSource:= ASource;
-  SetStats(gGammaComplete);
-  SetStats(gGammaLimited);
-  FastScan(ADestination,False);
-  end; {wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=0)}
-Result:= GetResultValue;
+  FastScan(ADestination);
+  end;
+  try
+    FreeAndNil(Q);
+   except
+    ExceptMessage('WH.!GammaAnalysis:Q');
+   end;
 Dec(FActiveCnt);
+Result:= Gamma;
 end; {~gammaanalysis}
 {$pop}
 
@@ -17868,13 +17608,13 @@ with wSource[ASource] do
     begin
     s:= NearestPosition(twAbsNormPosCm,ASource);
     v:= 1;
-    for i:= s downto twDataRange[ptFirst] do
+    for i:= s downto twDataFirst do
       begin
       if (twData[i]/twAbsNormValue)>twcSymCorrectionLevel then
         v:= 1-twLinSlope*(twPosCm[i]-twAbsNormPosCm)/twAbsNormValue;
       twData[i]:= twData[i]*v;
       end;
-    for i:= Succ(s) to twDataRange[ptLast] do
+    for i:= Succ(s) to twDataLast do
       begin
       if (twData[i]/twAbsNormValue)>twcSymCorrectionLevel then
         v:= 1-twLinSlope*(twPosCm[i]-twAbsNormPosCm)/twAbsNormValue;
@@ -17895,16 +17635,15 @@ with wSource[ASource] do
 end;  {~correctsymmetry}
 
 
-{11/04/2022 twAnalysisRange}
 function TWellhoferData.ResetValues(ASource:twcDataSource=dsMeasured): Boolean;
 begin
 with wSource[ASource] do
   begin
   if twValid then
     begin
-    twScanRange    := twDataRange;
-    twAnalysisRange:= twDataRange;
-    twFastScan     := False;
+    twScanFirst:= twDataFirst;
+    twScanLast := twDataLast;
+    twFastScan := False;
     end;
   Result:= twValid;
   end;
@@ -17956,7 +17695,7 @@ end; {~getleveldistance}
 
 
 //****BistroMath core function****
-//needs: twDataRange[ptFirst],twDataRange[ptLast],twMaxPosCm,twScanLength
+//needs: twDataFirst,twDataLast,twMaxPosCm,twScanLength
 {17/05/2015
   More stable and faster version by calculating the probable position just once and
   then reducing the search area very fast.
@@ -17969,10 +17708,10 @@ var i,m,n,s: Integer;
 begin
 with wSource[ASource] do
   begin
-  if (twPoints>2) and (ForceAlwaysIn or InRange(Position,twDataPosCm[ptFirst],twDataPosCm[ptLast])) then
+  if (twPoints>2) and (ForceAlwaysIn or InRange(Position,twFirstDataPosCm,twLastDataPosCm)) then
     begin
-    m:= twDataRange[ptFirst];
-    n:= twDataRange[ptLast ];
+    m:= twDataFirst;
+    n:= twDataLast;
     s:= 1;
     i:= EnsureRange(m+round((n-m)*(Position-twPosCm[m])/(twPosCm[n]-twPosCm[m])),m,n);
     while (n-m>1) and (s<>0) do                                                 //reduce search range by replacing m or n boundary with estimate
@@ -17997,7 +17736,7 @@ function TWellhoferData.NextPos(APos   :twcFloatType;
 var i: Integer;
 begin
 i:= NearestPosition(APos,ASource);
-if i<wSource[ASource].twDataRange[ptLast] then
+if i<wSource[ASource].twDataLast then
   Result:= wSource[ASource].twPosCm[Succ(i)]
 else
   Result:= APos;
@@ -18014,23 +17753,23 @@ var X,c: twcFloatType;
 begin
 with wSource[ASource] do
   begin
-  Result:= twValid and InRange(CalcPosCm,twDataPosCm[ptFirst],twDataPosCm[ptLast]);
+  Result:= twValid and InRange(CalcPosCm,twFirstDataPosCm,twLastDataPosCm);
   if Result then
     begin
     c:= CalcWidth_cm/2;
     X:= CalcPosCm-c;
     try
-      Lpos:= Max(0,Trunc((X-twPosCm[twDataRange[ptFirst]])/twStepSizeCm))+twDataRange[ptFirst];    //preliminary estimation
+      Lpos:= Max(0,Trunc((X-twPosCm[twDataFirst])/twStepSizeCm))+twDataFirst;    //preliminary estimation
      except
-      Lpos:= twDataRange[ptFirst];
+      Lpos:= twDataFirst;
      end;
-    while (Lpos>twDataRange[ptFirst]) and (twPosCm[Lpos]>=X) and (X-twPosCm[Lpos-1]<c) do //failsave for variable stepsize
+    while (Lpos>twDataFirst) and (twPosCm[Lpos]>=X) and (X-twPosCm[Lpos-1]<c) do //failsave for variable stepsize
       Dec(Lpos);
-    while (Lpos<twDataRange[ptLast]) and (twPosCm[Lpos+1]<X) do                           //failsave for variable stepsize
+    while (Lpos<twDataLast) and (twPosCm[Lpos+1]<X) do                           //failsave for variable stepsize
       Inc(Lpos);
     X   := X+CalcWidth_cm;
-    Rpos:= Min(Succ(Lpos),twDataRange[ptLast]);
-    while (Rpos<twDataRange[ptLast]) and (twPosCm[Rpos]<=X) and (twPosCm[Rpos+1]-X<c) do
+    Rpos:= Min(Succ(Lpos),twDataLast);
+    while (Rpos<twDataLast) and (twPosCm[Rpos]<=X) and (twPosCm[Rpos+1]-X<c) do
       Inc(Rpos);
     end;
   end;
@@ -18048,7 +17787,7 @@ var X,c: twcFloatType;
 begin
 with wSource[ASource] do
   begin
-  Result:= twValid and InRange(NearestPos,twScanRange[ptFirst],twScanRange[ptLast]);
+  Result:= twValid and InRange(NearestPos,twScanFirst,twScanLast);
   if Result then
     begin
     c   := CalcWidth_cm/2;
@@ -18056,9 +17795,9 @@ with wSource[ASource] do
     i   := ifthen(ASide=twcLeft,1,-1);
     Lpos:= NearestPos;
     Rpos:= NearestPos;
-    while (Lpos>twScanRange[ptFirst]) and ((X-twPosCm[Pred(Lpos)]<c) or (i*(ADataLevel-twData[Lpos])<=0)) do
+    while (Lpos>twScanFirst) and ((X-twPosCm[Pred(Lpos)]<c) or (i*(ADataLevel-twData[Lpos])<=0)) do
       Dec(Lpos);
-    while (Rpos<twScanRange[ptLast ]) and ((twPosCm[Succ(Rpos)]-X<c) or (i*(ADataLevel-twData[Rpos])>0)) do
+    while (Rpos<twScanLast ) and ((twPosCm[Succ(Rpos)]-X<c) or (i*(ADataLevel-twData[Rpos])>0)) do
       Inc(Rpos);
     end;
   end;
@@ -18082,11 +17821,11 @@ with wSource[ASource] do
   if InverseCalc then begin  Xarr:= twData;   Yarr:= twPosCm;  end
   else                begin  Yarr:= twData;   Xarr:= twPosCm;  end;
   try
-    if not InRange(LPos,twDataRange[ptFirst],twDataRange[ptLast]) then
+    if not InRange(LPos,twDataFirst,twDataLast) then
       Result:= 0
     else
       begin
-      Rpos      := EnsureRange(Rpos,LPos,twDataRange[ptLast]);
+      Rpos      := EnsureRange(Rpos,LPos,twDataLast);
       CentralPos:= (Lpos+Rpos) div 2;
       Q:= TQuadFit.Create(Rpos-Lpos+2);
       try
@@ -18097,12 +17836,12 @@ with wSource[ASource] do
           begin                                                                 //interpolation between points
           if Lpos=Rpos then
             begin
-            if Lpos=twScanRange[ptFirst] then
+            if Lpos=twScanFirst then
               begin
               Lpos:= Succ(Lpos);
               Rpos:= Lpos;
               end
-            else if Rpos=twScanRange[ptLast]  then
+            else if Rpos=twScanLast  then
               begin
               Lpos:= Pred(Rpos);
               Rpos:= Lpos;
@@ -18150,7 +17889,7 @@ var i,j,k: Integer;
 begin
 i:= NearestPosition(Position,ASource,False);
 with wSource[ASource] do
-  if i>=twDataRange[ptFirst] then
+  if i>=twDataFirst then
     begin
     d:= Position-twPosCm[i];
     if Abs(d)<wSamePositionRadiusCm then
@@ -18159,7 +17898,7 @@ with wSource[ASource] do
       begin
       k:= ifthen(d>0,1,-1);
       j:= i+k;
-      if not InRange(j,twDataRange[ptFirst],twDataRange[ptLast]) then
+      if not InRange(j,twdataFirst,twDatalast) then
         j:= i-k;
       if twPosCm[j]=twPosCm[i] then
         Result:= (twData[i]+twData[j])/2
@@ -18252,13 +17991,13 @@ with wSource[ASource] do
       begin
       k:= Max(2,k);
       Q:= TQuadFit.Create(Succ(2*k));
-      i:= Max(twScanRange[ptFirst],FitCenterArr-k);                                      //find enough points around maximum
-      j:= Min(FitCenterArr+k ,twDataRange[ptLast]);
-      while (j-i<k) and (i>twDataRange[ptFirst]) do
+      i:= Max(twScanFirst,FitCenterArr-k);                                      //find enough points around maximum
+      j:= Min(FitCenterArr+k ,twDataLast);
+      while (j-i<k) and (i>twDataFirst) do
         Dec(i);
       for k:= i to j do
         Q.Add_XY(twPosCm[k],twData[k]);
-      if InRange(Q.TopX,ifthen(ScanType in twcVertScans,Max(0.001,twDataPosCm[ptFirst]),twDataPosCm[ptFirst]),twDataPosCm[ptLast]) and
+      if InRange(Q.TopX,ifthen(ScanType in twcVertScans,Max(0.001,twFirstDataPosCm),twFirstDataPosCm),twLastDataPosCm) and
          (Q.TopY>twcMinNormVal) then                                            //calculate maximum
         begin
         twTopModel:= Q.Report;
@@ -18357,8 +18096,8 @@ with wSource[ASource] do
     begin
     if b then                                                                   //still search needed
       begin
-      tmpL:= twScanRange[ptFirst];
-      tmpR:= twScanRange[ptLast ];
+      tmpL:= twScanFirst;
+      tmpR:= twScanLast;
       if Symmetric then
         begin
         CurrentLevel:= 0.9*twData[tmpR];
@@ -18539,8 +18278,7 @@ if Result then
   uSource                          := ASource;                                  //initially uSource is equal to ASource
   if wApplyUserLevel then wSource[ASource].twAppliedEdgeLevel:= dUser           //User dose level trigger overrides default for FieldClass method
   else                    wSource[ASource].twAppliedEdgeLevel:= wEdgeMethod[fcPrimary,FieldClass];
-  if (wEdgeDetect or (wFieldTypeDetection[fcFFF] and (wSource[ASource].twSetFieldType<>fcFFF))
-                  or (wSource[ASource].twAppliedEdgeLevel=dDerivative) or SigmoidNeeded) and
+  if (wEdgeDetect or wFieldTypeDetection[fcFFF] or (wSource[ASource].twAppliedEdgeLevel=dDerivative) or SigmoidNeeded) and
      (not wSource[ASource].twIsRelative) and (ASource<>dsBuffer) then
     begin                                                                       //set alternative source to unfiltered original
     if (ASource in twcFilteredCopies) then                                      //----derivative into dsBuffer----
@@ -18617,7 +18355,7 @@ end; {~findedge}
 
 (* FastScan  ****BistroMath core function****
 FastScan locates the position of the profile, nu asumptions are made other than
-twScanRange[ptFirst] and twScanRange[ptLast] which can be used for a local peak search.
+twScanFirst and twScanlast which can be used for a local peak search.
 Profiles not crossing the origin at all are accepted, but unsupported in most dosimetry protocols.
 As a pdd can be viewed as a "profile shape" it can follow almost all rules set
 for real profiles.
@@ -18640,7 +18378,7 @@ The major output results are mostly preliminary and include:
 {23/08/2015 if twIsDiagonal set then no further detection attempts}
 {01/09/2015 twOriginPosValid added}
 {17/09/2015 twValid:= (twMaxValue>twMinval) or twIsRelative}
-{17/12/2015 repair for local peak analysis: loop from twScanRange[ptFirst] to twScanRange[ptLast]}
+{17/12/2015 repair for local peak analysis: loop from twSCANfirst to twSCANlast}
 {15/11/2016 twCenterDefUse (administration purposes only)}
 {16/06/2017 guarantee twMaxArr always to be a positive position for depth doses}
 {28/01/2018 twAbsNormDefUse}
@@ -18648,7 +18386,7 @@ The major output results are mostly preliminary and include:
 {03/04/2018 for diagonal detection field size should larger than 2 cm}
 {29/09/2018 Remaining unused code found which created out of array boundary problems.
             For relative curves no new normalisation point is set.}
-{15/05/2020 set twScanPosCm[ptFirst],twScanPosCm[ptLast]}
+{15/05/2020 set twFirstScanPosCm,twLastScanPosCm}
 {23/05/2020 reset twSigmoidDone}
 {20/07/2020 twcFieldClass}
 {21/07/2020 fcWedge}
@@ -18663,9 +18401,7 @@ The major output results are mostly preliminary and include:
 {14/06/2021 logging of twAbsNormPos}
 {13/09/2021 twIsDiagonal:= wDiagonalDetection[twSetFieldType]}
 {13/09/2021 allowed vmax=vmin for relative profile: twValid := (vmax>0) and ((vmax>vmin) or ((vmax=vmin) and twIsRelative))}
-{11/04/2022 twAnalysisRange}
-procedure TWellhoferData.FastScan(ASource      :twcDataSource=dsMeasured;
-                                  ClearAnalysis:Boolean      =True       );
+procedure TWellhoferData.FastScan(ASource:twcDataSource=dsMeasured);
 var i,j                : Integer;
     lMin,lTmp,vmin,vmax: twcFloatType;
     p                  : twcDoseLevel;
@@ -18676,19 +18412,19 @@ Inc(FActiveCnt);
 with wSource[ASource] do
   FailInfo:= ifthen(twValid,ifthen(twFastScan,'done','init'),'invalid')+#32+wSource[ASource].twDataHistoryStg;
 {$ENDIF}
-if ClearAnalysis then
-  ResetAnalysis(ASource);
 with wSource[ASource] do
   if twValid and (not (twFastScan or FFrozen)) then
     try
-      twFastScan          := True;
-      twAnalysed          := False;
-      twDataPosCm[ptFirst]:= twPosCm[twDataRange[ptFirst]];
-      twDataPosCm[ptLast ]:= twPosCm[twDataRange[ptLast] ];
-      twScanLength        := twDataPosCm[ptLast]-twDataPosCm[ptFirst];
-      twValid             := Abs(twScanLength)>twcDefMinScanLength;
+      twFastScan       := True;
+      twAnalysed       := False;
+      twSigmoidDone    := False;
+      twDerivativeValid:= False;
+      twFirstDataPosCm := twPosCm[twDataFirst];
+      twLastDataPosCm  := twPosCm[twDataLast ];
+      twScanLength     := twLastDataPosCm-twFirstDataPosCm;
+      twValid          := Abs(twScanLength)>twcDefMinScanLength;
       {$IFDEF COMPILED_DEBUG}
-      FailInfo            := ifthen(twValid,'p1',Format('ScanLength=%0.1f',[twScanLength]));
+      FailInfo         := ifthen(twValid,'p1',Format('ScanLength=%0.1f',[twScanLength]));
       {$ENDIF}
       if twValid then
         begin
@@ -18699,9 +18435,9 @@ with wSource[ASource] do
           Limit[twcRight].Valid:= False;
           end;
         lTmp          := Sign(twScanLength);
-        i             := twDataRange[ptFirst];
+        i             := twDataFirst;
         if not FZeroStepsOk then
-          while twValid and (i<twDataRange[ptLast]) do
+          while twValid and (i<twDataLast) do
             begin
             Inc(i);
             twValid := (twPosCm[i]-twPosCm[i-1])*lTmp>0;
@@ -18712,17 +18448,17 @@ with wSource[ASource] do
         if twValid then
           try
             if twLocalPeak then   //-------localpeak only-----------------
-              begin                                                             //twAbsNormPos must be available, find twScanRange[ptFirst] en twScanRange[ptFirst]
+              begin                                                             //twAbsNormPos must be available, find twScanFirst en twScanFirst
               i   := NearestPosition(twAbsNormPosCm,ASource);
               lTmp:= twcSearchNoiseFactor*twData[i];
               lMin:= lTmp;
               j   := i;
-              while (j>twDataRange[ptFirst]) and (twData[j]<lTmp) do
+              while (j>twDataFirst) and (twData[j]<lTmp) do
                 begin
                 Dec(j);
                 if twData[j]<lMin then
                   begin
-                  twScanRange[ptFirst]:= j;
+                  twScanFirst:= j;
                   lMin       := twData[j];
                   lTmp       := twcSearchNoiseFactor*lMin;
                   end
@@ -18730,31 +18466,31 @@ with wSource[ASource] do
               lTmp:= twcSearchNoiseFactor*twData[i];
               lMin:= lTmp;
               j   := i;
-              while (j<twDataRange[ptLast]) and (twData[j]<lTmp) do
+              while (j<twDataLast) and (twData[j]<lTmp) do
                 begin
                 Inc(j);
                 if twData[j]<lMin then
                   begin
-                  twScanRange[ptLast]:= j;
-                  lMin               := twData[j];
-                  lTmp               := twcSearchNoiseFactor*lMin;
+                  twScanLast:= j;
+                  lMin      := twData[j];
+                  lTmp      := twcSearchNoiseFactor*lMin;
                   end
                 end; {while}
               end;                //-------localpeak only-----------------
             if ScanType in twcHoriScans then
               begin
-              j   := twScanRange[ptFirst];
-              vmin:= twData[twScanRange[ptLast]          ];
-              vmax:= twData[(j+twScanRange[ptLast]) div 2];
+              j   := twScanFirst;
+              vmin:= twData[twScanLast          ];
+              vmax:= twData[(j+twScanLast) div 2];
               end
             else
               begin
-              j   := Max(twScanRange[ptFirst],NearestPosition(0,ASource));
-              vmin:= twData[twScanRange[ptLast]];
-              vmax:= twData[j                  ];
+              j   := Max(twScanFirst,NearestPosition(0,ASource));
+              vmin:= twData[twScanLast];
+              vmax:= twData[j         ];
               end;
             twMinArr:= j;
-            for i:= twScanRange[ptFirst] to twScanRange[ptLast] do
+            for i:= twScanFirst to twScanLast do
               begin
               if (twData[i]>vmax) and (i>=j) then
                 begin
@@ -18776,9 +18512,8 @@ with wSource[ASource] do
               {$IFDEF COMPILED_DEBUG}
               FailInfo         := 'p3';
               {$ENDIF}
-              twScanPosCm[ptFirst]:= twPosCm[twScanRange[ptFirst]];
-              twScanPosCm[ptLast ]:= twPosCm[twScanRange[ptLast ]];
-              twAnalysisRange     := twScanRange;
+              twFirstScanPosCm := twPosCm[twScanFirst];
+              twLastScanPosCm  := twPosCm[twScanLast ];
               if twIsRelative and (twAbsNormDefUse<>dUseUndefined) then
                 begin
                 twAbsNormValue:= GetQFittedValue(twAbsNormPosCm,ASource,vmax);
@@ -18806,7 +18541,7 @@ with wSource[ASource] do
               try
                 twValid         := (twAbsNormValue>0) and InRange(GetQFittedValue(twAbsNormPosCm,ASource)/twAbsNormValue,0.1,10);
                 twOriginPosValid:= (ScanType in twcHoriScans)                   and
-                                   InRange(0,twScanPosCm[ptFirst],twScanPosCm[ptLast])  and
+                                   InRange(0,twFirstScanPosCm,twLastScanPosCm)  and
                                    (GetQFittedValue(0,ASource)>twcOriginMinNormFraction*twMaxValue);
                except
                 twValid         := False;
@@ -18861,7 +18596,7 @@ with wSource[ASource] do
                       twIsDiagonal:= wDiagonalDetection[twSetFieldType];
                     end; {not relative}
                   end; {twhoriscans}
-                if (not Inrange(twCenterPosCm,twScanPosCm[ptFirst],twScanPosCm[ptLast])) or
+                if (not Inrange(twCenterPosCm,twFirstScanPosCm,twLastScanPosCm)) or
                    (ScanType in twcVertScans)  then
                   begin
                   twCenterArr      := twMaxArr;
@@ -18869,7 +18604,7 @@ with wSource[ASource] do
                   twCenterPosDefUse:= dUseMax;
                   end;
                 if (wNormalisation[twSetFieldType] in [NormOnCenter,NormOnInFieldArea]) or
-                   (not InRange(0,twScanPosCm[ptFirst],twScanPosCm[ptLast]))            or
+                   (not InRange(0,twFirstScanPosCm,twLastScanPosCm))                    or
                    (GetQfittedValue(0,ASource,0)*10<twMaxValue)  then
                   begin
                   twAbsNormPosCm := twCenterPosCm;
@@ -18889,7 +18624,7 @@ with wSource[ASource] do
               if  not (twIsRelative or (CheckAlternativeSource(twAlignedTo)=CheckAlternativeSource(twSelf))) then
                 begin
                 lTmp:= wSource[twAlignedTo].twAbsNormPosCm;
-                if InRange(lTmp,twDataPosCm[ptFirst],twDataPosCm[ptLast]) then
+                if InRange(lTmp,twFirstDataPosCm,twLastDataPosCm) then
                   begin
                   twAbsNormPosCm := lTmp;
                   twAbsNormDefUse:= wSource[twAlignedTo].twAbsNormDefUse;
@@ -18977,7 +18712,7 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {28/01/2018 twAbsNormDefUse}
 {28/10/2019 Autocenter only on dsMeasured}
 {29/10/2019 Autocenter=AC_on forces analyse to start}
-{15/05/2020 use twScanPosCm[ptFirst],twScanPosCm[ptLast]}
+{15/05/2020 use twFirstScanPosCm,twLastScanPosCm}
 {01/07/2020 code for horizontal and vertical scans in separate local functions}
 {11/07/2020 FindEdge now handles edge detection and related tasks}
 {20/07/2020 twcFieldClass}
@@ -18998,8 +18733,6 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {13/09/2021 DoLinFit:= [twSetFieldType=fcStandard] -> (twSetFieldType<>fcSmall)}
 {13/09/2021 moved final twIsDiagonal check to after FFF detection}
 {18/02/2022 In VerticalScans is assumed that the norm position is >0. This is the case for an open water interface. At angle 90/270 this might not be valid.}
-{29/03/2022 extended use of GetModDepth}
-{09/04/2022 handle exception ltmp1+ltmp2=0 in horizontalscans}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -19011,7 +18744,7 @@ var s: twcDataSource;
       begin
       if twAbsNormDefUse<>dUseUndefined then
         begin
-        if InRange(0,twScanPosCm[ptFirst],twScanPosCm[ptLast]) and
+        if InRange(0,twFirstScanPosCm,twLastScanPosCm) and
            ((twOriginPosValid and (wNormalisation[AFieldClass]=NormOnOrigin)) or (AFieldClass=fcWedge)) then
           begin
           twAbsNormPosCm := 0;
@@ -19048,16 +18781,16 @@ var s: twcDataSource;
         var BorderAvg: twcFloatType;
         begin
         with wSource[ASource] do
-          if twCenterPosValid and (not twIsRelative) then
+          if twCenterPosValid then
             begin
             BorderAvg:= (GetPenumbraValue(ASource,twAppliedEdgeLevel,twcLeft)+GetPenumbraValue(ASource,twAppliedEdgeLevel,twcRight))/2;
             if Abs(twCenterPosCm-BorderAvg)<1 then
               BorderAvg:= twCenterPosCm;                                        //IFA should be within borders at all times
-            twInFieldPosCm[twcLeft ]:= BorderAvg-IFA/2;
-            twInfieldRange[twcLeft ]:= Clip(NearestPosition(twInFieldPosCm[twcLeft],ASource,False),twScanRange[ptFirst],Pred(twCenterArr));
+            twInFieldPosCm[twcLeft] := BorderAvg-IFA/2;
+            twInFieldArr[twcLeft]   := Clip(NearestPosition(twInFieldPosCm[twcLeft],ASource,False),twScanFirst,Pred(twCenterArr));
             twInFieldPosCm[twcRight]:= BorderAvg+IFA/2;
-            twInfieldRange[twcRight]:= Clip(NearestPosition(twInFieldPosCm[twcRight],ASource,False),Succ(twCenterArr),twScanRange[ptLast]);
-            twInFieldAreaOk         := twInFieldAreaOk and (twInfieldRange[twcRight]-twInfieldRange[twcLeft]>2);
+            twInFieldArr[twcRight]  := Clip(NearestPosition(twInFieldPosCm[twcRight],ASource,False),Succ(twCenterArr),twScanLast);
+            twInFieldAreaOk         := twInFieldAreaOk and (twInFieldArr[twcRight]-twInFieldArr[twcLeft]>2);
             end;
         end; {set_ifa}
 
@@ -19095,7 +18828,7 @@ var s: twcDataSource;
         twAvgNormValue  := GetQfittedValue(twAbsNormPosCm,ASource);
         CurrentCenterDef:= twCenterPosDefUse;
         if twCenterPosValid or AcceptMissingPenumbra then
-          begin                                                                 //derive twInfieldRange[Left,Rigtht] as 80% of fieldwidth
+          begin                                                                 //derive twInFieldArr[Left,Rigtht] as 80% of fieldwidth
           LinFit:= TLinFit.Create;                                              //this object is reused several times
           if not twIsRelative then
             begin  {parsedata: twPosScaling:= ifthen(twScaleProfile,twSDD2SSDratio,1)}
@@ -19121,7 +18854,7 @@ var s: twcDataSource;
                 lTmp1:= GetLevelDistance(d50,dDerivative,twcLeft ,ASource);
                 lTmp2:= GetLevelDistance(d50,dDerivative,twcRight,ASource);
                 if (lSize>=wFFFMinFieldSizeCm)                                                                                      and
-                   (100-(50*(twData[twInfieldRange[twcLeft]]+twData[twInfieldRange[twcRight]])/twData[twCenterArr])>wFFFMinDoseDifPerc) and
+                   (100-(50*(twData[twInFieldArr[twcLeft]]+twData[twInFieldArr[twcRight]])/twData[twCenterArr])>wFFFMinDoseDifPerc) and
                    ((lTmp1=0) or (lTmp1>wFFFMinEdgeDifCm) or (lTmp2=0) or (lTmp2>wFFFMinEdgeDifCm)) then
                     begin
                     if AppliedFieldType=fcStandard then                         //when AppliedFieldType=fcMRlinac then keep it that way
@@ -19152,13 +18885,13 @@ var s: twcDataSource;
             if twFFFdetected then           //------------------start FFF specific works-----------------------------------
               begin
               FindEdge(ASource);                                                //FindEdge must be repeated with settings for FFF
-              for side:= twcLeft to twcRight do {if (borders are symmetrical around origin) && (average twInfieldRange < 90%):  evaluate FFF slopes}
+              for side:= twcLeft to twcRight do {if (borders are symmetrical around origin) && (average twInFieldArr < 90%):  evaluate FFF slopes}
                 with twFFFslope[side] do
                   begin
                   LinFit.Initialize;
                   k:= ifthen(side=twcLeft,-1,1);
                   i:= NearestPosition(twMaxPosCm+wTopModelRadiusCm[twSetFieldType]*k,ASource);
-                  j:= NearestPosition(twMaxPosCm+Max(abs(twPosCm[twInfieldRange[side]]-twMaxPosCm)+twcFFFInFieldExtCm,wTopModelRadiusCm[twSetFieldType]+1)*k,ASource);
+                  j:= NearestPosition(twMaxPosCm+Max(abs(twPosCm[twInFieldArr[side]]-twMaxPosCm)+twcFFFInFieldExtCm,wTopModelRadiusCm[twSetFieldType]+1)*k,ASource);
                   while Abs(i-j)<2 do
                     Inc(j,k);
                   twFFFfirst:= Min(i,j);
@@ -19215,7 +18948,7 @@ var s: twcDataSource;
               ProfileNormalisation(fcFFF);
               end; {twfffdetected}              //------------------------------ end FFF specific works----------------------------
             if twInFieldAreaOk and (LogLevel>2) then
-              StatusMessage(Format('->In-Field area[%s]: %0.2f cm',[twcDataSourceNames[ASource],abs(twPosCm[twInfieldRange[twcRight]]-twPosCm[twInfieldRange[twcLeft]])]));
+              StatusMessage(Format('->In-Field area[%s]: %0.2f cm',[twcDataSourceNames[ASource],abs(twPosCm[twInFieldArr[twcRight]]-twPosCm[twInFieldArr[twcLeft]])]));
             end; {not isrelative}
           lMin:= twMaxValue;
           lMax:= 0;
@@ -19223,7 +18956,7 @@ var s: twcDataSource;
             DoLinfit:= (twSetFieldType<>fcSmall);
             if DoLinfit then
               LinFit.Initialize;
-            for i:= twInfieldRange[twcLeft] to twInfieldRange[twcRight] do          //IFA analysis based on array points, no interpolations
+            for i:= twInFieldArr[twcLeft] to twInFieldArr[twcRight] do          //IFA analysis based on array points, no interpolations
               begin
               if DoLinfit then
                 LinFit.Add_XY(twPosCm[i],twData[i]);
@@ -19255,7 +18988,7 @@ var s: twcDataSource;
            end;
           twSymmetry:= 1;
           try {--------------- calculation of symmetry ----needs twcenterposcm => borders + fff top---}
-            for i:= twCenterArr to Min(2*twCenterArr-twInfieldRange[twcLeft],twInfieldRange[twcRight]) do //symmetry: calculate max of ratio D[c-x]/D[c+x]
+            for i:= twCenterArr to Min(2*twCenterArr-twInFieldArr[twcLeft],twInFieldArr[twcRight]) do //symmetry: calculate max of ratio D[c-x]/D[c+x]
               begin
               lMin:= 2*twCenterPosCm-twPosCm[i];                                                      //lmin=position of opposite point
               try
@@ -19276,10 +19009,7 @@ var s: twcDataSource;
           lTmp1:= Integrate(twCenterPosCm-lMin,twCenterPosCm,ASource,True);                           //symmetrical range around twCenterPos
           lTmp2:= Integrate(twCenterPosCm,twCenterPosCm+lMin,ASource,True);
           try
-            if lTmp1+lTmp2=0 then
-              twSymAreaRatio:= 0
-            else
-              twSymAreaRatio:= 2*(lTmp2-lTmp1)/(lTmp1+lTmp2);
+            twSymAreaRatio:= 2*(lTmp2-lTmp1)/(lTmp1+lTmp2);
            except
             twSymAreaRatio:= 0;
            end;
@@ -19338,9 +19068,9 @@ var s: twcDataSource;
       with twBeamInfo do
         begin
         Stg             := FModNormList.ModalityFormat(twBModality,twBEnergy);
-        twRelNormPosCm  := FModNormList.GetModDepth(Stg,twSetFieldType,Linac,False,ifthen(twIsRelative,wSource[dsMeasured].twMaxPosCm,0));
-        twRelNormValue  := FModNormList.GetModValue(Stg,twSetFieldType,Linac,False);
-        twAbsNormPosCm  := FModNormList.GetModDepth(Stg,twSetFieldType,Linac,not twIsRelative,ifthen(twIsRelative,-1,wSource[dsMeasured].twMaxPosCm));
+        twRelNormPosCm  := FModNormList.GetModDepth(Stg,False,ifthen(twIsRelative,wSource[dsMeasured].twMaxPosCm,0));
+        twRelNormValue  := FModNormList.GetModValue(Stg,False);
+        twAbsNormPosCm  := FModNormList.GetModDepth(Stg,not twIsRelative,ifthen(twIsRelative,-1,wSource[dsMeasured].twMaxPosCm));
         lTmp1           := GetQfittedValue(twAbsNormPosCm,ASource,1);
         twAbsNormConfig := (lTmp1>0) and (not twIsRelative) and
                            (twMaxValue/lTmp1-1<twcYtopQfitRelDif);
@@ -19356,7 +19086,7 @@ var s: twcDataSource;
           end;
         if twAbsNormPosCm>=0 then
           begin
-          lTmp1:= FModNormList.GetModValue(Stg,twSetFieldType,Linac,not twIsRelative);
+          lTmp1:= FModNormList.GetModValue(Stg,not twIsRelative);
           try
             if lTmp1<=0 then twRefNormFactor:= GetQfittedValue(twAbsNormPosCm,ASource)/twMaxValue;
            finally
@@ -19368,11 +19098,11 @@ var s: twcDataSource;
         end;
       if twIsRelative and (ASource<>dsMeasured) then
         begin
-        twAbsNormPosCm:= EnsureRange(wSource[dsMeasured].twAbsNormPosCm,twDataPosCm[ptFirst],twDataPosCm[ptLast]);
-        twRelNormPosCm:= EnsureRange(wSource[dsMeasured].twRelNormPosCm,twDataPosCm[ptFirst],twDataPosCm[ptLast]);
+        twAbsNormPosCm:= EnsureRange(wSource[dsMeasured].twAbsNormPosCm,twFirstDataPosCm,twLastDataPosCm);
+        twRelNormPosCm:= EnsureRange(wSource[dsMeasured].twRelNormPosCm,twFirstDataPosCm,twLastDataPosCm);
         end
       else
-        if (twAbsNormPosCm>=0) and InRange(twAbsNormPosCm,twDataPosCm[ptFirst],twDataPosCm[ptLast]) then
+        if (twAbsNormPosCm>=0) and InRange(twAbsNormPosCm,twFirstDataPosCm,twLastDataPosCm) then
           begin
           twAbsNormValue:= Max(twData[twMaxArr]/10,GetQfittedValue(twAbsNormPosCm,ASource))*twRefNormFactor;
           if (Abs(twMaxValue/twAbsNormValue-1)>=twcYtopQfitRelDif) and
@@ -19387,7 +19117,7 @@ var s: twcDataSource;
           twAbsNormValue := twMaxValue*twRefNormFactor;
           twAbsNormDefUse:= dUseMax;
           end;
-      if not InRange(twRelNormPosCm,twDataPosCm[ptFirst],twDataPosCm[ptLast]) then      //18/02/2022 condition (twRelNormPosCm>0) removed
+      if not InRange(twRelNormPosCm,twFirstDataPosCm,twLastDataPosCm) then      //18/02/2022 condition (twRelNormPosCm>0) removed
         begin
         twRelNormPosCm:= twPosCm[twMaxArr];
         twRelNormValue:= 100;
@@ -19609,7 +19339,7 @@ if (ASource in DumpDataFilter) or (OriginSource in DumpDataFilter) then
     Stg:= '';
     if assigned(twPosCm) then
       begin
-      for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+      for i:= twDataFirst to twDataLast do
         Stg:= Format('%s, %0.9f',[Stg,twPosCm[i]]);
       end
     else
@@ -19618,7 +19348,7 @@ if (ASource in DumpDataFilter) or (OriginSource in DumpDataFilter) then
     Stg:= '';
     if assigned(twPosCm) then
       begin
-      for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
+      for i:= twDataFirst to twDataLast do
         Stg:= Format('%s, %0.9f',[Stg,twData[i]]);
       end
     else
@@ -19733,7 +19463,7 @@ var Gamma,StartLimit,Limit,Distance: twcFloatType;
             s:= x-twPosCm[j]; {s is distance between x and nearest point in reference}
             if s<>0 then
               begin {interpolatie tussen twee punten}
-              for k:= Max(twDataRange[ptFirst],Pred(j)) to Min(Succ(j),twDataRange[ptLast]) do
+              for k:= Max(twDataFirst,Pred(j)) to Min(Succ(j),twDataLast) do
                 if (k=j) or ((twPosCm[k]-twPosCm[j])/s>1) then
                   Add_XY(twPosCm[k],twData[k]);
               y:= FitLin(x);
