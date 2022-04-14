@@ -1,7 +1,7 @@
 object AnalyseForm: TAnalyseForm
-  Left = 675
+  Left = 232
   Height = 565
-  Top = 208
+  Top = 83
   Width = 885
   AllowDropFiles = True
   AlphaBlendValue = 0
@@ -1805,7 +1805,7 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Hint = 'show warnings from analysis process'
-          Top = 97
+          Top = 127
           Width = 177
           HelpContext = 129
           Caption = 'Show warnings         Log level:'
@@ -1827,7 +1827,7 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Hint = 'Use matching as primary strategy'
-          Top = 179
+          Top = 209
           Width = 243
           HelpContext = 129
           Caption = 'Use always matching for profile alignment'
@@ -2226,7 +2226,7 @@ object AnalyseForm: TAnalyseForm
         object BadPenumbraLabel: TStaticText
           Left = 18
           Height = 19
-          Top = 269
+          Top = 299
           Width = 125
           HelpContext = 129
           Align = alCustom
@@ -2238,7 +2238,7 @@ object AnalyseForm: TAnalyseForm
         object OriginMinLevelLabel: TStaticText
           Left = 16
           Height = 19
-          Top = 299
+          Top = 329
           Width = 125
           HelpContext = 129
           Align = alCustom
@@ -2249,8 +2249,8 @@ object AnalyseForm: TAnalyseForm
         end
         object PipsPixelSizeLabel: TStaticText
           Left = 18
-          Height = 19
-          Top = 329
+          Height = 22
+          Top = 356
           Width = 125
           HelpContext = 129
           Align = alCustom
@@ -2262,7 +2262,7 @@ object AnalyseForm: TAnalyseForm
         object LogLevelEdit: TSpinEditEx
           Left = 192
           Height = 21
-          Top = 95
+          Top = 125
           Width = 51
           HelpContext = 129
           AutoSize = False
@@ -2274,9 +2274,9 @@ object AnalyseForm: TAnalyseForm
         end
         object PipsPixelSize_cm: TFloatSpinEditEx
           Left = 192
-          Height = 21
+          Height = 24
           Hint = 'Pixel size at isoc level'
-          Top = 327
+          Top = 354
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2288,7 +2288,7 @@ object AnalyseForm: TAnalyseForm
           Left = 192
           Height = 21
           Hint = 'Minimum percentage of maximum for normalisation purposes.'
-          Top = 297
+          Top = 327
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2303,7 +2303,7 @@ object AnalyseForm: TAnalyseForm
           Left = 192
           Height = 21
           Hint = 'Limit for acceptable penumbra'
-          Top = 267
+          Top = 297
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2316,7 +2316,7 @@ object AnalyseForm: TAnalyseForm
         object HistoryListCheckBox: TCheckBox
           Left = 10
           Height = 19
-          Top = 127
+          Top = 157
           Width = 175
           HelpContext = 129
           Caption = 'Use history list              length:'
@@ -2327,7 +2327,7 @@ object AnalyseForm: TAnalyseForm
         object HistoryListSize_num: TSpinEditEx
           Left = 193
           Height = 21
-          Top = 125
+          Top = 155
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2343,7 +2343,7 @@ object AnalyseForm: TAnalyseForm
           Left = 192
           Height = 21
           Hint = 'Upper points limit for statistical analysis'
-          Top = 237
+          Top = 267
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2359,7 +2359,7 @@ object AnalyseForm: TAnalyseForm
           Left = 27
           Height = 19
           Hint = 'All data will stay untouched'
-          Top = 149
+          Top = 179
           Width = 180
           HelpContext = 129
           Caption = 'Put history data in frozen state'
@@ -2370,7 +2370,7 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Hint = 'Use matching as primary strategy'
-          Top = 209
+          Top = 239
           Width = 182
           HelpContext = 129
           Caption = 'Auto set decimal separator for:'
@@ -2380,7 +2380,7 @@ object AnalyseForm: TAnalyseForm
         object AutoDecPointList: TEdit
           Left = 192
           Height = 21
-          Top = 207
+          Top = 237
           Width = 33
           HelpContext = 97
           AutoSize = False
@@ -2393,7 +2393,7 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Hint = 'When checked, the File menu item to lock critical actions will be shown'
-          Top = 67
+          Top = 97
           Width = 227
           HelpContext = 129
           Caption = 'Show "Lock Critical Items" in File menu'
@@ -2476,6 +2476,19 @@ object AnalyseForm: TAnalyseForm
             MaxValue = 30
           end
         end
+        object FFFinFileCheckBox: TCheckBox
+          Left = 10
+          Height = 19
+          Hint = 'When checked, the program will start in Advanced Mode'
+          Top = 67
+          Width = 118
+          HelpContext = 129
+          Caption = 'FFF property in file'
+          Checked = True
+          ParentBidiMode = False
+          State = cbChecked
+          TabOrder = 24
+        end
       end
     end
     object ConfigurationTab: TTabSheet
@@ -2499,11 +2512,11 @@ object AnalyseForm: TAnalyseForm
           Left = 1
           Height = 492
           Top = 1
-          Width = 497
+          Width = 529
           HelpContext = 240
           Align = alLeft
           ColCount = 8
-          DefaultColWidth = 60
+          DefaultColWidth = 65
           DefaultRowHeight = 20
           FixedCols = 0
           FixedRows = 0
@@ -2515,7 +2528,7 @@ object AnalyseForm: TAnalyseForm
           OnSelectCell = ModListGridSelectCell
         end
         object ModListAddButton: TButton
-          Left = 523
+          Left = 585
           Height = 25
           Top = 32
           Width = 50
@@ -2525,7 +2538,7 @@ object AnalyseForm: TAnalyseForm
           TabOrder = 1
         end
         object ModListEditButton: TButton
-          Left = 523
+          Left = 585
           Height = 25
           Top = 72
           Width = 50
@@ -2535,7 +2548,7 @@ object AnalyseForm: TAnalyseForm
           TabOrder = 2
         end
         object ModListDelButton: TButton
-          Left = 523
+          Left = 585
           Height = 25
           Top = 112
           Width = 50
@@ -2545,7 +2558,7 @@ object AnalyseForm: TAnalyseForm
           TabOrder = 3
         end
         object ModListNormRadioButton: TRadioButton
-          Left = 513
+          Left = 575
           Height = 19
           Top = 184
           Width = 156
@@ -2557,7 +2570,7 @@ object AnalyseForm: TAnalyseForm
           TabStop = True
         end
         object ModListFilmRadioButton: TRadioButton
-          Left = 513
+          Left = 575
           Height = 19
           Top = 210
           Width = 79
@@ -2567,7 +2580,7 @@ object AnalyseForm: TAnalyseForm
           TabOrder = 5
         end
         object ModListBeamRadioButton: TRadioButton
-          Left = 513
+          Left = 575
           Height = 19
           Top = 237
           Width = 117
@@ -3189,6 +3202,12 @@ object AnalyseForm: TAnalyseForm
         ShortCut = 49217
         OnClick = Reload
       end
+      object ProcessSetFFFItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Assign &FFF property'
+        ShortCut = 16454
+        OnClick = OnDataRead
+      end
       object ProcessSigmoid2BufferItem: TMenuItem
         AutoCheck = True
         Caption = 'Apply sigmoid model on Buffer'
@@ -3254,7 +3273,7 @@ object AnalyseForm: TAnalyseForm
         GroupIndex = 71
         HelpContext = 74
         Hint = 'recalculate all for current data'
-        ShortCut = 16454
+        ShortCut = 24646
         OnClick = Reload
       end
       object ProcessingDivisor3: TMenuItem

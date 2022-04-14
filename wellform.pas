@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-16/02/2022 | Lazarus 2.2.0/FPC 3.2.0: 31/01/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-13/04/2022 | Lazarus 2.2.0/FPC 3.2.0: 31/01/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -61,9 +61,10 @@ type
 type
   htObjectPlainProc = procedure                        of object;
   {$IFDEF THREAD_PLOT}
-  htObjectFillProc  = procedure(ASeries :PlotItems;
-                                ASource :twcDataSource;
-                                AScaling:twcFloatType) of object;
+  htObjectFillProc  = procedure(ASeries  :PlotItems;
+                                ASource  :twcDataSource;
+                                AScaling :twcFloatType;
+                                AnalRange:Boolean=False) of object;
   {$ENDIF THREAD_PLOT}
 
   {$IFDEF THREAD_FILES}
@@ -76,10 +77,11 @@ type
   public
     FPlainProc: htObjectPlainProc;
     constructor Create(APlainProc  :htObjectPlainProc;
-                       FreeWhenDone:Boolean          =True);    reintroduce;
+                       FreeWhenDone:Boolean          =True);     reintroduce;
   end;
 
   {$IFDEF THREAD_PLOT}
+  {12/04/2022 FAnalyse}
   THelpFillThread=class(TThread)
   protected
     procedure Execute;                                           override;
@@ -88,11 +90,13 @@ type
     FSeries   : PlotItems;
     FSource   : twcDataSource;
     FScaling  : twcFloatType;
-    constructor Create(AFillProc   :htObjectFillProc;
-                       ASeries     :PlotItems;
-                       ASource     :twcDataSource;
-                       AScaling    :twcFloatType;
-                       FreeWhenDone:Boolean          =True);    reintroduce;
+    FAnalyse  : Boolean;
+    constructor Create(AFillProc       :htObjectFillProc;
+                       ASeries         :PlotItems;
+                       ASource         :twcDataSource;
+                       AScaling        :twcFloatType;
+                       UseAnalysisRange:Boolean=False;
+                       FreeWhenDone    :Boolean=True);           reintroduce;
   end;
   {$ENDIF THREAD_PLOT}
 
@@ -105,7 +109,7 @@ type
     FSender   : TObject;
     constructor Create(AEventProc  :htObjectEventProc;
                        ASender     :TObject;
-                       FreeWhenDone:Boolean          =True);    reintroduce;
+                       FreeWhenDone:Boolean          =True);     reintroduce;
   end;
   {$ENDIF THREAD_FILES}
 {$ENDIF THREADED}
@@ -335,6 +339,10 @@ type
     Data type changed from Int64 to PtrInt
     in function HelpHandler(Command:Word; Data:PtrInt; var CallHelp:Boolean): Boolean;
     PtrInt is used in the THelpEvent (forms.pp) and avoids platform dependencies
+  28/03/2022
+    Introduced AppliedGammaScope
+  10/04/2022
+    added ProcessSetFFFItem, FFFinFileCheckBox
   }
 
   {=========== TAnalyseForm =====================}
@@ -362,6 +370,7 @@ type
     ProcessingDivisor1          : TMenuItem;
     ProcessingDivisor2          : TMenuItem;
     ProcessingDivisor3          : TMenuItem;
+    ProcessSetFFFItem           : TMenuItem;  {Ctrl+F}       //OnClick = OnDataRead
     ProcessAutoscalingItem      : TMenuItem;  {none}         //OnClick = Reload;                     Tag=4
     ProcessSigmoid2BufferItem   : TMenuItem;  {Ctrl+B}       //OnClick = Reload                      >wApplySigmoidToBuffer
     ProcessReprocessItem        : TMenuItem;  {Ctrl+R}       //OnClick = OnDataRead
@@ -370,7 +379,7 @@ type
     ProcessSetMergeSourceItem   : TMenuItem;  {Ctrl+Alt+Q}   //OnClick = ProcessMergeSourceClick
     ProcessClearMergeItem       : TMenuItem;  {Shift+Ctrl+O} //OnClick = ProcessMergeSourceClick
     ProcessMirrorMeasRefItem    : TMenuItem;  {Ctrl+X}       //OnClick = ProcessMirrorMeasRefClick
-    ProcessSyntheticProfile     : TMenuItem;  {Ctrl+F}       //OnClick = Reload                      >wDefaultIgnoreSet
+    ProcessSyntheticProfile     : TMenuItem;  {Shift+Ctrl+F} //OnClick = Reload                      >wDefaultIgnoreSet
     ProcessSetTempRefItem       : TMenuItem;  {Ctrl+T}       //Action  = TempRefAction               >wCheckRefCurveString
     ProcessUnsetTempRefItem     : TMenuItem;  {Shift+Ctrl+T} //OnClick = ProcessUnsetTempRefClick
     ProcessIgnoreTUnameItem     : TMenuItem;  {Ctrl+U}       //OnClick = ProcessUpdateDataRead       >wCheckRefCurveString,wCheckRefIgnoreLinac
@@ -645,6 +654,7 @@ type
     AdvancedSettingsTab         : TTabSheet;
     AdvancedSettingsPanel       : TPanel;                                       //placeholder to set background color
     AdvancedModeStartCheckBox   : TCheckBox;
+    FFFinFileCheckBox           : TCheckBox;
     ShowLockItemCheckBox        : TCheckBox;
     AddDateTimeCheckBox         : TCheckBox;
     ShowWarningCheckBox         : TCheckBox;
@@ -1004,6 +1014,7 @@ type
     InventoryReader       : TWellhoferData;
     AppliedFieldClass     : twcFieldClass;
     AppliedEdgeRefNorm    : twcDoseLevel;
+    AppliedGammaScope     : twcGammaScope;
     ExtSym                : ExtSymType;
     SM2_Infotype          : Integer;                                            //infostring used for specialmode2  : 1=profile, 2=wedge, 3=DefaultSSD_cm, 4=pdd
     CxUsedLineMax         : Integer;                                            //actual number of elements per column (+1)
@@ -1104,7 +1115,8 @@ type
     function  InventoryReaderSetup(irCreate:Boolean=True           ): Boolean;
     procedure ThreadSaveFillPlot(ASeries   :PlotItems;                                    //graph filling for single and multiple threads
                                  ASource   :twcDataSource;
-                                 AScaling  :twcFloatType           );
+                                 AScaling  :twcFloatType;
+                                 AnalRange :Boolean=False          );
     procedure OnSeriesSelected(AMouseButton:TMouseButton=mbLeft    );
     procedure ControlsEnable(AControl      :TControl;                                     //menu management
                              Enable        :Boolean                );
@@ -1172,6 +1184,8 @@ const DefAppName           ='BistroMath';
       DefLabelDmax         = 'dmax';
       DefDoseGridModCol    =   0;
       DefDoseGridFilmCol   =   1;
+      DefNormGridTypeCol   =   5;
+      DefNormGridLinacCol  =   6;
       DefErrorLimit        = 9e8;
       DefZoomRange         =   1.03;
       DefAxisMaxExtension  =   1.05;                                            //extension of graph axis to accommodate head room
@@ -1260,7 +1274,7 @@ resourcestring
       DefFFFpSubTexts   ='&Top Model,&Slopes';
       DefFFFpSubKeys    ='T,S';
       DefModFilmKeys    ='Modality,Film,a,b,c,d,e,f';
-      DefModNormKeys    ='Modality,RelDepth,RelValue,AbsDepth,AbsValue';
+      DefModNormKeys    ='Modality,RelDepth,RelValue,AbsDepth,AbsValue,"Field Types",Linacs';
       DefModBeamKeys    ='Modality,Linac';
       DefDoseFilmValues ='X0.0,none,0,1,0,0,0,0';
       DefDoseNormValues ='X0.0,0,100,0,100';
@@ -1344,11 +1358,13 @@ end; {~execute}
 
 {$IFDEF THREAD_PLOT}
 //each curve is filled throug a separate thread
-constructor THelpFillThread.Create(AFillProc   :htObjectFillProc;
-                                   ASeries     :PlotItems;
-                                   ASource     :twcDataSource;
-                                   AScaling    :twcFloatType;
-                                   FreeWhenDone:Boolean=True);
+{12/04/2022 FAnalyse,UseAnalysisRange}
+constructor THelpFillThread.Create(AFillProc       :htObjectFillProc;
+                                   ASeries         :PlotItems;
+                                   ASource         :twcDataSource;
+                                   AScaling        :twcFloatType;
+                                   UseAnalysisRange:Boolean=False;
+                                   FreeWhenDone    :Boolean=True);
 begin
 inherited Create(False);
 FreeOnTerminate:= FreeWhenDone;
@@ -1357,12 +1373,14 @@ FFillProc      := AFillProc;
 FSeries        := ASeries;
 FSource        := ASource;
 FScaling       := AScaling;
+FAnalyse       := UseAnalysisRange;
 end; {~create}
 
 
+{12/04/2022 FAnalyse}
 procedure THelpFillThread.Execute;
 begin
-if  assigned(FFillProc) then FFillProc(FSeries,FSource,FScaling);
+if assigned(FFillProc) then FFillProc(FSeries,FSource,FScaling,FAnalyse);
 end; {~execute}
 {$ENDIF THREAD_PLOT}
 
@@ -1391,6 +1409,7 @@ end; {~execute}
 
 {****************************** TAnalyseForm ********************************************}
 {$IFDEF Windows}
+//needed for insertion in the windows clipboard chain
 function WndCallback(Ahwnd:HWND; uMsg:UINT; wParam:WParam; lParam:LParam): LRESULT; stdcall;
 begin
 if uMsg=WM_CHANGECBCHAIN then
@@ -2232,6 +2251,8 @@ Fills graph and triggers display of analysis results (PublishResults).
 {02/03/2021 FFFfeatures}
 {03/03/2020 removed MeasDetectDiagItem}
 {01/08/2021 OnDataReadBusy:= True moved to earlier phase}
+{28/03/2022 introduction AppliedGammaScope}
+{10/04/2022 can be triggered through ProcessSetFFFItem}
 procedure TAnalyseForm.OnDataRead(Sender:TObject);
 var i                           : Integer;
     m                           : twcMeasAxis;
@@ -2312,13 +2333,13 @@ var i                           : Integer;
       s:= Math.Max(0.1,Fpar[2]);
       if (ScanType in twcVertScans) then                                        //FPar[2]=step width in cm
         begin
-        p:= Ceil( Math.Max(1,GetPosition(dsCalculated,twDataFirst)  )/s);
-        q:= Trunc(Math.Min(  GetPosition(dsCalculated,twDataLast),30)/s);
+        p:= Ceil( Math.Max(1,GetPosition(dsCalculated,twDataRange[ptFirst]) )/s);
+        q:= Trunc(Math.Min(  GetPosition(dsCalculated,twDataRange[ptLast ]),30)/s);
         end
       else
         begin
-        p:= Trunc(GetPosition(dsCalculated,twInFieldArr[twcLeft] )/s);
-        q:= Trunc(GetPosition(dsCalculated,twInFieldArr[twcRight])/s);
+        p:= Trunc(GetPosition(dsCalculated,twInfieldRange[twcLeft] )/s);
+        q:= Trunc(GetPosition(dsCalculated,twInfieldRange[twcRight])/s);
         end;
       for i:= p to q do
         DataEditorAddLine(Format('%5.2f  %6.2f %s %s%0.0f %s',
@@ -2368,9 +2389,11 @@ var i                           : Integer;
   Instead, separate the use of other objects into a separate procedure call, and call that procedure by passing it as a parameter to the Synchronize method.}
 
   {06/08/2015 twLocked is set}
-  procedure FillPlotSeries(ASeries :PlotItems;                                                          //initiate plotting of data using ThreadSaveFillPlot
-                           ASource :twcDataSource;
-                           AScaling:twcFloatType);
+  {12/04/2022 AnalRange}
+  procedure FillPlotSeries(ASeries  :PlotItems;                                                         //initiate plotting of data using ThreadSaveFillPlot
+                           ASource  :twcDataSource;
+                           AScaling :twcFloatType;
+                           AnalRange:Boolean=False);
   begin
   with Engines[UsedEngine].wSource[ASource] do
     begin
@@ -2379,15 +2402,15 @@ var i                           : Integer;
     end;
   {$IFDEF THREAD_PLOT}
   Engines[UsedEngine].wSource[ASource].twLocked:= True;                         //creating the thread also takes some time: do manual lock first in main thread
-  PlotFillThread[ASeries]:= THelpFillThread.Create(@ThreadSaveFillPlot,ASeries,ASource,AScaling,False); //no freeonterminate, cleanup on end of ondataread
+  PlotFillThread[ASeries]:= THelpFillThread.Create(@ThreadSaveFillPlot,ASeries,ASource,AScaling,AnalRange,False); //no freeonterminate, cleanup on end of ondataread
   {$ELSE}
-  ThreadSaveFillPlot(ASeries,ASource,AScaling);
+  ThreadSaveFillPlot(ASeries,ASource,AScaling,AnalRange);
   {$ENDIF THREAD_PLOT}
   end; {fillplotseries}
 
 begin
 if PollKeyEvent<>0 then
-   FKeyboardReady:= False;                                                                              //there are still keys in buffer
+  FKeyboardReady:= False;                                                                              //there are still keys in buffer
 x:= ifthen(ViewMeasNormAdjustMode.Checked and AdvancedModeItem.Checked,MeasNormAdjustEdit.Value/100,1); //new value for NormAdjustFactor
 b:= not ((Sender=MeasNormAdjustEdit) and (x=MeasNormAdjustFactor));                                     //check if action is needed
 {$IFDEF ONDATA_SPEEDTEST}
@@ -2397,13 +2420,6 @@ for j:= 1 to 20 do
 if b and CheckWellhoferReady and FKeyboardReady then                            //check with onkeyup event for keys to be processed
   begin
   LogTabMemo.Lines.BeginUpdate;
-  if Sender is TMenuItem then with Sender as TMenuItem do
-    begin
-    if RadioItem then
-      Checked:= True;
-    UpdateSettings(Sender);                                                     //this sets also the normalisation of wellhofer
-    MeasNormAdjustEdit.Visible:= False;
-    end;
   {$IFDEF THREAD_PLOT}
   for p:= pMeasured to pBuffer do PlotFillThread[p]:= nil;                      //Unlike Delphi7, a nil value is not guaranteed, but is needed later when not used.
   {$ENDIF THREAD_PLOT}
@@ -2422,9 +2438,27 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
   with Engines[UsedEngine],wCurveInfo do                                        //==== current engine is Engines[UsedEngine] ====
     if IsValid and (not OnDataReadBusy) then                                    //do nothing if still busy
       begin
-      OnDataReadBusy     := True;                                               //set busy state early in process
-      tmpX               := GetDisplayedPositionScale;
-      Br                 := Format('%s%0.2f',[wSource[dsMeasured].twBeamInfo.twBModality,Energy]);
+      if Sender is TMenuItem then with Sender as TMenuItem do
+        begin
+        if RadioItem then
+          Checked:= True;
+        UpdateSettings(Sender);                                                     //this sets also the normalisation of wellhofer
+        MeasNormAdjustEdit.Visible:= False;
+        if Sender=ProcessSetFFFItem then
+          begin
+          if ProcessSetFFFItem.Checked then
+            begin
+            if wSource[dsMeasured].twSetFieldType=fcStandard then wSource[dsMeasured].twSetFieldType:= fcFFF;
+            end
+          else
+            if wSource[dsMeasured].twSetFieldType=fcFFF      then wSource[dsMeasured].twSetFieldType:= fcStandard;
+          end;
+        ResetAnalysis;
+        end;
+      ProcessSetFFFItem.Checked:= wSource[dsMeasured].twSetFieldType=fcFFF;
+      OnDataReadBusy           := True;                                         //set busy state early in process
+      tmpX                     := GetDisplayedPositionScale;
+      Br                       := Format('%s%0.2f',[wSource[dsMeasured].twBeamInfo.twBModality,Energy]);
       MeasMenuClick(Sender);                                                    //update measurement menu
       if not Freeze then                                                        //if current engine is not in frozen state
         wApplyUserLevel  := MeasUserDoseItem.Checked;                           //keep unchanged otherwise
@@ -2605,6 +2639,8 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         end;
       SyntheticMade:= (ProcessSyntheticProfile.Checked and
                        SyntheticProfile(dsMeasFiltered,dsRefFiltered,ProcessAutoscalingItem.Checked));
+      if GammaInFieldLimits[AppliedFieldClass].Checked then AppliedGammaScope:= gGammaLimited
+      else                                                  AppliedGammaScope:= gGammaComplete;
       if not wSource[dsMeasured].twSymCorrected then with MeasSymCorrectItem do
         begin
         Enabled:= ScanType in [snGT,snAB,snAngle];
@@ -2668,10 +2704,14 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
           F:= MeasNormAdjustFactor; //*wSource[dsReference].twAppliedNormVal/wSource[dsMeasured].twAppliedNormVal;
          {$IFDEF GAMMA_SPEEDTEST}
           k:= MilliSecondOfTheDay(Now);
-          for i:= 1 to 100 do GammaAnalysis(Measured,Reference,Calculated,ProcessAutoscalingItem.Checked,F);
+          for i:= 1 to 100 do
+            begin
+            ResetAnalysis(Calculated);
+            GammaAnalysis(Measured,Reference,Calculated,False,gGammaComplete,ProcessAutoscalingItem.Checked,F);
+            end;
           MessageBar:= Num2Stg(round((MilliSecondOfTheDay(Now)-k)/100),0)+' ms per calculation';
          {$ENDIF}
-          GammaAnalysis(dsMeasured,dsReference,dsCalculated,GammaInFieldLimits[AppliedFieldClass].Checked,ProcessAutoscalingItem.Checked,F,True);
+          GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,AppliedGammaScope,ProcessAutoscalingItem.Checked,F,True);
           HistogramTab.TabVisible:= True;
           end {referencegammaitem}
         else if RefUseAddToItem.Checked then                                    //== use reference for addition ==================
@@ -2714,7 +2754,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
             SetPlotDate(pCalculated,ifthen(Length(wSource[dsCalculated].twFilterString)>0,twFilterString+'(','')+
                                            wSource[dsCalculated].twDataHistoryStg+
                                            ifthen(Length(wSource[dsCalculated].twFilterString)>0,')',''));
-            FillPlotSeries(pCalculated,dsCalculated,F);
+            FillPlotSeries(pCalculated,dsCalculated,F,twIsGamma and GammaInFieldLimits[AppliedFieldClass].Checked);
             end;
           end
         else
@@ -2747,7 +2787,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
             x                                     := GetDisplayedPositionScale;
             with twpddFitData[{$IFDEF SHOW_X_FIT}NM_Extrapolation{$ELSE}NM_Primary{$ENDIF}] do
               if twFitValid then
-                for i:= NearestPosition(twFitLowCm,dsBuffer) to twDataLast do
+                for i:= NearestPosition(twFitLowCm,dsBuffer) to twDataRange[ptLast] do
                   try
                     if abs(wSource[dsMeasured].twData[i])<0.00001 then
                       tmpE:= 0
@@ -2892,6 +2932,7 @@ end; {~axismarktotext}
 {28/01/2018 added annot:s to min/max in-field}
 {20/01/2018 symmetry rul split for DefaultSSD_cm/conventional}
 {08/10/2018 implementation of addmode}
+{29/03/2022 added gamma pass rate}
 procedure TAnalyseForm.SetDefaultPanel(Sender:TObject);
 
   procedure AddFormattedElement(aID,acol,arow           :Integer;
@@ -2935,7 +2976,8 @@ AddFormattedElement(21,1,2,'-1,P20,100,-1' ,'-'                                 
 AddFormattedElement(22,1,3,'-1,P20/10,1,-1','-'                                        ,'3,'    ,'XP,0,V,annot:!rfRS,color:n');         {pdd20/pdd10}
 AddFormattedElement(23,1,1,'-1,D80,1,-1'  ,'-'                                         ,'2,'    ,'E,0,V,annot:!rfRS*,color:n');         {electron pdd d80}
 AddFormattedElement(24,1,2,'-1,D50,1,-1'  ,'-'                                         ,'2,'    ,'E,0,V,annot:!rfRS*,color:n');         {electron pdd d50}
-AddFormattedElement(25,1,8,'2,G,1,0'      ,'Conf.Limit'                                ,'2,'    ,'XEPO,0,A,annot:rzs,cond:rg');         {gamma}
+AddFormattedElement(25,1,8,'2,G0,1,0'     ,'Conf.Limit'                                ,'2,'    ,'XEPO,0,A,annot:rzs,cond:rg');         {gamma CL with default from settings tab}
+AddFormattedElement(26,1,7,'2,V0,1,0'     ,'Pass Rate'                                 ,'0,%'   ,'XEPO,0,A,annot:rzs,cond:rg');         {gamma pass rate with default from settings tab}
 {$IFDEF TEST_RULES}
 AddFormattedElement(26,1,7,'-1,x+21,1,0'  ,'-'                                         ,'2,%'   ,'XEPO,0,H,annot:rzs');                 {Y+50}
 AddFormattedElement(27,1,8,'-1,X+21,1,0'  ,'-'                                         ,'2,%'   ,'XEPO,0,H,annot:rzs');                 {Y+50}
@@ -3479,6 +3521,7 @@ with CF do
   ShortRead(IniSectionName,ForceMatchingCheckBox);
   ShortRead(IniSectionName,FitResultsLabelsCheckBox);
   ShortRead(IniSectionName,FitResultsHeaderCheckBox);
+  ShortRead(IniSectionName,FFFinFileCheckBox);
   ShortRead(IniSectionName,LogLevelEdit);
   end;
 with DataPlot do
@@ -3682,6 +3725,7 @@ with CF do
       ShortWrite(IniSectionName,HistogramLimit_num);
       ShortWrite(IniSectionName,AutoSetDecPointCheckBox);
       ShortWrite(IniSectionName,AutoDecPointList);
+      ShortWrite(IniSectionName,FFFinFileCheckBox);
       ShortWrite(IniSectionName,ManualShiftStep_cm);
       WriteFloat(IniSectionName,ZoomText,ZoomRange);
       WriteInteger(IniSectionName,'MinClipBoardBytes',MinClipBoardBytes);
@@ -3963,6 +4007,7 @@ end; {~setwellhofervalues}
 {07/03/2021 Nominal_IFA_CheckBox}
 {30/03/2021 wResampleData, wMeas2TankMapping}
 {01/06/2021 FFFMinFieldSize_cm,MeasGeneric_mm_Item}
+{10/04/2022 FFFinFileCheckBox}
 procedure TAnalyseForm.SetEngineValues(aEngine:Integer);
 var p: twcDoseLevel;
     q: twcEdgeClass;
@@ -3988,6 +4033,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     wGenericToPDD             := MeasGenericToPDDItem           .Checked;
     MatchOverride             := ForceMatchingCheckBox          .Checked;
     wOutlierFilter            := OutlierFilterStatsCheckBox     .Checked;
+    wFFFinFile                := FFFinFileCheckBox              .Checked;
     ResampleGridSize_cm       := ResampleGrid_mm                .Value/10;
     Loglevel                  := LogLevelEdit                   .Value;
     wSmallFieldLimitCm        := EdgeSmallFieldWidth_cm         .Value;
@@ -4442,6 +4488,7 @@ end; {~updatesettings}
 {24/07/2020 MeasCenterSmallSubMenu,MeasNormSmallSubMenu,MeasCenterWedgeSubMenu,MeasNormWedgeSubMenu}
 {28/07/2020 FieldTypesTab}
 {08/12/2020 ShowLockItemCheckBox}
+{10/04/2022 ProcessSetFFFItem}
 procedure TAnalyseForm.UImodeChange(Sender:TObject);
 var a,b,c,s: Boolean;
     i      : Integer;
@@ -4479,6 +4526,7 @@ EnableMenu(ViewIndicatorsItem      ,a);
 EnableMenu(ViewValuesItem          ,a);
 EnableMenu(ViewHighResValItem      ,a);
 EnableMenu(ProcessCheckTempTypeItem,a);
+EnableMenu(ProcessSetFFFItem       ,a);
 EnableMenu(ProcessResetFitItem     ,a and PDDfitCheckBox.Checked);
 EnableMenu(FileSaveAsReferenceItem ,c);
 EnableMenu(MeasPreserveDataItem    ,c);
@@ -6794,20 +6842,25 @@ end; {~placeresultslabels}
 
 {31/05/2015 intermediate procedure which can be called from any thread}
 {31/07/2015 use twLocked}
-{20/06/2017 replaced twDataFirst/Last with twScanFirst/Last to avoid non-useful data}
+{20/06/2017 replaced twDataRange[ptFirst]/Last with twScanRange[ptFirst]/Last to avoid non-useful data}
 {01/02/2018 ViewMillimetersItem}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
-procedure TAnalyseForm.ThreadSaveFillPlot(ASeries :PlotItems;
-                                          ASource :twcDataSource;
-                                          AScaling:twcFloatType);
+{12/04/2022 analrange}
+procedure TAnalyseForm.ThreadSaveFillPlot(ASeries  :PlotItems;
+                                          ASource  :twcDataSource;
+                                          AScaling :twcFloatType;
+                                          AnalRange:Boolean=False);
 var i: Integer;
     x: twcFloatType;
+    r: twcRange;
 begin
 with Engines[UsedEngine],wSource[ASource] do
   begin
+  if AnalRange then r:= twAnalysisRange
+  else              r:= twScanRange;
   twLocked:= True;
   x       := GetDisplayedPositionScale;                                         //multiplier for mm
-  for i:= twScanFirst to twScanLast do
+  for i:= r[ptFirst] to r[ptLast] do
    PlotSeries[ASeries].AddXY(x*twPosCm[i],AScaling*twData[i]);
   twLocked:= False;
   end;
@@ -7861,7 +7914,7 @@ end; {~filesave}
 (*
 EvaluateInfoRecord implements the retrieval of data from TWellhoferData through
 identifiers defined in PanelElements:
-EvaluationXtypes = ['a','b','c','C','d','D','e','F','f','G','i','I','K','L','l','M','m','N','n','p','P','q','Q','r','R','s','S','t','T','u','U','w','X','x','Y','y','Z','z',EmptyXtype];
+EvaluationXtypes = ['a','b','c','C','d','D','e','f','F','g','G','i','I','K','l','L','m','M','n','N','p','P','q','Q','r','R','s','S','t','T','u','U','v','V','w','x','X','y','Y','z','Z',EmptyXtype];
 ------
 Parameters with the exclamation symbol have a left and right result. Therefore the left result is obtained as -"evaluation type" and the right results as +"evaluation type". When no sign is given the result will be the average of left and right value.
     a                Area ratio
@@ -7882,10 +7935,10 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                        ifthen(Xsign<0,wSource[Xsource].twRelMinInField,wSource[Xsource].twRelMaxInField);
     f                Absolute flatness
                        wSource[Xsource].twFlatness*100;
-    G                Gamma analysis within IFA
-                       GammaAnalysis(dsMeasured,dsReference,dsCalculated,True,NormAdjustNumEdit.Value/100);
-    g                Gamma analysis over complete profile
-                       GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,NormAdjustNumEdit.Value/100);
+    G|V              Gamma analysis within IFA
+                       GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,gGammaComplete,True,NormAdjustNumEdit.Value/100);
+    g|v              Gamma analysis over complete profile
+                       GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,gGammaComplete,True,NormAdjustNumEdit.Value/100);
   ! i                Sigmoid edge (inflection point)
                        wSource[Xsource].twLevelPos[dSigmoid].Penumbra[side].Calc;
   ! I                Sigmoid 50%,
@@ -7983,12 +8036,17 @@ In the ResultsInfoRecord (see also PanelElements) the result is returned, includ
 {05/03/2021 added 'Q'}
 {02/04/2021 X_actual,twActDet2NormRatio}
 {14/05/2021 implemented 'K', 't'}
+{28/03/2022 expanded twConfidenceLimit}
+{29/03/2022 support for gamma pass rate 'V'}
+{06/04/2022 more efficient use of gammaanalysis by using calculated for output}
+{14/04/2022 for gammaanalysis parameters G and V support additional 0 to take default from settings tab}
 function TAnalyseForm.EvaluateInfoRecord(var ARec:ResultsInfoRecord): twcFloatType;
-var side     : twcSides;
-    Ynorm,r,c: twcFloatType;
-    Divisor  : Integer;
-    Selection: Char;
-    b        : Boolean;
+var side      : twcSides;
+    Ynorm,r,c : twcFloatType;
+    Divisor   : Integer;
+    Selection : Char;
+    b         : Boolean;
+    GammaScope: twcGammaScope;
 
    function Yeff(const ASource:twcDataSource): twcFloatType;
    begin
@@ -8104,19 +8162,27 @@ with Engines[UsedEngine],ARec do                                                
              else                Result:= wSource[USource].twFlatness*100;
            Sidedness:= False;
            end;
+      'V',
+      'v',
       'G',        //Gamma analysis within InField area
       'g': begin  //Gamma analysis over complete profile
            if ReferenceValid then
              begin
-             if wSource[USource].twIsGamma then
-               Result:= wSource[USource].twConfidenceLimit
-             else
+             if ConvStg='0' then {if '0' is added, the default of the user interface is taken}
                begin
-               if ProcessSetMergeSourceItem.Checked then Usource:= dsCalculated
-               else                                      Usource:= dsUnrelated;
-               Result:= GammaAnalysis(dsMeasured,dsReference,Usource,Selection='G',ProcessAutoscalingItem.Checked,
-                                      ifthen(ViewMeasNormAdjustMode.Checked and AdvancedModeItem.Checked,MeasNormAdjustFactor,1));
+               if GammaInFieldLimits[wSource[dsMeasured].twSetFieldType].Checked then Selection:= UpCase(Selection)
+               else                                                                   Selection:= LowerCase(Selection);
                end;
+             if Selection in ['G','V'] then GammaScope:= gGammaLimited
+             else                           GammaScope:= gGammaComplete;
+             if not wSource[USource].twIsGamma then
+               begin
+               if ProcessSetMergeSourceItem.Checked or RefUseGammaItem.Checked then Usource:= dsCalculated
+               else                                                                 Usource:= dsUnrelated;
+               GammaAnalysis(dsMeasured,dsReference,Usource,False,GammaScope,ProcessAutoscalingItem.Checked,
+                             ifthen(ViewMeasNormAdjustMode.Checked and AdvancedModeItem.Checked,MeasNormAdjustFactor,1));
+               end;
+             Result:= ifthen(Selection in ['G','g'],wSource[USource].twConfidenceLimit[GammaScope],wSource[USource].twGammaPassRate[GammaScope])
              end
            else
              Result:= Xerrorval;
@@ -8159,7 +8225,7 @@ with Engines[UsedEngine],ARec do                                                
            Sidedness:= False;
            end;
       'l': begin  //elevation
-           Result   := 100*wSource[USource].twLinSlope*(GetPosition(USource,wSource[USource].twInFieldArr[twcRight])-GetPosition(USource,wSource[USource].twInFieldArr[twcLeft]))/Ynorm;
+           Result   := 100*wSource[USource].twLinSlope*(GetPosition(USource,wSource[USource].twInfieldRange[twcRight])-GetPosition(USource,wSource[USource].twInfieldRange[twcLeft]))/Ynorm;
            Sidedness:= False;
            end;
       'M': begin  //max position
@@ -8442,15 +8508,15 @@ in second instance, by the Buffer curve.}
 {20/04/2020 found solution for double axis scaling: switch on/off both autotransforms}
 {08/05/2020 update LastProfileZoomState}
 {14/05/2020 alignment of rightaxis}
-{15/05/2020 twFirstScanPosCm,twLastScanPosCm, smarter setting bottom axis range}
+{15/05/2020 twScanPosCm[ptFirst],twScanPosCm[ptLast], smarter setting bottom axis range}
 {10/06/2020 maximise horizontal scale when syntheticmade}
 {21/07/2020 fcWedge}
 {29/07/2020 switch on title for Gamma, no range adaption for Gamma}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {21/02/2021 avoid potentional log(0) situations}
 procedure TAnalyseForm.AutoZoom(FullAuto:Boolean=True);
-var p,d,ZoomWanted: Boolean;
-    r,x  : twcFloatType;
+var p,d,ZoomWanted,CalcIsGamma: Boolean;
+    r,x                       : twcFloatType;
 
   procedure MinMaxZoomed(amin,amax,arng:twcFloatType;
                          AxisNumber    :integer);  {see TAChartAxis.pas}
@@ -8536,15 +8602,17 @@ var p,d,ZoomWanted: Boolean;
 begin
 with DataPlot,Engines[UsedEngine] do if IsValid then
   begin
+  with wSource[dsCalculated] do
+    CalcIsGamma:= twValid and twIsGamma;
   if FullAuto then
     begin
     x:= GetDisplayedPositionScale;
     with wSource[dsMeasured] do
       begin
-      p:= (twLastScanPosCm-twFirstScanPosCm)/(twLastDataPosCm-twFirstDataPosCm)>0.5; //local use of p here
+      p:= (twScanPosCm[ptLast]-twScanPosCm[ptFirst])/(twDataPosCm[ptLast]-twDataPosCm[ptFirst])>0.5; //local use of p here
       try
-        BottomAxis.Range.Min:= Math.Min(ifthen(p,twFirstDataPosCm,twFirstScanPosCm)*x,BottomAxis.Range.Max-1);
-        BottomAxis.Range.Max:= Math.Max(BottomAxis.Range.Min+1,ifthen(p,twLastDataPosCm,twLastScanPosCm)*x);
+        BottomAxis.Range.Min:= Math.Min(ifthen(p,twDataPosCm[ptFirst],twScanPosCm[ptFirst])*x,BottomAxis.Range.Max-1);
+        BottomAxis.Range.Max:= Math.Max(BottomAxis.Range.Min+1,ifthen(p,twDataPosCm[ptLast],twScanPosCm[ptLast])*x);
        except
         BottomAxis.Range.Min:= -20*x;
         BottomAxis.Range.Max:=  20*x;
@@ -8553,7 +8621,7 @@ with DataPlot,Engines[UsedEngine] do if IsValid then
     ZoomRange:= Clip(ZoomRange,0.8,10);
     p:= (ScanType in twcHoriscans) and (wSource[dsMeasured].twSetFieldType<>fcWedge); //p set for
     with wSource[dsCalculated] do
-      d:= (ScanType=snPDD) and twValid and twIsRelative and (not twIsGamma);          //depth dose
+      d:= (ScanType=snPDD) and twValid and twIsRelative;                              //depth dose
     ZoomWanted:= (p or d);
     with LeftAxis do
       begin
@@ -8590,12 +8658,12 @@ with DataPlot,Engines[UsedEngine] do if IsValid then
   if wSource[dsBuffer].twValid and (PlotSeries[pCalculated].AxisIndexY<>DefChartAxR) and (not ErrorSeries.Active) then
      PlotSeries[pBuffer].AxisIndexY:= SetAxis(pBuffer);
   end;
-L_AxisTransform_AutoScale.Enabled:= not ZoomWanted;                             //https://wiki.freepascal.org/TAChart_Tutorial:_Dual_y_axis,_Legend#Setting_up_auto-scale_axis_transformations
+L_AxisTransform_AutoScale.Enabled:= (not ZoomWanted) or CalcIsGamma;            //https://wiki.freepascal.org/TAChart_Tutorial:_Dual_y_axis,_Legend#Setting_up_auto-scale_axis_transformations
 R_AxisTransform_AutoScale.Enabled:= L_AxisTransform_AutoScale.Enabled;          //in single axis mode *both* autoscaling transforms must be disabled!
 if SyntheticMade then with DataPlot.AxisList[DefChartAxB],Engines[UsedEngine] do
   begin
-  Range.Min:= GetDisplayedPositionScale(Math.Min(wSource[dsMeasured].twFirstScanPosCm,wSource[dsReference].twFirstScanPosCm));
-  Range.Max:= GetDisplayedPositionScale(Math.Max(wSource[dsMeasured].twLastScanPosCm ,wSource[dsReference].twLastScanPosCm ));
+  Range.Min:= GetDisplayedPositionScale(Math.Min(wSource[dsMeasured].twScanPosCm[ptFirst],wSource[dsReference].twScanPosCm[ptFirst]));
+  Range.Max:= GetDisplayedPositionScale(Math.Max(wSource[dsMeasured].twScanPosCm[ptLast] ,wSource[dsReference].twScanPosCm[ptLast] ));
   end;
 with DataPlot,AxisList[DefChartAxR] do
   if Visible then
@@ -8604,7 +8672,7 @@ with DataPlot,AxisList[DefChartAxR] do
       Marks.Source:= AxisAlignSource                                            //set alignment of axis marks
     else
       Marks.Source:= nil;
-    if not Engines[UsedEngine].wSource[dsCalculated].twIsGamma then
+    if not CalcIsGamma then
       begin
       r          := Range.Max-Range.Min;                                        //and nice limits (Marks.Format='%4.1f' in designer)
       r          := RoundDeci(r,ifthen(r>2.5,0,1));
@@ -8660,7 +8728,7 @@ with Engines[UsedEngine],wSource[FFFdataSource] do
     F           := twPlotScaling;
     Y1          := ifthen(ViewZoomItem.Checked,(DataPlot.LeftAxis.Range.Max-DataPlot.LeftAxis.Range.Min)/10,1);
     Y2          := Math.Min(DataPlot.LeftAxis.Range.Max-Y1,twMaxValue*F*DefZoomRange);
-    Y1          := Math.Max(DataPlot.LeftAxis.Range.Min+Y1,Math.Min(80,Math.Min(twData[twInFieldArr[twcLeft]],twData[twInFieldArr[twcRight]]))*F/DefZoomRange);
+    Y1          := Math.Max(DataPlot.LeftAxis.Range.Min+Y1,Math.Min(80,Math.Min(twData[twInfieldRange[twcLeft]],twData[twInfieldRange[twcRight]]))*F/DefZoomRange);
     tmpX        := GetDisplayedPositionScale;
     InFieldColor:= ifthen(twInFieldAreaOk,
                           ifthen(twSymCorrected,
@@ -8828,7 +8896,7 @@ with Engines[UsedEngine],wSource[dsMeasured] do
   begin
   if twValid then
     begin
-    CursorPosCm:= Clip(CursorPosCm,twFirstScanPosCm,twLastScanPosCm);
+    CursorPosCm:= Clip(CursorPosCm,twScanPosCm[ptFirst],twScanPosCm[ptLast]);
     for k:= Low(PlotItems) to High(PlotItems) do
       AddPoint(PlotDataMapping[k],CursorSeries[k],PlotValues[k]);
     PublishValue(PositionValue,GetDisplayedPositionScale(CursorPosCm),clBlack,2);
@@ -8950,7 +9018,7 @@ PageControl.ActivePage:= FitResultsTab;
 end; {~showfitresults}
 
 
-{20/06/2017 replaced twDataFirst/Last with twScanFirst/Last to avoid non-useful data}
+{20/06/2017 replaced twDataRange[ptFirst]/Last with twScanRange[ptFirst]/Last to avoid non-useful data}
 {14/10/2018 ignore data points <0}
 {22/04/2020 ====Lazarus: minor adaptations====}
 {23/04/2020 use InField area only for horizontal scans}
@@ -8958,6 +9026,7 @@ end; {~showfitresults}
 {09/06/2020 improved histogram normalisation}
 {07/09/2020 axis title in all modes with source identification}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{28/03/2022 introduction AppliedGammaScope}
 procedure TAnalyseForm.ShowHistogram;
 var i,j,k      : Integer;
     F,Lo,Hi,Ofs: twcFloatType;
@@ -8970,8 +9039,8 @@ else                                                         aSource:= dsMeasure
 with Engines[UsedEngine],wSource[aSource] do if twValid then
   begin
   Analyse(aSource);
-  j:= twScanFirst;
-  k:= twScanLast;
+  j:= twScanRange[ptFirst];
+  k:= twScanRange[ptLast];
   if twIsGamma then {data are gamma-analysis}
     begin
     F  := 1;
@@ -8985,8 +9054,8 @@ with Engines[UsedEngine],wSource[aSource] do if twValid then
       begin
       if ScanType in twcHoriScans then
         begin
-        j:= twInFieldArr[twcLeft];
-        k:= twInFieldArr[twcRight];
+        j:= twInfieldRange[twcLeft];
+        k:= twInfieldRange[twcRight];
         F:= 100/twAbsNormValue;
         end
       else
@@ -9018,7 +9087,7 @@ with Engines[UsedEngine],wSource[aSource] do if twValid then
     Format('%s distribution (%s) CL=%0.2f%s %s',
            [Stg,twcDataSourceNames[aSource],Sampler.ConfidenceLimit,
             ifthen(RefUseDivideByItem.Checked,'%',''),
-            ifthen(twIsGamma,Format('(raw data: %0.2f)',[twConfidenceLimit]),'')]);
+            ifthen(twIsGamma,Format('(raw data: %0.2f)',[twConfidenceLimit[AppliedGammaScope]]),'')]);
   try
     Sampler.Free
    except
@@ -9209,6 +9278,7 @@ end; {~modlistaddclick}
 
 {08/11/2016 dual list implementation}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{02/04/2022 extension for multiple identical modalities with normalisation but differences in info}
 procedure TAnalyseForm.ModListGridFill(ACommaText  :String;
                                        AddToModData:Boolean=False);
 var i,j  : Integer;
@@ -9223,7 +9293,7 @@ with ModListGrid do if Length(ACommaText)>0 then
   case ModMode of
     ModMFilm: begin
               for i:= 1 to DefDoseGridFilmCol do
-                Delete(s,1,Pos(',',s)); {extract film type intwo steps}
+                Delete(s,1,Pos(',',s)); {extract film type in two steps}
               f:= copy(s,1,Pred(Pos(',',s))); {f=filmtype}
               L:= Engines[UsedEngine].ModalityFilmList;
               end;
@@ -9233,17 +9303,20 @@ with ModListGrid do if Length(ACommaText)>0 then
               end;
    else
               begin
-              f:= '';
+              for i:= 1 to DefNormGridTypeCol do
+                Delete(s,1,Pos(',',s)); {extract info}
+              f:= s.Trim(',');
               L:= Engines[UsedEngine].ModalityNormList;
               end;
-
    end; {case}
   i:= 0;
   j:= RowCount-1;
   if j>0 then
-    repeat
+    repeat                                                                      {search for identical items}
       Inc(i);
-      found:= ((Rows[i].Strings[DefDoseGridModCol]=m) and ((ModMode<>ModMFilm) or (Rows[i].Strings[DefDoseGridFilmCol]=f)));
+      if ModMode in [ModMFilm,ModMBeam] then s:= ''
+      else                                   s:= (Rows[i].Strings[DefNormGridTypeCol]+Rows[i].Strings[DefNormGridLinacCol]).Trim(',');
+      found:= ((Rows[i].Strings[DefDoseGridModCol]=m) and (((ModMode=ModMFilm) and (Rows[i].Strings[DefDoseGridFilmCol]=f)) or (s=f)));
     until found or (i>=j)
   else
     found:= False;
@@ -10093,7 +10166,7 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
     begin
     ResetValues;
     CopyCurve(wSource[dsMeasured],wSource[dsBuffer]);
-    with wSource[dsMeasured] do for i:= twDataFirst to twDataLast do twData[i]:= i;
+    with wSource[dsMeasured] do for i:= twDataRange[ptFirst] to twDataRange[ptLast] do twData[i]:= i;
     CopyCurve(wSource[dsBuffer],wSource[dsMeasured]);
     end;
   CheckMenuItem(ViewCalculatedItem,False);
@@ -10135,7 +10208,7 @@ if TestResult(LoadSelftestFile('selftest01_theoretical.txt'),'Theoretical profil
   EdgeDetectionCheckBox.Checked:= True;
   end;
 AddEmptyTest(2);                                                                                   {24}
-Engines[UsedEngine].ModalityNormList.FindModData(smod,ModRec);
+with Engines[UsedEngine] do ModalityNormList.FindModData(smod,wSource[dsMeasured].twSetFieldType,Linac,ModRec);
 TestResult(Assigned(ModRec),'Obtaining modality data for '+smod);                                  {26}
 if TestResult(LoadSelftestFile('selftest15_missing_penumbra.txt'),'Missing penumbra') then         {27}
   begin

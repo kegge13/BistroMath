@@ -1,7 +1,7 @@
 object AboutBox: TAboutBox
-  Left = 1096
+  Left = 394
   Height = 494
-  Top = 223
+  Top = 205
   Width = 671
   AlphaBlend = True
   Caption = 'about BistroMath'
@@ -9,7 +9,7 @@ object AboutBox: TAboutBox
   ClientWidth = 671
   Color = clInactiveBorder
   OnMouseMove = FormMouseMove
-  LCLVersion = '2.0.10.0'
+  LCLVersion = '2.0.12.0'
   object Panel: TPanel
     AnchorSideBottom.Control = OKButton
     Left = 0

@@ -22,8 +22,8 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="4"/>
-      <MinorVersionNr Value="24"/>
-      <BuildNr Value="767"/>
+      <MinorVersionNr Value="25"/>
+      <BuildNr Value="771"/>
       <Language Value="0809"/>
       <StringTable CompanyName="Theo van Soest" ProductName="BistroMath" ProductVersion="4"/>
     </VersionInfo>
