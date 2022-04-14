@@ -1,4 +1,4 @@
-unit PanelElements; {© Theo van Soest Lazarus 2.0.8/FPC 3.0.4 31/03/2020-16/05/2021}
+unit PanelElements; {© Theo van Soest 31/03/2020-14/04/2022 | Lazarus 2.2.0/FPC 3.2.0: 31/01/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -39,9 +39,9 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
                        ifthen(Xsign<0,wSource[Xsource].twRelMinInField,wSource[Xsource].twRelMaxInField);
     f                Absolute flatness
                        wSource[Xsource].twFlatness*100;
-    G                Gamma analysis within IFA
+    G|V[0]           Gamma analysis|Gamma pass rate within IFA [the '0' will take the range from the settings tab in the user interface]
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,True,NormAdjustNumEdit.Value/100);
-    g                Gamma analysis over complete profile
+    g|V[0]           Gamma analysis|Gamma pass rate over complete profile [the '0' will take the range from the settings tab in the user interface]
                        GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,NormAdjustNumEdit.Value/100);
   ! i                Sigmoid edge (inflection point)
                        wSource[Xsource].twLevelPos[dSigmoid].Penumbra[side].Calc;
@@ -112,7 +112,7 @@ Parameters with the exclamation symbol have a left and right result. Therefore t
 {14/05/2021 added 'K', 't'}
 const
   EmptyXtype           =  #0;
-  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','G','i','I','K','L','l','M','m','N','n','p','P','q','Q','r','R','s','S','t','T','u','U','w','X','x','Y','y','Z','z',EmptyXtype];
+  EvaluationXtypes     = ['a','b','c','C','d','D','e','F','f','g','G','i','I','K','L','l','m','M','n','N','p','P','q','Q','r','R','s','S','t','T','u','U','v','V','w','X','x','Y','y','Z','z',EmptyXtype];
   DefEnergyUncertainty = 0.01; {MeV}
   DefPanel             = 'PanelElements';
   DefCondTxt           = 'cond:';

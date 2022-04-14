@@ -435,6 +435,10 @@ version 4.06.2
 -Only after a explicite reload a new reference was loaded
 -Extended AliasTabExit event which does a reload for complete history
 
+069	11/04/2022	Zoom fails in gamma-analysis mode				solved
+in gamma-analyse modus: zoom-functie werk op rechteras, kleuren van schaal fout
+
+
 ======tested=======
 29/05/2020	unlocking critical options
 -enables ProcessAutoscalingItem

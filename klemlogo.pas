@@ -1,7 +1,6 @@
-﻿unit KlemLogo;
+﻿unit KlemLogo; {c Theo van Soest 24/02/2021}
 {$mode objfpc}{$H+}
 {$WARN 5024 off : Parameter "$1" not used}
-
 interface
 
 uses
@@ -35,7 +34,7 @@ var AboutBox        : TAboutBox;
 
 implementation
 
-uses StrUtils,
+uses StrUtils, LCLversion,
      Math,
      TObaseDef,TOtools,TOnumparser;
 
@@ -70,6 +69,7 @@ var LogoStrings: array[1..15] of String=(
 
 
 {30/10/2020 auto insertion of date}
+{24/02/2021 insert LCL/FPC version}
 constructor TAboutBox.Create(AOwner: TComponent);
 var dt: TDateTime;
     p : toTNumParser;
@@ -84,7 +84,7 @@ p                    := toTNumParser.Create;
 p        .CurrentLine:= {$I %DATE%};
 dt                   := p.NextDate;                                             //this procedure gives maximum flexibility
 s                    := FormatDateTime('DD/MM/YYYY',dt);
-Version  .Caption    := Format('version %s (build %d)   %s',[GetAppVersionString(False),BMBuildNumber,s]);
+Version  .Caption    := Format('version %s (build %d)   %s, generated with Lazarus v%s / FreePascal compiler v%s',[GetAppVersionString(False),BMBuildNumber,s,lcl_version,{$INCLUDE %FPCVERSION%}]);
 CopyRight.Caption    := '© Theo van Soest, 2005 - '+RightStr(CharSetTrimAll(csComplete-csNumeric,s),4);
 p.Free;
 end; {~init}
