@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-14/04/2022 | FPC 3.2.0: 13/09/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-15/04/2022 | FPC 3.2.0: 13/09/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -905,6 +905,8 @@ type
 no swapping needed
 *)
 
+{15/04/2022 FFF support introduced, based on general assumptions and experiences with other iba formats}
+
 const
   rfaNumMeasID   = ':MSR';
   rfaSystemID    = ':SYS';
@@ -951,6 +953,7 @@ type
                rfaField_mm      : array[twcFieldSizeDesc] of Integer;{%FSZ}
                rfaRadiation     : rfa_ID;                            {%BMT}
                rfaEnergy_MV     : twcFloatType;                      {%BMT}
+               rfaFFF           : Boolean;                           {"(FFF)" assumption, no proof in real world}
                rfaSSD_mm        : Integer;                           {%SSD}
                rfaBUP_01mm      : Integer;                           {%BUP}
                rfaBRD_mm        : Integer;                           {%BRD}
@@ -4742,6 +4745,7 @@ FRegisteredFiles := '.asc';
 end; {~create}
 
 
+{15/04/2022 rfaFFF}
 procedure TRfaProfileData.SetDefaults;
 begin
 Inherited;
@@ -4763,6 +4767,7 @@ with RfaData do
   rfaField_mm[fCrossplane]:=  100;
   rfaRadiation            := ifthen(twcGenericToElectron,'ELE','PHO');
   rfaEnergy_MV            :=    6;
+  rfaFFF                  := False;
   rfaSSD_mm               := Round(twcDefaultSSDcm[fcStandard]*10);
   rfaBUP_01mm             :=    0;
   rfaBRD_mm               := 1000;
@@ -4829,6 +4834,7 @@ end; {~checkdata}
 {16/12/2105 added scannr to readresults}
 {20/03/2017 range checking applied}
 {06/10/2020 fundamentals alternative}
+{15/04/2022 rfaFFF}
 function TRfaProfileData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
 var i,CommentCnt: Integer;
     Handled     : Boolean;
@@ -4938,7 +4944,7 @@ var i,CommentCnt: Integer;
 
   procedure RfaFill(RfaText     :String;
                     var Arfa_ID :rfa_ID;
-                    LineComplete:Boolean=True);       overload;
+                    LineComplete:Boolean=True);     overload;
   var Stg: String;
   begin
   if RfaTest(RfaText) then
@@ -4955,12 +4961,14 @@ var i,CommentCnt: Integer;
 
   procedure RfaFill(RfaText    :String;
                     var Arfa_ID:rfa_ID;
-                    var AFloat :twcFloatType);         overload;
+                    var AFloat :twcFloatType;
+                    var ABool  :Boolean);             overload;
   begin
   if RfaTest(RfaText) then
     begin
     RfaFill(RfaText,ARfa_ID,False);
     AFloat := FParser.NextFloat(1e5);
+    ABool  := Pos('FFF',FParser.CurrentLine)>0;
     Handled:= FParser.NextLine;
     end;
   end;
@@ -5054,36 +5062,36 @@ if FParseOk and (not CheckFileTypeOnly) and (FileFormat=twcRFA_ascii) then with 
         Handled:= False;
         if FParseOk and not (RfaTest(rfaEndMeasID) or RfaTest(rfaEndFileID)) then
           begin
-          RfaFill(rfaModID                         ,rfaModType);                  {%MOD 	RAT}
-          RfaFill(rfaFileID                        ,rfaFileType);                 {%TYP 	SCN}
-          RfaFill(rfaScanID                        ,rfaScanType);                 {%SCN 	DPT}
-          RfaFill(rfaDetID                         ,rfaDetType);                  {%FLD 	ION}
-          RfaFill(rfaDateID                        ,rfaDate);                     {%DAT 	12-09-2011}
-          RfaFill(rfaTimeID                        ,rfaDate,True);                {%TIM 	13:53:07}
-          RfaFill(rfaFSizeID                       ,rfaField_mm);                 {%FSZ 	100	100}
-          RfaFill(rfaRadiationID                   ,rfaRadiation,rfaEnergy_MV);   {%BMT 	PHO	    6.0}
-          RfaFill(rfaSSDID                         ,rfaSSD_mm,0);                 {%SSD 	1000}
-          RfaFill(rfaBUPID                         ,rfaBUP_01mm);                 {%BUP 	0}
-          RfaFill(rfaBRDID                         ,rfaBRD_mm,0);                 {%BRD 	1000}
-          RfaFill(rfaFShapeID                      ,rfaFShape);                   {%FSH 	-1}
-          RfaFill(rfaAccessoryID                   ,rfaAccessory);                {%ASC 	0}
-          RfaFill(rfaWedgeID                       ,rfaWedge_deg,0);              {%WEG 	0}
-          RfaFill(rfaGantryID                      ,rfaGantry,360);               {%GPO 	0}
-          RfaFill(rfaCollimatorID                  ,rfaCollimator,360);           {%CPO 	0}
-          RfaFill(rfaMeasID                        ,rfaMeasType);                 {%MEA 	1}
-          RfaFill(rfaDepthID                       ,rfaDepth_01mm,1e4);           {%PRD 	0}
-          RfaFill(rfaPointsID                      ,rfaPoints,2);                 {%PTS 	141}
-          RfaFill(rfaStartScanID                   ,rfaStart_Meas_cm);            {%STS 	    0.0	    0.0  160.0}
-          RfaFill(rfaEndScanID                     ,rfaEnd_Meas_cm);              {%ETS 	    0.0	    0.0  -10}
+          RfaFill(rfaModID                  ,rfaModType);                       {%MOD 	RAT}
+          RfaFill(rfaFileID                 ,rfaFileType);                      {%TYP 	SCN}
+          RfaFill(rfaScanID                 ,rfaScanType);                      {%SCN 	DPT}
+          RfaFill(rfaDetID                  ,rfaDetType);                       {%FLD 	ION}
+          RfaFill(rfaDateID                 ,rfaDate);                           {%DAT 	12-09-2011}
+          RfaFill(rfaTimeID                 ,rfaDate,True);                     {%TIM 	13:53:07}
+          RfaFill(rfaFSizeID                ,rfaField_mm);                      {%FSZ 	100	100}
+          RfaFill(rfaRadiationID            ,rfaRadiation,rfaEnergy_MV,rfaFFF); {%BMT 	PHO	    6.0}
+          RfaFill(rfaSSDID                  ,rfaSSD_mm,0);                      {%SSD 	1000}
+          RfaFill(rfaBUPID                  ,rfaBUP_01mm);                      {%BUP 	0}
+          RfaFill(rfaBRDID                  ,rfaBRD_mm,0);                      {%BRD 	1000}
+          RfaFill(rfaFShapeID               ,rfaFShape);                        {%FSH 	-1}
+          RfaFill(rfaAccessoryID            ,rfaAccessory);                     {%ASC 	0}
+          RfaFill(rfaWedgeID                ,rfaWedge_deg,0);                   {%WEG 	0}
+          RfaFill(rfaGantryID               ,rfaGantry,360);                    {%GPO 	0}
+          RfaFill(rfaCollimatorID           ,rfaCollimator,360);                {%CPO 	0}
+          RfaFill(rfaMeasID                 ,rfaMeasType);                      {%MEA 	1}
+          RfaFill(rfaDepthID                ,rfaDepth_01mm,1e4);                {%PRD 	0}
+          RfaFill(rfaPointsID               ,rfaPoints,2);                      {%PTS 	141}
+          RfaFill(rfaStartScanID            ,rfaStart_Meas_cm);                 {%STS 	    0.0	    0.0  160.0}
+          RfaFill(rfaEndScanID              ,rfaEnd_Meas_cm);                   {%ETS 	    0.0	    0.0  -10}
           if CommentCnt<2 then
             begin
-            RfaFill(rfaMeasInfoID                  ,rfaComments[CommentCnt]);     {!}
+            RfaFill(rfaMeasInfoID           ,rfaComments[CommentCnt]);          {!}
             if Length(rfaComments[CommentCnt])>0 then
               Inc(CommentCnt);
             end;
           while RfaTest('#') and FParseOk do
             NextLine;
-          RfaFill(rfaDataID                        ,rfaCoordinates_cm,rfaValues); {=}
+          RfaFill(rfaDataID                 ,rfaCoordinates_cm,rfaValues);      {=}
           end;
         if LogLevel>3 then
           StatusMessage(Format('%d:%s',[FParser.CurrentLineNumber,FParser.CurrentLine]),False,4);
@@ -5136,6 +5144,7 @@ end; {~putprofile}
 
 
 {29/10/2016 chTab before dose value in data line}
+{15/04/2022 rfaFFF}
 function TRfaProfileData.WriteData(AFileName  :String;
                                    AStringList:TStrings;
                                    ASource    :twcDataSource=dsMeasured;
@@ -5192,8 +5201,8 @@ with AStringList,RfaData do
     WriteRfaString(rfaDetID        ,rfaDetType   );   {%FLD ION}
     WriteRfaString(rfaDateID       ,Format('%0.2d-%0.2d-%0.4d',[MonthOf(rfaDate),DayOf(rfaDate)   ,YearOf(rfaDate)         ])); {%DAT 	03-27-2008}
     WriteRfaString(rfaTimeID       ,Format('%0.2d:%0.2d:%0.2d',[HourOf(rfaDate) ,MinuteOf(rfaDate),SecondOf(rfaDate)       ])); {%TIM 	15:57:33}
-    WriteRfaString(rfaFSizeID      ,Format('%d%s%d'      ,[rfaField_mm[fInplane],chTab            ,rfaField_mm[fCrossplane]])); {%FSZ 	400	400}
-    WriteRfaString(rfaRadiationID  ,Format('%s%s%0.1f'   ,[rfaRadiation         ,chTab            ,rfaEnergy_MV            ])); {%BMT 	PHO 	    6.0}
+    WriteRfaString(rfaFSizeID      ,Format('%d%s%d'           ,[rfaField_mm[fInplane],chTab       ,rfaField_mm[fCrossplane]])); {%FSZ 	400	400}
+    WriteRfaString(rfaRadiationID  ,Format('%s%s%0.1f%s'      ,[rfaRadiation,chTab,rfaEnergy_MV,ifthen(rfaFFF,' (FFF)','') ])); {%BMT 	PHO 	    6.0 (FFF)}
     WriteRfaInteger(rfaSSDID       ,rfaSSD_mm    );   {%SSD 	1000}
     WriteRfaInteger(rfaBUPID       ,rfaBUP_01mm  );   {%BUP 	0}
     WriteRfaInteger(rfaBRDID       ,rfaBRD_mm    );   {%BRD 	1000}
@@ -12782,6 +12791,7 @@ end; {~importschusterprofile}
 {09/12/2015 transfer of flastmessage}
 {15/12/2015 ScanNr copied to twScanNr}
 {16/05/2020 applied FMultiScanCapable}
+{15/04/2022 rfaFFF}
 function TWellhoferData.ImportRfaProfile(Rfa:TRfaProfileData): Boolean;
 var i,n  : Integer;
     mAxis: twcMeasAxis;
@@ -12794,12 +12804,13 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
   Result    := ((rfaModType='RAT') or (rfaModType='ABS') or twFilmData) and (rfaFileType='SCN');
   if Result then
     begin
-    if      rfaRadiation='ELE'   then twBModality:= 'E'
-    else if rfaRadiation='PHO'   then twBModality:= 'X'
-    else if twcGenericToElectron then twBModality:= 'E'
-    else                              twBModality:= 'X';
-    if rfaScanType ='DPT' then twDesScanType:= snPDD
-    else                       twDesScanType:= snUndefined;
+    if      rfaRadiation='ELE'   then twBModality   := 'E'
+    else if rfaRadiation='PHO'   then twBModality   := 'X'
+    else if twcGenericToElectron then twBModality   := 'E'
+    else                              twBModality   := 'X';
+    if wFFFinFile and rfaFFF     then twSetFieldType:= fcFFF;
+    if rfaScanType ='DPT'        then twDesScanType := snPDD
+    else                              twDesScanType := snUndefined;
     twBASD           := 100;
     FMultiScanCapable:= Rfa.FMultiScanCapable;
     FIdentity        := Rfa.Identity;
@@ -13309,6 +13320,7 @@ end; {~importwmsprofile}
 {24/07/2015 Shift already completely done on data.}
 {12/05/2016 wAxisPreserveOnExport}
 {27/04/2020 Scalingfactor reviewed}
+{15/04/2022 rfaFFF}
 function TWellhoferData.ExportRfaProfile(Rfa          :TRfaProfileData;
                                          ASource      :twcDataSource=dsMeasured;
                                          ScalingFactor:twcFloatType =1.0         ): Boolean;
@@ -13331,6 +13343,7 @@ if Result then
     rfaField_mm[fCrossplane]:= Round(FieldAB_cm*10);
     rfaRadiation            := ifthen(twBModality='X','PHO','ELE');
     rfaEnergy_MV            := Energy;
+    rfaFFF                  := wFFFinFile and (twSetFieldType in [fcFFF,fcMRlinac]);
     rfaSSD_mm               := Round(twSSD_cm*10);
     rfaWedge_deg            := WedgeAngle;
     rfaGantry               := twBGantry;

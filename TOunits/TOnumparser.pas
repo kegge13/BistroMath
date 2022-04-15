@@ -1,4 +1,4 @@
-unit TOnumparser;  {© Theo van Soest 2015-26/11/2020}
+unit TOnumparser;  {© Theo van Soest 2015-30/03/2022}
 {$I TOnumparser_opt.inc}
 {$R-}
 
@@ -978,7 +978,7 @@ FConversionResult:= FindNum;
 Result           := 0;
 if FConversionResult then
   try
-     FLeft            := Min(Length(FLine),Succ(FRight));
+     FLeft            := Succ(FRight);//Min(Length(FLine),Succ(FRight));
      Result           := StrToFloat(ConversionString);
     {$IFDEF SMART_ROUNDING}
      if (Result<>0) and (Round(Result)<>Result) then
@@ -1027,12 +1027,13 @@ end; {~nextchar}
 
 
 {06/10/2020 fundamentals alternative}
+{30/03/2022 handle negative FRight}
 function toTNumParser.NextString(StopChar:Char): String;
 begin
-if FLeft=0 then
-  Inc(FLeft);                                                                   //FLeft is 1-based
 FRight:= FLine.IndexOf(StopChar,FLeft);                                         //zero-based
-Result:= FLine.SubString(Pred(FLeft),FRight-FLeft).Trim;                        //zero-based
+if FRight<FLeft then
+  FRight:= FLine.Length+1;
+Result:= FLine.SubString(FLeft,FRight-FLeft).Trim;                              //zero-based
 FLeft := Succ(FRight);
 end; {~nextstring}
 
