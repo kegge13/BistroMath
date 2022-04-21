@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-13/04/2022 | Lazarus 2.2.0/FPC 3.2.0: 31/01/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-21/04/2022 | Lazarus 2.2.0/FPC 3.2.0: 31/01/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -2604,8 +2604,8 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
                       [ifthen(Linac=twcDefUnknown,'',Linac+','),
                        Er,Tr,
                        ifthen((ScanType in [snGT,snAB,snFreescan,snAngle]) and
-                              (not twDesVaryingAxis[Beam]) and (twVector_ICD_cm[Start].m[Beam]>0),
-                              Format(', '+DefDepthText,[twVector_ICD_cm[Start].m[Beam]*tmpX])                 ,''),
+                              (not twDesVaryingAxis[Beam]) and (twVector_ICD_cm[ptFirst].m[Beam]>0),
+                              Format(', '+DefDepthText,[twVector_ICD_cm[ptFirst].m[Beam]*tmpX])               ,''),
                        ifthen(AxisViewFileTypeCheckBox  .Checked,
                               ', '+Identity                                                                   ,''),
                        ifthen(AxisViewFieldTypeCheckBox .Checked,
@@ -7201,7 +7201,7 @@ with Engines[UsedEngine],wSource[dsCalculated],SpecialMode[2] do
                      LowerCase(wCurveInfo.twDesTypeString[1]),
                      ifthen(SwapAxis,ScanRightSide,ScanLeftSide),ifthen(SwapAxis,ScanLeftSide,ScanRightSide),
                      ifthen(ViewMillimetersItem.Checked,'m','c'),
-                     ifthen(ScanType in twcVertScans,'-',Format('%0.1f',[Xscaling*twVector_ICD_cm[Start].m[Beam]])),
+                     ifthen(ScanType in twcVertScans,'-',Format('%0.1f',[Xscaling*twVector_ICD_cm[ptFirst].m[Beam]])),
                      Xscaling*FieldGT_cm,Xscaling*FieldAB_cm,Rs]);
   SetMessageBar(OutStg);
   if Fpar[_ParClipBoard]>0 then
