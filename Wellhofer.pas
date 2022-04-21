@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-15/04/2022 | FPC 3.2.0: 13/09/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-21/04/2022 | FPC 3.2.0: 13/09/2021}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -453,7 +453,6 @@ type
   twcScalingType    =(scNormalised,scAvgNorm,scPlotScaling,scMaximum);
   twcBeamType       =(Photons,Electrons,Protons,Other);
   twcFloatType      = Double;                                                   //was Extended in Delphi7
-  twcStartStopType  =(Start,Stop);
   twcRange          = array[twcLimits] of Integer;
   twcFloatRange     = array[twcLimits] of twcFloatType;
   twcFloatArray     = array of twcFloatType;
@@ -2627,7 +2626,7 @@ type
     twSSD2NormRatio   : twcFloatType;                                           //ratio of used SSD to standard SSD
     twActDet2NormRatio: twcFloatType;                                           //ratio of detector to standard SSD: twSDD2SSDratio*twSSD2NormRatio/twPosScaling;
     twSNR             : twcFloatType;
-    twVector_ICD_cm   : array[twcStartStopType] of twcCoordinate;
+    twVector_ICD_cm   : array[twcLimits] of twcCoordinate;
     twStepSizeCm      : twcFloatType;
     twStepSign        : SmallInt;
     twSymCorrected    : Boolean;
@@ -7155,6 +7154,7 @@ end; {~checkdata}
 
 {08/06/2020 skip too short lines in GetNextLine; do not test on ConversionResult at EndOfFile}
 {01/06/2021 twcGenericPos_mm}
+{21/04/2022 lost first point for generic profile}
 function THdfProfileData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
 var v,r  : twcFloatType;
     c    : twcCoordinate;
@@ -7260,7 +7260,7 @@ if (Result and (not CheckFileTypeOnly) and (FileFormat in [twcHdfProfile,twcGene
       end;
     end; {hdfprofile}
   while FParseOk do
-    GetNextLine;                               {overige xy-paren}
+    GetNextLine(Length(FHDFdata)=0);                               {generic, use current line when no points were found}
   FParseOk:= EndOfFile and (GetNumPoints>1);
   if FParseOk then
     begin
@@ -9497,7 +9497,7 @@ end; {~getequivalentfield}
 
 function TWellhoferData.GetFieldDepth: twcFloatType;
 begin
-if ScanType in twcHoriScans then Result:= wSource[dsMeasured].twVector_ICD_cm[Start].m[Beam]
+if ScanType in twcHoriScans then Result:= wSource[dsMeasured].twVector_ICD_cm[ptFirst].m[Beam]
 else                             Result:= UndefinedVal;
 end; {~getfielddepth}
 
@@ -10136,8 +10136,8 @@ with wCurveInfo,wSource[ASource],twBeamInfo do
     if  ((WedgeAngle>0) or (twSetFieldType=fcWedge)) and (not (twiWedge in IgnoredParams)) then
       Stg:= Stg+'w';
     for t:= Inplane to CrossPlane do
-      if (not twDesVaryingAxis[t]) and (Abs(twVector_ICD_cm[Start].m[t])>1) then
-        Stg:= Stg+'_'+ic[t]+Num2Stg(wUserAxisSign[t]*twVector_ICD_cm[Start].m[t],2,0);
+      if (not twDesVaryingAxis[t]) and (Abs(twVector_ICD_cm[ptFirst].m[t])>1) then
+        Stg:= Stg+'_'+ic[t]+Num2Stg(wUserAxisSign[t]*twVector_ICD_cm[ptFirst].m[t],2,0);
     end
   else
     Stg:= 'default';
@@ -10714,8 +10714,8 @@ var Stg         : String;
     if SearchLine('Number Of Points:' ,i) then
       begin
       SetNumPoints(dsMeasured,i);                                               //resize arrays, set twDataRange[ptFirst], twDataRange[ptLast]
-      SearchLine('Start'              ,twVector_ICD_cm[Start],True,True);
-      SearchLine('End'                ,twVector_ICD_cm[Stop ],True,True);
+      SearchLine('Start'              ,twVector_ICD_cm[ptFirst],True,True);
+      SearchLine('End'                ,twVector_ICD_cm[ptLast ],True,True);
       FParser.Search('Points');
       s:= ifthen(Pos('[mm]',FParser.CurrentLine)>0,0.1,1);
       i:= twDataRange[ptFirst];
@@ -11162,7 +11162,7 @@ reference is loaded
 {12/01/2018 added twAbsNormConfig to note used info from modlist}
 {22/02/2018 apply StrTrim to Linac instead of removing anything surrounded by illegal characters}
 {26/02/2018 ... but still clip at first space}
-{21/08/2018 tmpCoord.m[mAxis]:= twVector_ICD_cm[Stop].m[mAxis]-twVector_ICD_cm[Start].m[mAxis] was calculated before twVector_ICD_cm[nn] was set}
+{21/08/2018 tmpCoord.m[mAxis]:= twVector_ICD_cm[Stop].m[mAxis]-twVector_ICD_cm[ptFirst].m[mAxis] was calculated before twVector_ICD_cm[nn] was set}
 {11/09/2018 swapped relation between scanangle 45/135 and GA/TA}
 {02/11/2018 wGenericToPDD handling improved}
 {16/11/2018 rescaling for profiles improved}
@@ -11187,7 +11187,7 @@ var i,j        : Integer;
     MeasAxisID : twcTankAxisID;
     tmpCoord   : twcCoordinate;
     TankMapping: twcMeasAxisStg;
-    v          : twcStartStopType;
+    v          : twcLimits;
 
   function NotOnCAX(ACoordinate:twcCoordinate): Boolean;
   begin
@@ -11210,10 +11210,10 @@ var i,j        : Integer;
     Result:= 0
   else with wSource[dsMeasured] do
     try
-      deltaZ:= twVector_ICD_cm[Stop ].m[Beam ]-twVector_ICD_cm[Start].m[Beam];
-      Result:= twVector_ICD_cm[Start].m[aAxis];
+      deltaZ:= twVector_ICD_cm[ptLast ].m[Beam ]-twVector_ICD_cm[ptFirst].m[Beam];
+      Result:= twVector_ICD_cm[ptFirst].m[aAxis];
       if Abs(deltaZ)>0.5 then
-         Result:= Result - twVector_ICD_cm[Start].m[Beam]*(twVector_ICD_cm[Stop].m[aAxis]-twVector_ICD_cm[Start].m[aAxis])/deltaZ;
+         Result:= Result - twVector_ICD_cm[ptFirst].m[Beam]*(twVector_ICD_cm[ptLast].m[aAxis]-twVector_ICD_cm[ptFirst].m[aAxis])/deltaZ;
      except
       Result:= 0;
      end;
@@ -11300,16 +11300,16 @@ with wCurveInfo do
         for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
           twCoordinates[i].m[mAxis]:= twCoordinates[i].m[mAxis]+wAutoShiftCm[mAxis];
       end;
-    twVector_ICD_cm[Start]:= twCoordinates[twDataRange[ptFirst]];
-    twVector_ICD_cm[Stop ]:= twCoordinates[twDataRange[ptLast ]];
+    twVector_ICD_cm[ptFirst]:= twCoordinates[twDataRange[ptFirst]];
+    twVector_ICD_cm[ptLast ]:= twCoordinates[twDataRange[ptLast ]];
     for mAxis:= Inplane to Beam do                                              //will be used to derive scanangle in OmniPro v6 GTABUD coordinate system
-      tmpCoord.m[mAxis]:= twVector_ICD_cm[Stop].m[mAxis]-twVector_ICD_cm[Start].m[mAxis];
+      tmpCoord.m[mAxis]:= twVector_ICD_cm[ptLast].m[mAxis]-twVector_ICD_cm[ptFirst].m[mAxis];
     if wFieldTypeDetection[fcMRlinac] and (Pos(Linac,wMRlinacTUlist)>0) then
       twSetFieldType:= fcMRlinac;
     twSSD_cm          := Max(10,Abs(twSSD_cm));
     FDefaultSSD_cm    := Max(10,Abs(twcDefaultSSDcm[twSetFieldType]));
     twSSD2NormRatio   := twSSD_cm/FDefaultSSD_cm;
-    twSDD2SSDratio    := ifthen(Abs(twVector_ICD_cm[Start].m[Beam]-twVector_ICD_cm[Stop].m[Beam])<0.2,1+twVector_ICD_cm[Start].m[Beam]/twSSD_cm,1);
+    twSDD2SSDratio    := ifthen(Abs(twVector_ICD_cm[ptFirst].m[Beam]-twVector_ICD_cm[ptLast].m[Beam])<0.2,1+twVector_ICD_cm[ptFirst].m[Beam]/twSSD_cm,1);
     twPosScaling      := Max(0.1,ifthen(wScaleSDD2SSD,Max(1,twSDD2SSDratio),1)*ifthen(wScale2DefaultSSD,twSSD2NormRatio,1));
     twActDet2NormRatio:= twSDD2SSDratio*twSSD2NormRatio/twPosScaling;
     twResampled       := False;
@@ -11319,9 +11319,9 @@ with wCurveInfo do
     twPosCmExportSign := 1;
     for mAxis:= Inplane to Beam do
       begin                                                                     //set refpoint to first datapoint
-      twDesVaryingAxis[mAxis]:= Abs(twVector_ICD_cm[Stop ].m[mAxis]-twVector_ICD_cm[Start].m[mAxis])>0.5;
+      twDesVaryingAxis[mAxis]:= Abs(twVector_ICD_cm[ptLast].m[mAxis]-twVector_ICD_cm[ptFirst].m[mAxis])>0.5;
       twPosCmExportSign      := twPosCmExportSign*ifthen(twDesVaryingAxis[mAxis],wUserAxisSign[mAxis],1);
-      wRefpoint.m[mAxis]     := ifthen(twDesVaryingAxis[mAxis],0,twVector_ICD_cm[Start].m[mAxis]);
+      wRefpoint.m[mAxis]     := ifthen(twDesVaryingAxis[mAxis],0,twVector_ICD_cm[ptFirst].m[mAxis]);
       Inc(varAxisHex,ifthen(twDesVaryingAxis[mAxis],1 shl ord(mAxis),0));
       end;
     if twDesScanType in [snFreeScan,snAngle,snUndefined,snGenericHorizontal,snGenericProfile] then
@@ -11329,14 +11329,14 @@ with wCurveInfo do
       case varAxisHex of
         1: SetScanType(snGT);
         2: SetScanType(snAB);
-        3: if LineDistance2Origin(twVector_ICD_cm[Start].m[Inplane],twVector_ICD_cm[Start].m[Crossplane],
-                                  twVector_ICD_cm[Stop ].m[Inplane],twVector_ICD_cm[Stop ].m[Crossplane])<0.5 then
+        3: if LineDistance2Origin(twVector_ICD_cm[ptFirst].m[Inplane],twVector_ICD_cm[ptFirst].m[Crossplane],
+                                  twVector_ICD_cm[ptLast ].m[Inplane],twVector_ICD_cm[ptLast ].m[Crossplane])<0.5 then
              SetScanType(snAngle)
            else
              SetScanType(snFreeScan);
         4: SetScanType(snPDD);
-        5..7: if NotOnCAX(twVector_ICD_cm[Start]) and NotOnCAX(twVector_ICD_cm[Stop ]) and
-                (FanTangent(twVector_ICD_cm[Start])=FanTangent(twVector_ICD_cm[Stop ])) then
+        5..7: if NotOnCAX(twVector_ICD_cm[ptFirst]) and NotOnCAX(twVector_ICD_cm[ptLast]) and
+                (FanTangent(twVector_ICD_cm[ptFirst])=FanTangent(twVector_ICD_cm[ptLast])) then
                 SetScanType(snFanLine)
               else
                 SetScanType(snFreeScan);
@@ -11346,9 +11346,9 @@ with wCurveInfo do
       end;
      if twDesScanType=snAngle then
        begin
-       if max(abs(twVector_ICD_cm[Start].m[Inplane]),abs(twVector_ICD_cm[Start].m[Crossplane]))>
-          max(abs(twVector_ICD_cm[Stop ].m[Inplane]),abs(twVector_ICD_cm[Stop ].m[Crossplane])) then v:= Start
-       else                                                                                          v:= Stop;
+       if max(abs(twVector_ICD_cm[ptFirst].m[Inplane]),abs(twVector_ICD_cm[ptFirst].m[Crossplane]))>
+          max(abs(twVector_ICD_cm[ptLast ].m[Inplane]),abs(twVector_ICD_cm[ptLast ].m[Crossplane])) then v:= ptFirst
+       else                                                                                              v:= ptLast;
        if twVector_ICD_cm[v].m[InPlane]=0 then
          begin
          SetScanType(snAB);
@@ -11373,7 +11373,7 @@ with wCurveInfo do
        end;
     if (twDesScanType in [snFreescan]) and (not twDesVaryingAxis[Beam]) then
       twDesScanType:= snGenericHorizontal;
-    if (((twDesScanType in [snFreescan,snGenericProfile,snUndefined,snPDD]) and wGenericToPDD and (GetDistance(twVector_ICD_cm[Stop],twVector_ICD_cm[Start])>3)) or
+    if (((twDesScanType in [snFreescan,snGenericProfile,snUndefined,snPDD]) and wGenericToPDD and (GetDistance(twVector_ICD_cm[ptLast],twVector_ICD_cm[ptFirst])>3)) or
             (twDesScanType=snFanLine)) then
       begin
       for mAxis:= Inplane to Beam do
@@ -11391,8 +11391,8 @@ with wCurveInfo do
           twCoordinates[i].m[Inplane   ]:= wRefPoint.m[Inplane   ];
           twCoordinates[i].m[Crossplane]:= wRefPoint.m[Crossplane];
           end;
-        twVector_ICD_cm[Start]:= twCoordinates[twDataRange[ptFirst]];
-        twVector_ICD_cm[Stop ]:= twCoordinates[twDataRange[ptLast ]];
+        twVector_ICD_cm[ptFirst]:= twCoordinates[twDataRange[ptFirst]];
+        twVector_ICD_cm[ptLast ]:= twCoordinates[twDataRange[ptLast ]];
         end;
       end;
     case twDesScanType of
@@ -11403,13 +11403,13 @@ with wCurveInfo do
                        end;
       snFanLine      : begin
                        for mAxis:= Inplane to CrossPlane do
-                         wRefPoint.m[mAxis]:= twVector_ICD_cm[Start].m[mAxis];
+                         wRefPoint.m[mAxis]:= twVector_ICD_cm[ptFirst].m[mAxis];
                        for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
                          twPosCm[i]:= DistanceToRefPoint(twCoordinates[i])*Sign(twCoordinates[i].m[Beam]);
                        end;
       snGenericHorizontal,
       snFreeScan     : begin
-                       wRefPoint:= twVector_ICD_cm[Start];
+                       wRefPoint:= twVector_ICD_cm[ptFirst];
                        for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
                          twPosCm[i]:= DistanceToRefPoint(twCoordinates[i]);
                        end;
@@ -11950,14 +11950,14 @@ var StreamPos: Integer;
             if Version>60 then
               AStream.Seek(291,soFromCurrent);    {move pointer 291 bytes}
             // voor absdose y,x,z,refy,refx,refz
-            twVector_ICD_cm[Start]:= get_CIB_double;
-            twVector_ICD_cm[Stop ].m[CrossPlane  ]                 := to_double(0,0.1);
-            twVector_ICD_cm[Stop ].m[InPlane     ]                 := to_double(0,0.1);
-            if Version>60 then twVector_ICD_cm[Stop ].m[InPlane]   := to_double(0,0.1); // -y
-            twVector_ICD_cm[Stop ].m[Beam        ]                 := to_double(0,0.1);
-            if Version>60 then twVector_ICD_cm[Stop ].m[CrossPlane]:= to_double(0,0.1); // -x
-            twTemperature_C                                        := to_double;
-            twPressure_hPa                                         := to_double;
+            twVector_ICD_cm[ptFirst]:= get_CIB_double;
+            twVector_ICD_cm[ptLast ].m[CrossPlane  ]                := to_double(0,0.1);
+            twVector_ICD_cm[ptLast ].m[InPlane     ]                := to_double(0,0.1);
+            if Version>60 then twVector_ICD_cm[ptLast].m[InPlane]   := to_double(0,0.1); // -y
+            twVector_ICD_cm[ptLast].m[Beam        ]                 := to_double(0,0.1);
+            if Version>60 then twVector_ICD_cm[ptLast].m[CrossPlane]:= to_double(0,0.1); // -x
+            twTemperature_C                                         := to_double;
+            twPressure_hPa                                          := to_double;
             with wSource[dsMeasured] do
               while i>0 do
                 begin
@@ -12021,13 +12021,13 @@ var StreamPos: Integer;
             AStream.Seek(ifthen(Version<52,8,10),soFromCurrent);                {move pointer 8 or 10 bytes}
           if FParseOk then with wSource[dsMeasured] do
             begin
-            twVector_ICD_cm[Start]:= get_CIB_double;
-            twVector_ICD_cm[Stop ]:= get_CIB_double;
-            twScanLength := Max(0.1,GetDistance(twVector_ICD_cm[Start],twVector_ICD_cm[Stop]));
-            ICD_offset   := twVector_ICD_cm[Start];
+            twVector_ICD_cm[ptFirst]:= get_CIB_double;
+            twVector_ICD_cm[ptLast ]:= get_CIB_double;
+            twScanLength := Max(0.1,GetDistance(twVector_ICD_cm[ptFirst],twVector_ICD_cm[ptLast]));
+            ICD_offset   := twVector_ICD_cm[ptFirst];
             ScanHex      := 0;
             for ma:= Inplane to Beam do
-              if Abs(twVector_ICD_cm[Start].m[ma]-twVector_ICD_cm[Stop].m[ma])>0.5 then
+              if Abs(twVector_ICD_cm[ptFirst].m[ma]-twVector_ICD_cm[ptLast].m[ma])>0.5 then
                 begin
                 Inc(ScanHex,1 shl Ord(ma));
                 ICD_offset.m[ma]:= 0;
@@ -12046,7 +12046,7 @@ var StreamPos: Integer;
             if FParseOk then
               begin
               for ma:= Inplane to Beam do
-                tmpRangeCoord.m[ma]:= Abs(twVector_ICD_cm[Stop].m[ma]-twVector_ICD_cm[Start].m[ma])/twScanLength;
+                tmpRangeCoord.m[ma]:= Abs(twVector_ICD_cm[ptLast].m[ma]-twVector_ICD_cm[ptFirst].m[ma])/twScanLength;
               for i:= 0 to Pred(twPoints) do
                 to_Meas_point(i);                         {-----------------------read datapoints----------------------------}
               if (ScanNr=0) or (ScanNr=ScanNrOk) then
@@ -12633,8 +12633,8 @@ if Result then if Pips.GetNumPoints>0 then
       twCoordinates[i].m[Beam]:= 0;
       twData[i]               := Pips.GetProfile(i);
       end;
-    twVector_ICD_cm[Start]:= twCoordinates[0];
-    twVector_ICD_cm[Stop ]:= twCoordinates[Pred(Pips.GetNumPoints)];
+    twVector_ICD_cm[ptFirst]:= twCoordinates[0];
+    twVector_ICD_cm[ptLast ]:= twCoordinates[Pred(Pips.GetNumPoints)];
     StatusMessage(Pips.LastMessage,True,2);
     end;
 end; {~importpipsprofile}
@@ -12781,8 +12781,8 @@ if Result then if Schuster.GetNumPoints>0 then
       twCoordinates[i].m[Beam]:= Schuster.Depth;
       twData[i]               := Schuster.GetProfile(i);
       end;
-    twVector_ICD_cm[Start]    := twCoordinates[0];
-    twVector_ICD_cm[Stop ]    := twCoordinates[Pred(Schuster.GetNumPoints)];
+    twVector_ICD_cm[ptFirst]  := twCoordinates[0];
+    twVector_ICD_cm[ptLast ]  := twCoordinates[Pred(Schuster.GetNumPoints)];
     StatusMessage(Schuster.LastMessage,True,2);
     end;
 end; {~importschusterprofile}
@@ -12839,9 +12839,9 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
     SetAxisID('-XY-Z',twDeviceMappingICD,twDeviceDirXYZ);
     for mAxis:= Inplane to Beam do   {fixed mapping assumed by using coordinates.m}
       begin
-      twVector_ICD_cm[Start].m[mAxis]:= rfaCoordinates_cm[0].m[mAxis];
-      twVector_ICD_cm[Stop ].m[mAxis]:= rfaCoordinates_cm[n].m[mAxis];
-      wRefPoint    .m[mAxis]:= twVector_ICD_cm[Start].m[mAxis];
+      twVector_ICD_cm[ptFirst].m[mAxis]:= rfaCoordinates_cm[0].m[mAxis];
+      twVector_ICD_cm[ptLast ].m[mAxis]:= rfaCoordinates_cm[n].m[mAxis];
+      wRefPoint    .m[mAxis]:= twVector_ICD_cm[ptFirst].m[mAxis];
       end;
     twElSamples     := 1;
     twDesModDateTime:= rfaDate;
@@ -12850,7 +12850,7 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
     twMeasTime      := twDesModTime;
     twMeasDateTime  := twDesModDateTime;
     twScanNr        := Rfa.ScanNr;
-    twStepSizeCm    := GetDistance(twVector_ICD_cm[Start],twVector_ICD_cm[Stop ])/n;
+    twStepSizeCm    := GetDistance(twVector_ICD_cm[ptFirst],twVector_ICD_cm[ptLast])/n;
     if n>0 then
       for i:= 0 to n do
         begin
@@ -12974,9 +12974,9 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
   twDeviceDirXYZ    := tmAxisDir;
   for mAxis:= Inplane to Beam do
     begin
-    twVector_ICD_cm[Start].m[mAxis]:= Get_tmPoscm(mAxis,0);
-    twVector_ICD_cm[Stop ].m[mAxis]:= Get_tmPoscm(mAxis,n);
-    wRefPoint             .m[mAxis]:= twVector_ICD_cm[Start].m[mAxis];
+    twVector_ICD_cm[ptFirst].m[mAxis]:= Get_tmPoscm(mAxis,0);
+    twVector_ICD_cm[ptLast ].m[mAxis]:= Get_tmPoscm(mAxis,n);
+    wRefPoint               .m[mAxis]:= twVector_ICD_cm[ptFirst].m[mAxis];
     end;
   twSSD_cm        := tmSSD_mm/10;
   twElSamples     := 1;
@@ -13204,8 +13204,8 @@ if Result then if Hdf.GetNumPoints>0 then
           twData[i]:= q*hdfpoint.Y;
           end;
         end;
-      twVector_ICD_cm[Start]:= twCoordinates[0];
-      twVector_ICD_cm[Stop ]:= twCoordinates[Pred(Hdf.GetNumPoints)];
+      twVector_ICD_cm[ptFirst]:= twCoordinates[0];
+      twVector_ICD_cm[ptLast ]:= twCoordinates[Pred(Hdf.GetNumPoints)];
       StatusMessage(Hdf.LastMessage,True,2);
       Result:= True;
       end; {q>0}
@@ -13283,8 +13283,8 @@ if Wms<>nil then with Wms.wmsFileHeader.wmsRec06 do
       twSSD_cm:= wmhSSD_cm;
       for mAxis:= Inplane to Beam do   {fixed mapping assumed by using coordinates.m}
         begin
-        twVector_ICD_cm[Start].m[mAxis]:= wmhBorders[1,mAxis]/100;
-        twVector_ICD_cm[Stop ].m[mAxis]:= wmhBorders[2,mAxis]/100;
+        twVector_ICD_cm[ptFirst].m[mAxis]:= wmhBorders[1,mAxis]/100;
+        twVector_ICD_cm[ptLast ].m[mAxis]:= wmhBorders[2,mAxis]/100;
         wRefPoint.m[mAxis]     := wmhBorders[1,mAxis]/100;
         twDesVaryingAxis[mAxis]:= abs(wmhBorders[1,mAxis]-wmhBorders[2,mAxis])/100>0.5;
         end;
@@ -13349,10 +13349,10 @@ if Result then
     rfaGantry               := twBGantry;
     rfaCollimator           := twBCollimator;
     rfaMeasType             := ifthen(ScanType=snPDD,1,2)+ifthen(WedgeAngle=0,0,4);
-    rfaDepth_01mm           := Round(ifthen(ScanType=snPDD,0,twVector_ICD_cm[Start].m[Beam])*10);
+    rfaDepth_01mm           := Round(ifthen(ScanType=snPDD,0,twVector_ICD_cm[ptFirst].m[Beam])*10);
     rfaPoints               := twPoints;
-    rfaStart_Meas_cm        := twVector_ICD_cm[Start];
-    rfaEnd_Meas_cm          := twVector_ICD_cm[Stop ];
+    rfaStart_Meas_cm        := twVector_ICD_cm[ptFirst];
+    rfaEnd_Meas_cm          := twVector_ICD_cm[ptLast ];
     rfaComments[0]          := Linac;
     If Result then
       begin
@@ -13445,9 +13445,9 @@ with Mcc.MccData,tmScanInfo,wSource[ASource],twBeamInfo,wCurveInfo do
        tmDetHV          := wMeterInfo.twElChannels[FieldCh].twHV;
        end;
     tmDetectors[RefCh]           := tmDetectors[FieldCh];
-    tmScanDepth_mm               := wUserAxisSign[Beam      ]*ifthen(twDesVaryingAxis[Beam      ],0,twVector_ICD_cm[Start].m[Beam      ])*10;
-    tmScanOffAxis_mm[fInplane]   := wUserAxisSign[Crossplane]*ifthen(twDesVaryingAxis[Crossplane],0,twVector_ICD_cm[Start].m[Crossplane])*10;
-    tmScanOffAxis_mm[fCrossplane]:= wUserAxisSign[Inplane   ]*ifthen(twDesVaryingAxis[Inplane   ],0,twVector_ICD_cm[Start].m[Inplane   ])*10;
+    tmScanDepth_mm               := wUserAxisSign[Beam      ]*ifthen(twDesVaryingAxis[Beam      ],0,twVector_ICD_cm[ptFirst].m[Beam      ])*10;
+    tmScanOffAxis_mm[fInplane]   := wUserAxisSign[Crossplane]*ifthen(twDesVaryingAxis[Crossplane],0,twVector_ICD_cm[ptFirst].m[Crossplane])*10;
+    tmScanOffAxis_mm[fCrossplane]:= wUserAxisSign[Inplane   ]*ifthen(twDesVaryingAxis[Inplane   ],0,twVector_ICD_cm[ptFirst].m[Inplane   ])*10;
     tmScanAngle                  := ScanAngle;
     tmLinac                      := Linac;
     tmModality                   := twBModality;
@@ -13560,7 +13560,7 @@ if Result then
       snFreescan: begin
                   wmhKs     := 'L';
                   wmhScan[1]:= 0;
-                  wmhScan[2]:= Round(100*DistanceToRefPoint(twVector_ICD_cm[Stop ]));
+                  wmhScan[2]:= Round(100*DistanceToRefPoint(twVector_ICD_cm[ptLast]));
                   end;
        else       wmhKs     := 'U';
      end;
@@ -13577,12 +13577,12 @@ if Result then
         snPDD: mAxis:= Beam;
        else    mAxis:= Inplane;
        end;
-      wmhScan[1]:= Round(100*(twVector_ICD_cm[Start].m[mAxis]+twShiftCm));
-      wmhScan[2]:= Round(100*(twVector_ICD_cm[Stop ].m[mAxis]+twShiftCm));
+      wmhScan[1]:= Round(100*(twVector_ICD_cm[ptFirst].m[mAxis]+twShiftCm));
+      wmhScan[2]:= Round(100*(twVector_ICD_cm[ptLast ].m[mAxis]+twShiftCm));
       for mAxis:= Inplane to Beam do
         begin
-        wmhBorders[1,mAxis]:= Round(100*wUserAxisSign[mAxis]*twVector_ICD_cm[Start].m[mAxis]);
-        wmhBorders[2,mAxis]:= Round(100*wUserAxisSign[mAxis]*twVector_ICD_cm[Stop ].m[mAxis]);
+        wmhBorders[1,mAxis]:= Round(100*wUserAxisSign[mAxis]*twVector_ICD_cm[ptFirst].m[mAxis]);
+        wmhBorders[2,mAxis]:= Round(100*wUserAxisSign[mAxis]*twVector_ICD_cm[ptLast ].m[mAxis]);
         end;
       end;
     Wms.SetNumPoints(GetSourceNumPoints(ASource));
@@ -13856,8 +13856,8 @@ if wSource[ASource].twValid then
   CompareValues('Scan angle'      ,wSource[ASource].twScanAngle           ,wSource[AReference].twScanAngle);
   CompareValues('Wedge angle'     ,wSource[ASource].twBeamInfo.twBWedge   ,wSource[AReference].twBeamInfo.twBWedge);
   if ScanType in twcHoriScans then
-    CompareValues('depth'         ,wSource[ASource   ].twVector_ICD_cm[Start].m[Beam],
-                                   wSource[AReference].twVector_ICD_cm[Start].m[Beam]);
+    CompareValues('depth'         ,wSource[ASource   ].twVector_ICD_cm[ptFirst].m[Beam],
+                                   wSource[AReference].twVector_ICD_cm[ptFirst].m[Beam]);
   CompareValues('Diagonal status' ,wSource[ASource].twIsDiagonal          ,wSource[AReference].twIsDiagonal);
   end;
 end; {~reportdifferences}
@@ -14356,8 +14356,8 @@ with wGeneralInfo,wSource[ASource],twBeamInfo,wCurveInfo,wMeterInfo,
   for c:= 'A' to 'D' do
     WriteReals2(twDeviceRefPosition_cm[c].m,'Position '+c+' [I, C, D]');
   WriteIntegers([GetSourceNumPoints(ASource)]     ,'Number Of Points:');
-  WriteReals1(wSource[ASource].twVector_ICD_cm[Start].m,'Start Point [I,C,D]',True);
-  WriteReals1(wSource[ASource].twVector_ICD_cm[Stop ].m ,'End Point [I,C,D]' ,True);
+  WriteReals1(wSource[ASource].twVector_ICD_cm[ptFirst].m,'Start Point [I,C,D]',True);
+  WriteReals1(wSource[ASource].twVector_ICD_cm[ptLast ].m ,'End Point [I,C,D]' ,True);
   Append('Points [cm]:	Inline	Crossline	Depth	Relative Dose');
   for i:= 0 to Pred(twPoints) do
     WritePoint(twCoordinates[i],twData[i]);
@@ -14468,8 +14468,8 @@ with wSource[ASource] do if twValid and (not FFrozen) then
       Qofs:= Qofs+(Qquad*cm-Qlin)*cm;
       Qlin:= Qlin-2*Qquad*cm;
       end;
-    twCenterPosCm   := twCenterPosCm   +cm;
-    twMaxPosCm      := twMaxPosCm      +cm;
+    twCenterPosCm       := twCenterPosCm   +cm;
+    twMaxPosCm          := twMaxPosCm      +cm;
     twDataPosCm[ptFirst]:= twDataPosCm[ptFirst]+cm;
     twScanPosCm[ptFirst]:= twScanPosCm[ptFirst]+cm;
     twDataPosCm[ptLast ]:= twDataPosCm[ptLast ]+cm;
@@ -14481,11 +14481,11 @@ with wSource[ASource] do if twValid and (not FFrozen) then
         if mBool[mAxis] then
           twCoordinates[i].m[mAxis]:= twCoordinates[i].m[mAxis]+mShift.m[mAxis];
       end;
-    twVector_ICD_cm[Start]:= twCoordinates[twDataRange[ptFirst]];
-    twVector_ICD_cm[Stop ]:= twCoordinates[twDataRange[ptLast ]];
-    twPDD10               := twPDD10  +cm;
-    twPDD20               := twPDD20  +cm;
-    twShiftCm             := twShiftCm+cm;
+    twVector_ICD_cm[ptFirst]:= twCoordinates[twDataRange[ptFirst]];
+    twVector_ICD_cm[ptLast ]:= twCoordinates[twDataRange[ptLast ]];
+    twPDD10                 := twPDD10  +cm;
+    twPDD20                 := twPDD20  +cm;
+    twShiftCm               := twShiftCm+cm;
     if not (ScanType in twcVertScans) then
       begin
       if twAbsNormDefUse=dUseOrigin then
@@ -14679,8 +14679,8 @@ if (not FFrozen) and wSource[ASource].twValid then
       tPtr:= @wSource[ADestination];
     with wSource[ASource] do
       begin
-      twVector_ICD_cm[Start]:= twCoordinates[twDataRange[ptFirst]];
-      twVector_ICD_cm[Stop ]:= twCoordinates[twDataRange[ptLast ]];
+      twVector_ICD_cm[ptFirst]:= twCoordinates[twDataRange[ptFirst]];
+      twVector_ICD_cm[ptLast ]:= twCoordinates[twDataRange[ptLast ]];
       if StepCm<=0 then
         StepCm:= Max(0.001,twStepSizeCm);
       x            := NiceStep(StepCm,[1,2,3,4,5]);
@@ -14692,7 +14692,7 @@ if (not FFrozen) and wSource[ASource].twValid then
       l            := twDataPosCm[ptLast]-twDataPosCm[ptFirst];
       p0           := twDataPosCm[ptFirst];
       for t:= Inplane to Beam do
-        dx.m[t]:= twVector_ICD_cm[Stop ].m[t]-twVector_ICD_cm[Start].m[t];      //obtain travel length on each axis
+        dx.m[t]:= twVector_ICD_cm[ptLast].m[t]-twVector_ICD_cm[ptFirst].m[t];      //obtain travel length on each axis
       end;
     CopyParameters(wSource[ASource],tPtr^);
     CheckSize(tPtr^,Succ(n));
@@ -14702,16 +14702,16 @@ if (not FFrozen) and wSource[ASource].twValid then
       begin
       x               := (i+j)*StepCm;
       for t:= Inplane to Beam do
-        tPtr^.twCoordinates[i].m[t]:= wSource[ASource].twVector_ICD_cm[Start].m[t]+((x-p0)/l)*dx.m[t];
+        tPtr^.twCoordinates[i].m[t]:= wSource[ASource].twVector_ICD_cm[ptFirst].m[t]+((x-p0)/l)*dx.m[t];
       tPtr^.twPosCm[i]:= x;
       tPtr^.twData[i] := GetQfittedValue(x,ASource);
       end;
-    tPtr^.twResampled           := True;
-    tPtr^.twComposite           := True;
-    tPtr^.twScanLength          := tPtr^.twPosCm[n]-tPtr^.twPosCm[0];
-    tPtr^.twVector_ICD_cm[Start]:= tPtr^.twCoordinates[0];
-    tPtr^.twVector_ICD_cm[Stop ]:= tPtr^.twCoordinates[n];
-    tPtr^.twRelatedSource       := ASource;
+    tPtr^.twResampled             := True;
+    tPtr^.twComposite             := True;
+    tPtr^.twScanLength            := tPtr^.twPosCm[n]-tPtr^.twPosCm[0];
+    tPtr^.twVector_ICD_cm[ptFirst]:= tPtr^.twCoordinates[0];
+    tPtr^.twVector_ICD_cm[ptLast ]:= tPtr^.twCoordinates[n];
+    tPtr^.twRelatedSource         := ASource;
     if DeqA then
       begin
       CopyCurve(tPtr^,wSource[ASource]);
@@ -14748,7 +14748,7 @@ if (not FFrozen)                                           and
     begin
     n:= Max(1,Pred(twPoints));
     for t:= Inplane to Beam do
-      dx.m[t]:= (twVector_ICD_cm[Stop ].m[t]-twVector_ICD_cm[Start].m[t])/n;
+      dx.m[t]:= (twVector_ICD_cm[ptLast].m[t]-twVector_ICD_cm[ptFirst].m[t])/n;
     while twDataPosCm[ptFirst]>wSource[ASource2].twDataPosCm[ptFirst] do
       begin
       AddPoints(ADestination,1,True);
@@ -16892,18 +16892,19 @@ end; {~applysigmoidpenumbrafit}
 {24/11/2017 positionweighting added, and changed to conditional feature}
 {25/11/2017 resampling implemented}
 {17/09/2020 introduction of FFrozen}
+{21/04/2022 protection against too small steps}
 function TWellhoferData.Integrate(FirstPosCm,LastPosCm:twcFloatType;
                                   ASource             :twcDataSource=dsMeasured;
-                                  UseResampling       :Boolean     =False
+                                  UseResampling       :Boolean      =False
                                  {$IFDEF POSINTEGRAL};
-                                  PositionWeighted    :Boolean     =False
+                                  PositionWeighted    :Boolean      =False
                                  {$ENDIF}                                   ): twcFloatType;
 var i,j,k       : Integer;
     StepCm,Limit: twcFloatType;
 begin
 Result:= 0;
-if (not FFrozen) and (FirstPosCm<LastPosCm) then
-  with wSource[ASource] do if twValid then
+with wSource[ASource] do
+  if twValid and (not FFrozen) and (LastPosCm-FirstPosCm>twStepSizeCm) then     //integrate over at least one step
     begin
     if UseResampling then
       begin
@@ -16912,7 +16913,7 @@ if (not FFrozen) and (FirstPosCm<LastPosCm) then
       repeat
         k     := k shr 1;
         StepCm:= (LastPosCm-FirstPosCm)/k;
-      until StepCm>=Limit;
+      until (StepCm>=Limit) or (k=1);                                           //k should not be 0
       for i:= 0 to k do
         Result:= Result+GetQfittedValue(FirstPosCm+i*StepCm,ASource)*StepCm{$IFDEF POSINTEGRAL}*ifthen(PositionWeighted,StepCm,1){$ENDIF};
      {$IFDEF POSINTEGRAL}
@@ -19302,7 +19303,7 @@ var s: twcDataSource;
          {$ENDIF}
           if Sign(twLevelPos[twAppliedEdgeLevel].Limit[twcLeft].CalcPos)+Sign(twLevelPos[twAppliedEdgeLevel].Limit[twcRight].CalcPos)=0 then
             begin {------ calculation of twSymLinacError: left and right border should at least have opposite sign ----------}
-            lSize      := (twSSD_cm+twVector_ICD_cm[Start].m[Beam])*Sign(twLevelPos[twAppliedEdgeLevel].Limit[twcRight].CalcPos)/100;
+            lSize      := (twSSD_cm+twVector_ICD_cm[ptFirst].m[Beam])*Sign(twLevelPos[twAppliedEdgeLevel].Limit[twcRight].CalcPos)/100;
             j          := twLevelPos[twAppliedEdgeLevel].Limit[twcLeft].Nearest;
             RightOutArr:= Min(NearestPosition(wLinacSymOuterRadiusCm*lSize,ASource),twLevelPos[d50].Limit[twcRight].Nearest);
             RightInArr := NearestPosition(wLinacSymInnerRadiusCm*lSize,ASource);

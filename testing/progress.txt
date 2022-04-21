@@ -438,6 +438,12 @@ version 4.06.2
 069	11/04/2022	Zoom fails in gamma-analysis mode				solved
 in gamma-analyse modus: zoom-functie werk op rechteras, kleuren van schaal fout
 
+070	21/04/2022	div0 problem in file Div0-data.csv				solved
+-Data are of type Generic, scan of 100 points over 15 mm (stepsize 0.015 cm!!)
+-First point was accidently discarded during reading with THdfProfileData.ParseData as fileformat=twcGenericProfile
+-Maximum not in center!
+-TWellhoferData.Integrate, called by Analyse failed because of too small integration range, leading to integer div 0 error
+
 
 ======tested=======
 29/05/2020	unlocking critical options
