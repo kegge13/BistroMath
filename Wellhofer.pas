@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-21/04/2022 | FPC 3.2.0: 13/09/2021}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-26/04/2022 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2717,6 +2717,7 @@ const
 {02/04/2022 added ReturnPassRate option to GammaAnalysis}
 {10/04/2022 added wFFFinFile: read/write FFF from/to file (OmniPro v6/7/8 and PTW only}
 {11/04/2022 replaced FNMPddFirst, FNMPddLast with twAnalysisRange}
+{26/04/2022 added function IsFFF}
 type
   TWellhoferData=class(TRadthData)
     private
@@ -2939,6 +2940,7 @@ type
      function  GetPenumbraString(ASource           :twcDataSource;
                                  ADoseLevel        :twcDoseLevel;
                                  ASide             :twcSides                  ): String;
+     function  IsFFF           (ASource            :twcDataSource=dsMeasured  ): Boolean;
      function  ReadRfb(AFileName                   :String                    ): Boolean;     overload;
      function  ReadRfb(AStream                     :TStream                   ): Boolean;     overload;
      function  ReadData(AStringList                :TStrings;
@@ -9647,6 +9649,14 @@ else
 end; {~getpenumbrastring}
 
 
+{26/04/2022}
+function TWellhoferData.IsFFF(ASource:twcDataSource=dsMeasured): Boolean;
+begin
+with wSource[ASource] do
+  Result:=(twSetFieldType=fcFFF) or twFFFdetected;
+end; {~isfff}
+
+
 {29/09/2016}
 procedure TWellhoferData.SetMultiRefIndex(AMultiRefIndex:Boolean);
 begin
@@ -10108,7 +10118,7 @@ with wCurveInfo,wSource[ASource],twBeamInfo do
        Dec(i);
     if not (twiEnergy in IgnoredParams) then
       Stg:= Stg+Num2Stg(Round(tEnergy));
-    if wFFFinFile and ((twSetFieldType=fcFFF) or twFFFdetected) then
+    if wFFFinFile and IsFFF(ASource) then
       Stg:= Stg+'FFF';
     if CreateMultiName then
       Stg:= Stg+Format('_%s_',[ApplyAliasList(wMeasDeviceInfo.twDeviceName)])
@@ -14041,7 +14051,7 @@ if Result then                                                                  
   else
  {$ENDIF}
     s:= ReferenceDirectory+ifthen(MultiRefIndex and FArrayScanRefOk,wSource[dsMeasured].twFileIDString,MeasCurveIDstg);
-  StatusMessage('LoadReference->'+s,True,1);
+  StatusMessage('Reference: '+s,True,1);
   UseOrg:= CheckRefOrg and (RefCurveIDstg=MeasCurveIDstg);
   if not UseOrg then
     begin
@@ -14533,6 +14543,7 @@ end; {~shift}
 {14/01/2018 both curves should succesfully analysed}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
+{26/04/2022 IsFFF}
 procedure TWellhoferData.AlignCurves(ASource   :twcDataSource=dsReference;
                                      AReference:twcDataSource=dsMeasured);
 var Cm                 : twcFloatType;
@@ -14559,7 +14570,7 @@ if (not FFrozen)                                    and
     begin
     MEdgeType:= wSource[ASource   ].twAppliedEdgeLevel;
     REdgeType:= wSource[AReference].twAppliedEdgeLevel;
-    if wRefAlignPeak and (wSource[ASource].twSetFieldType=fcFFF) and (wSource[AReference].twSetFieldType=fcFFF) then
+    if wRefAlignPeak and IsFFF(ASource) and IsFFF(AReference) then
       Cm:= wSource[AReference].twMaxPosCm-wSource[ASource].twMaxPosCm
     else if wSource[AReference].twCenterPosValid and wSource[ASource].twCenterPosValid then
       Cm:= wSource[AReference].twCenterPosCm-wSource[ASource].twCenterPosCm
@@ -18239,6 +18250,7 @@ found twMaxPosCm and within the fit range then twMaxPosCM//twMaxValue to Xtop/Yt
 {30/08/2020 set twMaxPosCm/twMaxValue if old value within fitrange and less than 1 cm from model.xtop}
 {01/09/2020 RangeCm=0 -> no fit}
 {14/05/2021 use maximum only for topmodel when it is a true FFF}
+{26/04/2022 IsFFF}
 procedure TWellhoferData.QfitMaxPos(ASource       :twcDataSource=dsMeasured;
                                     ForceFitCenter:Boolean      =False      );
 var Q                  : TQuadFit;
@@ -18248,7 +18260,7 @@ begin
 with wSource[ASource] do
   if twFastScan and ((ScanType in twcHoriScans) or (twMaxPosCm>twcPDDminTopCm)) then
     begin
-    FitCenterArr:= ifthen(ForceFitCenter or (not twFFFdetected),twCenterArr,twMaxArr);
+    FitCenterArr:= ifthen(ForceFitCenter or (not IsFFF(ASource)),twCenterArr,twMaxArr);
     FitCenterCm := twPosCm[FitCenterArr];
     if ScanType in twcHoriScans then
       begin
@@ -19248,7 +19260,7 @@ var s: twcDataSource;
             lMin:= 0;
             lMax:= 0;
            end; {try}
-          if twSetFieldType=fcFFF then
+          if twFFFdetected then
             twLinSlope:= twFFFslope[twcLeft].twFFFgain+twFFFslope[twcRight].twFFFgain
           else if (twBeamInfo.twBWedge=0) and (lMax>0) then
             twLinSlope:= LinFit.Linear;

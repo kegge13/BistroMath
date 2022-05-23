@@ -1,4 +1,4 @@
-unit PanelElements; {© Theo van Soest 31/03/2020-14/04/2022 | Lazarus 2.2.0/FPC 3.2.0: 31/01/2022}
+unit PanelElements; {© Theo van Soest 31/03/2020-14/04/2022 | Lazarus 2.2.2/FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 

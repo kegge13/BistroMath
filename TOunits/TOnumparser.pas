@@ -1,4 +1,4 @@
-unit TOnumparser;  {© Theo van Soest 2015-30/03/2022}
+unit TOnumparser;  {© Theo van Soest 2015-30/03/2022 | FPC 3.2.2: 20/05/2022}
 {$I TOnumparser_opt.inc}
 {$R-}
 

@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-21/04/2022 | Lazarus 2.2.0/FPC 3.2.0: 31/01/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-20/05/2022 | Lazarus 2.2.2/FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -2104,7 +2104,7 @@ if FileExists(TempPath) then
   Application.OnHelp  := @HelpHandler;
   end;
 {$ENDIF}
-SetMessageBar('Data='+CommonAppData);
+SetMessageBar('DataDir='+CommonAppData);
 InventorySetRefDirClick(Sender);                                                //'Reference='+Wellhofer.ReferenceDirectory
 if Length(PresetName)>0 then
   PresetLoad(ifthen(Pos(PathSeparator,PresetName)=0,CommonAppData,'')+PresetName)
@@ -3126,6 +3126,7 @@ end; {~selectconfig}
 
 {13/01/2017 use configname, institute.ini will be changed to getconfigstg}
 {19/01/2017 testfile}
+{12/05/2022 display full path of config file}
 {$push}{$warn 5092 off}
 procedure TAnalyseForm.SetConfigName(AName   :String;
                                      TestFile:Boolean=False);
@@ -3141,7 +3142,7 @@ if  TestFile or (AName='') or (AName<>ConfigName) then
     AName                 := LowerCase(PresetToName(ExtractFileName(AName),True));
     ConfigSaveItem.Caption:= 'Save '+AName;
     ConfigReadItem.Caption:= 'Load '+AName;
-    SetMessageBar('config='+AName);
+    SetMessageBar('config='+ConfigName);
     end;
   end;
 end; {~setconfigname}
@@ -5110,13 +5111,15 @@ end; {~sethistorylistsize}
 {18/09/2020 when unfrozen relaod current data if possible}
 {15/02/2021 handling engines size moved to SetHistoryListSize}
 {07/06/2021 do not remove Engine[0] from list, because of ownership ModalityLists}
+{20/05/2022 reduced logging (p)}
 procedure TAnalyseForm.HistoryListSizeClick(Sender: TObject);
-var i,j: Integer;
-    c,s: Boolean;
+var i,j  : Integer;
+    c,s,p: Boolean;
 begin
 c:= FileHistoryItem.Checked<>HistoryListCheckBox.Checked;                       //prevent reentrance by changing checked within procedure
 if c or (Sender=HistoryListSize_num) then
   begin
+  p:= HistoryListCheckBox.Checked;                                              //p = initial checkstate
   if Sender=HistoryListCheckBox then                                            //synchronise checkbox and menu item
     FileHistoryItem    .Checked:= HistoryListCheckBox.Checked
   else if Sender=FileHistoryItem then
@@ -5137,7 +5140,8 @@ if c or (Sender=HistoryListSize_num) then
     Reload(Sender);                                                             //reload current data in unfrozen state when meaningful
   if not ClipBoardLock then                                                     //ClipBoardLock is set during FormCreate
     UpdateSettings(Sender);
-  ShowMenuItemStatus(FileHistoryItem);
+  if (c<>p) then
+    ShowMenuItemStatus(FileHistoryItem);
   end;
 end; {~historylistsizeclick}
 
@@ -5919,6 +5923,7 @@ end; {~fileconvnamecheck}
 
 //conversion tab implementation
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{26/04/2022 include FFF in name}
 function TAnalyseForm.FileConvMakeName(DefaultName:string): String;
 var i,j: Integer;
     p  : ^ConvItemList;
@@ -5951,7 +5956,7 @@ with Engines[UsedEngine] do
                          Electrons: a:= 'E';
                         else        a:= 'O';
                         end;
-        ConvEMV      : a:= Format('%2.2d',[Round(Energy        )]);
+        ConvEMV      : a:= Format('%2.2d',[Round(Energy        )])+ifthen(IsFFF,'FFF','');
         ConvEkV      : a:= Format('%3.3d',[Round(Energy*1000   )]);
         ConvDcm      : a:= Format('%2.2d',[Round(FieldDepth    )]);
         ConvDmm      : a:= Format('%3.3d',[Round(FieldDepth*10 )]);
@@ -6437,7 +6442,7 @@ if Sender=InventorySetRefDirButton then
   Engines[UsedEngine].ReferenceDirectory:= InventoryDirBox.Directory;
   InventorySetRefDirButton.Enabled      := False;
   end;
-SetMessageBar('Reference='+Engines[UsedEngine].ReferenceDirectory);
+SetMessageBar('ReferenceDir='+Engines[UsedEngine].ReferenceDirectory);
 end; {~inventorysetrefdirclick}
 
 (*

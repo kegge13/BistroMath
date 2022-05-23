@@ -20,7 +20,7 @@ object AnalyseForm: TAnalyseForm
   OnKeyPress = FormKeyPress
   OnKeyUp = FormKeyUp
   OnResize = FormResize
-  LCLVersion = '2.2.0.4'
+  LCLVersion = '2.2.2.0'
   object PageControl: TPageControl
     Left = 0
     Height = 522
@@ -65,6 +65,7 @@ object AnalyseForm: TAnalyseForm
           Alignment = taRightJustify
           AutoSize = False
           Caption = 'Position:'
+          ParentColor = False
         end
         object PositionValue: TLabel
           Left = 900
@@ -74,6 +75,7 @@ object AnalyseForm: TAnalyseForm
           Alignment = taRightJustify
           AutoSize = False
           Caption = '0'
+          ParentColor = False
         end
         object MeasNormAdjustEdit: TFloatSpinEditEx
           Left = 822
@@ -308,6 +310,7 @@ object AnalyseForm: TAnalyseForm
           Font.Color = clWindowText
           Font.Height = -8
           Font.Name = 'MS Sans Serif'
+          ParentColor = False
           ParentFont = False
         end
         object FitResultsAllCheckBox: TCheckBox
@@ -964,6 +967,7 @@ object AnalyseForm: TAnalyseForm
             Top = 1
             Width = 115
             Caption = 'Limit to ''In-Field area'''
+            ParentColor = False
           end
           object GammaLocalDoseCheckBox: TCheckBox
             Left = 306
@@ -1872,6 +1876,7 @@ object AnalyseForm: TAnalyseForm
             Anchors = [akTop, akRight]
             AutoSize = False
             Caption = 'Maximum length:'
+            ParentColor = False
           end
           object AxisViewComLengthLabel: TLabel
             Left = 373
@@ -1884,6 +1889,7 @@ object AnalyseForm: TAnalyseForm
             Anchors = [akTop, akRight]
             AutoSize = False
             Caption = 'Maximum length:'
+            ParentColor = False
           end
           object AxisViewFileTypeCheckBox: TCheckBox
             Left = 18
@@ -2060,6 +2066,7 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Range divider:'
+            ParentColor = False
           end
           object MatchStepFactorLabel: TLabel
             Left = 18
@@ -2071,6 +2078,7 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Step number:'
+            ParentColor = False
           end
           object MatchNormPercLabel: TLabel
             Left = 295
@@ -2082,6 +2090,7 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Normalisation range fraction (%):'
+            ParentColor = False
           end
           object MatchInclusionLabel: TLabel
             Left = 295
@@ -2093,6 +2102,7 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Inclusion lower limit (%):'
+            ParentColor = False
           end
           object MatchRangeDivider_num: TSpinEditEx
             Left = 103
@@ -2479,11 +2489,11 @@ object AnalyseForm: TAnalyseForm
         object FFFinFileCheckBox: TCheckBox
           Left = 10
           Height = 19
-          Hint = 'When checked, the program will start in Advanced Mode'
+          Hint = 'FFF property in contents and file name'
           Top = 67
-          Width = 118
+          Width = 223
           HelpContext = 129
-          Caption = 'FFF property in file'
+          Caption = 'FFF property in file contents and name'
           Checked = True
           ParentBidiMode = False
           State = cbChecked
