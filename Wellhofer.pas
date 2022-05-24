@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-26/04/2022 | FPC 3.2.2: 20/05/2022}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-24/05/2022 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2718,6 +2718,7 @@ const
 {10/04/2022 added wFFFinFile: read/write FFF from/to file (OmniPro v6/7/8 and PTW only}
 {11/04/2022 replaced FNMPddFirst, FNMPddLast with twAnalysisRange}
 {26/04/2022 added function IsFFF}
+{24/05/2022 added procedure wDebugInfo,AddDebugInfo}
 type
   TWellhoferData=class(TRadthData)
     private
@@ -2818,6 +2819,7 @@ type
       wCheckRefCurveString      : Boolean;
       wCheckRefIgnoreLinac      : Boolean;
       wCurveInfo                : twCurveDesRec;
+      wDebugInfo                : String;
       wDefaultIgnoreSet         : twcIgnoreSet;
       wDetectorInfo             : twDetectorDesRec;
       wDiagonalDetection        : array[twcFieldClass] of Boolean;
@@ -2881,6 +2883,7 @@ type
                         BinaryFile       :String       ='';
                         AStatusProc      :toExtMsgProc =nil;
                         AIdentity        :String       ='bistromath'          );             reintroduce;
+     procedure AddDebugInfo(AText        :String       =''                    );
      procedure ConfigLoad(Sender                   :TObject                   );
      procedure ConfigSave(Sender                   :TObject                   );
      procedure PassSettings(var ADestination       :TWellhoferData;
@@ -3293,13 +3296,13 @@ const                                                                           
   twcDeriveMinMax         :twcFloatType=   0.90;                                //allowed relative value in first and last point of scan
   twcDeriveBinFraction    :twcFloatType=   0.25;                                //maximum of largest bin
   twcDeriveLookAhead      :Integer     =   3;                                   //number of points to look ahead after bandlow or bandhigh is passed
-  twcGammaCutoffDepth     :twcFloatType=   0.5;                                 //cm
+  twcGammaCutoffDepthCm   :twcFloatType=   0.5;                                 //cm
   twcGammaCutoffPercent   :twcFloatType=   5;                                   //%
   twcGammaLocalDosePerc   :Boolean     = True;                                  //relative to local dose
   twcGammaDosePercBase    :twcFloatType=   1.0;                                 //%
   twcGammaDistCmBase      :twcFloatType=   0.1;                                 //cm
   twcGammaDistCmStep      :twcFloatType=   0.02;                                //cm
-  twcGammaSearchMultiplier:twcFloatType=   5;                                   //limit search to Gamma-value at distance 0 multiplied with this facto
+  twcGammaSearchMaxFactor :twcFloatType=   5;                                   //limit search to Gamma-value at distance 0 multiplied with this facto
   twcMaxRelMatchDif       :twcFloatType=  10;
   twcMatchRangeDivider    :Word        =   2;                                   //reduction factor range during iteration in match
   twcMatchStepsNumber     :Word        =   6;                                   //number of shift steps
@@ -4832,6 +4835,7 @@ end; {~checkdata}
 
 
 {$push}{$warn 5057 off}
+(* handles a list of lables in any order *)
 {16/12/2105 added scannr to readresults}
 {20/03/2017 range checking applied}
 {06/10/2020 fundamentals alternative}
@@ -5008,7 +5012,7 @@ var i,CommentCnt: Integer;
           end;
       if FParseOk then
         begin
-        AValue := FParser.NextFloat(1e6);
+        AValue  := FParser.NextFloat(1e6);
         FParseOk:= ConversionResult;
         if FParseOk then
           begin
@@ -6392,9 +6396,9 @@ Result:= FormatDateTime('dd-mmm-yyyy hh:nn:ss',ADateTime);
 end; {~maketimestring}
 
 
+{$push}{$warn 5057 off:Local variable "s" does not seem to be initialized}
 {15/08/2016 BinStream implementation}
 {19/08/2020 speed improvement with BinaryOnly}
-{$push}{$warn 5057 off:Local variable "s" does not seem to be initialized}
 function TMccProfileData.GetFileType(AFileName :String ='';
                                      BinaryOnly:Boolean=False): twcFileType;
 type CStg=record case Boolean of
@@ -6888,9 +6892,9 @@ if InRange(Index,0,Pred(GetNumPoints)) then with MccData do
 end; {~putprofile}
 
 
+{$push}{$warn 5092 off}
 {25/08/2015 tmCurveType,MccOrgScanType}
 {09/04/2022 tmFFF}
-{$push}{$warn 5092 off}
 function TMccProfileData.WriteData(AFileName  :String;
                                    AStringList:TStrings;
                                    ASource    :twcDataSource=dsMeasured;
@@ -8479,6 +8483,7 @@ end; {~destroy}
 {15/02/2021 initialise FAliasList}
 {01/06/2021 added wFFFMinFieldSizeCm}
 {10/04/2022 wFFFinFile}
+{24/05/2022 AddDebugInfo}
 constructor TWellhoferData.Create(AModalityNormList:TModNormList =nil;
                                   AModalityFilmList:TModFilmList =nil;
                                   AModalityBeamList:TModTextList =nil;
@@ -8586,12 +8591,25 @@ FillChar(wAutoShiftCm       ,SizeOf(wAutoShiftCm       ),0);
 LoadAliasList(nil);
 ResetMultiScanCounters;
 ResetAliasList;
+AddDebugInfo;
 for i:= twcFirstDataSource to twcLastDataSource do
   begin
   InitCurve(wSource[i]);
   ClearCurve(i,False);                                                          //unset Freeze
   end;
 end; {~create}
+
+
+{24/05/2022}
+procedure TWellhoferData.AddDebugInfo(AText:String='');
+begin
+if FActiveCnt=0      then wDebugInfo   := ''
+else
+  if LogLevel>1      then wDebugInfo:= wDebugInfo+';'+AText
+  else if LogLevel=1 then wDebugInfo:= AText;
+if LogLevel=4 then
+  StatusMessage(AText,False);
+end; {~adddebuginfo}
 
 
 {$push}{$warn 5092 off}
@@ -8682,6 +8700,7 @@ end; {~isregisteredfiletype}
 {$pop}
 
 
+{24/05/2022 AddDebugInfo}
 procedure TWellhoferData.SetDefaults;
 var k: twcDataSource;
 
@@ -8746,6 +8765,7 @@ FDefaultSSD_cm:= twcDefaultSSDcm[fcStandard];
 FCentered     := False;
 FParseOk      := False;
 Freeze        := False;
+AddDebugInfo;
 end; {~setdefaults}
 
 
@@ -8775,6 +8795,7 @@ end; {~setdefaults}
 {07/03/2021 wNominalIFA}
 {01/06/2021 wFFFMinFieldSizeCm}
 {10/04/2022 wFFFinFile}
+{24/05/2022 AddDebugInfo}
 (* wAutoShiftCm is not passed to load unshifted references *)
 procedure TWellhoferData.PassSettings(var ADestination:TWellhoferData;
                                       AObjectCallSign :String        ='';
@@ -8783,6 +8804,7 @@ begin
 if assigned(ADestination) then
   begin
   Inc(FActiveCnt); {increase business}
+  AddDebugInfo('PassSettings');
   ADestination.wApplyUserLevel           := wApplyUserLevel;
   ADestination.wApplySigmoidToBuffer     := wApplySigmoidToBuffer;
   ADestination.AutoDecimalPoint          := AutoDecimalPoint;
@@ -9078,6 +9100,7 @@ end; {~configsave}
 {16/05/2020 storage of wMultiScanNr removed}
 {08/03/2021 twcDefaultSSD_MRcm}
 {01/06/2021 wFFFMinFieldSizeCm}
+{24/05/2022 AddDebugInfo}
 procedure TWellhoferData.ReadConfig(CF:TConfigStrings=nil);
 var IsLocal: Boolean;
     S      : TStringList;
@@ -9112,6 +9135,7 @@ var IsLocal: Boolean;
 
 begin
 Inc(FActiveCnt);
+AddDebugInfo('ReadConfig');
 IsLocal:= CF=nil;
 Section:= twcWellhoferKey;
 S      := TStringList.Create;
@@ -9154,13 +9178,13 @@ with CF do
   twcDeriveMinMax            := ReadFloat(Section  ,'DeriveMinMax'             ,twcDeriveMinMax);
   twcDeriveBinFraction       := ReadFloat(Section  ,'DeriveBinFraction'        ,twcDeriveBinFraction);
   twcDeriveLookAhead         := ReadInteger(Section,'DeriveLookAhead'          ,twcDeriveLookAhead);
-  twcGammaCutoffDepth        := ReadFloat(Section  ,'GammaCutoffDepth'         ,twcGammaCutoffDepth);
+  twcGammaCutoffDepthCm      := ReadFloat(Section  ,'GammaCutoffDepth'         ,twcGammaCutoffDepthCm);
   twcGammaCutoffPercent      := ReadFloat(Section  ,'GammaCutoffPercentage'    ,twcGammaCutoffPercent);
   twcGammaLocalDosePerc      := ReadBool( Section  ,'GammaLocalDosePerc'       ,twcGammaLocalDosePerc);
   twcGammaDosePercBase       := ReadFloat(Section  ,'GammaDosePercBase'        ,twcGammaDosePercBase);
   twcGammaDistCmBase         := ReadFloat(Section  ,'GammaDistCmBase'          ,twcGammaDistCmBase);
   twcGammaDistCmStep         := ReadFloat(Section  ,'GammaDistCmStep'          ,twcGammaDistCmStep);
-  twcGammaSearchMultiplier   := ReadFloat(Section  ,'GammaSearchFactor'        ,twcGammaSearchMultiplier);
+  twcGammaSearchMaxFactor    := ReadFloat(Section  ,'GammaSearchFactor'        ,twcGammaSearchMaxFactor);
   twcMatchRangeDivider       := ReadInteger(Section,'MatchRangeFactor'         ,twcMatchRangeDivider);
   twcMatchStepsNumber        := ReadInteger(Section,'MatchStepFactor'          ,twcMatchStepsNumber);
   twcMatchNormDeltaPercent   := ReadFloat(Section  ,'MatchNormPercRange'       ,twcMatchNormDeltaPercent);
@@ -9285,12 +9309,12 @@ with CF do
   WriteString(Section,'DeriveMinMax'             ,Num2Stg(twcDeriveMinMax           ,0,2));
   WriteString(Section,'DeriveBinFraction'        ,Num2Stg(twcDeriveBinFraction      ,0,3));
   WriteString(Section,'DeriveLookAhead'          ,Num2Stg(twcDeriveLookAhead        ,0,0));
-  WriteString(Section,'GammaCutoffDepth'         ,Num2Stg(twcGammaCutoffDepth       ,0,2));
+  WriteString(Section,'GammaCutoffDepth'         ,Num2Stg(twcGammaCutoffDepthCm     ,0,2));
   WriteString(Section,'GammaCutoffPercentage'    ,Num2Stg(twcGammaCutoffPercent     ,0,2));
   WriteString(Section,'GammaDosePercBase'        ,Num2Stg(twcGammaDosePercBase      ,0,2));
   WriteString(Section,'GammaDistCmBase'          ,Num2Stg(twcGammaDistCmBase        ,0,2));
   WriteString(Section,'GammaDistCmStep'          ,Num2Stg(twcGammaDistCmStep        ,0,4));
-  WriteString(Section,'GammaSearchFactor'        ,Num2Stg(twcGammaSearchMultiplier  ,0,1));
+  WriteString(Section,'GammaSearchFactor'        ,Num2Stg(twcGammaSearchMaxFactor   ,0,1));
   WriteBool(  Section,'GammaLocalDosePerc'       ,        twcGammaLocalDosePerc          );
   WriteString(Section,'MatchRangeFactor'         ,Num2Stg(twcMatchRangeDivider      ,0,1));
   WriteString(Section,'MatchStepFactor'          ,Num2Stg(twcMatchStepsNumber       ,0,1));
@@ -9988,6 +10012,7 @@ wMultiScanNr is set for the first matching scan
 {03/06/2018 FIndexingMode}
 {29/09/2020 call to PassSettings changed}
 {01/10/2020 progress monitor}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.IndexMultiScan(AFileName     :String='';
                                        ACurveIDString:String=''): Boolean;
 var i,o         : Integer;
@@ -9998,6 +10023,7 @@ var i,o         : Integer;
     tStart      : TDateTime;
 begin
 Inc(FActiveCnt);
+AddDebugInfo('IndexMultiScan');
 FIndexingMode:= True;
 WExt         := (Length(AFileName)>0) and (AFileName<>FileName);
 if WExt then
@@ -10349,12 +10375,14 @@ end; {~setaxisid}
 {01/09/2015 EvaluateFileType}
 {11/12/2018 twWellhoferAscii_v8}
 {09/04/2022 accept also a series of spaces instead of tab after WellhoferAscii_v8_ident}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
 const WellhoferAscii_v8_ident='Measurement time:';
 var Stg  : String;
     i,j,k: Integer;
 begin
 Inc(FActiveCnt);
+AddDebugInfo('ParseData');
 FParseOk:= inherited ParseData(CheckFileTypeOnly);
 Stg     := CharSetReplaceAll(csNumeric,'n',IdentificationStg.ToLower.Replace('-','/').Replace('a','p'));
 for i:= 1 to 12 do
@@ -10398,6 +10426,7 @@ end; {~parsedata}
 {06/10/2020 fundamentals alternative}
 {21/10/2020 chop off " Accelerator" in v8 Linac name}
 {10/04/2022 wFFFinFile}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.Parse_Wellhofer_SNC_ascii: Boolean;
 var Stg         : String;
     DataAxisID  : twcTankAxisID;
@@ -11127,6 +11156,7 @@ var Stg         : String;
 
 begin
 Inc(FActiveCnt);
+AddDebugInfo('Parse...ascii');
 FParseOk:= True;
 FParser.GotoTop;
 if AutoDecimalPoint then
@@ -11189,6 +11219,7 @@ reference is loaded
 {31/03/2021 twSSD2NormRatio implemented}
 {02/04/2021 twActDet2NormRatio}
 {28/03/2022 twConfidenceLimit expanded}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.PrepareProfile: Boolean;
 var i,j        : Integer;
     mAxis      : twcMeasAxis;
@@ -11237,6 +11268,7 @@ var i,j        : Integer;
 
 begin
 Inc(FActiveCnt);
+AddDebugInfo('PrepareProfile');
 with wCurveInfo do
   begin
   if not FMultiScanCapable then
@@ -11596,6 +11628,7 @@ Thanks to Bert van der Leije for the major parts of this reconstruction. Additio
 {30/05/2020 added FMultiScanCapable}
 {02/10/2020 set BinStreamType}
 {06/10/2020 fundamentals alternative}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.ReadRfb(AStream:TStream): Boolean; {works also for tmemorystream}
 {$IFDEF READRFB_TEST}
 var StreamPos: Integer;
@@ -12122,6 +12155,7 @@ Result:= FParseOk and (not FFrozen);
 if Result then
   begin
   Inc(FActiveCnt);
+  AddDebugInfo('ReadRfb');
   SetDefaults;   {sets fparseok to false}
   FMultiScanCapable:= True;
   FParseOk         := True;
@@ -12183,6 +12217,7 @@ combined with a specific import procedure within the twellhoferdata object.
 {16/11/2020 ADataTopLine}
 {30/03/2021 formatok replaced with parseok}
 {16/06/2021 change of 30/03/2021 lets looping fail, do not test anymore on ..or (not xxx.ParseOk) or .. for multiscan files}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.DualReadData(AStringList :TStrings;
                                      AStream     :TStream;
                                      AFileName   :String;
@@ -12200,6 +12235,7 @@ var Wms     : TWmsData;
     i       : Integer;
 begin
 Inc(FActiveCnt);
+AddDebugInfo('DualReadData');
 FParseOk:= CheckBlackList(AFileName) and (not FFrozen);
 if FParseOk then
   begin
@@ -13921,6 +13957,7 @@ This complex procedure tries all in-memory options first and then searches on di
 {06/07/2021 Indexing mode only applicable when RefScanNr>0: r.wMultiScanNr:= ifthen(MultiRefIndex AND (RefScanNr>0),RefScanNr,wMultiScanNr)}
 {16/07/2021 s:= ReferenceDirectory+ifthen(MULTIREFINDEX AND FArrayScanRefOk,wSource[dsMeasured].twFileIDString,MeasCurveIDstg)}
 {13/07/2021 LoadReference needs reliable FileType detection. This is only completed after full analysis.}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.LoadReference(AFileName            :String ='';
                                       SetCurrentAsRefSource:Boolean=False): Boolean;
 var r                                              : TWellhoferData;
@@ -14032,6 +14069,7 @@ var r                                              : TWellhoferData;
 begin
 //wSource[RefOrg].twValid:= False; {test: force file-load}
 Inc(FActiveCnt);
+AddDebugInfo('LoadReference');
 Result          := wSource[dsMeasured].twValid and (not FFrozen) and Analyse(dsMeasured);
 FromDisk        := False;
 MeasCurveIDstg  := LocalCurveID(dsMeasured);
@@ -14845,6 +14883,7 @@ end; {~add}
 {21/06/2017 replaced twDataRange[ptFirst]/Last with twScanFirst/Last to avoid non-useful data}
 {20/11/2018 until (Abs(s)<=twcMaxRelMatchDif) or (twScanRange[ptLast]-j-twScanFirst-i<30)}
 {17/09/2020 introduction of FFrozen}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.Match(ASource    :twcDataSource=dsReference;
                               AReference :twcDataSource=dsMeasured;
                               ResultType :twcShiftType=AbsShift;
@@ -14946,6 +14985,7 @@ Result:= 0;
 if not FFrozen then
   begin
   Inc(FActiveCnt);
+  AddDebugInfo('Match');
   OriginalShift:= wSource[ASource].twShiftCm;
   ShiftStep    := 0;
   if (MatchLimitL=0) and (MatchLimitR=0) then
@@ -15088,6 +15128,7 @@ end; {~checkalternativesource}
 {18/12/2016 apply quadfilter instead of median filter}
 {25/11/2018 autoscaling}
 {17/09/2020 introduction of FFrozen}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.SyntheticProfile(ASource    :twcDataSource=dsMeasured;
                                          Divisor    :twcDataSource=dsReference;
                                          AutoScaling:Boolean     =True;
@@ -15109,6 +15150,7 @@ Result:= (not FFrozen) and wSource[ASource].twValid and wSource[Divisor].twValid
 if Result then
   begin
   Inc(FActiveCnt);
+  AddDebugInfo('SyntheticProfile');
   IgnoreSet:= [twiFieldSize,twiDiagonal];
   if wCheckRefIgnoreLinac then IgnoreSet:= IgnoreSet+[twiLinac];
   if (MakeCurveName(False,True,IgnoreSet,True,ASource)=MakeCurveName(False,True,IgnoreSet,True,Divisor)) and
@@ -15149,6 +15191,7 @@ end; {~syntheticprofile}
 {21/07/2020 GetAdjustedFilterWidthCm}
 {29/07/2020 MedianFilter called with wrong source}
 {11/04/2022 twAnalysisRange}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.Divide(ASource     :twcDataSource=dsMeasured;
                                ADivisor    :twcDataSource=dsReference;
                                ADestination:twcDataSource=dsCalculated;
@@ -15213,6 +15256,7 @@ if not Result then
   if Result then
     begin
     Inc(FActiveCnt);
+    AddDebugInfo('Divide');
     Sbackup  := NeedBackup(ASource);
     Dbackup  := False;
     if ADivisor=ADestination then
@@ -15751,6 +15795,7 @@ end; {~timereport}
 {17/09/2020 introduction of FFrozen}
 {21/02/2021 avoid division by zero for twFitNormalisation altogether insteed of relying on try..except}
 {11/04/2022 twAnalysisRange}
+{24/05/2022 AddDebugInfo}
 procedure TWellhoferData.PddFit(ASource     :twcDataSource=dsMeasured;
                                 ADestination:twcDataSource=dsCalculated);
 const Photonvertex   : array[0..pddfit_mubpower ] of TaVertexDataType=(110,  4,  -7,  15,   -10, 60,    260,  0.1 ); {I1, mu1..4, Ib, mub,mubpower}
@@ -15954,6 +15999,7 @@ begin
 if (not (FFrozen or FIndexingMode)) and Analyse(ASource) then
   begin
   Inc(FActiveCnt); {increase business}
+  AddDebugInfo('PddFit');
   with wSource[ASource] do
     begin
     if twSNR=0 then
@@ -16108,12 +16154,14 @@ end; {~mayneord}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
 {17/02/2021 singleamoebe}
+{24/05/2022 AddDebugInfo}
 procedure TWellhoferData.PDDmaxNMFit(ASource:twcDataSource=dsMeasured;
                                      AFit   :twcNMpddFits=NM_Primary);
 var cm: TaFunctionVertex;
     NM: TaNMsimplex;
 begin
 Inc(FActiveCnt);
+AddDebugInfo('PDDmaxNMFit');
 FNMPddSource:= ASource;
 FNMPddFit   := AFit;
 NM          := TaNMsimplex.Create(@PDDfitMaxErrorResult,1);
@@ -16662,6 +16710,7 @@ end; {~sigmoidfiterrorresult}
 {17/02/2021 singleamoebe}
 {05/03/2021: added twFitResult1,2 for optional model results}
 {11/06/2021 implemented CalcRangeFirst and CalcRangeLast}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.SigmoidPenumbraFit(ASource     :twcDataSource=dsMeasured;
                                            ApplyModel  :Boolean      =False;
                                            ADestination:twcDataSource=dsMeasured): Boolean;
@@ -16836,6 +16885,7 @@ begin
 if not (FIndexingMode or FFrozen) then
   begin
   Inc(FActiveCnt);
+  AddDebugInfo('SigmoidPenumbraFit-'+twcDataSourceNames[ASource]);
   with wSource[ASource] do
     if (ScanType in twcHoriScans) and twDerivativeValid and (not (twIsRelative or twisDerivative)) and BordersValid(ASource) then
       begin
@@ -17003,6 +17053,7 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
 {18/02/2021 limitations on edge range: twcDefEdgeRangeCm}
 {11/06/2021 implemented CalcRangeFirst and CalcRangeLast}
 {12/06/2021 use ADestination (instead of ASource) in GetPenumbraString}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.Derive(cm          :twcFloatType =twcDefaultValue;
                                ASource     :twcDataSource=dsMeasured;
                                ADestination:twcDataSource=dsCalculated;
@@ -17139,6 +17190,7 @@ if (not FFrozen) and wSource[ASource].twValid then
   begin
   fSource:= ASource;
   Inc(FActiveCnt);
+  AddDebugInfo('Derive');
   if PreFilter then
     begin
     if ASource in twcFilterSources then
@@ -17505,6 +17557,7 @@ end; {~mirror}
 {03/06/2018 initborders}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.Merge(ASource      :twcDataSource=dsUnrelated;
                               ADestination :twcDataSource=dsMeasured;
                               ShiftSourceCm:twcFloatType =0;
@@ -17576,6 +17629,7 @@ var SumSource,SumDest: twcFloatType;
 
 begin
 Inc(FActiveCnt);
+AddDebugInfo('Merge');
 SourceID:= GetCurveIDString(ASource     ,True);
 DestID  := GetCurveIDString(ADestination,True);
 if ScanType in twcVertScans then
@@ -17642,13 +17696,13 @@ The shortest vector should be found with some interpolation mechanism after a se
 For 1D data sets as in this unit this is relatively simple: from a number of point the Gamma value is interpolated.
 Any gamma analysis implementation needs a number of parameters and makes interpolation choices. Therefore each implementation is different.
 In this implementation
--twcGammaLocalDosePerc   : use local dose
--twcGammaCutoffPercent   : cutoff for profiles
--twcGammaCutoffDepth     : cutoff depth for pdd
--twcGammaDistCmStep      : step size for searching between measurerment points
--twcGammaSearchMultiplier: limit search to Gamma-value at distance 0 multiplied with this factor
--twcGammaDosePercBase    : unit vector for dose
--twcGammaDistCmBase      : unit vecor distance
+-twcGammaLocalDosePerc  : use local dose
+-twcGammaCutoffPercent  : cutoff for profiles
+-twcGammaCutoffDepthCm  : cutoff depth for pdd
+-twcGammaDistCmStep     : step size for searching between measurerment points
+-twcGammaSearchMaxFactor: limit search to Gamma-value at distance 0 multiplied with this factor
+-twcGammaDosePercBase   : unit vector for dose
+-twcGammaDistCmBase     : unit vecor distance
 
 See for instance
 Li et al.: Investigation of gamma-index with surface based distance method; Med. Phys. 38 (12), December 2011
@@ -17663,6 +17717,7 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3298565/
 {28/03/2022 InFieldArea has become AnalysisScope:twcGammaScope=gGammaLimited, added nPass,nTotal,twGammaPassRate}
 {02/04/2022 added ReturnPassRate option}
 {12/04/2022 more efficient use of gammaanalysis}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.GammaAnalysis(ASource        :twcDataSource=dsMeasured;
                                       AReference     :twcDataSource=dsReference;
                                       ADestination   :twcDataSource=dsCalculated;
@@ -17798,6 +17853,7 @@ var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
 {$push}{$warn 5091 off: Local variable "tmpDCurve" of a managed type does not seem to be initialized}
 begin
 Inc(FActiveCnt);
+AddDebugInfo('GammaAnalysis');
 IsPDD := ScanType in [snPDD,snFanline];
 if wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=0) then
   begin
@@ -17814,19 +17870,19 @@ if wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=
     begin
     for i:= twScanRange[ptFirst] to twScanRange[ptLast] do
       if (IsPDD       or (twData[i] >twcGammaCutoffPercent)) and
-         ((not IsPDD) or (twPosCm[i]>twcGammaCutoffDepth)  ) and
+         ((not IsPDD) or (twPosCm[i]>twcGammaCutoffDepthCm)) and
          (GetQfittedValue(twPoscm[i],fReference)>0         ) then
         begin
         Gamma     := CalcGamma(i,0);                                            //calculate gamma at distance=0
         Distance  := -twcGammaDistCmStep;
-        StartLimit:= Max(1,Gamma)*twcGammaSearchMultiplier;
+        StartLimit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
         Limit     := StartLimit;
         while InRange(CalcGamma(i,Distance),0,Limit) do                         //loop with small steps to left while (last)gamma sufficiently small
           begin
           if InRange(LastGamma,0,Gamma) then                                    //if smaller set as lowest gamma
             begin
             Gamma:= LastGamma;
-            Limit:= Max(1,Gamma)*twcGammaSearchMultiplier;
+            Limit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
             end;
           Distance:= Distance-twcGammaDistCmStep;
           end;
@@ -17837,7 +17893,7 @@ if wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=
           if InRange(LastGamma,0,Gamma) then                                    //if LastGamma smaller set as lowest gamma
             begin
             Gamma:= LastGamma;
-            Limit:= Max(1,Gamma)*twcGammaSearchMultiplier;
+            Limit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
             end;
           Distance:= Distance+twcGammaDistCmStep;
           end;
@@ -18690,6 +18746,7 @@ The major output results are mostly preliminary and include:
 {13/09/2021 twIsDiagonal:= wDiagonalDetection[twSetFieldType]}
 {13/09/2021 allowed vmax=vmin for relative profile: twValid := (vmax>0) and ((vmax>vmin) or ((vmax=vmin) and twIsRelative))}
 {11/04/2022 twAnalysisRange}
+{24/05/2022 AddDebugInfo}
 procedure TWellhoferData.FastScan(ASource      :twcDataSource=dsMeasured;
                                   ClearAnalysis:Boolean      =True       );
 var i,j                : Integer;
@@ -18698,6 +18755,7 @@ var i,j                : Integer;
 
 begin
 Inc(FActiveCnt);
+AddDebugInfo('FastScan-'+twcDataSourceNames[ASource]);
 {$IFDEF COMPILED_DEBUG}
 with wSource[ASource] do
   FailInfo:= ifthen(twValid,ifthen(twFastScan,'done','init'),'invalid')+#32+wSource[ASource].twDataHistoryStg;
@@ -19026,6 +19084,7 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {18/02/2022 In VerticalScans is assumed that the norm position is >0. This is the case for an open water interface. At angle 90/270 this might not be valid.}
 {29/03/2022 extended use of GetModDepth}
 {09/04/2022 handle exception ltmp1+ltmp2=0 in horizontalscans}
+{24/05/2022 AddDebugInfo}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var s: twcDataSource;
@@ -19439,6 +19498,7 @@ with wSource[ASource] do
   if (not FFrozen) and Result and ((not (twFastScan and twAnalysed)) or (AutoCenterProfile=AC_on)) then
     begin
     Inc(FActiveCnt);
+    AddDebugInfo('Analyse-'+twcDataSourceNames[ASource]);
     twFastScan:= False;
     FastScan(ASource);                                                          //might change twValid
     Result:= twValid;
@@ -19800,14 +19860,14 @@ case FCalculation of
     begin
     Gamma     := CalcGamma(0);       {calculate gamma at distance=0}
     Distance  := -twcGammaDistCmStep;
-    StartLimit:= Max(1,Gamma)*twcGammaSearchMultiplier;
+    StartLimit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
     Limit     := StartLimit;
     while InRange(CalcGamma(Distance),0,Limit) do {loop with small steps to left while (last)gamma sufficiently small}
       begin
       if InRange(FResult,0,Gamma) then {if smaller set as lowest gamma}
         begin
         Gamma:= FResult;
-        Limit:= Max(1,Gamma)*twcGammaSearchMultiplier;
+        Limit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
         end;
       Distance:= Distance-twcGammaDistCmStep;
       end;
@@ -19818,7 +19878,7 @@ case FCalculation of
       if InRange(FResult,0,Gamma) then  {if smaller set as lowest gamma}
         begin
         Gamma:= FResult;
-        Limit:= Max(1,Gamma)*twcGammaSearchMultiplier;
+        Limit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
         end;
       Distance:= Distance+twcGammaDistCmStep;
       end;

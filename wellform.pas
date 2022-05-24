@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-20/05/2022 | Lazarus 2.2.2/FPC 3.2.2: 20/05/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-24/05/2022 | Lazarus 2.2.2/FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -616,40 +616,40 @@ type
     MayneordSSD2_cm             : TFloatSpinEditEx;
     //--gamma analysis groupbox
     GammaDepthCutoffLabel       : TStaticText;
-    GammaDepthCutoff_mm         : TFloatSpinEditEx;
+    GammaDepthCutoff_mm         : TFloatSpinEditEx;                             //>twcGammaCutoffDepthCm
     GammaDistNormLabel          : TStaticText;
-    GammaDistNorm_mm            : TFloatSpinEditEx;
+    GammaDistNorm_mm            : TFloatSpinEditEx;                             //>twcGammaDistCmBase
     GammaDoseCutoffLabel        : TStaticText;
-    GammaDoseCutoff_perc        : TFloatSpinEditEx;
+    GammaDoseCutoff_perc        : TFloatSpinEditEx;                             //twcGammaCutoffPercent
     GammaDoseNormLabel          : TStaticText;
-    GammaDoseNorm_perc          : TFloatSpinEditEx;
+    GammaDoseNorm_perc          : TFloatSpinEditEx;                             //>twcGammaDosePercBase
     GammaSearchFactorLabel      : TStaticText;
-    GammaSearchMultiplier_num   : TFloatSpinEditEx;
+    GammaSearchMultiplier_num   : TFloatSpinEditEx;                             //>twcGammaSearchMaxFactor
     GammaStepsLabel             : TStaticText;
-    GammaEdit_Steps_per_mm      : TFloatSpinEditEx;
+    GammaEdit_Steps_per_mm      : TFloatSpinEditEx;                             //>twcGammaDistCmStep
     GammaSettingsGroupBox       : TGroupBox;
     GammaLimitAreaLabel         : TLabel;
-    GammaLocalDoseCheckBox      : TCheckBox;
+    GammaLocalDoseCheckBox      : TCheckBox;                                    //>twcGammaLocalDosePerc
     //--pddfit groupbox
     PDDfitGroupBox              : TGroupBox;
     PDDfitCheckBox              : TCheckBox;
     FitCyclesLabel              : TStaticText;
-    FitCycles_num               : TSpinEditEx;
+    FitCycles_num               : TSpinEditEx;                                  //>twcNMcycles
     FitENRLabel                 : TStaticText;
     FitENRlimit_ratio           : TFloatSpinEditEx;
-    FitENRweigthedCheckBox      : TCheckBox;
+    FitENRweigthedCheckBox      : TCheckBox;                                    //>twcPddFitCostENRWeighted
     FitMaxTimeLabel             : TStaticText;
-    FitMaxTime_sec              : TFloatSpinEditEx;
-    FitMu3CheckBox              : TCheckBox;
-    FitMu4CheckBox              : TCheckBox;
+    FitMaxTime_sec              : TFloatSpinEditEx;                             //>twcNMseconds
+    FitMu3CheckBox              : TCheckBox;                                    //>pddfitEnames[pddfit_mu3]
+    FitMu4CheckBox              : TCheckBox;                                    //>pddfitEnames[pddfit_mu3]
     FitMubPowerFixedCheckBox    : TCheckBox;
     FitMubPowerLabel            : TStaticText;
-    FitMubPower_exp             : TFloatSpinEditEx;
-    FitMx2CheckBox              : TCheckBox;
+    FitMubPower_exp             : TFloatSpinEditEx;                             //>twcPddFitMubPower
+    FitMx2CheckBox              : TCheckBox;                                    //>pddfitEnames[pddfit_mx2]
     FitRestartsLabel            : TStaticText;
-    FitRestarts_num             : TSpinEditEx;
+    FitRestarts_num             : TSpinEditEx;                                  //>twcNMrestarts
     FitZWeightLabel             : TStaticText;
-    FitZWeight_val              : TFloatSpinEditEx;
+    FitZWeight_val              : TFloatSpinEditEx;                             //>twcPddFitZWeightPower
     //-advanced settings tab
     AdvancedSettingsTab         : TTabSheet;
     AdvancedSettingsPanel       : TPanel;                                       //placeholder to set background color
@@ -3864,12 +3864,12 @@ FitMu4CheckBox           .Checked:= twcPDDpar[pddfit_mu4];
 FitMx2CheckBox           .Checked:= twcPDDpar[pddfit_mx2];
 DefaultEnergy_MeV        .Value  := twcDefaultEnergy_MeV;
 GammaDoseCutoff_perc     .Value  := twcGammaCutoffPercent;
-GammaDepthCutoff_mm      .Value  := twcGammaCutoffDepth       *10;
+GammaDepthCutoff_mm      .Value  := twcGammaCutoffDepthCm     *10;
 GammaDoseNorm_perc       .Value  := twcGammaDosePercBase;
 GammaLocalDoseCheckBox   .Checked:= twcGammaLocalDosePerc;
 GammaDistNorm_mm         .Value  := twcGammaDistCmBase        *10;
 GammaEdit_Steps_per_mm   .Value  := 1/Math.Max(0.1,twcGammaDistCmStep*10);
-GammaSearchMultiplier_num.Value  := twcGammaSearchMultiplier;
+GammaSearchMultiplier_num.Value  := twcGammaSearchMaxFactor;
 MatchRangeDivider_num    .Value  := twcMatchRangeDivider;
 MatchSteps_num           .Value  := twcMatchStepsNumber;
 MatchNormDelta_perc      .Value  := twcMatchNormDeltaPercent;
@@ -3973,13 +3973,13 @@ twcPDDpar[pddfit_mu3]         := FitMu3CheckBox                .Checked;
 twcPDDpar[pddfit_mu4]         := FitMu4CheckBox                .Checked;
 twcPDDpar[pddfit_mx2]         := FitMx2CheckBox                .Checked;
 twcDefaultEnergy_MeV          := DefaultEnergy_MeV             .Value;
-twcGammaCutoffDepth           := GammaDepthCutoff_mm           .Value/10;
+twcGammaCutoffDepthCm         := GammaDepthCutoff_mm           .Value/10;
 twcGammaCutoffPercent         := GammaDoseCutoff_perc          .Value;
 twcGammaDosePercBase          := GammaDoseNorm_perc            .Value;
 twcGammaLocalDosePerc         := GammaLocalDoseCheckBox        .Checked;
 twcGammaDistCmBase            := GammaDistNorm_mm              .Value/10;
 twcGammaDistCmStep            := 1/Round(GammaEdit_Steps_per_mm.Value)*10;
-twcGammaSearchMultiplier      := GammaSearchMultiplier_num     .Value;
+twcGammaSearchMaxFactor      := GammaSearchMultiplier_num     .Value;
 twcMatchRangeDivider          := MatchRangeDivider_num         .Value;
 twcMatchStepsNumber           := Abs(MatchSteps_num            .Value);
 twcMatchNormDeltaPercent      := MatchNormDelta_perc           .Value;
@@ -4490,6 +4490,7 @@ end; {~updatesettings}
 {28/07/2020 FieldTypesTab}
 {08/12/2020 ShowLockItemCheckBox}
 {10/04/2022 ProcessSetFFFItem}
+{23/05/2022 InventoryTab depends on advancedmode}
 procedure TAnalyseForm.UImodeChange(Sender:TObject);
 var a,b,c,s: Boolean;
     i      : Integer;
@@ -4511,6 +4512,7 @@ ControlsEnable(ConfigurationTab    ,a);
 ControlsEnable(SettingsTab         ,a);
 ControlsEnable(FileConversionTab   ,a);
 ControlsEnable(FieldTypesTab       ,a);
+ControlsEnable(InventoryTab        ,s);
 ControlsEnable(AdvancedSettingsTab ,a);
 ControlsEnable(ODconvTab           ,a);
 EnableMenuSystem(True);                                                         //reset all menus to available and change from here
@@ -6487,7 +6489,7 @@ if not InventoryListReady then
      end;
   {$ENDIF THREAD_FILES}
   end;
-if InventoryReaderSetup then
+if InventoryTab.Enabled and InventoryReaderSetup then
   begin
   InventoryListReady        := False;
   InventoryGrid  .OnDblClick:= nil;
@@ -6636,11 +6638,12 @@ end; {~inventoryreadersetup}
 //for each engine an activity counter is maintained, which should be zero when ready
 {24/01/2018}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
+{24/05/2022 wDebugInfo}
 function TAnalyseForm.CheckWellhoferReady: Boolean;
 begin
 Result:= Engines[UsedEngine].EngineReady;
 if not Result then
-  SetMessageBar('Analysis object reports busy state.');
+  SetMessageBar('Analysis object reports busy state: '+Engines[UsedEngine].wDebugInfo);
 end; {checkwellhoferready}
 
 
@@ -10015,7 +10018,7 @@ tdla                    := twcDeriveLookAhead;
 tgcp                    := twcGammaCutoffPercent;
 tgdp                    := twcGammaDosePercBase;
 tgdc                    := twcGammaDistCmBase;
-tgsf                    := twcGammaSearchMultiplier;
+tgsf                    := twcGammaSearchMaxFactor;
 tmrf                    := twcMatchRangeDivider;
 tmsf                    := twcMatchStepsNumber;
 tmnp                    := twcMatchNormDeltaPercent;
@@ -10028,7 +10031,7 @@ twcDeriveLookAhead      := 3;
 twcGammaCutoffPercent   := 5;     {%}
 twcGammaDosePercBase    := 0.5;   {%}
 twcGammaDistCmBase      := 0.1;   {cm}
-twcGammaSearchMultiplier:= 5;
+twcGammaSearchMaxFactor:= 5;
 twcMatchRangeDivider    := 2;
 twcMatchStepsNumber     := 6;
 twcMatchNormDeltaPercent:= 2;
@@ -10490,7 +10493,7 @@ twcDeriveLookAhead                      := tdla;
 twcGammaCutoffPercent                   := tgcp;
 twcGammaDosePercBase                    := tgdp;
 twcGammaDistCmBase                      := tgdc;
-twcGammaSearchMultiplier                := tgsf;
+twcGammaSearchMaxFactor                 := tgsf;
 twcMatchRangeDivider                    := tmrf;
 twcMatchStepsNumber                     := tmsf;
 twcMatchNormDeltaPercent                := tmnp;
