@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-24/05/2022 | FPC 3.2.2: 20/05/2022}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-17/06/2022 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -308,7 +308,8 @@ resourcestring
   twForBinRead1     = 'Incorrect data in profile header';
   twForBinRead2     = 'File read error in profile data';
   twForMinMax       = 'Problem with maximum (%0.1f=%0.1f)';
-  twForMinScanLen   = 'Length of scan %0.1f cm; at least %0.1f cm required.';
+  twForMinScanLen   = 'Length of scan %0.1f cm; at least %0.1f cm required. %s';
+  twForPosInMm      = 'Data interpreted as mm.';
   twForIllegalScan  = 'Bi-directional or zero steps in scan at point %d.';
   twForPointError   = ' -->point %d expected';
   twForUnsupported  = 'Unsupported scan type: ';
@@ -7161,6 +7162,7 @@ end; {~checkdata}
 {08/06/2020 skip too short lines in GetNextLine; do not test on ConversionResult at EndOfFile}
 {01/06/2021 twcGenericPos_mm}
 {21/04/2022 lost first point for generic profile}
+{17/06/2022 twForPosInMm}
 function THdfProfileData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
 var v,r  : twcFloatType;
     c    : twcCoordinate;
@@ -7280,6 +7282,8 @@ if (Result and (not CheckFileTypeOnly) and (FileFormat in [twcHdfProfile,twcGene
       ScanStop.t[X] := FHDFdata[GetNumPoints-1].X;
       ScanStop.t[Y] := 0;
       ScanStop.t[Z] := 0;
+      if twcGenericPos_mm then
+        StatusMessage(twForPosInMm);
       end;
     FScanLength:= GetDistance(ScanStart,ScanStop);
     FStepSize  := FScanLength/Max(1,GetNumPoints-1);
@@ -17829,6 +17833,7 @@ var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
       begin
       Gamma:= twData[i];
       t.Add_X(Gamma);
+StatusMessage(Format('%0d %0.9f',[i,Gamma]));
       if Gamma<=1 then
         Inc(nPass);
       end;
@@ -18747,6 +18752,7 @@ The major output results are mostly preliminary and include:
 {13/09/2021 allowed vmax=vmin for relative profile: twValid := (vmax>0) and ((vmax>vmin) or ((vmax=vmin) and twIsRelative))}
 {11/04/2022 twAnalysisRange}
 {24/05/2022 AddDebugInfo}
+{17/06/2022 twForPosInMm}
 procedure TWellhoferData.FastScan(ASource      :twcDataSource=dsMeasured;
                                   ClearAnalysis:Boolean      =True       );
 var i,j                : Integer;
@@ -19004,7 +19010,7 @@ with wSource[ASource] do
           StatusMessage(Format(twForIllegalScan,[i]));
         end {twvalid, scanlength ok}
       else
-        StatusMessage(Format(twForMinScanLen,[Abs(twScanLength),twcDefMinScanLength]));
+        StatusMessage(Format(twForMinScanLen,[Abs(twScanLength),twcDefMinScanLength,ifthen((FileFormat=twcGenericProfile) and twcGenericPos_mm,twForPosInMm)]));
      except
       twValid:= False;
      end; {try, no fastscan}
