@@ -1,4 +1,4 @@
-unit TOmath;   {© Theo van Soest, FPC 3.2.0: 09/02/2021}
+unit TOmath;   {© Theo van Soest, 20/12/2015-20/06/2022  FPC 3.2.0: 09/02/2021}
 {$MODE DELPHI}
 {$I TOmath_opt.inc}
 interface      {09/02/2021}
@@ -477,7 +477,7 @@ function TStatsSampler.InDataRange(X      :StatsDataType;
                                    Limited:Boolean=True): Boolean;
 var r: StatsDataType;
 begin
-if Samples>0 then
+if Samples>1 then
   begin
   if Limited then
     begin
@@ -499,17 +499,19 @@ else              Result:= 0;
 end; {~get_mean}
 
 
+{18/06/2022 protect against negative calculation value due to equal data input}
 function TStatsSampler.Get_SumSquares_Mean: StatsDataType;
 begin
-if Samples>0 then Result:= FS_x[2]-Sqr(FS_x[1])/Samples
+if Samples>0 then Result:= Max(0,FS_x[2]-Sqr(FS_x[1])/Samples)
 else              Result:= 0;
 end; {~get_sumsquares_mean}
 
 
+{20/06/2022 threshold as extra condition}
 function TStatsSampler.Get_VarianceEst: StatsDataType;
 begin
-if Samples>1 then Result:= SumSquaresMean/Pred(Samples)
-else              Result:= 0;
+if (Samples>1) and (FSmax>FSmin) then Result:= SumSquaresMean/Pred(Samples)
+else                                  Result:= 0;
 end; {~get_varianceest}
 
 
