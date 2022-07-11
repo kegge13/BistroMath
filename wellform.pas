@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-24/05/2022 | Lazarus 2.2.2/FPC 3.2.2: 20/05/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-11/07/2022 | Lazarus 2.2.2/FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -8048,6 +8048,7 @@ In the ResultsInfoRecord (see also PanelElements) the result is returned, includ
 {29/03/2022 support for gamma pass rate 'V'}
 {06/04/2022 more efficient use of gammaanalysis by using calculated for output}
 {14/04/2022 for gammaanalysis parameters G and V support additional 0 to take default from settings tab}
+{11/07/2022 implementation of sigmoid slope output changed (Q,q)}
 function TAnalyseForm.EvaluateInfoRecord(var ARec:ResultsInfoRecord): twcFloatType;
 var side      : twcSides;
     Ynorm,r,c : twcFloatType;
@@ -8278,10 +8279,11 @@ with Engines[UsedEngine],ARec do                                                
            with wSource[Xsource] do
              if AssureSigmoidData(Xsource) then
                try
-                 if Selection='Q' then c:= abs(twSigmoidFitData[side].twFitResult2)
-                 else                  c:= twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope];
+                 with twSigmoidFitData[side],twNMReport do                      //normalisation on local value instead of global Ynorm
+                   if Selection='Q' then c:= abs(twFitTrueInflSlope/twFitTrueInflVal)
+                   else                  c:= abs(2*BestVertex[sigmoid_Slope]/(BestVertex[sigmoid_HighVal]+BestVertex[sigmoid_LowVal]));
                  Xedge  := dUseInflection;                                      //change confirmed Xedge to sigmoid-related value
-                 Y[side]:= SetLengthUnits(Units_in_denominator)*100*c/Ynorm;
+                 Y[side]:= SetLengthUnits(Units_in_denominator)*100*c;
                  if not Inrange(Y[side],0,1000) then
                    Y[side]:= 0;
                 except

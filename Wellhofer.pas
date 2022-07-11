@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-17/06/2022 | FPC 3.2.2: 20/05/2022}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-11/07/2022 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2483,7 +2483,8 @@ type
 
   {26/06/2016: twFitMaxScaling}
   {13/07/2020: twFitOffsetCm added as replacement for shared twSigmoidOffsetCm}
-  {05/03/2021: added twFitResult1,2 for optional model results}
+  {05/03/2021: added twFitTrueInflCm,twFitTrueInflSlope for optional model results}
+  {11/07/2022: added twFitTrueInflVal}
   twFitRecord=record
       twFitLowCm            : twcFloatType;
       twFitHighCm           : twcFloatType;
@@ -2492,8 +2493,9 @@ type
       twFitScalingPointCm   : twcFloatType;
       twFitOffsetCm         : twcFloatType;         {former twSigmoidOffset is now separate for each side}
       twFitModel            : twcFitModels;         {models are: pddPhoton,pddPhotonExtrapolation,pddElectron,fffSlope,fffTop,penumbraSigmoid}
-      twFitResult1          : twcFloatType;         {optional calculation results; sigmoid true inflection point}
-      twFitResult2          : twcFloatType;         {optional calculation results; sigmoid slope in inflection point}
+      twFitTrueInflCm       : twcFloatType;         {optional calculation results; sigmoid true inflection point}
+      twFitTrueInflVal      : twcFloatType;         {optional calculation results; value in sigmoid true inflection point}
+      twFitTrueInflSlope    : twcFloatType;         {optional calculation results; sigmoid slope in inflection point}
       twFitValid            : Boolean;
       twNMReport            : NMReportRecord;
     end;
@@ -14566,7 +14568,7 @@ with wSource[ASource] do if twValid and (not FFrozen) then
           twFitHighCm                                   := twFitHighCm        +cm;
           twFitScalingPointCm                           := twFitScalingPointCm+Cm;
           twFitOffsetCm                                 := twFitOffsetCm      +cm;
-          twFitResult1                                  := twFitResult1       +cm;
+          twFitTrueInflCm                               := twFitTrueInflCm    +cm;
           twNMReport.BestVertex[sigmoid_InflectionMajor]:= twNMReport.BestVertex[sigmoid_InflectionMajor]+cm;
           end;
       end; {for sides}
@@ -16847,14 +16849,15 @@ var s : twcSides;
             begin
             with twLevelPos[dInflection].Limit[ASide] do
               begin
-              h             := BestVertex[sigmoid_Slope];                                                       //just for short-writing in next line
-              CalcPos       := BestVertex[sigmoid_InflectionMajor]*power((h-1)/(h+1),1/h)+twFitOffsetCm;        //inflection point: x=B*((C-1)/(C+1))^(1/C)
-              CalcRangeFirst:= FNMEdgeFirst;                                                                    //reporting
-              CalcRangeLast := FNMEdgeLast;
-              Nearest       := NearestPosition(CalcPos,FNMEdgeSource);
-              Valid         := InRange(Nearest,CalcRangeFirst,CalcRangeLast);
-              twFitResult1  := CalcPos;                                                                         //infection point
-              twFitResult2  := twFitNormalisation*RawLogisticDerivative(BestVertex,twFitResult1,twFitOffsetCm); //slope in inflection point
+              h                 := BestVertex[sigmoid_Slope];                                                       //just for short-writing in next line
+              CalcPos           := BestVertex[sigmoid_InflectionMajor]*power((h-1)/(h+1),1/h)+twFitOffsetCm;        //inflection point: x=B*((C-1)/(C+1))^(1/C)
+              CalcRangeFirst    := FNMEdgeFirst;                                                                    //reporting
+              CalcRangeLast     := FNMEdgeLast;
+              Nearest           := NearestPosition(CalcPos,FNMEdgeSource);
+              Valid             := InRange(Nearest,CalcRangeFirst,CalcRangeLast);
+              twFitTrueInflCm   := CalcPos;                                                                         //infection point
+              twFitTrueInflVal  := twFitNormalisation*RawLogisticFunction(BestVertex,CalcPos,twFitOffsetCm);
+              twFitTrueInflSlope:= twFitNormalisation*RawLogisticDerivative(BestVertex,CalcPos,twFitOffsetCm);      //slope in inflection point
               if Valid and (LogLevel>2) and (ASource=dsMeasured) then
                 begin
                 StatusMessage(Format('inflection point %s: %s',[ifthen(ASide=twcLeft,'left','right'),GetPenumbraString(ASource,dInflection,ASide)]));
