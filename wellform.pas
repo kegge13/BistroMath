@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-11/07/2022 | Lazarus 2.2.2/FPC 3.2.2: 20/05/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-17/11/2022 | Lazarus 2.2.4/FPC 3.2.2: 02/10/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -119,6 +119,8 @@ const
   CxMaxCol         =   1;  {panelelements,starting from 0}
   CxDefaultRowCnt  =   9;
   OD2doseTableMax  =  13;
+  FPrectLeft       =  20;
+  FPrectSpacing    = 185;
 
 type
   ModModeType  = (ModMNorm,ModMFilm,ModMBeam);
@@ -156,7 +158,7 @@ type
    12/08/2015
     MeasMaxAsCenterItem added
    03/12/2015
-    EdgeDetectionGroupBox, EdgeSimoidRadius_mm added
+    Ft_EdgeDetectionGroupBox, EdgeSimoidRadius_mm added
    11/12/2015
     static LeffSeries and ReffSeries replaced with dynamic InFieldIndicators
     added FFFindicators
@@ -343,6 +345,36 @@ type
     Introduced AppliedGammaScope
   10/04/2022
     added ProcessSetFFFItem, FFFinFileCheckBox
+  14/10/2022
+    added MeasCalcPDDfitItem as quick access to PDDfitCheckBox in Settings tab
+    added FocusPositionTab,FocusPositionPanel
+    added arrays FP_Center_button and FP_Center_mm
+  16/10/2022
+    added FocusPosition_IEC_Convention,FocusPositionDetectorRotates
+  18/10/2022
+    added FocusPosition_mapping_Box
+  24/10/2022
+    added FocusPositionUseClipBoard,FocusPositionSetupGroupBox,FocusPositionInputGroupBox
+  28/10/2022
+    added FP_Results_label,FP_Average_mm
+  29/10/2022
+    added FocusPosition_UpperBLD_ident
+  01/11/2022
+    added FocusPositionCollimFromName
+  02/11/2022
+    added FocusPositionCollimFromName,FocusPositionResetButton,FocusPositionResetButtonClick
+  03/11/2022
+    added procedure FocusPositionProcessFile
+  04/11/2022
+    added FP_Results_Titles,FP_Calc_Dbfso_mm,FP_Calc_Drot_mm
+  08/11/2022
+    added FP_BankLevel_Label,FP_BankLevel_mm as array[twcBanks]
+  14/11/2022
+    added FocusPositionNamePatternEdit
+  15/11/2022
+    added FocusPositionDetSurfaceIsoc,FocusPositionDetectorInIsoc,FocusPositionDetectorOther: TRadioButton
+  17/11/2022
+    added ProcessSendToFPItem
   }
 
   {=========== TAnalyseForm =====================}
@@ -360,7 +392,7 @@ type
     FileSaveFilteredItem        : TMenuItem;  {Ctrl+Alt+S}
     FileSaveItem                : TMenuItem;  {Ctrl+A}
     FileIgnoreClipboardItem     : TMenuItem;  {Ctrl+I}       //OnClick = FileIgnoreClipboardClick
-    FileSaveAsReferenceItem     : TMenuItem;  {Ctrl+R}       //OnClick = FileSaveAsReferenceAction;  Tag=4
+    FileSaveAsReferenceItem     : TMenuItem;                 //OnClick = FileSaveAsReferenceAction;  Tag=4
     FileLockCriticalItems       : TMenuItem;  {Ctrl+Alt+R}   //OnClick = OptionModeClick;            Tag=4
     FileHistoryItem             : TMenuItem;  {Ctrl+H}       //OnClick = HistoryListSizeClick, linked to HistoryListCheckBox
     FileExitItem                : TMenuItem;  {Alt+F4}       //OnClick = FileExitAction
@@ -374,6 +406,7 @@ type
     ProcessAutoscalingItem      : TMenuItem;  {none}         //OnClick = Reload;                     Tag=4
     ProcessSigmoid2BufferItem   : TMenuItem;  {Ctrl+B}       //OnClick = Reload                      >wApplySigmoidToBuffer
     ProcessReprocessItem        : TMenuItem;  {Ctrl+R}       //OnClick = OnDataRead
+    ProcessSendToFPItem         : TMenuItem;  {Shift+Ctrl+R}
     ProcessResetFitItem         : TMenuItem;  {Ctrl+Z}       //OnClick = ProcessResetFitClick
     ProcessMergeItem            : TMenuItem;  {Ctrl+Q}       //OnClick = OnDataRead
     ProcessSetMergeSourceItem   : TMenuItem;  {Ctrl+Alt+Q}   //OnClick = ProcessMergeSourceClick
@@ -425,7 +458,8 @@ type
     MeasResampleItem            : TMenuItem;  {Shift+R}      //OnClick = Reload
     MeasMayneordItem            : TMenuItem;  {Shift+M}      //OnClick = Reload
     MeasUserDoseItem            : TMenuItem;  {Shift+U}      //OnClick = OnDataRead                   >wApplyUserLevel
-    MeasUseFitModelItem         : TMenuItem;  {Shift+P}      //OnClick = OnDataRead
+    MeasCalcPDDfitItem          : TMenuItem;                 //                                       linked to PDDfitCheckBox
+    MeasUsePDDfitModelItem      : TMenuItem;  {Shift+P}      //OnClick = OnDataRead
     MeasMirrorToBufferItem      : TMenuItem;  {Shift+E}      //OnClick = ViewItems
     MeasLocalPeakItem           : TMenuItem;  {Shift+L}      //OnClick = LocalPeakClick
     MeasMoveLeftItem            : TMenuItem;  {Shift+,}      //OnClick = MeasMoveClick
@@ -505,7 +539,7 @@ type
     AliasListInsert             : TMenuItem;
     AliasListDelete             : TMenuItem;
     //tabs
-    PageControl                 : TPageControl;
+    PageControl: TPageControl;
     //-analysis tab
     AnalysisTab                 : TTabSheet;
     DataPlot                    : TChart;                                       //set DataPlot.AutoFocus on to avoid trigger of PageControlRequestChange with VK_LEFT/RIGHT
@@ -523,109 +557,127 @@ type
     HistogramTab                : TTabSheet;
     HistogramPlot               : TChart;                                       //set HistoGramPlot.AutoFocus on to avoid trigger of PageControlRequestChange with VK_LEFT/RIGHT
     Histogram                   : TBarSeries;
+    //-focus position tab
+    FocusPositionTab            : TTabSheet;
+    FocusPositionPanel          : TPanel;
+    FocusPositionSetupGroupBox  : TGroupBox;
+    FocusPositionMappingLabel   : TLabel;
+    FocusPosition_mapping_Box   : TComboBox;
+    FocusPositionDetectorRotates: TCheckBox;
+    FocusPositionIECLabel       : TLabel;
+    FocusPosition_IEC_Convention: TComboBox;
+    FocusPositionUpperLabel     : TLabel;
+    FocusPosition_UpperBLD_ident: TComboBox;
+    FocusPositionDetSurfaceIsoc : TRadioButton;
+    FocusPositionDetectorInIsoc : TRadioButton;
+    FocusPositionDetectorOther  : TRadioButton;
+    FocusPositionInputGroupBox  : TGroupBox;
+    FocusPositionUseCollimInfo  : TCheckBox;
+    FocusPositionCollimFromName : TCheckBox;
+    FocusPositionNamePatternEdit: TLabeledEdit;
+    FocusPositionResetButton    : TButton;
     //-fit results tab
-    FitResultsTab               : TTabSheet;                                    //here model parameter values can be observed and copied after a pdd fit
-    FitResultsPanel             : TPanel;                                       //only used to set background color
-    FitResultsAllCheckBox       : TCheckBox;
-    FitResultsGrid              : TStringGrid;
-    FitResultsHeaderCheckBox    : TCheckBox;
-    FitresultsLabel             : TLabel;
-    FitResultsLabelsCheckBox    : TCheckBox;
+    PDDFitResultsTab            : TTabSheet;                                    //here model parameter values can be observed and copied after a pdd fit
+    PDDFitResultsPanel          : TPanel;                                       //only used to set background color
+    PDDFitResultsAllCheckBox    : TCheckBox;
+    PDDFitResultsGrid           : TStringGrid;
+    PDDFitResultsHeaderCheckBox : TCheckBox;
+    PDDFitresultsLabel          : TLabel;
+    PDDFitResultsLabelsCheckBox : TCheckBox;
     //-alias tab
     AliasTab                    : TTabSheet;
     AliasListEditor             : TValueListEditor;
     //-Field Types tab
     FieldTypesTab               : TTabSheet;                                    //a series of settings is highly dependendent on the actual data being processed: the Field Types
     FieldTypesPanel             : TPanel;                                       //a place holder to ba able to set a background color
-    Ft_DetectLabel              : TStaticText;                                  //twcFieldClass=(fcStandard,fcFFF,fcSmall,fcMRlinac,fcWedge,fcElectron);
-    Ft_DetDiagonalLabel         : TStaticText;
-    Ft_MeasSymCorrLabel         : TStaticText;
-    Ft_RefSymCorrLabel          : TStaticText;
-    Ft_DynPenumbraWidthLabel    : TStaticText;
-    Ft_EdgePrimaryLabel         : TStaticText;
-    Ft_EdgeFallBackLabel        : TStaticText;
-    Ft_CoFLabel                 : TStaticText;
-    Ft_NormLabel                : TStaticText;
-    Ft_CenterModelRadiusLabel   : TStaticText;
-    Ft_Default_SSD_Label        : TStaticText;
-    FFFDetectionGroupBox        : TGroupBox;
-    FFFMinFieldSizeLabel        : TStaticText;
+    Ft_DetectLabel              : TLabel;                                       //twcFieldClass=(fcStandard,fcFFF,fcSmall,fcMRlinac,fcWedge,fcElectron);
+    Ft_DetDiagonalLabel         : TLabel;
+    Ft_MeasSymCorrLabel         : TLabel;
+    Ft_RefSymCorrLabel          : TLabel;
+    Ft_DynPenumbraWidthLabel    : TLabel;
+    Ft_EdgePrimaryLabel         : TLabel;
+    Ft_EdgeFallBackLabel        : TLabel;
+    Ft_CoFLabel                 : TLabel;
+    Ft_NormLabel                : TLabel;
+    Ft_CenterModelRadiusLabel   : TLabel;
+    Ft_Default_SSD_Label        : TLabel;
+    Ft_FFFDetectionGroupBox     : TGroupBox;
+    FFFMinFieldSizeLabel        : TLabel;
     FFFMinFieldSize_cm          : TFloatSpinEditEx;                             //>wFFFMinFieldSizeCm
-    FFFMinDoseDifLabel          : TStaticText;
+    FFFMinDoseDifLabel          : TLabel;
     FFFMinDoseDif_perc          : TFloatSpinEditEx;                             //>wFFFMinDoseDifPerc
-    FFFMinEdgeDifLabel          : TStaticText;
+    FFFMinEdgeDifLabel          : TLabel;
     FFFMinEdgeDif_mm            : TFloatSpinEditEx;                             //>wFFFMinEdgeDifCm
-    FFFInFieldExtLabel          : TStaticText;
+    FFFInFieldExtLabel          : TLabel;
     FFFInFieldExt_cm            : TFloatSpinEditEx;                             //>twcFFFInFieldExtCm
     //--Edge groupbox
-    EdgeDetectionGroupBox       : TGroupBox;
+    Ft_EdgeDetectionGroupBox    : TGroupBox;
     EdgeDetectionCheckBox       : TCheckBox;                                    //>wEdgeDetect
     EdgeDetectionError_mm       : TFloatSpinEditEx;                             //>wEdgeFallBackCm
-    EdgeSigmoidRadiusLabel      : TStaticText;
+    EdgeSigmoidRadiusLabel      : TLabel;
     EdgeSigmoidRadius_cm        : TFloatSpinEditEx;                             //>wInflectionSigmoidRadiusCm
-    EdgeSmallFieldWidthLabel    : TStaticText;
+    EdgeSmallFieldWidthLabel    : TLabel;
     EdgeSmallFieldWidth_cm      : TFloatSpinEditEx;                             //>wSmallFieldLimitCm
-    EdgeWedge90ShiftLabel       : TStaticText;
+    EdgeWedge90ShiftLabel       : TLabel;
     EdgeWedge90ShiftFactor      : TFloatSpinEditEx;                             //>wWedge90ShiftFactor
-    EdgeMRlinacListLabel        : TStaticText;
-    EdgeMRlinacTUcsvList        : TEdit;                                        //>wMRlinacTUlist
+    EdgeMRlinacTUcsvList        : TLabeledEdit;
     //-settings tab
     SettingsTab                 : TTabSheet;
     SettingsPanel               : TPanel;                                       //placeholder to set background color
-    FilterWidthLabel            : TStaticText;
+    FilterWidthLabel            : TLabel;
     FilterWidth_mm              : TFloatSpinEditEx;
-    CalcWidthLabel              : TStaticText;
+    CalcWidthLabel              : TLabel;
     CalcWidth_mm                : TFloatSpinEditEx;
-    ResampleGridLabel           : TStaticText;
+    ResampleGridLabel           : TLabel;
     ResampleGrid_mm             : TFloatSpinEditEx;
-    GlobalNormAdjustLabel       : TStaticText;
+    GlobalNormAdjustLabel       : TLabel;
     GlobalNormAdjust_perc       : TFloatSpinEditEx;
-    UserBorderDoseLabel         : TStaticText;
+    UserBorderDoseLabel         : TLabel;
     UserBorderDose_perc         : TFloatSpinEditEx;
-    XpenumbraLabel              : TStaticText;
+    XpenumbraLabel              : TLabel;
     XLpenumbra_perc             : TFloatSpinEditEx;                             //>wXPenumbraL
     XHpenumbra_perc             : TFloatSpinEditEx;                             //>wXPenumbraH
-    EpenumbraLabel              : TStaticText;
+    EpenumbraLabel              : TLabel;
     ELpenumbra_perc             : TFloatSpinEditEx;                             //>wEPenumbraL
     EHpenumbra_perc             : TFloatSpinEditEx;                             //>wEPenumbraH
-    DefaultEnergyLabel          : TStaticText;
+    DefaultEnergyLabel          : TLabel;
     DefaultEnergy_MeV           : TFloatSpinEditEx;
-    HistogramLimitLabel         : TStaticText;
+    HistogramLimitLabel         : TLabel;
     HistogramLimit_num          : TFloatSpinEditEx;
     InsertOriginCheckBox        : TCheckBox;
     Nominal_IFA_CheckBox        : TCheckBox;                                    //>wNominalIFA
     //--shift settings groupbox
     ShiftGroupBox               : TGroupBox;
-    ShiftStepLabel              : TStaticText;
+    ShiftStepLabel              : TLabel;
     ManualShiftStep_cm          : TFloatSpinEditEx;
     //--merge groupbox
     MergeGroupBox               : TGroupBox;
-    MergeProfShiftLabel         : TStaticText;
+    MergeProfShiftLabel         : TLabel;
     MergeProfShift_cm           : TFloatSpinEditEx;
     MergeScaleOverlapCheckBox   : TCheckBox;
-    MergePDDShiftLabel          : TStaticText;
+    MergePDDShiftLabel          : TLabel;
     MergePDDShift_cm            : TFloatSpinEditEx;
     MergeMatchCheckBox          : TCheckBox;
     //--mayneord groupbox
     MayneordGroupBox            : TGroupBox;
-    MayneordDmaxLabel           : TStaticText;
+    MayneordDmaxLabel           : TLabel;
     MayneordDmax_cm             : TFloatSpinEditEx;
-    MayneordSSD1Label           : TStaticText;
+    MayneordSSD1Label           : TLabel;
     MayneordSSD1_cm             : TFloatSpinEditEx;
-    MayneordSSD2Label           : TStaticText;
+    MayneordSSD2Label           : TLabel;
     MayneordSSD2_cm             : TFloatSpinEditEx;
     //--gamma analysis groupbox
-    GammaDepthCutoffLabel       : TStaticText;
+    GammaDepthCutoffLabel       : TLabel;
     GammaDepthCutoff_mm         : TFloatSpinEditEx;                             //>twcGammaCutoffDepthCm
-    GammaDistNormLabel          : TStaticText;
+    GammaDistNormLabel          : TLabel;
     GammaDistNorm_mm            : TFloatSpinEditEx;                             //>twcGammaDistCmBase
-    GammaDoseCutoffLabel        : TStaticText;
+    GammaDoseCutoffLabel        : TLabel;
     GammaDoseCutoff_perc        : TFloatSpinEditEx;                             //twcGammaCutoffPercent
-    GammaDoseNormLabel          : TStaticText;
+    GammaDoseNormLabel          : TLabel;
     GammaDoseNorm_perc          : TFloatSpinEditEx;                             //>twcGammaDosePercBase
-    GammaSearchFactorLabel      : TStaticText;
+    GammaSearchFactorLabel      : TLabel;
     GammaSearchMultiplier_num   : TFloatSpinEditEx;                             //>twcGammaSearchMaxFactor
-    GammaStepsLabel             : TStaticText;
+    GammaStepsLabel             : TLabel;
     GammaEdit_Steps_per_mm      : TFloatSpinEditEx;                             //>twcGammaDistCmStep
     GammaSettingsGroupBox       : TGroupBox;
     GammaLimitAreaLabel         : TLabel;
@@ -633,22 +685,22 @@ type
     //--pddfit groupbox
     PDDfitGroupBox              : TGroupBox;
     PDDfitCheckBox              : TCheckBox;
-    FitCyclesLabel              : TStaticText;
+    FitCyclesLabel              : TLabel;
     FitCycles_num               : TSpinEditEx;                                  //>twcNMcycles
-    FitENRLabel                 : TStaticText;
+    FitENRLabel                 : TLabel;
     FitENRlimit_ratio           : TFloatSpinEditEx;
     FitENRweigthedCheckBox      : TCheckBox;                                    //>twcPddFitCostENRWeighted
-    FitMaxTimeLabel             : TStaticText;
+    FitMaxTimeLabel             : TLabel;
     FitMaxTime_sec              : TFloatSpinEditEx;                             //>twcNMseconds
     FitMu3CheckBox              : TCheckBox;                                    //>pddfitEnames[pddfit_mu3]
     FitMu4CheckBox              : TCheckBox;                                    //>pddfitEnames[pddfit_mu3]
     FitMubPowerFixedCheckBox    : TCheckBox;
-    FitMubPowerLabel            : TStaticText;
+    FitMubPowerLabel            : TLabel;
     FitMubPower_exp             : TFloatSpinEditEx;                             //>twcPddFitMubPower
     FitMx2CheckBox              : TCheckBox;                                    //>pddfitEnames[pddfit_mx2]
-    FitRestartsLabel            : TStaticText;
+    FitRestartsLabel            : TLabel;
     FitRestarts_num             : TSpinEditEx;                                  //>twcNMrestarts
-    FitZWeightLabel             : TStaticText;
+    FitZWeightLabel             : TLabel;
     FitZWeight_val              : TFloatSpinEditEx;                             //>twcPddFitZWeightPower
     //-advanced settings tab
     AdvancedSettingsTab         : TTabSheet;
@@ -667,11 +719,11 @@ type
     OutlierMaxPoints_num        : TSpinEditEx;
     AutoSetDecPointCheckBox     : TCheckBox;
     AutoDecPointList            : TEdit;
-    BadPenumbraLabel            : TStaticText;
+    BadPenumbraLabel            : TLabel;
     BadPenumbraWidth_cm         : TFloatSpinEditEx;
-    OriginMinLevelLabel         : TStaticText;
+    OriginMinLevelLabel         : TLabel;
     OriginMinLevel_perc         : TFloatSpinEditEx;                             //>twcOriginMinNormFraction
-    PipsPixelSizeLabel          : TStaticText;
+    PipsPixelSizeLabel          : TLabel;
     PipsPixelSize_cm            : TFloatSpinEditEx;                             //>wPipsPixelCm
     //--axis title groupbox
     AxisViewGroupBox            : TGroupBox;
@@ -711,7 +763,7 @@ type
     LinacErrorGroupBox          : TGroupBox;
     LinacErrInvertABCheckBox    : TCheckBox;
     LinacErrInvertGTCheckBox    : TCheckBox;
-    LinacSymLabel               : TStaticText;
+    LinacSymLabel               : TLabel;
     LinacSymInner_cm            : TFloatSpinEditEx;
     LinacSymOuter_cm            : TFloatSpinEditEx;
     //-configuration tab
@@ -742,10 +794,10 @@ type
     //-file conversion tab
     FileConversionTab           : TTabSheet;
     FileConversionPanel         : TPanel;                                       //placeholder to set background color
-    FileConvDestinationLabel    : TStaticText;
-    FileConvDestinationTypeLabel: TStaticText;
-    FileConvSourceLabel         : TStaticText;
-    FileConvSourceTypeLabel     : TStaticText;
+    FileConvDestinationLabel    : TLabel;
+    FileConvDestinationTypeLabel: TLabel;
+    FileConvSourceLabel         : TLabel;
+    FileConvSourceTypeLabel     : TLabel;
     FileConvSourcePath          : TDirectoryEdit;
     FileConvSourceListBox       : TListBox;
     FileConvSourceRecursive     : TCheckBox;
@@ -762,11 +814,11 @@ type
     //-signal adapt tab
     ODconvTab                   : TTabSheet;
     ODConversionPanel           : TPanel;
-    UseBackgroundValueLabel     : TStaticText;
-    UseDoseConvLabel            : TStaticText;
-    UseDoseFilmTypeLabel        : TStaticText;
-    UseDoseModalityLabel        : TStaticText;
-    UseSubtractLabel            : TStaticText;
+    UseBackgroundValueLabel     : TLabel;
+    UseDoseConvLabel            : TLabel;
+    UseDoseFilmTypeLabel        : TLabel;
+    UseDoseModalityLabel        : TLabel;
+    UseSubtractLabel            : TLabel;
     UseBackGroundBox            : TGroupBox;
     UseDoseAddButton            : TButton;
     UseDoseDelButton            : TButton;
@@ -796,7 +848,7 @@ type
     procedure ViewItems                (Sender         : TObject);                //manage visibility of items on user input
     procedure UpdateSettings           (Sender         : TObject);                //passing user choices to various menu items
     procedure ClearScreen              (Sender         : TObject);                //clear graphics
-    procedure ReadDroppedFile          (Sender         : TObject;                 //uses DataFileOpen
+    procedure ReadDroppedFiles         (Sender         : TObject;                 //uses DataFileOpen
                                         const FileNames: array of String);
     procedure Reload                   (Sender         : TObject);      overload;
     procedure ReadEditor               (Sender         : TObject);      overload; //read data from raw data tab and call ondataread
@@ -812,6 +864,11 @@ type
     {$IFDEF form2pdf}
     procedure FilePrintFormClick       (Sender         : TObject);
     {$ENDIF}
+    procedure FocusPositionPanelPaint  (Sender         : TObject);
+    procedure FocusPositionProcessFile (Sender         : TObject);
+    procedure FocusPositionRadioClick  (Sender         : TObject);
+    procedure FocusPositionResetClick  (Sender         : TObject);
+    procedure FocusPositionChange_mm   (Sender         : TObject);
     procedure MeasMoveClick            (Sender         : TObject);
     procedure CalcSubMenuClick         (Sender         : TObject);
     procedure SymCorrectClick          (Sender         : TObject);
@@ -832,6 +889,7 @@ type
     procedure ProcessUpdateDataRead    (Sender         : TObject);
     procedure ProcessMergeSourceClick  (Sender         : TObject);
     procedure ProcessResetFitClick     (Sender         : TObject);
+    procedure MeasCalcPDDfitClick      (Sender         : TObject);
     procedure PresetsMenuEnter         (Sender         : TObject);
     procedure PresetsItemClick         (Sender         : TObject);
     procedure UseDoseAddButtonClick    (Sender         : TObject);
@@ -883,7 +941,7 @@ type
                                         aState         : TGridDrawState);
     procedure AliasListDeleteClick     (Sender         : TObject);
     procedure AliasListInsertClick     (Sender         : TObject);
-    procedure FitResultsGridClick      (Sender         : TObject);
+    procedure PDDFitResultsGridClick      (Sender         : TObject);
     procedure ModListAddClick          (Sender         : TObject);
     procedure ModListEditClick         (Sender         : TObject);
     procedure ModListUpdate            (Sender         : TObject);
@@ -940,22 +998,34 @@ type
     FilePrintSelItem      : TMenuItem;                    {Ctrl+Shift+P}                //OnClick = FilePrintFormClick
     FilePrintAllItem      : TMenuItem;                    {Ctrl+Alt+P}                  //OnClick = FilePrintFormClick
    {$ENDIF}
-    Ft_TypeLabel          : array[twcFieldClass                        ] of TLabel;     //Ft_xxx: used on FieldTypes tab         >|-
-    Ft_DetectionCheckbox  : array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection                       >wFieldTypeDetection
-    Ft_DetDiagonalCheckbox: array[twcFieldClass                        ] of TCheckBox;  //SyncSetDetection                       >wDiagonalDetection
-    Ft_DynPenumbraCheckbox: array[twcFieldClass                        ] of TCheckBox;  //no synchonisation needed               >-
-    Ft_SymCorrCheckbox    : array[twcFieldClass,dsMeasured..dsReference] of TCheckBox;  //local sync with menu ondataread        >-
-    Ft_EdgeMethodCombo    : array[twcFieldClass,twcEdgeClass           ] of TComboBox;  //SetWellhofervalues/GetWellhofervalues  >wEdgeMethod
-    Ft_CenterMethodCombo  : array[twcFieldClass                        ] of TComboBox;  //SyncSetCenterOfField                   >wCenterDefinition
-    Ft_NormMethodCombo    : array[twcFieldClass                        ] of TComboBox;  //SyncSetNormalisation                   >wNormalisation
-    Ft_CenterRadiusEdit_Cm: array[twcFieldClass                        ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
-    Ft_Default_SSD_Edit_Cm: array[twcFieldClass                        ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
-    GammaInFieldLimits    : array[twcFieldClass                        ] of TCheckBox;
-    ExtSymSubItems        : array[ExtSymType                           ] of TMenuItem;
-    FFFpSubItems          : array[CenterFFFTopModel..CenterFFFSlopes   ] of TMenuItem;
-    SpecialMode           : array[1..NumSpecialModes                   ] of SpecModeRec;
-    ShiftLabels           : array[twcMeasAxis                          ] of TStaticText; //                                      >wAutoShiftCm
-    ShiftValues_cm        : array[twcMeasAxis                          ] of TFloatSpinEditEx;
+    Ft_TypeLabel          : array[twcFieldClass                         ] of TLabel;     //Ft_xxx: used on FieldTypes tab         >|-
+    Ft_DetectionCheckbox  : array[twcFieldClass                         ] of TCheckBox;  //SyncSetDetection                       >wFieldTypeDetection
+    Ft_DetDiagonalCheckbox: array[twcFieldClass                         ] of TCheckBox;  //SyncSetDetection                       >wDiagonalDetection
+    Ft_DynPenumbraCheckbox: array[twcFieldClass                         ] of TCheckBox;  //no synchonisation needed               >-
+    Ft_SymCorrCheckbox    : array[twcFieldClass,dsMeasured..dsReference ] of TCheckBox;  //local sync with menu ondataread        >-
+    Ft_EdgeMethodCombo    : array[twcFieldClass,twcEdgeClass            ] of TComboBox;  //SetWellhofervalues/GetWellhofervalues  >wEdgeMethod
+    Ft_CenterMethodCombo  : array[twcFieldClass                         ] of TComboBox;  //SyncSetCenterOfField                   >wCenterDefinition
+    Ft_NormMethodCombo    : array[twcFieldClass                         ] of TComboBox;  //SyncSetNormalisation                   >wNormalisation
+    Ft_CenterRadiusEdit_Cm: array[twcFieldClass                         ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
+    Ft_Default_SSD_Edit_Cm: array[twcFieldClass                         ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
+    FP_RectTop            :                                                  Integer;          //value depends on top and height of FocusPositionInputGroupBox
+    FP_BankLevel_Label    : array[twcBanks                              ] of TLabel;           //FocusPosition
+    FP_BankLevel_mm       : array[twcBanks                              ] of TFloatSpinEditEx; //FocusPosition
+    FP_Center_button      : array[snGT..snAB   ,twcCardinalAngles       ] of TRadioButton;     //FocusPosition
+    FP_Center_mm          : array[snGT..snAB   ,twcCardinalAngles       ] of TFloatSpinEditEx; //FocusPosition
+    FP_Results_label      : array[InPlane..CrossPlane                   ] of TLabel;           //FocusPosition
+    FP_Average_Titles     :                                                  TLabel;           //FocusPosition
+    FP_Average_mm         : array[InPlane..CrossPlane,twcUpper..twcLower] of TLabel;           //FocusPosition
+    FP_Dbfso_Title        :                                                  TLabel;           //FocusPosition
+    FP_Drot_Title         :                                                  TLabel;           //FocusPosition
+    FP_Calc_Dbfso_mm      : array[InPlane..CrossPlane                   ] of TLabel;           //FocusPosition
+    FP_Calc_Drot_mm       : array[InPlane..CrossPlane                   ] of TLabel;           //FocusPosition
+    GammaInFieldLimits    : array[twcFieldClass                         ] of TCheckBox;
+    ExtSymSubItems        : array[ExtSymType                            ] of TMenuItem;
+    FFFpSubItems          : array[CenterFFFTopModel..CenterFFFSlopes    ] of TMenuItem;
+    SpecialMode           : array[1..NumSpecialModes                    ] of SpecModeRec;
+    ShiftLabels           : array[twcMeasAxis                           ] of TLabel; //                                      >wAutoShiftCm
+    ShiftValues_cm        : array[twcMeasAxis                           ] of TFloatSpinEditEx;
     CxResults             : array of CxLine;                                    //implementation PANEL DISPLAY RULES; binding to TPanelConfig.FElements; CxUsedRowMax=highest row number; see InitCxBlock, PublishResults
     UseDoseConvTable      : array of OD2dose_Rec;
     NextClipboardOwner    : THandle;                                            //BistroMath inserts iself in the chain of clipboardviewers
@@ -1006,7 +1076,7 @@ type
     MinClipBoardBytes     : Integer;                                            //ignore clipboard when too small
     ClipBoardLock         : Boolean;
     LastProfileZoomState  : Boolean;                                            //preserves the zoomstate for profiles when automatically is unzoomed for pdd's
-    SelectedFitCol        : Integer;                                            //remember last clicked column in FitResultsTab}
+    SelectedFitCol        : Integer;                                            //remember last clicked column in PDDFitResultsTab}
     FFFdataSource         : twcDataSource;                                      //maps on one of standard sources to plot TopModel
     FKeyboardReady        : Boolean;                                            //check with onkeyup event when there are no more keys to be processed
     InventoryListReady    : Boolean;                                            //See Files tab
@@ -1219,7 +1289,7 @@ const DefAppName           ='BistroMath';
       DefChartAxB          =  1;
       DefChartAxR          =  2;                                                //DefChartAxT=3;
       DefMinFPCbuild       =755;
-      DefConfigRepairFile  ='BM753_renamed_elements.ini';
+      DefConfigRepairFile  ='BM780_renamed_elements.ini';
       XtypeFilter          = csNumeric+[EmptyXtype];
       PlotSeriesColors  : array[PlotItems] of TColor       = (clRed,clBlue,clGreen,clMaroon{,clNavy});
       PlotDataMapping   : array[PlotItems] of twcDataSource= (dsMeasured,dsCalculated,dsReference,dsBuffer);
@@ -1484,22 +1554,33 @@ end; {wndcallback}
 {03/03/2020 added Ft_DetDiagonalCheckbox, removed MeasDetectDiagItem}
 {15/03/2021 added Ft_Default_SSD_Edit_Cm}
 {16/02/2022 specialmode1 support for filepath on other drive}
+{15/10/2022 init FP_Center_button and FP_Center_mm}
+{16/10/2022 fill FocusPosition_IEC_Convention}
+{18/10/2022 fill FocusPosition_mapping_Box}
+{28/10/2022 init FP_Results_label,FP_Average_mm}
+{29/10/2022 init FocusPosition_UpperBLD_ident}
+{04/11/2022 init FP_Results_Titles,FP_Calc_Dbfso_mm,FP_Calc_Drot_mm}
+{08/11/2022 init FP_BankLevels_Label,FP_BankLevel_mm}
 procedure TAnalyseForm.FormCreate(Sender: TObject);
 var k         : PlotItems;
-    i,j       : Integer;
+    i,j       : LongInt;
     TempPath  : String;
     aa,ab,ac  : array of String;
     f         : twcFieldClass;
     m         : twcFFFPeakType;
     n         : twcNormalisation;
     o         : twcCenterType;
-    x         : twcMeasAxis;
     e         : ExtSymType;
     side      : twcSides;
+    bank      : twcBanks;
     p         : twcDoseLevel;
     q         : twcEdgeClass;
     sidechar  : Char;
     s         : twcDataSource;
+    angle     : twcCardinalAngles;
+    iec       : twcIECdefs;
+    x         : twcMeasAxis;
+    scan      : twcScanTypes absolute x;
 
   {fpc implementation}
   function MakeChecksum: String;
@@ -1709,8 +1790,8 @@ for i:= 1 to NumSpecialModes do with SpecialMode[i] do                          
   MenuItem.OnClick  := @SetCaption;
   ProcessingMenu.Add(MenuItem);
   end;
-i := 100;                             {------------------------field types tab----------------------}
-j := i+10;
+i := 100;                                           {------------------------field types tab----------------------}
+j := i+20;
 aa:= String('Prim,Fallback').Split(',');
 ab:= String(DefCoFDefaults ).Split(',');                                        //defaults for each class
 ac:= String(DefNormDefaults).Split(',');                                        //defaults for each class = 'C,O,M,C';
@@ -1873,6 +1954,167 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     OnChange     := @SetWellhoferValues;
     end;
   end;
+FP_RectTop:= FocusPositionInputGroupBox.Top+FocusPositionInputGroupBox.Height+30; {-----focus position tab---------}
+for angle:= Rot000 to Rot270 do
+  FocusPosition_mapping_Box.AddItem(Format('%u°',[Ord(angle)*90]),nil);         //see also FocusPositionPanelPaint
+FocusPosition_mapping_Box.ItemIndex:= 0;
+for iec:= twcIEC601 to twcIEC1217 do
+  begin
+  FocusPosition_IEC_Convention.AddItem('IEC'+twcIECnames[iec],nil);
+  FocusPosition_UpperBLD_ident.AddItem(twcBLDupper[iec]      ,nil);
+  end;
+FocusPosition_IEC_Convention.ItemIndex:= Ord(twcIEC1217);
+FocusPosition_UpperBLD_ident.ItemIndex:= FocusPosition_IEC_Convention.ItemIndex;
+for bank:= twcUpper to twcDetector do
+  begin
+  FP_BankLevel_Label[bank]:= TLabel.Create(AnalyseForm);
+  with FP_BankLevel_Label[bank] do
+    begin
+    Parent       := FocusPositionSetupGroupBox;
+    Top          := FocusPositionUpperLabel.Top+(Ord(bank) mod 2)*30;
+    Width        := 135;
+    Left         := ifthen(bank=twcDetector,FocusPositionDetectorOther.Left,430);
+    Alignment    := taRightJustify;
+    AutoSize     := False;
+    Caption      := ifthen(bank=twcDetector,'Detector ref.',Format('%ser BLD',[ifthen(bank=twcUpper,'Upp','Low')]))+'  level (mm):';
+    end;
+  FP_BankLevel_mm[bank]:= TFloatSpinEditEx.Create(AnalyseForm);
+  with FP_BankLevel_mm[bank] do
+    begin
+    Parent       := FocusPositionSetupGroupBox;
+    Top          := FocusPosition_IEC_Convention.Top+(Ord(bank) mod 2)*30;
+    Left         := FP_BankLevel_Label[bank].Left+FP_BankLevel_Label[bank].Width+5;
+    Width        := 56;
+    Name         := Format('FocusPosition_%sLevel_mm',[ifthen(bank=twcDetector,'SSD_',ifthen(bank=twcUpper,'Upper','Lower'))]);
+    MinValue     :=    0;
+    MaxValue     := 1000;
+    DecimalPlaces:=    1;
+    Value        :=    0;
+    Increment    :=    0.1;
+    NullValue    := Value;
+    end;
+  end;
+for scan:= snGT to snAB do
+  begin
+  for angle:= Rot000 to Rot270 do
+    begin
+    FP_Center_button[scan,angle]:= TRadioButton    .Create(AnalyseForm);
+    FP_Center_mm    [scan,angle]:= TFloatSpinEditEx.Create(AnalyseForm);
+    with FP_Center_button[scan,angle] do
+      begin
+      Parent       := FocusPositionPanel;
+      HelpContext  := Parent.HelpContext;
+      Top          := FP_RectTop+140+Ord(scan)*30;
+      Width        := 104;
+      Left         := FPrectLeft+Ord(angle)*FPrectSpacing;
+      Caption      := Format('"%s" %3u° (mm):',[ifthen(scan=snGT,'TG','AB'),Ord(angle)*90]);
+      OnClick      := @FocusPositionRadioClick;
+      end;
+    with FP_Center_mm[scan,angle] do
+      begin
+      Parent       := FocusPositionPanel;
+      HelpContext  := Parent.HelpContext;
+      Top          := FP_Center_button[scan,angle].Top-2;
+      Width        := 56;
+      Left         := FP_Center_button[scan,angle].Left+FP_Center_button[scan,angle].Width;
+      Name         := StringReplace(FP_Center_button[scan,angle].Name,'button','mm',[rfIgnoreCase]);
+      Color        := clYellow;
+      DirectInput  := True;
+      MinValue     := -100;
+      MaxValue     :=  100;
+      DecimalPlaces:=    2;
+      Value        :=    0;
+      Increment    :=    0.1;
+      NullValue    := Value;
+      NumbersOnly  := False;
+      OnChange     := @FocusPositionChange_mm;
+      OnEditingDone:= @FocusPositionChange_mm;
+      Tag          := 1;
+      end;
+    end;
+  end; {scan}
+for x:= InPlane to CrossPlane do
+  begin
+  FP_Results_label[x]:= TLabel.Create(AnalyseForm);
+  with FP_Results_label[x] do
+    begin
+    Parent   := FocusPositionPanel;
+    Top      := FP_Center_button[scan,Rot000].Top+2;                          //scan and x refer to same memory location
+    Left     := FPrectLeft+4*FPrectSpacing-4;
+    AutoSize := False;
+    Width    := 40;
+    Alignment:= taLeftJustify;
+    Caption  := Format('%s axis:',[ifthen(x=Inplane,'TG','AB')]);
+    end;
+  for bank:= twcUpper to twcLower do
+    begin
+    FP_Average_mm[x,bank]:= TLabel.Create(AnalyseForm);
+    with FP_Average_mm[x,bank] do
+      begin
+      Parent    := FocusPositionPanel;
+      Top       := FP_Results_label[x].Top;
+      AutoSize  := False;
+      Width     := 40;
+      Left      := FP_Results_label[x].Left+FP_Results_label[x].Width+Ord(bank)*(Width+2);
+      Alignment := taRightJustify;
+      Font.Color:= clGray;
+      end;
+    end; {bank}
+  FP_Calc_Dbfso_mm[x]:= TLabel.Create(AnalyseForm);
+  with FP_Calc_Dbfso_mm[x] do
+    begin
+    Parent    := FocusPositionPanel;
+    Top       := FP_Results_Label[x].Top;
+    Left      := FP_Average_mm[x,twcLower].Left+FP_Average_mm[x,twcLower].Width+2;
+    AutoSize  := False;
+    Width     := 40;
+    Alignment := taRightJustify;
+    Font.Style:= [fsBold];
+    end;
+  FP_Calc_Drot_mm[x] := TLabel.Create(AnalyseForm);
+  with FP_Calc_Drot_mm[x] do
+    begin
+    Parent   := FocusPositionPanel;
+    Top      := FP_Results_Label[x].Top;
+    Left     := FP_Calc_Dbfso_mm[x].Left+FP_Calc_Dbfso_mm[x].Width+2;
+    AutoSize := False;
+    Width    := 40;
+    Alignment:= taRightJustify;
+    end;
+  end;
+FP_Average_Titles:= TLabel.Create(AnalyseForm);
+with FP_Average_Titles do
+  begin
+  Parent    := FocusPositionPanel;
+  Top       := FP_Average_mm[Inplane,twcUpper].Top -20;
+  Left      := FP_Average_mm[Inplane,twcUpper].Left+12;
+  Alignment := taLeftJustify;
+  Caption   := 'avg U     avg L';
+  Font.Color:= clGray;
+  end;
+FP_Dbfso_Title:= TLabel.Create(AnalyseForm);
+with FP_Dbfso_Title do
+  begin
+  Parent    := FocusPositionPanel;
+  AutoSize  := False;
+  Top       := FP_Average_Titles.Top;
+  Left      := FP_Calc_Dbfso_mm[Inplane].Left;
+  Width     := FP_Calc_Dbfso_mm[Inplane].Width;
+  Alignment := taRightJustify;
+  Font.Style:= [fsBold];
+  Caption   := 'Dbfso';
+  end;
+FP_Drot_Title:= TLabel.Create(AnalyseForm);
+with FP_Drot_Title do
+  begin
+  Parent    := FocusPositionPanel;
+  AutoSize  := False;
+  Top       := FP_Average_Titles.Top;
+  Left      := FP_Calc_Drot_mm[Inplane].Left;
+  Width     := FP_Calc_Drot_mm[Inplane].Width;
+  Alignment := taRightJustify;
+  Caption   := 'Drot';
+  end;
 aa:= String(DefFFFpSubTexts).Split(',');                                        //FFF peak submenu: texts
 ab:= String(DefFFFpSubKeys ).Split(',');                                        //FFF peak submenu: shortcuts
 ac:= String(DefFFFpSubNames).Split(',');
@@ -1925,7 +2167,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do {-------------------GammaSe
   end;
 for x:= Inplane to Beam do                           {-------------------ShiftGroupBox labels and values----------------}
   begin
-  ShiftLabels[x]:= TStaticText.Create(AnalyseForm);
+  ShiftLabels[x]:= TLabel.Create(AnalyseForm);
   with ShiftLabels[x] do
     begin
     Parent     := ShiftGroupBox;
@@ -2146,11 +2388,12 @@ ClipBoardLock:= False;                                                          
 end; {~formcreate}
 
 
+
 (* 18/04/2015
 ****BistroMath core function****
 {=> ProcessReprocessItem, ProcessMergeItem,
     ViewCalculatedItem, ViewHighResValItem, ViewSwapGTItem, ViewSwapABItem, ViewSwapUDItem, ViewSwapLRItem, ViewBottomAxisAlwaysBlack,
-    MeasUserDoseItem, MeasUseFitModelItem, MeasMissingPenumbraItem, RefNormaliseItem, CalcPostFilterItem
+    MeasUserDoseItem, MeasUsePDDfitModelItem, MeasMissingPenumbraItem, RefNormaliseItem, CalcPostFilterItem
 
 This truly is the core of the GUI. It handles the consequences of all settings upon a newly read data set.
 It calls a lot of functions from the TWellhoferdata object (engines[usedengine]) to apply these choices.
@@ -3421,7 +3664,9 @@ end; {~presetload}
 {16/11/2020 FileMultipleInputItem}
 {23/02/2021 readgroup ComboBox added}
 {14/05/2021 readgroup(MeasRemappingBox) added}
-{01/06/2021 ReadGroup(FFFDetectionGroupBox)}
+{01/06/2021 ReadGroup(Ft_FFFDetectionGroupBox)}
+{30/10/2022 ReadGroup(FocusPositionSetupGroupBox)}
+{14/11/2022 support for TLabeledEdit}
 procedure TAnalyseForm.PresetLoad(CF:TConfigStrings);
 var b: Boolean;
     i: Integer;
@@ -3476,7 +3721,9 @@ var b: Boolean;
       else if Controls[i] is TFloatSpinEditEx then
         CF.ShortRead(IniSectionName,TFloatSpinEditEx(Controls[i]))
       else if Controls[i] is TEdit then
-        CF.ShortRead(IniSectionName,TEdit(Controls[i]));
+        CF.ShortRead(IniSectionName,TEdit(Controls[i]))
+      else if Controls[i] is TLabeledEdit then
+        CF.ShortRead(IniSectionName,TLabeledEdit(Controls[i]));
       end;
     end;
   end;
@@ -3500,14 +3747,15 @@ with CF do
   ReadGroup(AxisViewGroupBox);
   ReadGroup(MergeGroupBox);
   ReadGroup(MatchGroupBox);
-  ReadGroup(EdgeDetectionGroupBox);
+  ReadGroup(Ft_EdgeDetectionGroupBox);
   ReadGroup(MayneordGroupBox);
   ReadGroup(PDDfitGroupBox);
   ReadGroup(MeasRemappingBox);
   ReadGroup(LinacErrorGroupBox);
   ReadGroup(GammaSettingsGroupBox);
-  ReadGroup(FFFDetectionGroupBox);
+  ReadGroup(Ft_FFFDetectionGroupBox);
   ReadGroup(FieldTypesPanel);
+  ReadGroup(FocusPositionSetupGroupBox);
   ShortRead(IniSectionName,SimpleModeItem);
   ShortRead(IniSectionName,ProcessCheckTempTypeItem);
   ShortRead(IniSectionName,ProcessIgnoreTUnameItem);
@@ -3520,8 +3768,8 @@ with CF do
   ShortRead(IniSectionName,MeasRemapCoordinates);
   ShortRead(IniSectionName,CalcPostFilterItem);
   ShortRead(IniSectionName,ForceMatchingCheckBox);
-  ShortRead(IniSectionName,FitResultsLabelsCheckBox);
-  ShortRead(IniSectionName,FitResultsHeaderCheckBox);
+  ShortRead(IniSectionName,PDDFitResultsLabelsCheckBox);
+  ShortRead(IniSectionName,PDDFitResultsHeaderCheckBox);
   ShortRead(IniSectionName,FFFinFileCheckBox);
   ShortRead(IniSectionName,LogLevelEdit);
   end;
@@ -3600,7 +3848,9 @@ end; {~configsave}
 {08/12/2020 ShowLockItemCheckBox}
 {23/02/2021 writegroup ComboBox added}
 {14/05/2021 writegroup(MeasRemappingBox) added}
-{01/06/2021 WriteGroup(FFFDetectionGroupBox)}
+{01/06/2021 WriteGroup(Ft_FFFDetectionGroupBox)}
+{30/10/2022 WriteGroup(FocusPositionSetupGroupBox)}
+{14/11/2022 support for TLabeledEdit}
 procedure TAnalyseForm.ConfigSave(AStream    :TStream;
                                   AFileName  :String='';
                                   PresetsOnly:Boolean=False);
@@ -3653,7 +3903,9 @@ var CF : TConfigStrings;
       else if Controls[i] is TFloatSpinEditEx then
         CF.ShortWrite(IniSectionName,TFloatSpinEditEx(Controls[i]))
       else if Controls[i] is TEdit then
-        CF.ShortWrite(IniSectionName,TEdit(Controls[i]));
+        CF.ShortWrite(IniSectionName,TEdit(Controls[i]))
+      else if Controls[i] is TLabeledEdit then
+        CF.ShortWrite(IniSectionName,TLabeledEdit(Controls[i]));
       end;
     end;
   end;
@@ -3780,10 +4032,11 @@ with CF do
       Engines[UsedEngine].WriteConfig(CF);
       end; {not presetsonly}
     WriteGroup(MayneordGroupBox);
-    WriteGroup(EdgeDetectionGroupBox);
+    WriteGroup(Ft_EdgeDetectionGroupBox);
     WriteGroup(PDDfitGroupBox);
     WriteGroup(FieldTypesPanel);
-    WriteGroup(FFFDetectionGroupBox);
+    WriteGroup(Ft_FFFDetectionGroupBox);
+    WriteGroup(FocusPositionSetupGroupBox);
     with DataPlot do
       for i:= 0 to Pred(SeriesCount) do if Series[i] is TLineSeries then
         with Series[i] as TLineSeries do
@@ -3801,8 +4054,8 @@ with CF do
     ShortWrite(IniSectionName,PDDfitCheckBox);
     ShortWrite(IniSectionName,ForceMatchingCheckBox);
     ShortWrite(IniSectionName,InventoryAltAxisCheckBox);
-    ShortWrite(IniSectionName,FitResultsLabelsCheckBox);
-    ShortWrite(IniSectionName,FitResultsHeaderCheckBox);
+    ShortWrite(IniSectionName,PDDFitResultsLabelsCheckBox);
+    ShortWrite(IniSectionName,PDDFitResultsHeaderCheckBox);
     WriteHex(IniSectionName,PlotColorPanel.Name,PlotColorPanel.Color,6);
     WriteHex(IniSectionName,GridColorPanel.Name,GridColorPanel.Color,6);
     WriteHex(IniSectionName,UIColorPanel  .Name,UIColorPanel  .Color,6);
@@ -3900,20 +4153,20 @@ with Engines[UsedEngine] do
     FilterWidth_mm            .Value  := FilterWidth_cm     *10;
     LinacErrInvertGTCheckBox  .Checked:=(wLinacSymSign[fInplane   ]=-1);
     LinacErrInvertABCheckBox  .Checked:=(wLinacSymSign[fCrossplane]=-1);
-    EdgeSigmoidRadius_cm      .Value  := wInflectionSigmoidRadiusCm;
     LinacSymInner_cm          .Value  := wLinacSymInnerRadiusCm;
     LinacSymOuter_cm          .Value  := wLinacSymOuterRadiusCm;
     ResampleGrid_mm           .Value  := ResampleGridSize_cm*10;
     OutlierFilterStatsCheckBox.Checked:= wOutlierFilter;
     CalcWidth_mm              .Value  := CalcWidth_cm       *10;
+    EdgeSigmoidRadius_cm      .Value  := wInflectionSigmoidRadiusCm;
     FFFMinFieldSize_cm        .Value  := wFFFMinFieldSizeCm;
     FFFMinDoseDif_perc        .Value  := wFFFMinDoseDifPerc;
     FFFMinEdgeDif_mm          .Value  := wFFFMinEdgeDifCm   *10;
-    MeasReNormaliseDataItem   .Checked:= wRenormaliseData;
-    MeasResampleItem          .Checked:= wResampleData;
     EdgeSmallFieldWidth_cm    .Value  := wSmallFieldLimitCm;
     EdgeWedge90ShiftFactor    .Value  := wWedge90ShiftFactor;
     EdgeMRlinacTUcsvList      .Text   := wMRlinacTUlist;
+    MeasReNormaliseDataItem   .Checked:= wRenormaliseData;
+    MeasResampleItem          .Checked:= wResampleData;
     MeasSDD2SSDItem           .Checked:= wScaleSDD2SSD;
     MeasScale2defaultSSDitem  .Checked:= wScale2DefaultSSD;
     MeasMissingPenumbraItem   .Checked:= AcceptMissingPenumbra;
@@ -3979,7 +4232,7 @@ twcGammaDosePercBase          := GammaDoseNorm_perc            .Value;
 twcGammaLocalDosePerc         := GammaLocalDoseCheckBox        .Checked;
 twcGammaDistCmBase            := GammaDistNorm_mm              .Value/10;
 twcGammaDistCmStep            := 1/Round(GammaEdit_Steps_per_mm.Value)*10;
-twcGammaSearchMaxFactor      := GammaSearchMultiplier_num     .Value;
+twcGammaSearchMaxFactor       := GammaSearchMultiplier_num     .Value;
 twcMatchRangeDivider          := MatchRangeDivider_num         .Value;
 twcMatchStepsNumber           := Abs(MatchSteps_num            .Value);
 twcMatchNormDeltaPercent      := MatchNormDelta_perc           .Value;
@@ -4009,6 +4262,7 @@ end; {~setwellhofervalues}
 {30/03/2021 wResampleData, wMeas2TankMapping}
 {01/06/2021 FFFMinFieldSize_cm,MeasGeneric_mm_Item}
 {10/04/2022 FFFinFileCheckBox}
+{14/11/2022 switch off AutoLoadReference}
 procedure TAnalyseForm.SetEngineValues(aEngine:Integer);
 var p: twcDoseLevel;
     q: twcEdgeClass;
@@ -4022,7 +4276,8 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     SyncSetNormalisation(nil);
     SyncSetDetection(nil);
     SyncSetFFFpeak(nil);
-    AutoLoadReference         := (RefAutoLoadItem.Checked and RefAutoLoadItem.Enabled) or ProcessSetTempRefItem.Checked;
+    AutoLoadReference         := ((RefAutoLoadItem.Checked and RefAutoLoadItem.Enabled) or ProcessSetTempRefItem.Checked) and
+                                 (PageControl.ActivePage<>FocusPositionTab);
     AcceptMissingPenumbra     := MeasMissingPenumbraItem        .Checked;
     AcceptZeroSteps           := MeasZeroStepsItem              .Checked;
     wApplySigmoidToBuffer     := ProcessSigmoid2BufferItem      .Checked;
@@ -4037,13 +4292,13 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     wFFFinFile                := FFFinFileCheckBox              .Checked;
     ResampleGridSize_cm       := ResampleGrid_mm                .Value/10;
     Loglevel                  := LogLevelEdit                   .Value;
-    wSmallFieldLimitCm        := EdgeSmallFieldWidth_cm         .Value;
-    wWedge90ShiftFactor       := EdgeWedge90ShiftFactor         .Value;
-    wMRlinacTUlist            := EdgeMRlinacTUcsvList           .Text;
+    wSmallFieldLimitCm        := EdgeSmallFieldWidth_cm      .Value;
+    wWedge90ShiftFactor       := EdgeWedge90ShiftFactor      .Value;
+    wMRlinacTUlist            := EdgeMRlinacTUcsvList        .Text;
     ShowWarning               := ShowWarningCheckBox            .Checked;
     wMeas2TankMapping         := ifthen(MeasRemapCoordinates.Checked,MeasReMappingString .Text,twcMeasAxisStandard);
     if EdgeDetectionCheckBox.Checked then
-      wEdgeFallBackCm         := EdgeDetectionError_mm          .Value/10
+      wEdgeFallBackCm         := EdgeDetectionError_mm       .Value/10
     else
       wEdgeFallBackCm         := -1;
     wXPenumbraH               := Round(XHpenumbra_perc          .Value)/100;
@@ -4053,7 +4308,7 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
     UserBorderDoseLevel       := UserBorderDose_perc            .Value/100;
     FilterWidth_cm            := FilterWidth_mm                 .Value/10;
     CalcWidth_cm              := CalcWidth_mm                   .Value/10;
-    wEdgeDetect               := EdgeDetectionCheckBox          .Checked;
+    wEdgeDetect               := EdgeDetectionCheckBox       .Checked;
     for f:= Low(twcFieldClass) to High(twcFieldClass) do
       begin
       for q:= fcPrimary to fcFallBack do
@@ -4066,13 +4321,13 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
       wAutoShiftCm[x         ]:= ShiftValues_cm[x]              .Value;
     wLinacSymSign[fInplane   ]:= ifthen(LinacErrInvertGTCheckBox.Checked,-1,1);
     wLinacSymSign[fCrossplane]:= ifthen(LinacErrInvertABCheckBox.Checked,-1,1);
-    wInflectionSigmoidRadiusCm:= EdgeSigmoidRadius_cm           .Value;
+    wInflectionSigmoidRadiusCm:= EdgeSigmoidRadius_cm        .Value;
     wLinacSymInnerRadiusCm    := LinacSymInner_cm               .Value;
     wLinacSymOuterRadiusCm    := LinacSymOuter_cm               .Value;
-    wFFFMinFieldSizeCm        := FFFMinFieldSize_cm             .Value;
-    wFFFMinDoseDifPerc        := FFFMinDoseDif_perc             .Value;
+    wFFFMinFieldSizeCm        := FFFMinFieldSize_cm          .Value;
+    wFFFMinDoseDifPerc        := FFFMinDoseDif_perc          .Value;
     wNominalIFA               := Nominal_IFA_CheckBox           .Checked;
-    wFFFMinEdgeDifCm          := FFFMinEdgeDif_mm               .Value/10;
+    wFFFMinEdgeDifCm          := FFFMinEdgeDif_mm            .Value/10;
     ArrayScanRefUse           := RefDeviceSpecificItem          .Checked;
     wAxisPreserveOnExport     := MeasPreserveDataItem           .Checked;
     wPipsPixelCm              := PipsPixelSize_cm               .Value/10;
@@ -4272,9 +4527,11 @@ end; {~settingstabexit}
 
 
 {15/03/2021}
+{12/10/2022 MeasCalcPDDfitClick}
 procedure TAnalyseForm.MeasMenuClick(Sender: TObject);
 begin
 MeasMayneordItem.Caption:= Format(MayneordItemText,[ifthen(MayneordSSD2_cm.Value>0,MayneordSSD2_cm.Value,Engines[UsedEngine].DefaultSSD_cm)]);
+MeasCalcPDDfitClick(Sender);
 end; {~measmenuclick}
 
 
@@ -4292,7 +4549,7 @@ DataPlot                            .Color    := PlotColorPanel.Color;
 DataPlot.BottomAxis.Title.LabelBrush.Color    := PlotColorPanel.Color;
 AdvancedSettingsPanel               .Color    := UIColorPanel.Color;
 ResultsPanel                        .Color    := UIColorPanel.Color;
-FitResultsPanel                     .Color    := UIColorPanel.Color;
+PDDFitResultsPanel                  .Color    := UIColorPanel.Color;
 FileConversionPanel                 .Color    := UIColorPanel.Color;
 SettingsPanel                       .Color    := UIColorPanel.Color;
 Statusbar                           .Color    := UIColorPanel.Color;
@@ -4303,15 +4560,16 @@ end; {~advancedsettingstabexit}
 
 {$push}{$warn 5036 off}
 {31/03/2020 Introduced from delphi unit tobaseform}
+{17/11/2022 show on/off status only for autocheck items}
 procedure TAnalyseForm.ShowMenuItemStatus(Sender:TObject);
 var Stg: String;
-    c  : Boolean;
+    a,c: Boolean;
 begin
 Stg:= '';
-if (Sender is TMenuItem)      then with Sender as TMenuItem do begin  Stg:= Caption;  c:= Checked;  end
-else if (Sender is TAction  ) then with Sender as TAction   do begin  Stg:= Caption;  c:= Checked;  end;
+if (Sender is TMenuItem)      then with Sender as TMenuItem do begin  Stg:= Caption;  a:= AutoCheck;  c:= Checked;  end
+else if (Sender is TAction  ) then with Sender as TAction   do begin  Stg:= Caption;  a:= AutoCheck;  c:= Checked;  end;
 if Stg<>'' then
-  SetMessageBar(CleanUpCaption(Stg)+': '+CheckStrings[c]);
+  SetMessageBar(CleanUpCaption(Stg)+ifthen(a,': '+CheckStrings[c],''));
 end; {~showmenuitemstatus}
 {$pop}
 
@@ -4334,7 +4592,7 @@ end; {~showmenuitemstatus}
   added FFFindicators}
 {20/03/2016 ProcessMirrorMeasRefItem unchecked}
 {26/11/2108 ProcessAutoscalingItem.Enabled}
-{23/06/2020 fitresultstab.tabvisible}
+{23/06/2020 PDDFitResultsTab.tabvisible}
 {28/07/2020 Ft_XXXX[twcFieldClass] elements}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {26/09/2020 PenumbraSigmoids}
@@ -4368,7 +4626,7 @@ SetActiveStatus(pReference ,ViewReferenceItem .Checked and (RefAutoLoadItem.Chec
 SetActiveStatus(pMeasured  ,ViewMeasuredItem  .Checked or ViewPointsItem.Checked);
 SetActiveStatus(pCalculated,ViewCalculatedItem.Checked);
 SetActiveStatus(pBuffer    ,ViewBufferItem    .Checked);
-FitResultsTab            .TabVisible := PDDfitCheckBox.Checked and (Engines[UsedEngine].ScanType in twcVertScans);
+PDDFitResultsTab            .TabVisible := PDDfitCheckBox.Checked and (Engines[UsedEngine].ScanType in twcVertScans);
 ProcessMirrorMeasRefItem .Checked    := ProcessMirrorMeasRefItem  .Checked and
                                         (not ProcessSetTempRefItem.Checked);
 RefAutoLoadItem          .Enabled    := not (ProcessSetTempRefItem  .Checked or
@@ -4427,47 +4685,53 @@ end; {~viewitems}
 {17/09/2020 HistoryListFreezeCheckBox}
 {16/11/2020 FileMultipleInputItem}
 {02/03/2021 FFF elements depend on both fcFFF and fcMRlinac}
+{02/11/2022 FocusPositionCollimFromName}
+{14/11/2022 FocusPositionNamePatternEdit}
+{17/11/2022 ProcessSendToFPItem}
 procedure TAnalyseForm.UpdateSettings(Sender:TObject);
 var b: Boolean;
 begin
-UsedEngine                       := Clip(UsedEngine,0,Length(Engines)-1);
-RefAutoLoadItem          .Enabled:= not MeasMirrorToBufferItem .Checked;
-ProcessSetTempRefItem    .Enabled:= not MeasMirrorToBufferItem .Checked;
-b                                := (not MeasMirrorToBufferItem.Checked) and
-                                    (RefAutoLoadItem.Checked or ProcessSetTempRefItem.Checked);
-ViewMeasNormAdjustMode   .Enabled:= ProcessAutoscalingItem.Enabled and (not ProcessAutoscalingItem.Checked);
-MeasUseFitModelItem      .Enabled:= PDDfitCheckBox             .Checked;
-MeasPeakFFFSubMenu       .Enabled:= Ft_DetectionCheckBox[fcFFF].Checked or Ft_DetectionCheckBox[fcMRlinac].Checked;
-RefAlignTopforFFF        .Enabled:= MeasPeakFFFSubMenu         .Enabled and RefAlignItem.Checked;
-ViewBufferItem           .Checked:= ViewBufferItem             .Checked or MeasMirrorToBufferItem.Checked;
-RefCalcSubMenu           .Enabled:= b;
-RefNormaliseItem         .Enabled:= b;
-RefSymCorrectItem        .Enabled:= b and (not ProcessMirrorMeasRefItem.Checked);
-RefUseDivideByItem       .Enabled:= b;
-RefUseAddToItem          .Enabled:= b;
-RefUseGammaItem          .Enabled:= b;
-RefUseUnrelatedToItem    .Enabled:= b;
-RefAlignItem             .Enabled:= b;
-RefAtDefaultSSDItem      .Enabled:= b and MeasScale2defaultSSDitem.Checked;
-ViewReferenceItem        .Enabled:= b and Engines[UsedEngine].ReferenceValid;
-HistoryListCheckBox      .Checked:= HistoryListCheckBox      .Checked and (HistoryListSize_num.Value>1);
-HistoryListFreezeCheckBox.Enabled:= HistoryListCheckBox      .Checked;
-ProcessResetFitItem      .Enabled:= PDDfitCheckBox           .Checked and AdvancedModeOk;
-CalcPostFilterItem       .Enabled:= RefUseAddToItem          .Checked and b;
-FileMultipleInputItem    .Enabled:= (SpecialMode[2].MenuItem.Checked) or (SpecialMode[3].MenuItem.Checked) or (HistoryListSize_num.Value>1);
+UsedEngine                          := Clip(UsedEngine,0,Length(Engines)-1);
+RefAutoLoadItem             .Enabled:= not MeasMirrorToBufferItem .Checked;
+ProcessSendToFPItem         .Enabled:= PageControl.ActivePage=AnalysisTab;
+ProcessSetTempRefItem       .Enabled:= not MeasMirrorToBufferItem .Checked;
+b                                   := (not MeasMirrorToBufferItem.Checked) and
+                                       (RefAutoLoadItem.Checked or ProcessSetTempRefItem.Checked);
+ViewMeasNormAdjustMode      .Enabled:= ProcessAutoscalingItem.Enabled and (not ProcessAutoscalingItem.Checked);
+MeasUsePDDfitModelItem      .Enabled:= PDDfitCheckBox             .Checked;
+MeasPeakFFFSubMenu          .Enabled:= Ft_DetectionCheckBox[fcFFF].Checked or Ft_DetectionCheckBox[fcMRlinac].Checked;
+RefAlignTopforFFF           .Enabled:= MeasPeakFFFSubMenu         .Enabled and RefAlignItem.Checked;
+ViewBufferItem              .Checked:= ViewBufferItem             .Checked or MeasMirrorToBufferItem.Checked;
+RefCalcSubMenu              .Enabled:= b;
+RefNormaliseItem            .Enabled:= b;
+RefSymCorrectItem           .Enabled:= b and (not ProcessMirrorMeasRefItem.Checked);
+RefUseDivideByItem          .Enabled:= b;
+RefUseAddToItem             .Enabled:= b;
+RefUseGammaItem             .Enabled:= b;
+RefUseUnrelatedToItem       .Enabled:= b;
+RefAlignItem                .Enabled:= b;
+RefAtDefaultSSDItem         .Enabled:= b and MeasScale2defaultSSDitem.Checked;
+ViewReferenceItem           .Enabled:= b and Engines[UsedEngine].ReferenceValid;
+HistoryListCheckBox         .Checked:= HistoryListCheckBox      .Checked and (HistoryListSize_num.Value>1);
+HistoryListFreezeCheckBox   .Enabled:= HistoryListCheckBox      .Checked;
+ProcessResetFitItem         .Enabled:= PDDfitCheckBox           .Checked and AdvancedModeOk;
+CalcPostFilterItem          .Enabled:= RefUseAddToItem          .Checked and b;
+FileMultipleInputItem       .Enabled:= (SpecialMode[2].MenuItem.Checked) or (SpecialMode[3].MenuItem.Checked) or (HistoryListSize_num.Value>1);
+FocusPositionCollimFromName .Enabled:= FocusPositionUseCollimInfo.Checked;
+FocusPositionNamePatternEdit.Enabled:= FocusPositionCollimFromName.Enabled and FocusPositionCollimFromName.Checked;
 with Engines[UsedEngine] do
   begin
-  ProcessIgnoreTUnameItem.Enabled:= wCheckRefCurveString and (not ProcessMirrorMeasRefItem.Checked);
-  wRefAtDefaultSSD               := RefAtDefaultSSDItem     .Enabled and RefAtDefaultSSDItem.Checked;
-  wCenterProfiles                := MeasMove2OriginItem     .Checked;
-  wTakeCurrentRefSource          := ProcessSetTempRefItem   .Checked;
-  wCheckRefCurveString           := ProcessCheckTempTypeItem.Checked or (not ProcessSetTempRefItem.Checked); {here limited to tempref only}
-  wCheckRefIgnoreLinac           := ProcessIgnoreTUnameItem .Checked and wCheckRefCurveString and ProcessSetTempRefItem.Checked;
-  wRenormaliseData               := MeasReNormaliseDataItem .Checked;
-if ProcessSyntheticProfile.Checked then
-    wDefaultIgnoreSet            :=   wDefaultIgnoreSet+[twiFieldSize,twiDiagonal]
+  ProcessIgnoreTUnameItem   .Enabled:= wCheckRefCurveString and (not ProcessMirrorMeasRefItem.Checked);
+  wRefAtDefaultSSD                  := RefAtDefaultSSDItem     .Enabled and RefAtDefaultSSDItem.Checked;
+  wCenterProfiles                   := MeasMove2OriginItem     .Checked;
+  wTakeCurrentRefSource             := ProcessSetTempRefItem   .Checked;
+  wCheckRefCurveString              := ProcessCheckTempTypeItem.Checked or (not ProcessSetTempRefItem.Checked); {here limited to tempref only}
+  wCheckRefIgnoreLinac              := ProcessIgnoreTUnameItem .Checked and wCheckRefCurveString and ProcessSetTempRefItem.Checked;
+  wRenormaliseData                  := MeasReNormaliseDataItem .Checked;
+if ProcessSyntheticProfile  .Checked then
+    wDefaultIgnoreSet               :=   wDefaultIgnoreSet+[twiFieldSize,twiDiagonal]
 else
-    wDefaultIgnoreSet            :=   wDefaultIgnoreSet-[twiFieldSize,twiDiagonal];
+    wDefaultIgnoreSet               :=   wDefaultIgnoreSet-[twiFieldSize,twiDiagonal];
   end;
 end; {~updatesettings}
 
@@ -4475,7 +4739,7 @@ end; {~updatesettings}
 (* UImode change responds to tab changing and other state changes with dis/enabling relevant parts of the GUI *)
 //=> AdvancedModeItem, SimpleModeItem
 {03/12/2015 edgedetectiongroupboox added}
-{17/12/2015 FFFDetectionGroupBox added
+{17/12/2015 Ft_FFFDetectionGroupBox added
             setting font color}
 {09/06/2016 replaced SpecialModes boolean Active with tmenuitem MenuItem}
 {27/10/2018 EnableMenu(ViewMeasNormAdjustMode,b)}
@@ -4491,6 +4755,7 @@ end; {~updatesettings}
 {08/12/2020 ShowLockItemCheckBox}
 {10/04/2022 ProcessSetFFFItem}
 {23/05/2022 InventoryTab depends on advancedmode}
+{12/10/2022 MeasCalcPDDfitItem}
 procedure TAnalyseForm.UImodeChange(Sender:TObject);
 var a,b,c,s: Boolean;
     i      : Integer;
@@ -4506,8 +4771,8 @@ c:= not FileLockCriticalItems.Checked;
 s:= not SimpleModeItem.Checked;
 b:= a or s;
 i:= Length(UseDoseConvTable);
-UseDoseDelButton.Enabled:= a and (i>1);
-UseDoseAddButton.Enabled:= a and (i<OD2doseTableMax);
+UseDoseDelButton         .Enabled:= a and (i>1);
+UseDoseAddButton         .Enabled:= a and (i<OD2doseTableMax);
 ControlsEnable(ConfigurationTab    ,a);
 ControlsEnable(SettingsTab         ,a);
 ControlsEnable(FileConversionTab   ,a);
@@ -4530,6 +4795,7 @@ EnableMenu(ViewValuesItem          ,a);
 EnableMenu(ViewHighResValItem      ,a);
 EnableMenu(ProcessCheckTempTypeItem,a);
 EnableMenu(ProcessSetFFFItem       ,a);
+EnableMenu(MeasCalcPDDfitItem      ,a);
 EnableMenu(ProcessResetFitItem     ,a and PDDfitCheckBox.Checked);
 EnableMenu(FileSaveAsReferenceItem ,c);
 EnableMenu(MeasPreserveDataItem    ,c);
@@ -4542,7 +4808,7 @@ SettingsTab               .TabVisible:= b;
 AdvancedSettingsTab       .TabVisible:= b;
 FieldTypesTab             .TabVisible:= b;
 ConfigurationTab          .TabVisible:= b;
-RawDataTab                 .TabVisible:= s;
+RawDataTab                .TabVisible:= s;
 MeasOD2DoseConvItem       .Enabled   := a;
 MeasOD2DoseConvItem       .Visible   := b;
 MeasExtSymSubMenu         .Visible   := s;
@@ -4554,7 +4820,7 @@ MeasSSDsubmenu            .Visible   := s;
 MeasMayneordItem          .Visible   := s;
 MeasUserDoseItem          .Visible   := s;
 MeasLocalPeakItem         .Visible   := s;
-MeasUseFitModelItem       .Visible   := s;
+MeasUsePDDfitModelItem    .Visible   := s;
 RefBackgroundCorrItem     .Visible   := s;
 RefAlignTopforFFF         .Visible   := s;
 RefMakeIndexItem          .Visible   := s;
@@ -4581,7 +4847,7 @@ FileSaveAsReferenceItem   .Visible   := a;
 ShiftGroupBox             .Visible   := s;
 MayneordGroupBox          .Visible   := s;
 PDDfitGroupBox            .Visible   := s;
-FFFDetectionGroupBox      .Visible   := s;
+Ft_FFFDetectionGroupBox      .Visible   := s;
 GammaSettingsGroupBox     .Visible   := s;
 ConfigSaveAsItem          .Visible   := s or c;
 ConfigReadItem            .Visible   := s;
@@ -4611,6 +4877,7 @@ end; {~uimodechange}
 {30/01/2018 clearallcx added}
 {15/09/2020 added conditional SetCaption}
 {26/09/2020 PenumbraSigmoids}
+{04/11/2022 keep page also on FocusPositionTab}
 procedure TAnalyseForm.ClearScreen(Sender:TObject);
 var k   : PlotItems;
     side: twcSides;
@@ -4623,7 +4890,7 @@ if (DataPlot.BottomAxis.Title.Caption<>'-') then
   ClearAllCx(Sender=ViewClearItem);
   if DataChanged then
     HistogramTab.TabVisible:= False;
-  if PageControl.ActivePage<>HistogramTab then
+  if (PageControl.ActivePage<>HistogramTab) and (PageControl.ActivePage<>FocusPositionTab) then
     PageControl.ActivePage:= AnalysisTab;
   for k:= Low(PlotItems) to High(PlotItems) do
     begin
@@ -4651,16 +4918,20 @@ end; {~clearscreen}
 {16/09/2020 multiple file implementation}
 {15/11/2020 some delay for multiple file drop}
 {16/11/2020 number of files dependent on FileMultipleInputItem}
-procedure TAnalyseForm.ReadDroppedFile(Sender         : TObject;
-                                       const FileNames: array of String);
-var i,j,k: Integer;
+{14/11/2022 accept multiple files for FocusPositionTab}
+procedure TAnalyseForm.ReadDroppedFiles(Sender         : TObject;
+                                        const FileNames: array of String);
+var i,j,k,l: Integer;
 begin
 i                       := 0;
 j                       := 0;
-k                       := ifthen(FileMultipleInputItem.Checked and FileMultipleInputItem.Enabled,Length(FileNames),1);
+k                       := ifthen((PageControl.ActivePage=FocusPositionTab) or
+                                  (FileMultipleInputItem.Checked and FileMultipleInputItem.Enabled),
+                                  Length(FileNames),1);
+l                       := ifthen(PageControl.ActivePage=FocusPositionTab,k,HistoryListSize_num.Value);
 MeasNormAdjustEdit.Value:= 100;                                                 //MeasNormAdjustEdit is intended for temporary use, reset to default
 if CheckWellhoferReady and (k>0) then
-      while (i<k) and (j<HistoryListSize_num.Value) do                          //read until whichever limit is reached first
+      while (i<k) and (j<l) do                                                  //read until whichever limit is reached first
         try
           FileOpenDialog.FileName:= FileNames[i];
           if j>0 then
@@ -4671,7 +4942,7 @@ if CheckWellhoferReady and (k>0) then
          except
           SetMessageBar('drop failed for '+FileNames[i]);
          end;
-end; {~readdroppedfile}
+end; {~readdroppedfiles}
 
 
 {09/06/2016 avoiding memory leak in editor/tmemo by reading lines into intermediate object localtext}
@@ -4735,42 +5006,46 @@ end; {~reload}
 {17/11/2020 UsedDataTopLine supports all context changes through SelectEngine}
 {17/03/2021 For multiscan files the scannr might change and no shift should be applied in that case.}
 {30/03/2021 resample and coordinateordering parameter dropped from advstreamdata}
+{03/11/2022 protect against hangups by checking OnDataReadBusy}
 procedure TAnalyseForm.Reload(Sender       :TObject;
                               DoClearScreen:Boolean);
 var b: Boolean;
     x: twcFloatType;
     s: String;
 begin
-x:= ifthen(Sender=FileLoadDataItem,0,Engines[UsedEngine].wSource[dsMeasured].twShiftCm);
-s:= Engines[UsedEngine].wSource[dsMeasured].twCurveIDString;
-if ProcessAutoscalingItem.Checked then
-  MeasNormAdjustEdit.Value:= 100;
-ShowMenuItemStatus(Sender);
-SetWellhoferValues(Sender);
-UpdateSettings(Sender);
-DetectedFileType:= Engines[UsedEngine].LastDetectedFileType;
-if Engines[UsedEngine].wSource[dsMeasured].twOriginalFormat=twcWellhoferRFb then //***binary data***
-  begin                                                                          //wMultiScanNr is used!
-  if DoClearScreen then
-    ClearScreen(Sender);
-  if (Engines[UsedEngine].Freeze and HistoryListCheckBox.Checked) or
-     Engines[UsedEngine].AdvStreamData(nil,
-                                       UsedDataTopLine,                         //this is also restored in selectengine
-                                       True,
-                                       DetectedFileType,
-                                       FileOpenDialog.FileName) then
-     Engine2Editor;                                                             //includes shift
-  end
-else
-  begin                                                                         //***ascii data***
-  b:= Engines[UsedEngine].IsFile;
-  ReadEditor(Sender,DoClearScreen);
-  if (x<>0) and (s=Engines[UsedEngine].wSource[dsMeasured].twCurveIDString) then
-    begin                                                                       //apply shift only on same scan for multiscan files
-    Engines[UsedEngine].Shift(x);                                               //preserve shift
-    OndataRead(Sender);
+if not OnDataReadBusy then
+  begin
+  x:= ifthen(Sender=FileLoadDataItem,0,Engines[UsedEngine].wSource[dsMeasured].twShiftCm);
+  s:= Engines[UsedEngine].wSource[dsMeasured].twCurveIDString;
+  if ProcessAutoscalingItem.Checked then
+    MeasNormAdjustEdit.Value:= 100;
+  ShowMenuItemStatus(Sender);
+  SetWellhoferValues(Sender);
+  UpdateSettings(Sender);
+  DetectedFileType:= Engines[UsedEngine].LastDetectedFileType;
+  if Engines[UsedEngine].wSource[dsMeasured].twOriginalFormat=twcWellhoferRFb then //***binary data***
+    begin                                                                          //wMultiScanNr is used!
+    if DoClearScreen then
+      ClearScreen(Sender);
+    if (Engines[UsedEngine].Freeze and HistoryListCheckBox.Checked) or
+       Engines[UsedEngine].AdvStreamData(nil,
+                                         UsedDataTopLine,                         //this is also restored in selectengine
+                                         True,
+                                         DetectedFileType,
+                                         FileOpenDialog.FileName) then
+       Engine2Editor;                                                             //includes shift
+    end
+  else
+    begin                                                                         //***ascii data***
+    b:= Engines[UsedEngine].IsFile;
+    ReadEditor(Sender,DoClearScreen);
+    if (x<>0) and (s=Engines[UsedEngine].wSource[dsMeasured].twCurveIDString) then
+      begin                                                                       //apply shift only on same scan for multiscan files
+      Engines[UsedEngine].Shift(x);                                               //preserve shift
+      OndataRead(Sender);
+      end;
+    Engines[UsedEngine].IsFile:= b;
     end;
-  Engines[UsedEngine].IsFile:= b;
   end;
 end; {~reload}
 
@@ -4813,14 +5088,15 @@ end; {~wmchangecbchain}
 {14/09/2020 addengine}
 {17/11/2020 support automated continuous reading of multiple data sets in single text data set file format}
 {30/04/2021 fail for next scan in iba-multiscan resolved}
+{11/11/2022 activate also for FocusPositionTab}
 {$push}{$warn 5024 off:wellform.pas(860,31) Hint: Parameter "AlParam" not used}
 procedure TAnalyseForm.WMDRAWCLIPBOARD(AwParam:WParam;
                                        AlParam:LParam);
 const InvalidStg='clipboard data invalid';
 var LocalDataTopLine: Integer;                                                  //support for automated continous reading in single file format type
 begin
-if (PageControl.ActivePage=AnalysisTab)    and
-    Clipboard.HasFormat(CF_TEXT)           and
+if ((PageControl.ActivePage=AnalysisTab) or (PageControl.ActivePage=FocusPositionTab)) and
+    Clipboard.HasFormat(CF_TEXT)                                                       and
    (AnsiLeftStr(ClipBoard.AsText,Length(DefAppName))<>DefAppName) then
   begin
   if not (ClipBoardLock or FileIgnoreClipboardItem.Checked or OnDataReadBusy) then
@@ -4869,7 +5145,7 @@ if (PageControl.ActivePage=AnalysisTab)    and
           SetMessageBar(InvalidStg);
          end; {try}
         if FileMultipleInputItem.Enabled        and FileMultipleInputItem.Checked and
-          (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then
+          (Engines[UsedEngine].wMultiScanMax=1) and Engines[UsedEngine].FindMoreData then //for all multi-scan formats: wMultiScanMax>1
           begin                                                                 //there are more data in this file, not being of multi-scan type format
           LocalDataTopLine:= Engines[UsedEngine].Parser.CurrentLineNumber;      //local file pointer is updated from last read line
           WaitLoop(100);                                                        //some delay for multiple data sets in single date set text format file
@@ -4911,58 +5187,77 @@ a lot of times changing users choices will result in rereading raw data.
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {17/11/2020 UsedDataTopLine set in WMDRAWCLIPBOARD or DataFileOpen}
 {30/03/2021 resample and coordinateordering parameter dropped from advreaddata/advstreamdata}
+{03/11/2022 timeout to prevent hanging}
 procedure TAnalyseForm.ReadEditor(Sender       :TObject;
                                   DoClearScreen:Boolean);
-var b  : Boolean;
+var b,f  : Boolean;
     i,j: Integer;
 begin
-while OnDataReadBusy do
-  WaitLoop(100);
-UpdateSettings(Sender);
-if DoClearScreen then
-  ClearScreen(Sender);
-Engines[UsedEngine].FileTime:= EditorFileTime;
-DataFromEditor              := True;
-SourceAxisSync;
-b:= (Engines[UsedEngine].Freeze and HistoryListCheckBox.Checked);
-if not b then
+i:= 50;
+while (OnDataReadBusy and (i>0)) do
   begin
- {$IFDEF PRELOAD}
-  if (not RawDataEditor.Modified) and ((Engines[UsedEngine].Parser.PreLoaded) or (Sender=nil)) then
-    begin
-    DataFromEditor:= False;
-    b:= (PreloadStream.Size>MinClipBoardBytes) and
-         Engines[UsedEngine].AdvStreamData(PreLoadStream,
-                                           UsedDataTopLine,
-                                           True,                                //unfreeze
-                                           DetectedFileType,
-                                           Engines[UsedEngine].FileName);
-    end
-  else
-    begin
-   {$ENDIF PRELOAD}
-    i:= RawDataEditor.Lines.Count;
-    j:= 0;
-    while (i>0) and (j<MinClipBoardBytes) do  {fast count of characters}
-      begin
-      Dec(i);
-      Inc(j,Length(RawDataEditor.Lines.Strings[i]));
-      end;
-    b:= (j>MinClipBoardBytes) and
-         Engines[UsedEngine].AdvReadData(RawDataEditor.Lines,
-                                         UsedDataTopLine,
-                                         True,                                  //unfreeze
-                                         DetectedFileType,
-                                         EditorFileName);
-   {$IFDEF PRELOAD}
-    end;
-   {$ENDIF PRELOAD}
+  WaitLoop(100);
+  Dec(i);
   end;
-if b then
-  OnDataRead(Sender);
-if Sender is TMenuItem then with Sender as TMenuItem do
-  if AutoCheck then
-    ShowMenuItemStatus(Sender);
+if i>0 then
+  begin
+  f:= PageControl.ActivePage=FocusPositionTab;
+  if not f then
+    begin
+    UpdateSettings(Sender);
+    if DoClearScreen then
+      ClearScreen(Sender);
+    end;
+  Engines[UsedEngine].FileTime:= EditorFileTime;
+  DataFromEditor              := True;
+  SourceAxisSync;
+  b:= (Engines[UsedEngine].Freeze and HistoryListCheckBox.Checked);
+  if not b then
+    begin
+   {$IFDEF PRELOAD}
+    if (not RawDataEditor.Modified) and ((Engines[UsedEngine].Parser.PreLoaded) or (Sender=nil)) then
+      begin
+      DataFromEditor:= False;
+      b:= (PreloadStream.Size>MinClipBoardBytes) and
+           Engines[UsedEngine].AdvStreamData(PreLoadStream,
+                                             UsedDataTopLine,
+                                             True,                                //unfreeze
+                                             DetectedFileType,
+                                             Engines[UsedEngine].FileName);
+      end
+    else
+      begin
+     {$ENDIF PRELOAD}
+      i:= RawDataEditor.Lines.Count;
+      j:= 0;
+      while (i>0) and (j<MinClipBoardBytes) do  {fast count of characters}
+        begin
+        Dec(i);
+        Inc(j,Length(RawDataEditor.Lines.Strings[i]));
+        end;
+      b:= (j>MinClipBoardBytes) and
+           Engines[UsedEngine].AdvReadData(RawDataEditor.Lines,
+                                           UsedDataTopLine,
+                                           True,                                  //unfreeze
+                                           DetectedFileType,
+                                           EditorFileName);
+     {$IFDEF PRELOAD}
+      end;
+     {$ENDIF PRELOAD}
+    end;
+  if b then
+    begin
+    if f then
+      FocusPositionProcessFile(Sender)
+    else
+      begin
+      OnDataRead(Sender);
+      if Sender is TMenuItem then with Sender as TMenuItem do
+        if AutoCheck then
+          ShowMenuItemStatus(Sender);
+      end; {other pages}
+    end; {b}
+  end; {i>0}
 end; {~readeditor}
 
 
@@ -5150,8 +5445,9 @@ end; {~historylistsizeclick}
 
 {16/09/2020 multiple file support}
 {17/11/2020 FileMultipleInputItem}
+{14/11/2022 accept multiple files for FocusPositionTab}
 procedure TAnalyseForm.FileOpenClick(Sender:TObject);
-var i,j,k: Integer;
+var i,j,k,l: Integer;
 begin
 SetCaption;
 with FileOpenDialog do
@@ -5159,9 +5455,12 @@ with FileOpenDialog do
     begin
     i                       := 0;                                               //number of files read
     j                       := 0;                                               //number engines used to read data
-    k                       := ifthen(FileMultipleInputItem.Checked and FileMultipleInputItem.Enabled,Files.Count,1); //k= number of files or 1
+    k                       := ifthen((PageControl.ActivePage=FocusPositionTab) or
+                                      (FileMultipleInputItem.Checked and FileMultipleInputItem.Enabled),
+                                      Files.Count,1);                           //k= number of files or 1
+    l                       := ifthen(PageControl.ActivePage=FocusPositionTab,k,HistoryListSize_num.Value);
     MeasNormAdjustEdit.Value:= 100;                                             //MeasNormAdjustEdit is intended for temporary use, reset to default
-    while (i<k) and (j<HistoryListSize_num.Value) do                            //read until whichever limit is reached first
+    while (i<k) and (j<l) do                                                    //read until whichever limit is reached first
       try
         if DataFileOpen(Files[i]) then
           Inc(j);                                                               //if succesfully read increment j
@@ -5260,6 +5559,316 @@ if Sender is TMenuItem then
     FormKeyPress(Sender,c);
     end;
 end; {~measmoveclick}
+
+
+//twcBLD_T:array[twcIECdefs,twcCardinalAngles ] of String[2]=(('X2','Y2','X1','Y1'),('Y1','X1','Y2','X2'));
+{17/10/2022 create graphics on focuspositionpanel}
+{18/10/2022 added effects of mapping}
+procedure TAnalyseForm.FocusPositionPanelPaint(Sender: TObject);
+var i    : Integer;
+    angle: twcCardinalAngles;
+    scan : twcScanTypes;
+
+  procedure DrawRect(AIndex:Word);
+  const RectOffset=FPrectLeft+42;
+        RectWidth =100;
+        TextOffset=  2;
+        RectHalf  =RectWidth div 2;
+        SideChars:array of Char=('T','A','G','B');
+  var j,Ri,Ty: Integer;
+      c      : TColor;
+
+    procedure OuterText(SideIndex:Integer);
+    var x,y,Tx: Integer;
+        Stg   : String;
+    begin
+    Stg:= SideChars[SideIndex]+'='+twcBLDnames[twcIECdefs(FocusPosition_IEC_Convention.ItemIndex),twcCardinalAngles((AIndex+SideIndex) mod 4)];
+    Tx := FocusPositionPanel.Canvas.TextWidth(Stg);
+    case SideIndex of
+      0,2: x:= RectHalf - Tx div 2;
+      1  : x:= -Tx-TextOffset;
+      else x:= RectWidth+TextOffset;
+      end;
+    case SideIndex of
+      0  : y:= RectWidth;
+      1,3: y:= RectHalf-Ty div 2;
+      else y:= -Ty;
+      end;
+    FocusPositionPanel.Canvas.TextOut(Ri+x,FP_RectTop+y,Stg);
+    end;
+
+    procedure InnerText(SideIndex:Integer);
+    var x,y,Tx: Integer;
+        Stg   : String;
+    begin
+    Stg:= '"'+SideChars[(SideIndex + ifthen(FocusPositionDetectorRotates.Checked,AIndex,0)) mod 4]+'"';
+    Tx := FocusPositionPanel.Canvas.TextWidth(Stg);
+    case SideIndex of
+      0,2: x:= RectHalf - Tx div 2;
+      1  : x:= +TextOffset;
+      else x:= RectWidth-TextOffset-Tx;
+      end;
+    case SideIndex of
+      0  : y:= RectWidth-TextOffset-Ty;
+      1,3: y:= RectHalf-Ty div 2;
+     else  y:= TextOffset;
+      end;
+    FocusPositionPanel.Canvas.TextOut(Ri+x,FP_RectTop+y,Stg);
+    end;
+
+  begin
+  Ri:= RectOffset+((AIndex+4-FocusPosition_mapping_Box.ItemIndex) mod 4)*FPrectSpacing;
+  with FocusPositionPanel.Canvas do
+    begin
+    Ty         := TextHeight('A');
+    Pen  .Color:= clBlack;
+    c          := Brush.Color;
+    Brush.Color:= clGray;
+    FillRect(Ri,FP_RectTop,Ri+RectWidth,FP_RectTop+RectWidth);
+    if FocusPositionDetectorRotates.Checked then
+      Font.Color:= clYellow;
+    TextOut(Ri+RectHalf-TextWidth(FocusPosition_mapping_Box.Items[AIndex]) div 2,FP_RectTop+RectHalf-Ty div 2,FocusPosition_mapping_Box.Items[AIndex]);
+    Font .Color:= clYellow;
+    for j:= 0 to 3 do
+      InnerText(j);
+    Brush.Color:= c;
+    Font .Color:= clBlack;
+    for j:= 0 to 3 do
+      OuterText(j);
+    end;
+  end;
+
+begin
+for scan:= snGT to snAB do
+  for angle:= Rot000 to Rot270 do
+    begin
+    FP_Center_button[scan,angle].Left:= FPrectLeft+((Ord(angle)+4-FocusPosition_mapping_Box.ItemIndex) mod 4)*FPrectSpacing;
+    FP_Center_mm[scan,angle]    .Left:= FP_Center_button[scan,angle].Left+FP_Center_button[scan,angle].Width;
+    end;
+for i:= 0 to 3 do
+  DrawRect(i);
+if Sender=FocusPosition_IEC_Convention then
+  begin
+  FocusPosition_UpperBLD_ident.ItemIndex:= FocusPosition_IEC_Convention.ItemIndex;
+  FocusPositionChange_mm(Sender);
+  end;
+end; {~focuspositionpanelpaint}
+
+
+{02/11/2022}
+procedure TAnalyseForm.FocusPositionResetClick(Sender: TObject);
+var scan : twcScanTypes;
+    angle: twcCardinalAngles;
+begin
+for scan:= snGT to snAB do
+  for angle:= Rot000 to Rot270 do
+    with FP_Center_mm[scan,angle] do
+      begin
+      Tag:= 1;
+      if Value=0 then
+        FocusPositionChange_mm(FP_Center_mm[scan,angle])
+      else
+        Value:= 0;
+      end;
+end; {~focuspositionresetclick}
+
+
+//FP_Center_button[scan,angle]
+//twcScanTypes     =(snGT,snAB,...
+//twcCardinalAngles=(Rot000,Rot090,Rot180,Rot270);
+{24/10/2022}
+{30/10/2022 rescaling to SSD}
+{02/11/2022 FocusPositionUseCollimInfo}
+{04/11/2022 support for file processing}
+{14/11/2022 support for FocusPositionCollimFromName}
+{15/11/2022 FocusPositionDetSurfaceIsoc implemented}
+procedure TAnalyseForm.FocusPositionRadioClick(Sender:TObject);
+var angle: twcCardinalAngles;
+    scan : twcScanTypes;
+    i,j  : Integer;
+    found: Boolean;
+begin
+with Engines[UsedEngine],wSource[dsMeasured] do
+  begin
+  angle:= Rot000;
+  found:= False;
+  if FocusPositionUseCollimInfo.Checked    and (not OnDataReadBusy) and
+     IsValid and (ScanType in [snGT,snAB]) and (twBeamInfo.twBCollimator mod 90=0) then
+    begin
+    scan:= ScanType;
+    if FocusPositionCollimFromName.Checked then
+       begin
+       i:= Pos('%',FocusPositionNamePatternEdit.Text);
+       j:= Pos('d',FocusPositionNamePatternEdit.Text,i);
+       if (i>0) and Inrange(j-i,1,2) then
+         begin
+         i:= 4;
+        repeat
+          Dec(i);
+          try
+            found:= Pos(Format(FocusPositionNamePatternEdit.Text,[i*90]),FileName)>0;
+           except
+            found:= False;
+          end;
+        until (found or (i=0));
+        if found then
+          angle:= twcCardinalAngles(i);
+        end;
+      end; {FocusPositionCollimFromName.Checked}
+    if not found then
+      begin
+      i:= ((twBeamInfo.twBCollimator+360) mod 360) div 90;
+      if InRange(i,0,3) then
+        begin
+        found:= True;
+        angle:= twcCardinalAngles(i);
+        end;
+      end {not found}
+    end {FocusPositionUseCollimInfo.Checked}
+  else
+    begin  //found is false here
+    i:= Ord(Rot000);
+    repeat
+      angle:= twcCardinalAngles(i);
+      j    := Ord(snGT);
+      Inc(i);
+      repeat
+        scan := twcScanTypes(j);
+        found:= FP_Center_button[scan,angle].Checked;
+        Inc(j);
+      until found or (scan=snAB);
+    until found or (angle=Rot270);
+    end;
+  if found then
+    begin
+    FP_Center_mm[scan,angle]    .Value  := 10*GetFieldCenterCm(dsMeasured,dInflection,True)/ifthen(FocusPositionDetSurfaceIsoc.Checked,twActDet2NormRatio,1);
+    FP_Center_button[scan,angle].Checked:= True;
+    end;
+  end; {with}
+end; {~focuspositionradioclick}
+
+
+{04/11/2022}
+{17/11/2022 ProcessSendToFPItem}
+procedure TAnalyseForm.FocusPositionProcessFile(Sender: TObject);
+var i: Integer;
+    s: set of twcScanTypes;
+begin
+with Engines[UsedEngine] do
+   begin
+   i:= ifthen(ArrayScanRefOk,wMultiScanMax,1);
+   s:= [];
+   if Sender=ProcessSendToFPItem then
+     ShowMenuItemStatus(Sender);
+   repeat
+     FocusPositionRadioClick(Sender);
+     s:= s+[ScanType];
+     if i>1 then
+       begin
+       Inc(wMultiScanNr);
+       AdvReadData(RawDataEditor.Lines,
+                   UsedDataTopLine,
+                   True,                                  //unfreeze
+                   DetectedFileType,
+                   EditorFileName);
+       end;
+     Dec(i);
+     if (snGT in s) and (snAB in s) then
+       i:= 0;
+   until i=0;
+   end;
+end; {~focuspositionprocessfile}
+
+
+(*
+for detector rotation with head
+inline    =  cos(a) * "TG det" + sin(a) * "AB det"
+crossline = -sin(a) * "TG det" + cos(a) * "AB det"
+  a,axis
+  0,i:  1, 0
+    c:  0, 1
+ 90,i:  0, 1
+    c: -1, 0
+180,i: -1, 0
+    c:  0,-1
+270,i:  0,-1
+    c:  1, 0
+*)
+{=> FP_Center_mm.OnChange}
+{28/10/2022}
+{29/10/2022 FocusPosition_UpperBLD_ident}
+{07/11/2022 support for device rotation}
+{12/11/2022 FP_BankLevel_mm[twcDetector]}
+{15/11/2022 FocusPositionDetectorOther implemented}
+procedure TAnalyseForm.FocusPositionChange_mm(Sender:TObject);
+var x                  : twcMeasAxis;
+    i                  : twcBanks;
+    n,u                : Integer;
+    scan               : twcScanTypes;
+    angle              : twcCardinalAngles;
+    FP_avg             : array[InPlane..CrossPlane,twcBanks] of Double;
+    a,d_epi,d_mlc,d_dia: Double;
+    c                  : TColor;
+
+    function DetectorAxisValue(AScan :twcMeasAxis;
+                               AAngle:twcCardinalAngles): Double;
+    type  AxisMapValue= array[snGT..snAB] of ShortInt;
+    const Axismapping : array[InPlane..CrossPlane,twcCardinalAngles] of AxisMapValue = (((1,0),(0,1),(-1,0),(0,-1)),((0,1),(-1,0),(0,-1),(1,0)));
+    var AxisMapAngle  : twcCardinalAngles;
+    begin
+    if FocusPositionDetectorRotates.Checked then AxisMapAngle:= AAngle
+    else                                         AxisMapAngle:= Rot000;
+    Result:= Axismapping[AScan,AxisMapAngle,snGT]*FP_Center_mm[snGT,AAngle].Value+Axismapping[AScan,AxisMapAngle,snAB]*FP_Center_mm[snAB,AAngle].Value;
+    end;
+
+begin
+n:= 0;
+u:= ifthen(twcBLDnames[twcIECdefs(FocusPosition_IEC_Convention.ItemIndex),Rot000][1]=FocusPosition_UpperBLD_ident.Text[1],0,1);
+if Sender is TFloatSpinEditEx then
+  with Sender as TFloatSpinEditEx do
+    if Tag=1 then
+      begin
+      Color:= clYellow;
+      Tag  := 0;
+      end
+    else
+      Color:= clLime;
+if (not FocusPositionDetectorOther.Checked) and FP_BankLevel_mm[twcDetector].Enabled then
+    FP_BankLevel_mm[twcDetector].Value:= 10*Engines[UsedEngine].DefaultSSD_cm;
+FP_BankLevel_mm[twcDetector].Enabled:= FocusPositionDetectorOther.Checked;
+with FocusPosition_UpperBLD_ident do
+  begin
+  if FocusPosition_IEC_Convention.ItemIndex=ItemIndex then c:= clSilver
+  else                                                     c:= clBlack;
+  if Font.Color<>c then
+    begin
+    Font.Color:= c;
+    SelLength := 0;
+    end;
+  end;
+for i:= twcUpper to twcLower do
+  for x:= InPlane to CrossPlane do
+    begin
+    FP_avg[x,i]               := (DetectorAxisValue(x,twcCardinalAngles((Ord(i)+Ord(x)+u) mod 4))+DetectorAxisValue(x,twcCardinalAngles((Ord(i)+Ord(x)+u+2) mod 4)))/2;
+    FP_Average_mm[x,i].Caption:= FormatFloat('0.00',FP_avg[x,i]);
+    end;
+for scan:= snGT to snAB do
+  for angle:= Rot000 to Rot270 do
+    if FP_Center_mm[scan,angle].Color=clLime then Inc(n);
+if n mod 8=0 then
+  begin
+  d_epi:= FP_BankLevel_mm[twcDetector].Value;
+  d_mlc:= FP_BankLevel_mm[twcUpper   ].Value;
+  d_dia:= FP_BankLevel_mm[twcLower   ].Value;
+  a    := 1/(d_epi*(1/d_dia-1/d_mlc));  //for i:= twcUpper to twcLower do Magnification[i]:= (d_epi_mm/FP_BankLevel_mm[i].Value)-1;
+  for x:= InPlane to CrossPlane do
+    begin
+    FP_Calc_Dbfso_mm[x].Caption:= FormatFloat('0.00',(FP_avg[x,twcUpper]-FP_avg[x,twcLower])*a);
+    FP_Calc_Drot_mm[x] .Caption:= FormatFloat('0.00',(FP_avg[x,twcLower]*d_dia*(d_epi-d_mlc) - FP_avg[x,twcUpper]*d_mlc*(d_epi-d_dia))/
+                                                     (d_epi*(d_dia-d_mlc)));
+    end;
+  end;
+end; {~focuspositionchange_mm}
 
 
 {=> RefUseGammaItem, RefUseAddToItem, RefUseUnrelatedToItem}
@@ -5571,6 +6180,16 @@ OnDataread(Sender);
 end; {~processresetfitclick}
 
 
+{=> MeasCalcPDDfitItem}
+{12/10/2022}
+procedure TAnalyseForm.MeasCalcPDDfitClick(Sender: TObject);
+begin
+if Sender=MeasCalcPDDfitItem then
+  PDDfitCheckBox.Checked:= not PDDfitCheckBox.Checked;
+MeasCalcPDDfitItem.Checked:= PDDfitCheckBox.Checked;
+end; {~meascalcpddfitclick}
+
+
 {=> UseDoseAddButton}
 {05/11/2016}
 procedure TAnalyseForm.UseDoseAddButtonClick(Sender: TObject);
@@ -5759,10 +6378,10 @@ if PageControl.ActivePage=AnalysisTab then
     Engines[UsedEngine].LoadReference;
     end;
   MenusOnOff(True);
-  FitResultsTab.TabVisible:= MeasUseFitModelItem.Enabled;
+  PDDFitResultsTab.TabVisible:= MeasUsePDDfitModelItem.Enabled;
   if PrevTab=InventoryTab then
     OnDataRead(Sender)
-  else if not ((PrevTab=HistogramTab) or (PrevTab=LogTab) or (PrevTab=FitResultsTab)) then
+  else if not ((PrevTab=HistogramTab) or (PrevTab=LogTab) or (PrevTab=PDDFitResultsTab) or OnDataReadBusy) then
     Reload(Sender);
   end
 else if PageControl.ActivePage=FieldTypesTab then
@@ -5787,7 +6406,7 @@ else
   MeasRemappingString.Enabled:= MeasRemappingBox.Enabled;
   if PageControl.ActivePage=HistogramTab then
     ShowHistogram
-  else if PageControl.ActivePage=FitresultsTab then
+  else if PageControl.ActivePage=PDDFitResultsTab then
     ShowFitResults
   else if PageControl.ActivePage=AliasTab then
     SetMessageBar(DefAliasInfo)
@@ -7257,7 +7876,7 @@ end; {~dospecialmode2}
 This function is called through several routes:
 -FormCreate, specialmode1
 -FileOpenClick (File menu -> File open)
--ReadDroppedFile (AnalyseForm.OnDropFiles event)
+-ReadDroppedFiles (AnalyseForm.OnDropFiles event)
 It relies completely on the underlying TWellhoferdata object.
 The fact that TWellhoferData itself handles all currently known binary types can be exploited here:
 -first it checks on possibly binary data; the data are read into a memorystream.
@@ -7301,7 +7920,7 @@ if Result then
       ClearScreen(Self);
       UpdateSettings(Self);
       RawDataEditor.Clear;
-      RawDataEditor.Modified     := False;
+      RawDataEditor.Modified  := False;
       DataFromEditor          := False;
       MeasNormAdjustEdit.Value:= 100;
       PrevKey                 := #0;
@@ -7706,7 +8325,7 @@ var s                                 : String;
                             DefWedgeCol,
                             DefCenterAnnot[PCRxrecord.Xedge]+sLocal);
               AddAnnotation(pa_fitted,
-                            FitResultsTab.TabVisible and MeasUseFitModelItem.Checked,
+                            PDDFitResultsTab.TabVisible and MeasUsePDDfitModelItem.Checked,
                             clRed);
               AddAnnotation(pa_config,
                             twAbsNormConfig,
@@ -7806,8 +8425,8 @@ var s                                 : String;
 begin {syntheticmade set in ondataread}
 with Engines[UsedEngine],wCurveInfo do
   begin
-  FitResultsTab.TabVisible:= (ScanType in twcVertScans) and PDDfitCheckBox.Checked and wSource[dsBuffer].twValid;
-  if FitResultsTab.TabVisible and MeasUseFitModelItem.Checked then
+  PDDFitResultsTab.TabVisible:= (ScanType in twcVertScans) and PDDfitCheckBox.Checked and wSource[dsBuffer].twValid;
+  if PDDFitResultsTab.TabVisible and MeasUsePDDfitModelItem.Checked then
     DataSource:= dsBuffer   {fitted pdd}
   else if SyntheticMade and wSource[dsCalculated].twValid then
     DataSource:= dsCalculated
@@ -8975,17 +9594,17 @@ var r        : twcNMpddFits;
     n        : ^fitNormArray;
 begin
 if not Engines[UsedEngine].wSource[dsMeasured].twpddFitData[NM_Extrapolation].twFitValid then
-  FitResultsAllCheckBox.State:= cbGrayed
-else if FitResultsAllCheckBox.Checked then
-  FitResultsAllCheckBox.State:= cbChecked
+  PDDFitResultsAllCheckBox.State:= cbGrayed
+else if PDDFitResultsAllCheckBox.Checked then
+  PDDFitResultsAllCheckBox.State:= cbChecked
 else
-  FitResultsAllCheckBox.State:= cbUnChecked;
-FitResultsGrid.RowCount:= 1;
-w                      := Max(90,FitResultsGrid.Canvas.TextWidth(Engines[UsedEngine].wSource[dsMeasured].twCurveIDString)+10);
+  PDDFitResultsAllCheckBox.State:= cbUnChecked;
+PDDFitResultsGrid.RowCount:= 1;
+w                      := Max(90,PDDFitResultsGrid.Canvas.TextWidth(Engines[UsedEngine].wSource[dsMeasured].twCurveIDString)+10);
 if not Engines[UsedEngine].wSource[dsMeasured].twpddFitData[NM_Primary].twFitValid then
-  FitResultsGrid.RowCount:= 1;
+  PDDFitResultsGrid.RowCount:= 1;
 for r:= NM_Primary to NM_Extrapolation do
-  with FitResultsGrid,Engines[UsedEngine].wSource[dsMeasured],twpddFitData[r] do if twFitValid then
+  with PDDFitResultsGrid,Engines[UsedEngine].wSource[dsMeasured],twpddFitData[r] do if twFitValid then
     begin
     i       := Ord(r)*2;
     ColCount:= i+2;
@@ -9024,7 +9643,7 @@ for r:= NM_Primary to NM_Extrapolation do
       end;
      Col:= SelectedFitCol;
     end; {with}
-PageControl.ActivePage:= FitResultsTab;
+PageControl.ActivePage:= PDDFitResultsTab;
 end; {~showfitresults}
 
 
@@ -9178,20 +9797,20 @@ end; {~aliastabexit}
 
 
 //put fit results on the clipboard
-{=> FitResultsGrid}
+{=> PDDFitResultsGrid}
 {28/06/2016 SelectedFitCol}
 {13/03/2018 return to AnalysisTab}
 {05/05/2020 use AsciiCRLF for colu,ns}
 {06/10/2020 fundamentals alternative}
-procedure TAnalyseForm.FitResultsGridClick(Sender:TObject);
+procedure TAnalyseForm.PDDFitResultsGridClick(Sender:TObject);
 var i,j,k,l,m: LongInt;
     Stg      : String;
 begin
-with FitResultsGrid do
+with PDDFitResultsGrid do
   begin
   Stg:= '';
   k  := Pred(RowCount);
-  if FitResultsAllCheckBox.Checked then
+  if PDDFitResultsAllCheckBox.Checked then
     begin
     while Length(Rows[k].CommaText.Trim(','))=0 do                              //TStringHelper function
       Dec(k);
@@ -9204,11 +9823,11 @@ with FitResultsGrid do
     while (Length(Cells[l,k])=0) and (k>0) do Dec(k);
     m:= Succ(l);
     end;
-  for j:= ifthen(FitResultsHeaderCheckBox.Checked,0,1) to k do
+  for j:= ifthen(PDDFitResultsHeaderCheckBox.Checked,0,1) to k do
     for i:= l to m do
       if Odd(i) then
         Stg:= Stg+Cells[i,j]+ifthen(i<m,chTab,ifthen(j<k,AsciiCRLF,''))
-      else if FitResultsLabelsCheckBox.Checked then
+      else if PDDFitResultsLabelsCheckBox.Checked then
         Stg:= Stg+Cells[i,j]+chTab;
   ClipBoard.AsText:= Stg;
   SetMessageBar(Cells[1,0]);
@@ -10085,7 +10704,7 @@ if FileHistoryItem.Checked then
   FileHistoryItem.Checked:= False;
   HistoryListSizeClick(FileHistoryItem);
   end;
-CheckMenuItem(MeasUseFitModelItem       ,False);
+CheckMenuItem(MeasUsePDDfitModelItem       ,False);
 CheckMenuItem(MeasInvertGTitem          ,True);
 CheckMenuItem(MeasInvertABitem          ,False);
 CheckMenuItem(MeasInvertUDitem          ,False);
@@ -10288,7 +10907,7 @@ if TestResult(LoadSelftestFile('selftest03_pdd_theoretical.txt'),'PDD') then {48
     FloatResult(CxResults[3][1],0.582,0.002,'PDD20/10');                      {51}
     end;
 AddMessage('Setting absolute scaling point to 10 cm...',0);
-CheckMenuItem(MeasUseFitModelItem,True);
+CheckMenuItem(MeasUsePDDfitModelItem,True);
 ModRec.NormRec.Depth[True]:= 10; {should be set befor file read because analysis is done immediately}
 AutoSetDecPointCheckBox.Checked:= True;                                         //some legacy reference files
 if TestResult(LoadSelftestFile('selftest03_pdd.txt'),'PDD') then              {52}
@@ -10433,7 +11052,7 @@ if LoadSelftestFile('selftest22_fanline.txt') then
   TestResult(CxResults[0][1,CxTitle].Caption=DefLabelDmax+':','Fanline'+Stg);                        {112}
 CheckMenuItem(MeasGenericToPDDItem,False);
 TestResult(LoadSelftestFile('selftest22_fanline.txt'),'Fanline');                                    {113}
-EdgeDetectionCheckbox.Checked:= True;
+EdgeDetectionCheckBox.Checked:= True;
 if LoadSelftestFile('selftest23_GirafTool.txt') then
   FloatResult(CxResults[2][1],7.5,0.5,'Width of filmdata');                                          {114}
 if LoadSelftestFile('selftest24_ScanAngle135.txt') then

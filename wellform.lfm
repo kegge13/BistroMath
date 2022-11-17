@@ -1,37 +1,52 @@
 object AnalyseForm: TAnalyseForm
-  Left = 232
+  Left = 717
   Height = 565
-  Top = 83
-  Width = 885
+  Top = 85
+  Width = 1000
   AllowDropFiles = True
   AlphaBlendValue = 0
   Caption = 'AnalyseForm'
   ClientHeight = 545
-  ClientWidth = 885
+  ClientWidth = 1000
   Color = clScrollBar
   Constraints.MinHeight = 565
-  Constraints.MinWidth = 885
+  Constraints.MinWidth = 1000
   DefaultMonitor = dmMainForm
   Menu = MainMenu
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  OnDropFiles = ReadDroppedFile
+  OnDropFiles = ReadDroppedFiles
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnKeyUp = FormKeyUp
   OnResize = FormResize
-  LCLVersion = '2.2.2.0'
+  LCLVersion = '2.2.4.0'
+  object StatusBar: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 522
+    Width = 1000
+    HelpContext = 21
+    Panels = <    
+      item
+        Width = 50
+      end    
+      item
+        Width = 51
+      end>
+    SimplePanel = False
+  end
   object PageControl: TPageControl
     Left = 0
     Height = 522
     Top = 0
-    Width = 885
+    Width = 1000
     HelpContext = 1
-    ActivePage = AnalysisTab
+    ActivePage = FocusPositionTab
     Align = alClient
     ParentFont = False
-    TabIndex = 0
-    TabOrder = 0
+    TabIndex = 2
+    TabOrder = 1
     OnChange = PageControlChange
     OnChanging = PageControlRequestChange
     OnExit = SettingsTabExit
@@ -41,18 +56,18 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 1
       Caption = 'Analysis'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       object ResultsPanel: TPanel
         Left = 0
         Height = 93
         Top = 401
-        Width = 877
+        Width = 992
         HelpContext = 11
         Align = alBottom
         Alignment = taLeftJustify
         Anchors = []
         ClientHeight = 93
-        ClientWidth = 877
+        ClientWidth = 992
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -78,7 +93,7 @@ object AnalyseForm: TAnalyseForm
           ParentColor = False
         end
         object MeasNormAdjustEdit: TFloatSpinEditEx
-          Left = 822
+          Left = 937
           Height = 17
           Top = 1
           Width = 52
@@ -98,7 +113,7 @@ object AnalyseForm: TAnalyseForm
         Left = 0
         Height = 401
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 9
         AutoFocus = True
         AxisList = <        
@@ -206,12 +221,12 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 17
       Caption = 'Histogram'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       object HistogramPlot: TChart
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 17
         AutoFocus = True
         AxisList = <        
@@ -267,29 +282,217 @@ object AnalyseForm: TAnalyseForm
         end
       end
     end
-    object FitResultsTab: TTabSheet
-      HelpContext = 20
-      Caption = 'Fit Results'
+    object FocusPositionTab: TTabSheet
+      Caption = 'Focus Position'
       ClientHeight = 494
-      ClientWidth = 877
-      object FitResultsPanel: TPanel
+      ClientWidth = 992
+      object FocusPositionPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
+        Align = alClient
+        ClientHeight = 494
+        ClientWidth = 992
+        Color = 15466223
+        ParentColor = False
+        TabOrder = 0
+        UseDockManager = False
+        OnPaint = FocusPositionPanelPaint
+        object FocusPositionSetupGroupBox: TGroupBox
+          Left = 9
+          Height = 105
+          Top = 0
+          Width = 961
+          Caption = 'Setup'
+          ClientHeight = 85
+          ClientWidth = 957
+          ParentBackground = False
+          TabOrder = 0
+          object FocusPositionMappingLabel: TLabel
+            Left = 10
+            Height = 15
+            Top = -1
+            Width = 57
+            Caption = 'First angle:'
+            ParentColor = False
+          end
+          object FocusPosition_mapping_Box: TComboBox
+            Left = 72
+            Height = 23
+            Top = -5
+            Width = 51
+            AutoComplete = True
+            AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
+            AutoDropDown = True
+            ItemHeight = 15
+            OnChange = FocusPositionPanelPaint
+            ReadOnly = True
+            TabOrder = 0
+            Text = 'FocusPosition_mapping_Box'
+          end
+          object FocusPositionIECLabel: TLabel
+            Left = 136
+            Height = 15
+            Top = -1
+            Width = 65
+            Caption = 'Convention:'
+            ParentColor = False
+          end
+          object FocusPosition_IEC_Convention: TComboBox
+            Left = 204
+            Height = 23
+            Top = -5
+            Width = 72
+            AutoComplete = True
+            AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
+            AutoDropDown = True
+            ItemHeight = 15
+            OnChange = FocusPositionPanelPaint
+            ReadOnly = True
+            TabOrder = 1
+            Text = 'FocusPosition_IEC_Convention'
+          end
+          object FocusPositionDetectorRotates: TCheckBox
+            Left = 12
+            Height = 19
+            Hint = 'The detector is attached on the treatment head'
+            Top = 60
+            Width = 187
+            Caption = 'Detector rotates with collimator'
+            OnChange = FocusPositionPanelPaint
+            TabOrder = 2
+          end
+          object FocusPositionUpperLabel: TLabel
+            Left = 301
+            Height = 15
+            Top = -1
+            Width = 59
+            Caption = 'Upper BLD:'
+            ParentColor = False
+          end
+          object FocusPosition_UpperBLD_ident: TComboBox
+            Left = 369
+            Height = 23
+            Hint = 'in general the MLC banks'
+            Top = -5
+            Width = 40
+            AutoCompleteText = []
+            AutoDropDown = True
+            AutoSize = False
+            ItemHeight = 15
+            OnChange = FocusPositionChange_mm
+            ReadOnly = True
+            TabOrder = 3
+            Text = 'Y'
+          end
+          object FocusPositionDetSurfaceIsoc: TRadioButton
+            Left = 672
+            Height = 19
+            Top = 60
+            Width = 157
+            Caption = 'Surface of detector in Isoc'
+            OnChange = FocusPositionChange_mm
+            TabOrder = 5
+          end
+          object FocusPositionDetectorInIsoc: TRadioButton
+            Left = 672
+            Height = 19
+            Top = 40
+            Width = 102
+            Caption = 'Detector in Isoc'
+            OnChange = FocusPositionChange_mm
+            TabOrder = 4
+          end
+          object FocusPositionDetectorOther: TRadioButton
+            Left = 672
+            Height = 19
+            Top = 20
+            Width = 132
+            Caption = 'Specify detector level'
+            Checked = True
+            OnChange = FocusPositionChange_mm
+            TabOrder = 6
+            TabStop = True
+          end
+        end
+        object FocusPositionInputGroupBox: TGroupBox
+          Left = 9
+          Height = 76
+          Top = 112
+          Width = 961
+          Caption = 'Data Input'
+          ClientHeight = 56
+          ClientWidth = 957
+          TabOrder = 1
+          object FocusPositionCollimFromName: TCheckBox
+            Left = 12
+            Height = 19
+            Top = 32
+            Width = 216
+            Caption = 'Collimator angle in file name prevails'
+            OnChange = UpdateSettings
+            TabOrder = 0
+          end
+          object FocusPositionUseCollimInfo: TCheckBox
+            Left = 12
+            Height = 19
+            Top = 6
+            Width = 188
+            Caption = 'Apply collimator angle from file'
+            Checked = True
+            OnChange = UpdateSettings
+            State = cbChecked
+            TabOrder = 1
+          end
+          object FocusPositionResetButton: TButton
+            Left = 672
+            Height = 25
+            Top = 6
+            Width = 75
+            Caption = 'Reset data'
+            OnClick = FocusPositionResetClick
+            TabOrder = 2
+          end
+          object FocusPositionNamePatternEdit: TLabeledEdit
+            Left = 372
+            Height = 23
+            Top = 30
+            Width = 100
+            EditLabel.Height = 15
+            EditLabel.Width = 127
+            EditLabel.Caption = 'File name angle pattern:'
+            EditLabel.ParentColor = False
+            LabelPosition = lpLeft
+            TabOrder = 3
+            Text = '~ %d BEA'
+          end
+        end
+      end
+    end
+    object PDDFitResultsTab: TTabSheet
+      HelpContext = 20
+      Caption = 'PDD Fit Results'
+      ClientHeight = 494
+      ClientWidth = 992
+      object PDDFitResultsPanel: TPanel
+        Left = 0
+        Height = 494
+        Top = 0
+        Width = 992
         HelpContext = 220
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 992
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
-        object FitResultsGrid: TStringGrid
+        object PDDFitResultsGrid: TStringGrid
           Left = 1
           Height = 313
           Hint = 'Click on column for copy to clipboard'
           Top = 1
-          Width = 875
+          Width = 990
           HelpContext = 220
           Align = alTop
           ColCount = 2
@@ -299,9 +502,9 @@ object AnalyseForm: TAnalyseForm
           FixedCols = 0
           RowCount = 2
           TabOrder = 0
-          OnClick = FitResultsGridClick
+          OnClick = PDDFitResultsGridClick
         end
-        object FitresultsLabel: TLabel
+        object PDDFitresultsLabel: TLabel
           Left = 32
           Height = 13
           Top = 331
@@ -313,7 +516,7 @@ object AnalyseForm: TAnalyseForm
           ParentColor = False
           ParentFont = False
         end
-        object FitResultsAllCheckBox: TCheckBox
+        object PDDFitResultsAllCheckBox: TCheckBox
           Left = 33
           Height = 19
           Top = 355
@@ -322,7 +525,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Copy all data'
           TabOrder = 1
         end
-        object FitResultsHeaderCheckBox: TCheckBox
+        object PDDFitResultsHeaderCheckBox: TCheckBox
           Left = 33
           Height = 19
           Top = 379
@@ -332,7 +535,7 @@ object AnalyseForm: TAnalyseForm
           State = cbChecked
           TabOrder = 2
         end
-        object FitResultsLabelsCheckBox: TCheckBox
+        object PDDFitResultsLabelsCheckBox: TCheckBox
           Left = 33
           Height = 19
           Top = 403
@@ -346,13 +549,13 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 20
       Caption = 'Alias'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       OnExit = AliasTabExit
       object AliasListEditor: TValueListEditor
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 20
         Align = alClient
         FixedCols = 0
@@ -367,7 +570,7 @@ object AnalyseForm: TAnalyseForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goEditing, goAutoAddRows, goAlwaysShowEditor, goThumbTracking]
         ColWidths = (
           150
-          706
+          821
         )
       end
     end
@@ -375,114 +578,121 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 23
       Caption = 'Field Types'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       OnExit = SetWellhoferValues
       object FieldTypesPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 23
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 992
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
-        object Ft_EdgePrimaryLabel: TStaticText
+        object Ft_EdgePrimaryLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 160
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Primary border/edge definition'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 0
+          Transparent = False
         end
-        object Ft_EdgeFallBackLabel: TStaticText
+        object Ft_EdgeFallBackLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 190
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Fallback border/edge definition'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 1
+          Transparent = False
         end
-        object Ft_MeasSymCorrLabel: TStaticText
+        object Ft_MeasSymCorrLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 80
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Measurement symmetry correction'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 2
+          Transparent = False
         end
-        object Ft_RefSymCorrLabel: TStaticText
+        object Ft_RefSymCorrLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 105
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Reference symmetry correction'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 3
+          Transparent = False
         end
-        object Ft_CoFLabel: TStaticText
+        object Ft_CoFLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 220
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Center of field definition'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 4
+          Transparent = False
         end
-        object Ft_NormLabel: TStaticText
+        object Ft_NormLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 250
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Normalisation definition'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 5
+          Transparent = False
         end
-        object Ft_DetectLabel: TStaticText
+        object Ft_DetectLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 30
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Detect'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 6
+          Transparent = False
         end
-        object EdgeDetectionGroupBox: TGroupBox
-          Left = 296
+        object Ft_EdgeDetectionGroupBox: TGroupBox
+          Left = 316
           Height = 144
           Top = 344
-          Width = 558
+          Width = 605
           HelpContext = 23
           Caption = 'Edge detection and related parameters'
           ClientHeight = 124
-          ClientWidth = 554
-          TabOrder = 7
+          ClientWidth = 601
+          TabOrder = 0
           object EdgeDetectionCheckBox: TCheckBox
             Left = 9
             Height = 19
@@ -496,22 +706,22 @@ object AnalyseForm: TAnalyseForm
             State = cbChecked
             TabOrder = 0
           end
-          object EdgeSigmoidRadiusLabel: TStaticText
-            Left = 267
-            Height = 19
+          object EdgeSigmoidRadiusLabel: TLabel
+            Left = 383
+            Height = 15
             Top = 8
-            Width = 177
+            Width = 110
             HelpContext = 130
             Align = alCustom
             Alignment = taRightJustify
             Anchors = [akTop, akRight]
             Caption = 'Sigmoid radius (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 1
+            Transparent = False
           end
           object EdgeSigmoidRadius_cm: TFloatSpinEditEx
-            Left = 448
+            Left = 496
             Height = 21
             Hint = 'Range for taken data points'
             Top = 5
@@ -520,7 +730,7 @@ object AnalyseForm: TAnalyseForm
             AutoSize = False
             Anchors = [akTop, akRight]
             MaxLength = 0
-            TabOrder = 2
+            TabOrder = 1
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 3
@@ -530,35 +740,35 @@ object AnalyseForm: TAnalyseForm
             Value = 3
           end
           object EdgeDetectionError_mm: TFloatSpinEditEx
-            Left = 134
+            Left = 136
             Height = 21
             Hint = 'Maximum allowed distance of 50% level'
             Top = 5
-            Width = 70
+            Width = 90
             HelpContext = 130
             AutoSize = False
             MaxLength = 0
-            TabOrder = 3
+            TabOrder = 2
             DecimalPlaces = 1
             MaxValue = 30
             Value = 2
           end
-          object EdgeSmallFieldWidthLabel: TStaticText
-            Left = 267
-            Height = 19
+          object EdgeSmallFieldWidthLabel: TLabel
+            Left = 374
+            Height = 15
             Top = 38
-            Width = 177
+            Width = 119
             HelpContext = 130
             Align = alCustom
             Alignment = taRightJustify
             Anchors = [akTop, akRight]
             Caption = 'Small field width (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 4
+            Transparent = False
           end
           object EdgeSmallFieldWidth_cm: TFloatSpinEditEx
-            Left = 448
+            Left = 496
             Height = 21
             Hint = 'Limit for small field detection'
             Top = 35
@@ -567,28 +777,28 @@ object AnalyseForm: TAnalyseForm
             AutoSize = False
             Anchors = [akTop, akRight]
             MaxLength = 0
-            TabOrder = 5
+            TabOrder = 4
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 5
             Value = 2.5
           end
-          object EdgeWedge90ShiftLabel: TStaticText
-            Left = 267
-            Height = 19
+          object EdgeWedge90ShiftLabel: TLabel
+            Left = 341
+            Height = 15
             Top = 68
-            Width = 177
+            Width = 152
             HelpContext = 130
             Align = alCustom
             Alignment = taRightJustify
             Anchors = [akTop, akRight]
             Caption = 'Wedge 90% level shift factor:'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 6
+            Transparent = False
           end
           object EdgeWedge90ShiftFactor: TFloatSpinEditEx
-            Left = 448
+            Left = 496
             Height = 21
             Hint = 'Factor*L90% > (L50%+R50%) or Factor*R90% < (L50%+R50%)'
             Top = 65
@@ -597,7 +807,7 @@ object AnalyseForm: TAnalyseForm
             AutoSize = False
             Anchors = [akTop, akRight]
             MaxLength = 0
-            TabOrder = 7
+            TabOrder = 3
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 2
@@ -606,82 +816,74 @@ object AnalyseForm: TAnalyseForm
             NullValueBehaviour = nvbInitialValue
             Value = 1
           end
-          object EdgeMRlinacListLabel: TStaticText
-            Left = 267
-            Height = 19
-            Top = 98
-            Width = 177
-            HelpContext = 130
-            Align = alCustom
-            Alignment = taRightJustify
-            Anchors = [akTop, akRight]
-            Caption = 'MRlinac treatment units:'
-            Color = clDefault
-            ParentColor = False
-            TabOrder = 8
-          end
-          object EdgeMRlinacTUcsvList: TEdit
-            Left = 448
+          object EdgeMRlinacTUcsvList: TLabeledEdit
+            Left = 496
             Height = 23
             Top = 95
             Width = 90
+            Anchors = [akTop, akRight]
+            AutoSize = False
+            EditLabel.Height = 15
+            EditLabel.Width = 130
+            EditLabel.Caption = 'MRlinac treatment units:'
+            EditLabel.ParentColor = False
+            LabelPosition = lpLeft
+            TabOrder = 5
+            Text = 'comma separated list'
             OnMouseEnter = EditEnter
-            TabOrder = 9
           end
         end
-        object FFFDetectionGroupBox: TGroupBox
+        object Ft_FFFDetectionGroupBox: TGroupBox
           Left = 8
           Height = 144
           Top = 344
-          Width = 272
+          Width = 292
           HelpContext = 23
           Caption = 'FFF detection and analysis'
           ClientHeight = 124
-          ClientWidth = 268
-          TabOrder = 8
-          object FFFMinDoseDifLabel: TStaticText
+          ClientWidth = 288
+          TabOrder = 1
+          object FFFMinDoseDifLabel: TLabel
             Left = 7
-            Height = 19
+            Height = 15
             Top = 37
-            Width = 173
+            Width = 167
             HelpContext = 23
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Minimal In-Field dose drop (%):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 0
+            Transparent = False
           end
-          object FFFMinEdgeDifLabel: TStaticText
+          object FFFMinEdgeDifLabel: TLabel
             Left = 7
-            Height = 19
+            Height = 15
             Top = 67
-            Width = 173
+            Width = 165
             HelpContext = 23
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Minimal edge difference (mm):'
             Color = clBtnFace
             ParentColor = False
-            TabOrder = 1
             Transparent = False
           end
-          object FFFInFieldExtLabel: TStaticText
+          object FFFInFieldExtLabel: TLabel
             Left = 7
-            Height = 19
+            Height = 15
             Top = 97
-            Width = 173
+            Width = 150
             HelpContext = 23
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'In-Field area extension (cm):'
             Color = clBtnFace
             ParentColor = False
-            TabOrder = 2
             Transparent = False
           end
           object FFFMinDoseDif_perc: TFloatSpinEditEx
-            Left = 185
+            Left = 193
             Height = 21
             Top = 35
             Width = 59
@@ -695,20 +897,20 @@ object AnalyseForm: TAnalyseForm
             Value = 10
           end
           object FFFMinEdgeDif_mm: TFloatSpinEditEx
-            Left = 185
+            Left = 193
             Height = 21
             Top = 65
             Width = 59
             HelpContext = 23
             AutoSize = False
             MaxLength = 0
-            TabOrder = 4
+            TabOrder = 0
             DecimalPlaces = 1
             Increment = 0.01
             MaxValue = 50
           end
           object FFFInFieldExt_cm: TFloatSpinEditEx
-            Left = 185
+            Left = 193
             Height = 21
             Hint = 'Extension of In-Field area'
             Top = 95
@@ -716,7 +918,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 23
             AutoSize = False
             MaxLength = 0
-            TabOrder = 5
+            TabOrder = 1
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 5
@@ -725,80 +927,84 @@ object AnalyseForm: TAnalyseForm
             Value = 1
           end
           object FFFMinFieldSize_cm: TFloatSpinEditEx
-            Left = 185
+            Left = 193
             Height = 21
             Top = 5
             Width = 59
             HelpContext = 23
             AutoSize = False
             MaxLength = 0
-            TabOrder = 6
+            TabOrder = 2
             DecimalPlaces = 1
             Increment = 0.01
             MaxValue = 50
             Value = 10
           end
-          object FFFMinFieldSizeLabel: TStaticText
+          object FFFMinFieldSizeLabel: TLabel
             Left = 7
-            Height = 19
+            Height = 15
             Top = 7
-            Width = 173
+            Width = 123
             HelpContext = 23
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Minimal field size (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 7
+            Transparent = False
           end
         end
-        object Ft_CenterModelRadiusLabel: TStaticText
+        object Ft_CenterModelRadiusLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 280
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Center model radius (cm)'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 9
+          Transparent = False
         end
-        object Ft_DynPenumbraWidthLabel: TStaticText
+        object Ft_DynPenumbraWidthLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 130
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Dynamic penumbra width'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 10
+          Transparent = False
         end
-        object Ft_DetDiagonalLabel: TStaticText
+        object Ft_DetDiagonalLabel: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 55
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Detect diagonals'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 11
+          Transparent = False
         end
-        object Ft_Default_SSD_Label: TStaticText
+        object Ft_Default_SSD_Label: TLabel
           Left = 9
-          Height = 19
+          Height = 15
           Top = 310
-          Width = 191
+          Width = 195
           HelpContext = 23
           Align = alCustom
+          AutoSize = False
           Caption = 'Default SSD (cm)'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 12
+          Transparent = False
         end
       end
     end
@@ -806,17 +1012,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 127
       Caption = 'Settings'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       OnExit = SettingsTabExit
       object SettingsPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 127
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 992
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -825,27 +1031,27 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 48
           Top = 0
-          Width = 583
+          Width = 698
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Shift settings (cm)'
           ClientHeight = 28
-          ClientWidth = 579
+          ClientWidth = 694
           Color = clBtnFace
           ParentColor = False
           TabOrder = 1
-          object ShiftStepLabel: TStaticText
+          object ShiftStepLabel: TLabel
             Left = 407
-            Height = 19
+            Height = 15
             Top = 2
             Width = 94
             HelpContext = 127
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Manual shift step:'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 0
+            Transparent = False
           end
           object ManualShiftStep_cm: TFloatSpinEditEx
             Left = 505
@@ -856,7 +1062,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            TabOrder = 1
+            TabOrder = 0
             DecimalPlaces = 3
             Increment = 0.01
             MaxValue = 30
@@ -867,12 +1073,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 49
           Top = 57
-          Width = 583
+          Width = 698
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Merge settings'
           ClientHeight = 29
-          ClientWidth = 579
+          ClientWidth = 694
           TabOrder = 2
           object MergeMatchCheckBox: TCheckBox
             Left = 391
@@ -897,33 +1103,33 @@ object AnalyseForm: TAnalyseForm
             Checked = True
             ParentBidiMode = False
             State = cbChecked
-            TabOrder = 2
+            TabOrder = 1
           end
-          object MergeProfShiftLabel: TStaticText
+          object MergeProfShiftLabel: TLabel
             Left = 2
-            Height = 19
+            Height = 15
             Top = 3
-            Width = 104
+            Width = 92
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Profile Shift (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 0
+            Transparent = False
           end
-          object MergePDDShiftLabel: TStaticText
+          object MergePDDShiftLabel: TLabel
             Left = 207
-            Height = 19
+            Height = 15
             Top = 3
-            Width = 90
+            Width = 81
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'PDD Shift (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 1
+            Transparent = False
           end
           object MergeProfShift_cm: TFloatSpinEditEx
             Left = 111
@@ -933,7 +1139,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            TabOrder = 4
+            TabOrder = 0
             MaxValue = 50
             MinValue = -50
           end
@@ -945,7 +1151,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            TabOrder = 5
+            TabOrder = 2
             MaxValue = 30
             MinValue = -30
           end
@@ -954,12 +1160,12 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 147
           Top = 173
-          Width = 583
+          Width = 698
           HelpContext = 136
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Gamma analysis settings'
           ClientHeight = 127
-          ClientWidth = 579
+          ClientWidth = 694
           TabOrder = 3
           object GammaLimitAreaLabel: TLabel
             Left = 11
@@ -982,84 +1188,84 @@ object AnalyseForm: TAnalyseForm
             State = cbChecked
             TabOrder = 6
           end
-          object GammaDepthCutoffLabel: TStaticText
+          object GammaDepthCutoffLabel: TLabel
             Left = 335
-            Height = 19
+            Height = 15
             Top = 32
-            Width = 141
+            Width = 131
             HelpContext = 136
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Depth dose cutoff (mm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 0
+            Transparent = False
           end
-          object GammaDoseCutoffLabel: TStaticText
+          object GammaDoseCutoffLabel: TLabel
             Left = 390
-            Height = 19
+            Height = 15
             Top = 5
-            Width = 86
+            Width = 85
             HelpContext = 136
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Dose cutoff (%):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 1
+            Transparent = False
           end
-          object GammaStepsLabel: TStaticText
+          object GammaStepsLabel: TLabel
             Left = 381
-            Height = 19
+            Height = 15
             Top = 59
             Width = 95
             HelpContext = 136
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Search steps/mm:'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 2
+            Transparent = False
           end
-          object GammaSearchFactorLabel: TStaticText
+          object GammaSearchFactorLabel: TLabel
             Left = 120
-            Height = 19
+            Height = 15
             Hint = 'Multiplication factor for initial distance to agreement to stop'
             Top = 59
-            Width = 118
+            Width = 98
             HelpContext = 136
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Search range limit:'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 3
+            Transparent = False
           end
-          object GammaDistNormLabel: TStaticText
+          object GammaDistNormLabel: TLabel
             Left = 111
-            Height = 19
+            Height = 15
             Top = 32
-            Width = 127
+            Width = 113
             HelpContext = 136
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Distance norm (mm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 4
+            Transparent = False
           end
-          object GammaDoseNormLabel: TStaticText
+          object GammaDoseNormLabel: TLabel
             Left = 134
-            Height = 19
+            Height = 15
             Top = 5
-            Width = 104
+            Width = 82
             HelpContext = 136
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Dose norm (%):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 5
+            Transparent = False
           end
           object GammaDoseNorm_perc: TFloatSpinEditEx
             Left = 241
@@ -1070,7 +1276,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            TabOrder = 7
+            TabOrder = 0
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 50
@@ -1086,7 +1292,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            TabOrder = 8
+            TabOrder = 1
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 50
@@ -1102,7 +1308,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            TabOrder = 9
+            TabOrder = 2
             DecimalPlaces = 1
             MaxValue = 10
             MinValue = 1
@@ -1117,7 +1323,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            TabOrder = 10
+            TabOrder = 3
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 1000
@@ -1132,7 +1338,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            TabOrder = 11
+            TabOrder = 4
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 50
@@ -1147,7 +1353,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 136
             AutoSize = False
             MaxLength = 0
-            TabOrder = 12
+            TabOrder = 5
             DecimalPlaces = 1
             Increment = 0.1
             MaxValue = 50
@@ -1159,51 +1365,51 @@ object AnalyseForm: TAnalyseForm
           Left = 285
           Height = 49
           Top = 115
-          Width = 583
+          Width = 698
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Mayneord settings'
           ClientHeight = 29
-          ClientWidth = 579
+          ClientWidth = 694
           TabOrder = 4
-          object MayneordDmaxLabel: TStaticText
+          object MayneordDmaxLabel: TLabel
             Left = 32
-            Height = 19
+            Height = 15
             Top = 4
-            Width = 66
+            Width = 62
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Dmax (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 0
+            Transparent = False
           end
-          object MayneordSSD1Label: TStaticText
+          object MayneordSSD1Label: TLabel
             Left = 214
-            Height = 19
+            Height = 15
             Top = 4
-            Width = 77
+            Width = 72
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'SSD org (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 1
+            Transparent = False
           end
-          object MayneordSSD2Label: TStaticText
+          object MayneordSSD2Label: TLabel
             Left = 374
-            Height = 19
+            Height = 15
             Top = 4
-            Width = 79
+            Width = 76
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'SSD new (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 2
+            Transparent = False
           end
           object MayneordDmax_cm: TFloatSpinEditEx
             Left = 111
@@ -1213,7 +1419,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            TabOrder = 3
+            TabOrder = 0
             DecimalPlaces = 1
             MaxValue = 20
             Value = 1.6
@@ -1226,7 +1432,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            TabOrder = 4
+            TabOrder = 1
             DecimalPlaces = 1
             MaxValue = 500
             MinValue = 10
@@ -1240,7 +1446,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            TabOrder = 5
+            TabOrder = 2
             DecimalPlaces = 1
             MaxValue = 500
             MinValue = 10
@@ -1248,132 +1454,132 @@ object AnalyseForm: TAnalyseForm
           end
         end
         object InsertOriginCheckBox: TCheckBox
-          Left = 3
+          Left = 4
           Height = 19
           Hint = 'Take missing origin value from other line (StarCheck maxi)'
           Top = 280
-          Width = 204
+          Width = 203
           HelpContext = 127
           Alignment = taLeftJustify
-          Caption = 'Assign origin to both 2D array lines'
+          Caption = 'Assign origin to both 2D array axes'
           ParentBidiMode = False
           TabOrder = 0
         end
-        object FilterWidthLabel: TStaticText
+        object FilterWidthLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 10
-          Width = 145
+          Width = 95
           Alignment = taRightJustify
           Caption = 'Filter width (mm):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 5
+          Transparent = False
         end
-        object CalcWidthLabel: TStaticText
+        object CalcWidthLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 40
-          Width = 145
+          Width = 129
           HelpContext = 127
           Align = alCustom
           Alignment = taRightJustify
           Caption = 'Calculation width (mm):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 6
+          Transparent = False
         end
-        object ResampleGridLabel: TStaticText
+        object ResampleGridLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 70
-          Width = 145
+          Width = 111
           HelpContext = 127
           Align = alCustom
           Alignment = taRightJustify
           Caption = 'Resample grid (mm):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 7
+          Transparent = False
         end
-        object GlobalNormAdjustLabel: TStaticText
+        object GlobalNormAdjustLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 100
-          Width = 145
+          Width = 126
           Alignment = taRightJustify
           Caption = 'Normalisation level (%):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 8
+          Transparent = False
         end
-        object UserBorderDoseLabel: TStaticText
+        object UserBorderDoseLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 130
-          Width = 145
+          Width = 106
           HelpContext = 127
           Align = alCustom
           Alignment = taRightJustify
           Caption = 'User Dose Level (%):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 9
+          Transparent = False
         end
-        object XpenumbraLabel: TStaticText
+        object XpenumbraLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 160
-          Width = 145
+          Width = 107
           HelpContext = 127
           Align = alCustom
           Alignment = taRightJustify
           Caption = 'X penumbra h/l (%):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 10
+          Transparent = False
         end
-        object EpenumbraLabel: TStaticText
+        object EpenumbraLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 190
-          Width = 145
+          Width = 106
           HelpContext = 127
           Align = alCustom
           Alignment = taRightJustify
           Caption = 'E penumbra h/l (%):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 11
+          Transparent = False
         end
-        object DefaultEnergyLabel: TStaticText
+        object DefaultEnergyLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 220
-          Width = 145
+          Width = 138
           HelpContext = 127
           Align = alCustom
           Alignment = taRightJustify
           Caption = 'Default energy [MV/MeV]:'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 12
+          Transparent = False
         end
         object FilterWidth_mm: TFloatSpinEditEx
-          Left = 173
+          Left = 167
           Height = 21
           Top = 8
           Width = 75
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 13
+          TabOrder = 9
           DecimalPlaces = 1
           MaxValue = 30
           Value = 6
         end
         object CalcWidth_mm: TFloatSpinEditEx
-          Left = 172
+          Left = 166
           Height = 21
           Hint = 'Range of data points used to calculate a dose level'
           Top = 38
@@ -1381,12 +1587,12 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 14
+          TabOrder = 11
           DecimalPlaces = 1
           MaxValue = 30
         end
         object ResampleGrid_mm: TFloatSpinEditEx
-          Left = 172
+          Left = 166
           Height = 21
           Hint = 'Create a fixed sample grid'
           Top = 68
@@ -1394,26 +1600,26 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 15
+          TabOrder = 13
           DecimalPlaces = 1
           MaxValue = 30
         end
         object GlobalNormAdjust_perc: TFloatSpinEditEx
-          Left = 173
+          Left = 167
           Height = 21
           Top = 98
           Width = 75
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 16
+          TabOrder = 15
           DecimalPlaces = 1
           MaxValue = 300
           MinValue = 2
           Value = 100
         end
         object UserBorderDose_perc: TFloatSpinEditEx
-          Left = 173
+          Left = 167
           Height = 21
           Hint = 'Non-standard dosepercentage for field border definition.'
           Top = 128
@@ -1436,7 +1642,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 18
+          TabOrder = 5
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1451,7 +1657,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 19
+          TabOrder = 6
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1466,7 +1672,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 20
+          TabOrder = 7
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1481,7 +1687,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 21
+          TabOrder = 8
           DecimalPlaces = 1
           MaxValue = 99
           MinValue = 2
@@ -1496,24 +1702,24 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           AutoSize = False
           MaxLength = 0
-          TabOrder = 22
+          TabOrder = 10
           DecimalPlaces = 1
           Increment = 0.1
           MinValue = 0.01
           Value = 6
         end
-        object HistogramLimitLabel: TStaticText
+        object HistogramLimitLabel: TLabel
           Left = 10
-          Height = 19
+          Height = 15
           Top = 250
-          Width = 145
+          Width = 139
           HelpContext = 129
           Align = alCustom
           Alignment = taRightJustify
           Caption = 'Histogram/Gamma range:'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 23
+          Transparent = False
         end
         object HistogramLimit_num: TFloatSpinEditEx
           Left = 166
@@ -1524,7 +1730,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 24
+          TabOrder = 12
           MaxValue = 30
           MinValue = 0.05
           NullValue = 2
@@ -1540,20 +1746,24 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 127
           Alignment = taLeftJustify
           Caption = 'Use nominal field size for IFA'
+          Font.CharSet = ANSI_CHARSET
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          ParentFont = False
           ParentBidiMode = False
-          TabOrder = 25
+          TabOrder = 14
         end
         object PDDfitGroupBox: TGroupBox
           Left = 285
           Height = 140
           Top = 329
-          Width = 583
+          Width = 698
           HelpContext = 129
           Anchors = [akTop, akLeft, akRight]
           Caption = 'PDD fit'
           ClientHeight = 120
-          ClientWidth = 579
-          TabOrder = 26
+          ClientWidth = 694
+          TabOrder = 16
           object PDDfitCheckBox: TCheckBox
             Left = 37
             Height = 19
@@ -1615,83 +1825,89 @@ object AnalyseForm: TAnalyseForm
             Caption = 'ENR'
             TabOrder = 4
           end
-          object FitZWeightLabel: TStaticText
+          object FitZWeightLabel: TLabel
             Left = 6
-            Height = 19
+            Height = 15
             Top = 31
-            Width = 119
+            Width = 120
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
+            AutoSize = False
             Caption = 'Z-weighting power:'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 5
+            Transparent = False
           end
-          object FitMubPowerLabel: TStaticText
+          object FitMubPowerLabel: TLabel
             Left = 6
-            Height = 19
+            Height = 15
             Top = 60
-            Width = 119
+            Width = 120
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
+            AutoSize = False
             Caption = 'mub power (buildup):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 6
+            Transparent = False
           end
-          object FitENRLabel: TStaticText
+          object FitENRLabel: TLabel
             Left = 6
-            Height = 19
+            Height = 15
             Top = 88
-            Width = 119
+            Width = 120
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
+            AutoSize = False
             Caption = 'Error to Noise Ratio:'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 7
+            Transparent = False
           end
-          object FitMaxTimeLabel: TStaticText
-            Left = 349
-            Height = 19
+          object FitMaxTimeLabel: TLabel
+            Left = 378
+            Height = 15
             Top = 88
-            Width = 119
+            Width = 90
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
+            AutoSize = False
             Caption = 'Max. time (sec):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 8
+            Transparent = False
           end
-          object FitRestartsLabel: TStaticText
-            Left = 412
-            Height = 13
+          object FitRestartsLabel: TLabel
+            Left = 378
+            Height = 15
             Top = 60
-            Width = 51
+            Width = 90
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
+            AutoSize = False
             Caption = 'Restarts:'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 9
+            Transparent = False
           end
-          object FitCyclesLabel: TStaticText
-            Left = 420
-            Height = 13
+          object FitCyclesLabel: TLabel
+            Left = 378
+            Height = 15
             Top = 31
-            Width = 43
+            Width = 90
             HelpContext = 129
             Align = alCustom
             Alignment = taRightJustify
+            AutoSize = False
             Caption = 'Cycles:'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 10
+            Transparent = False
           end
           object FitZWeight_val: TFloatSpinEditEx
             Left = 131
@@ -1702,7 +1918,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            TabOrder = 12
+            TabOrder = 5
             Increment = 0.01
             MaxValue = 2
           end
@@ -1715,7 +1931,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            TabOrder = 13
+            TabOrder = 6
             Increment = 0.01
             MaxValue = 10
             MinValue = 0.5
@@ -1730,7 +1946,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            TabOrder = 14
+            TabOrder = 7
             MaxValue = 50
             Value = 2
           end
@@ -1742,7 +1958,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            TabOrder = 15
+            TabOrder = 8
             MaxValue = 50
           end
           object FitCycles_num: TSpinEditEx
@@ -1753,7 +1969,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            TabOrder = 16
+            TabOrder = 9
             MaxValue = 50
             NullValue = 0
             Value = 0
@@ -1766,7 +1982,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 129
             AutoSize = False
             MaxLength = 0
-            TabOrder = 17
+            TabOrder = 10
             MaxValue = 50
             NullValue = 0
             Value = 0
@@ -1778,17 +1994,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 129
       Caption = 'Advanced Settings'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       OnExit = AdvancedSettingsTabExit
       object AdvancedSettingsPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 129
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 992
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -1876,7 +2092,9 @@ object AnalyseForm: TAnalyseForm
             Anchors = [akTop, akRight]
             AutoSize = False
             Caption = 'Maximum length:'
+            Color = clBtnFace
             ParentColor = False
+            Transparent = False
           end
           object AxisViewComLengthLabel: TLabel
             Left = 373
@@ -1889,7 +2107,9 @@ object AnalyseForm: TAnalyseForm
             Anchors = [akTop, akRight]
             AutoSize = False
             Caption = 'Maximum length:'
+            Color = clBtnFace
             ParentColor = False
+            Transparent = False
           end
           object AxisViewFileTypeCheckBox: TCheckBox
             Left = 18
@@ -2066,7 +2286,9 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Range divider:'
+            Color = clBtnFace
             ParentColor = False
+            Transparent = False
           end
           object MatchStepFactorLabel: TLabel
             Left = 18
@@ -2078,7 +2300,9 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Step number:'
+            Color = clBtnFace
             ParentColor = False
+            Transparent = False
           end
           object MatchNormPercLabel: TLabel
             Left = 295
@@ -2090,7 +2314,9 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Normalisation range fraction (%):'
+            Color = clBtnFace
             ParentColor = False
+            Transparent = False
           end
           object MatchInclusionLabel: TLabel
             Left = 295
@@ -2102,7 +2328,9 @@ object AnalyseForm: TAnalyseForm
             Alignment = taRightJustify
             AutoSize = False
             Caption = 'Inclusion lower limit (%):'
+            Color = clBtnFace
             ParentColor = False
+            Transparent = False
           end
           object MatchRangeDivider_num: TSpinEditEx
             Left = 103
@@ -2233,41 +2461,41 @@ object AnalyseForm: TAnalyseForm
             TabOrder = 4
           end
         end
-        object BadPenumbraLabel: TStaticText
+        object BadPenumbraLabel: TLabel
           Left = 18
-          Height = 19
+          Height = 15
           Top = 299
-          Width = 125
+          Width = 109
           HelpContext = 129
           Align = alCustom
           Caption = 'Bad penumbra (cm):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 9
+          Transparent = False
         end
-        object OriginMinLevelLabel: TStaticText
+        object OriginMinLevelLabel: TLabel
           Left = 16
-          Height = 19
+          Height = 15
           Top = 329
-          Width = 125
+          Width = 111
           HelpContext = 129
           Align = alCustom
           Caption = 'Origin min. level (%):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 10
+          Transparent = False
         end
-        object PipsPixelSizeLabel: TStaticText
+        object PipsPixelSizeLabel: TLabel
           Left = 18
-          Height = 22
+          Height = 15
           Top = 356
-          Width = 125
+          Width = 108
           HelpContext = 129
           Align = alCustom
           Caption = 'Pips pixel size (mm):'
-          Color = clDefault
+          Color = clBtnFace
           ParentColor = False
-          TabOrder = 11
+          Transparent = False
         end
         object LogLevelEdit: TSpinEditEx
           Left = 192
@@ -2277,7 +2505,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 12
+          TabOrder = 9
           MaxValue = 4
           NullValue = 0
           Value = 4
@@ -2291,7 +2519,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 13
+          TabOrder = 10
           MaxValue = 30
         end
         object OriginMinLevel_perc: TFloatSpinEditEx
@@ -2303,7 +2531,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 14
+          TabOrder = 11
           MaxValue = 1000
           NullValue = 95
           NullValueBehaviour = nvbInitialValue
@@ -2318,7 +2546,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 15
+          TabOrder = 12
           DecimalPlaces = 1
           MaxValue = 30
           Value = 2
@@ -2332,7 +2560,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Use history list              length:'
           OnClick = HistoryListSizeClick
           ParentBidiMode = False
-          TabOrder = 16
+          TabOrder = 13
         end
         object HistoryListSize_num: TSpinEditEx
           Left = 193
@@ -2342,7 +2570,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 17
+          TabOrder = 14
           OnChange = HistoryListSizeClick
           MaxValue = 99
           MinValue = 1
@@ -2358,7 +2586,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           AutoSize = False
           MaxLength = 0
-          TabOrder = 18
+          TabOrder = 15
           Increment = 2
           MaxValue = 21
           MinValue = 3
@@ -2374,7 +2602,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           Caption = 'Put history data in frozen state'
           ParentBidiMode = False
-          TabOrder = 19
+          TabOrder = 17
         end
         object AutoSetDecPointCheckBox: TCheckBox
           Left = 10
@@ -2385,7 +2613,7 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           Caption = 'Auto set decimal separator for:'
           ParentBidiMode = False
-          TabOrder = 20
+          TabOrder = 19
         end
         object AutoDecPointList: TEdit
           Left = 192
@@ -2408,19 +2636,19 @@ object AnalyseForm: TAnalyseForm
           HelpContext = 129
           Caption = 'Show "Lock Critical Items" in File menu'
           ParentBidiMode = False
-          TabOrder = 22
+          TabOrder = 16
         end
         object LinacErrorGroupBox: TGroupBox
           Left = 258
           Height = 51
           Top = 343
-          Width = 560
+          Width = 675
           HelpContext = 127
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Linac symmetry error'
           ClientHeight = 31
-          ClientWidth = 556
-          TabOrder = 23
+          ClientWidth = 671
+          TabOrder = 18
           object LinacErrInvertGTCheckBox: TCheckBox
             Left = 29
             Height = 19
@@ -2430,7 +2658,7 @@ object AnalyseForm: TAnalyseForm
             Alignment = taLeftJustify
             Caption = 'Invert sign: GT'
             ParentBidiMode = False
-            TabOrder = 1
+            TabOrder = 0
           end
           object LinacErrInvertABCheckBox: TCheckBox
             Left = 131
@@ -2441,21 +2669,21 @@ object AnalyseForm: TAnalyseForm
             Alignment = taLeftJustify
             Caption = 'AB'
             ParentBidiMode = False
-            TabOrder = 2
+            TabOrder = 1
           end
-          object LinacSymLabel: TStaticText
+          object LinacSymLabel: TLabel
             Left = 238
-            Height = 19
+            Height = 15
             Hint = 'Inner and outer radius for linac ionization chamber symmetry'
             Top = 4
-            Width = 150
+            Width = 129
             HelpContext = 127
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Radius inner/outer (cm):'
-            Color = clDefault
+            Color = clBtnFace
             ParentColor = False
-            TabOrder = 0
+            Transparent = False
           end
           object LinacSymInner_cm: TFloatSpinEditEx
             Left = 403
@@ -2480,7 +2708,7 @@ object AnalyseForm: TAnalyseForm
             HelpContext = 127
             AutoSize = False
             MaxLength = 0
-            TabOrder = 4
+            TabOrder = 2
             DecimalPlaces = 1
             Increment = 0.01
             MaxValue = 30
@@ -2497,7 +2725,7 @@ object AnalyseForm: TAnalyseForm
           Checked = True
           ParentBidiMode = False
           State = cbChecked
-          TabOrder = 24
+          TabOrder = 20
         end
       end
     end
@@ -2505,16 +2733,16 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 240
       Caption = 'Configuration'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       object ConfigurationPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 240
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 992
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -2605,13 +2833,13 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 300
       Caption = 'Messages'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       object LogTabMemo: TMemo
         Tag = 500
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 300
         Align = alClient
         Color = 13158592
@@ -2624,12 +2852,12 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 3
       Caption = 'Raw data'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       object RawDataEditor: TMemo
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 3
         Align = alClient
         Color = 14737632
@@ -2646,13 +2874,13 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 95
       Caption = 'Files'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       object InventoryGrid: TStringGrid
         AnchorSideLeft.Side = asrBottom
         Left = 178
         Height = 508
         Top = -8
-        Width = 703
+        Width = 818
         HelpContext = 95
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Left = 2
@@ -2748,17 +2976,17 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 97
       Caption = 'Conversion'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       object FileConversionPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 97
         Align = alClient
         Caption = 'FileConversionPanel'
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 992
         Color = clBtnFace
         ParentColor = False
         TabOrder = 0
@@ -2906,45 +3134,45 @@ object AnalyseForm: TAnalyseForm
           OnEnter = EditEnter
           OnExit = FileConvStartCheck
         end
-        object FileConvSourceLabel: TStaticText
+        object FileConvSourceLabel: TLabel
           Left = 5
-          Height = 13
+          Height = 15
           Top = 1
-          Width = 115
+          Width = 90
           Caption = 'Source Directory:'
           Color = clDefault
           ParentColor = False
-          TabOrder = 13
+          Transparent = False
         end
-        object FileConvSourceTypeLabel: TStaticText
+        object FileConvSourceTypeLabel: TLabel
           Left = 599
-          Height = 13
+          Height = 15
           Top = 1
-          Width = 115
+          Width = 87
           Caption = 'Source File Type:'
           Color = clDefault
           ParentColor = False
-          TabOrder = 14
+          Transparent = False
         end
-        object FileConvDestinationTypeLabel: TStaticText
+        object FileConvDestinationTypeLabel: TLabel
           Left = 599
-          Height = 13
+          Height = 15
           Top = 99
-          Width = 115
+          Width = 89
           Caption = 'Output File Type:'
           Color = clDefault
           ParentColor = False
-          TabOrder = 15
+          Transparent = False
         end
-        object FileConvDestinationLabel: TStaticText
+        object FileConvDestinationLabel: TLabel
           Left = 5
-          Height = 13
+          Height = 15
           Top = 99
-          Width = 115
+          Width = 92
           Caption = 'Output Directory:'
           Color = clDefault
           ParentColor = False
-          TabOrder = 16
+          Transparent = False
         end
       end
     end
@@ -2952,16 +3180,16 @@ object AnalyseForm: TAnalyseForm
       HelpContext = 230
       Caption = 'Signal Adapt'
       ClientHeight = 494
-      ClientWidth = 877
+      ClientWidth = 992
       object ODConversionPanel: TPanel
         Left = 0
         Height = 494
         Top = 0
-        Width = 877
+        Width = 992
         HelpContext = 230
         Align = alClient
         ClientHeight = 494
-        ClientWidth = 877
+        ClientWidth = 992
         Color = clCream
         ParentColor = False
         TabOrder = 0
@@ -2983,61 +3211,61 @@ object AnalyseForm: TAnalyseForm
           ParentColor = False
           ParentFont = False
           TabOrder = 0
-          object UseDoseConvLabel: TStaticText
+          object UseDoseConvLabel: TLabel
             Left = 5
             Height = 13
             Top = 19
-            Width = 90
+            Width = 80
             Align = alCustom
             Caption = 'Dose conversion'
             Color = clDefault
             ParentColor = False
-            TabOrder = 0
+            Transparent = False
           end
-          object UseDoseModalityLabel: TStaticText
+          object UseDoseModalityLabel: TLabel
             Left = 120
             Height = 13
             Top = 19
-            Width = 60
+            Width = 39
             Align = alCustom
             Caption = 'Modality'
             Color = clDefault
             ParentColor = False
-            TabOrder = 1
+            Transparent = False
           end
-          object UseDoseFilmTypeLabel: TStaticText
+          object UseDoseFilmTypeLabel: TLabel
             Left = 195
             Height = 13
             Top = 19
-            Width = 50
+            Width = 38
             Align = alCustom
             Caption = 'Filmtype'
             Color = clDefault
             ParentColor = False
-            TabOrder = 2
+            Transparent = False
           end
-          object UseSubtractLabel: TStaticText
+          object UseSubtractLabel: TLabel
             Left = 270
             Height = 13
             Top = 19
-            Width = 80
+            Width = 58
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Background'
             Color = clDefault
             ParentColor = False
-            TabOrder = 3
+            Transparent = False
           end
-          object UseBackgroundValueLabel: TStaticText
+          object UseBackgroundValueLabel: TLabel
             Left = 357
             Height = 13
             Top = 19
-            Width = 90
+            Width = 69
             Align = alCustom
             Caption = 'absolute value'
             Color = clDefault
             ParentColor = False
-            TabOrder = 4
+            Transparent = False
           end
         end
         object UseDoseDelButton: TButton
@@ -3062,21 +3290,6 @@ object AnalyseForm: TAnalyseForm
         end
       end
     end
-  end
-  object StatusBar: TStatusBar
-    Left = 0
-    Height = 23
-    Top = 522
-    Width = 885
-    HelpContext = 21
-    Panels = <    
-      item
-        Width = 50
-      end    
-      item
-        Width = 51
-      end>
-    SimplePanel = False
   end
   object ApplicationProperties: TApplicationProperties
     Left = 440
@@ -3174,7 +3387,6 @@ object AnalyseForm: TAnalyseForm
         Caption = 'Save as &Reference'
         GroupIndex = 1
         Hint = 'save the current curve as a reference profile'
-        ShortCut = 16466
         OnClick = OnMenu
       end
       object FileLockCriticalItems: TMenuItem
@@ -3230,8 +3442,13 @@ object AnalyseForm: TAnalyseForm
         GroupIndex = 71
         HelpContext = 70
         Hint = 'Process the current data with other settings'
-        ShortCut = 16464
+        ShortCut = 16466
         OnClick = OnDataRead
+      end
+      object ProcessSendToFPItem: TMenuItem
+        Caption = 'Send to Focus Position tab'
+        ShortCut = 24658
+        OnClick = FocusPositionProcessFile
       end
       object ProcessResetFitItem: TMenuItem
         Caption = 'Reset Nelder-Mead fit'
@@ -3557,7 +3774,11 @@ object AnalyseForm: TAnalyseForm
         ShortCut = 8277
         OnClick = OnDataRead
       end
-      object MeasUseFitModelItem: TMenuItem
+      object MeasCalcPDDfitItem: TMenuItem
+        Caption = 'Calculate PDD fit'
+        OnClick = MeasCalcPDDfitClick
+      end
+      object MeasUsePDDfitModelItem: TMenuItem
         AutoCheck = True
         Caption = 'Use &PDD-fit results'
         HelpContext = 127

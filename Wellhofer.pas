@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-11/07/2022 | FPC 3.2.2: 20/05/2022}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-16/11/2022 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -442,15 +442,15 @@ type
   twcAutoCenter     =(AC_default,AC_on,AC_off);
   twcGammaScope     =(gGammaComplete,gGammaLimited);
   twcNormalisation  =(NormOnCenter,NormOnOrigin,NormOnMax,NormOnInFieldArea);
-  twcFieldSizeDesc  =(fInplane,fCrossplane);
   twcModalityChar   = 'C'..'X';
   twcShiftType      =(AbsShift,RelShift);
   twcSourceEnum     =(dsMeasured,dsReference,dsMeasFiltered,dsRefFiltered,dsCalculated,dsBuffer,dsRefOrg,dsUnrelated
                      {$IFDEF WELLHOFER_DUMPDATA},dsDefault{$ENDIF});                                                                   {order is used for coupling}
-  twcTankAxis       =(X,Y,Z);
-  twcMeasAxis       =(Inplane,Crossplane,Beam);
-  twcScanTypes      =(snGT,snAB,snPDD,snAngle,snGenericHorizontal,snFreescan,
-                      snGenericProfile,snFanLine,snPlane,snUndefined);          //order of first 3 is critical and assumed in code
+  twcFieldSizeDesc  =(fInplane,fCrossplane);                                    //order is critical and linked twScanTypes
+  twcTankAxis       =(X,Y,Z);                                                   //order is critical and linked twScanTypes
+  twcMeasAxis       =(Inplane,Crossplane,Beam);                                 //order is critical and linked twScanTypes
+  twcScanTypes      =(snGT,snAB,snPDD,snAngle,snGenericHorizontal,snFreescan,   //order of first 3 is critical and assumed in code
+                      snGenericProfile,snFanLine,snPlane,snUndefined);
   twcScalingType    =(scNormalised,scAvgNorm,scPlotScaling,scMaximum);
   twcBeamType       =(Photons,Electrons,Protons,Other);
   twcFloatType      = Double;                                                   //was Extended in Delphi7
@@ -516,6 +516,9 @@ type
   twcMultiScanList  = array of String;
   twcIgnoreParams   = (twiLinac,twiModality,twiEnergy,twiSSD,twiFieldSize,twiWedge,twiDepth,twiDiagonal,twiScanDirection,twiScanClass,twiAngle,twiMeasDivice);
   twcIgnoreSet      = set of twcIgnoreParams;
+  twcIECdefs        =(twcIEC601,twcIEC1217);
+  twcCardinalAngles =(Rot000,Rot090,Rot180,Rot270);
+  twcBanks          =(twcUpper,twcLower,twcDetector);
 
 const                                                                           //set definitions
   twcMultiFiles     : set of twcFileType =[twcRFA_ascii,twcMccProfile,twcWellhoferRfb,twcW2CAD,twcICprofilerAscii];
@@ -532,6 +535,9 @@ const                                                                           
   twcFilteredCopies = [dsMeasFiltered,dsRefFiltered];
   twcCoupledSources :array[dsMeasured..dsReference      ] of twcSourceEnum=(dsMeasFiltered,dsRefFiltered);
   twcCoupledFiltered:array[dsMeasFiltered..dsRefFiltered] of twcSourceEnum=(dsMeasured    ,dsReference  );
+  twcIECnames       :array[twcIECdefs                   ] of String       =('601','1217');
+  twcBLDnames       :array[twcIECdefs,twcCardinalAngles ] of String[2]    =(('Y1','X2','Y2','X1'),('X2','Y1','X1','Y2'));
+  twcBLDupper       :array[twcIECdefs                   ] of Char         =('X','Y');
 
 {$IFDEF WELLHOFER_DUMPDATA}
 var
@@ -2627,7 +2633,7 @@ type
     twSSD_cm          : twcFloatType;
     twSDD2SSDratio    : twcFloatType;
     twSSD2NormRatio   : twcFloatType;                                           //ratio of used SSD to standard SSD
-    twActDet2NormRatio: twcFloatType;                                           //ratio of detector to standard SSD: twSDD2SSDratio*twSSD2NormRatio/twPosScaling;
+    twActDet2NormRatio: twcFloatType;                                           //ratio of detector to standard SSD with current settings: twSDD2SSDratio*twSSD2NormRatio/twPosScaling;
     twSNR             : twcFloatType;
     twVector_ICD_cm   : array[twcLimits] of twcCoordinate;
     twStepSizeCm      : twcFloatType;
@@ -2722,6 +2728,7 @@ const
 {11/04/2022 replaced FNMPddFirst, FNMPddLast with twAnalysisRange}
 {26/04/2022 added function IsFFF}
 {24/05/2022 added procedure wDebugInfo,AddDebugInfo}
+{24/10/2022 added parameter CalculateMissing to GetFieldWidthCm and GetFieldCenterCm}
 type
   TWellhoferData=class(TRadthData)
     private
@@ -2799,7 +2806,7 @@ type
      function  PDDfitMaxErrorResult(var cm            :TaFunctionVertex        ): TaVertexDataType;  //costfunction for search of maximum
      function  GetRegisteredFileTypes                                           : String;
      procedure CheckDataOrdering(ASource              :twcDataSource=dsMeasured);
-     function  SetScanType(AScanType                   :twcScanTypes;
+     function  SetScanType(AScanType                  :twcScanTypes;
                           ASource                     :twcDataSource=dsMeasured): Boolean;           //if adjusted, result is false
      procedure SetUserLevel(ADoseFraction             :twcFloatType            );
      procedure CopyParameters(var ASource,ADestination:twCurveDataRec          );
@@ -3017,9 +3024,11 @@ type
                              IgnoreZeroValue       :Boolean       =True;
                              ASource               :twcDataSource =dsMeasured ): String;
      function  GetFieldWidthCm(ASource             :twcDataSource =dsMeasured;
-                               ALevel              :twcDoseLevel  =d50        ): twcFloatType;
+                               ALevel              :twcDoseLevel  =d50;
+                               CalculateMissing    :Boolean       =False      ): twcFloatType;
      function  GetFieldCenterCm(ASource            :twcDataSource =dsMeasured;
-                                ALevel             :twcDoseLevel  =d50        ): twcFloatType;
+                                ALevel             :twcDoseLevel  =d50;
+                                CalculateMissing   :Boolean       =False      ): twcFloatType;
      function  BordersValid(ASource                :twcDataSource =dsMeasured;
                             ALevel                 :twcDoseLevel  =d50        ): Boolean;
      function  GetLevelDistance(Level1,Level2      :twcDoseLevel;
@@ -4417,14 +4426,17 @@ end; {~parsedata}
 
 
 {16/11/2020 support for multiple complete data sets in one single file intended for one single scan}
+{03/11/2022 at least twcDefMinDataLines extra}
 function TRadthData.FindMoreData(FromCurrentLine:Boolean=False): Boolean;
+var i: Integer;
 begin
 if assigned(FParser) then
   with FParser do
     begin
+    i:= CurrentLineNumber;
     if not FromCurrentLine then
       NextLine(True);
-    while (Length(Trim(CurrentLine))=0) and (not EndOfFile) do
+    while ((Length(Trim(CurrentLine))=0) or (CurrentLineNumber-i<twcDefMinDataLines)) and (not EndOfFile) do
       NextLine(True);
     Result:= (Length(Trim(CurrentLine))>0) and (not EndOfFile);
     end
@@ -8574,7 +8586,7 @@ wFFFMinEdgeDifCm                  :=  0.05;
 wSmallFieldLimitCm                :=  2;
 wSmallFieldFilterDivider          :=  4;
 wWedge90ShiftFactor               :=  1;
-wMRlinacTUlist                    := 'comma separated';
+wMRlinacTUlist                    := 'comma separated list';
 Fmcc                              := nil;
 FMultiScanList                    := nil;
 FAliasList                        := nil;
@@ -9697,14 +9709,13 @@ end; {~setmultirefindex}
 
 
 {05/06/2015}
+{04/11/2022 set FArrayScanRefOk anayway}
 procedure TWellhoferData.SetArrayScanRefUse(AState:Boolean);
 begin
+SetArrayScanRefOk;
+AState:= AState and ArrayScanRefOk;
 if AState<>FArrayScanRefUse then
-  begin
   FArrayScanRefUse:= AState;
-  if AState then
-    SetArrayScanRefOk;
-  end;
 end; {~setarrayscanrefuse}
 
 
@@ -9977,14 +9988,15 @@ end; {~takereferenceorg}
 {18/03/2016 do not change state of FArrayScanRefOk when not FArrayScanRefUse or invalid}
 {02/08/2016 twFileIDString}
 {02/02/2018 MakeCurveName: ignorezerovalue=false}
+{04/11/2022 evaluate independent of FArrayScanRefUse state}
 procedure TWellhoferData.SetArrayScanRefOk(ASource:twcDataSource=dsMeasured);
 var i: Word;
 begin
 with wSource[ASource] do
   begin
-  if twValid and FArrayScanRefUse then
+  FArrayScanRefOk:= False;
+  if twValid then
     begin
-    FArrayScanRefOk:= False;
     if twOriginalFormat=twcGenericProfile then twCurveIDString:= 'generic'
     else                                       twCurveIDString:= MakeCurveName(False,True); {name made with wMultiScanRefOk=false}
     i:= w2D_ArrayRefList.Count;
@@ -18001,9 +18013,14 @@ end; {~resetvalues}
 
 
 {16/01/2017}
-function TWellhoferData.GetFieldWidthCm(ASource:twcDataSource=dsMeasured;
-                                        ALevel :twcDoseLevel =d50      ): twcFloatType;
+{24/10/2022 CalculateMissing}
+function TWellhoferData.GetFieldWidthCm(ASource         :twcDataSource=dsMeasured;
+                                        ALevel          :twcDoseLevel =d50;
+                                        CalculateMissing:Boolean      =False       ): twcFloatType;
+
 begin
+if not BordersValid(ASource,ALevel) and CalculateMissing and (ALevel in [dInflection,dSigmoid50]) then
+  SigmoidPenumbraFit(ASource,False,ASource);
 if BordersValid(ASource,ALevel) then with wSource[ASource].twLevelPos[ALevel] do
   Result:= Abs(Limit[twcRight].CalcPos-Limit[twcLeft].CalcPos)
 else
@@ -18012,9 +18029,13 @@ end; {~getfieldwithcm}
 
 
 {27/11/2017 twcDoseLevel=(dLow,dHigh,d20,d50,d80,d90,dUser,dTemp,dDerivative,dInflection,dSigmoid50)}
-function TWellhoferData.GetFieldCenterCm(ASource:twcDataSource=dsMeasured;
-                                         ALevel :twcDoseLevel =d50      ): twcFloatType;
+{24/10/2022 CalculateMissing}
+function TWellhoferData.GetFieldCenterCm(ASource        :twcDataSource=dsMeasured;
+                                        ALevel          :twcDoseLevel =d50;
+                                        CalculateMissing:Boolean      =False       ): twcFloatType;
 begin
+if (not BordersValid(ASource,ALevel)) and CalculateMissing and (ALevel in [dInflection,dSigmoid50]) then
+  SigmoidPenumbraFit(ASource,False,ASource);
 if BordersValid(ASource,ALevel) then with wSource[ASource].twLevelPos[ALevel] do
   Result:= (Limit[twcRight].CalcPos+Limit[twcLeft].CalcPos)/2
 else
@@ -19956,5 +19977,6 @@ initialization
 AppVersionString:= GetAppVersionString(False,2,True);                           //TOtools
 twNumCPU        := GetNumCPU;                                                   //TOtools
 end.
+
 
 

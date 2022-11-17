@@ -2,12 +2,12 @@
 	<META HTTP-EQUIV="Content-Type" CONTENT="text/html; CHARSET=windows-1252">
 	<TITLE>BistroMath</TITLE>
 	<META NAME="AUTHOR" CONTENT="Theo van Soest">
-	<META NAME="GENERATOR" CONTENT="HelpScribble 8.3.0 from http://www.helpscribble.com/">
+	<META NAME="GENERATOR" CONTENT="HelpScribble 8.3.1 from http://www.helpscribble.com/">
 	<STYLE> span { display: inline-block; }</STYLE>
 </HEAD>
 <BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#800080" ALINK="#FF0000">
 <A NAME="hs1"></A>
-<FONT FACE="Arial" COLOR="#0000FF" SIZE="5"><B>BistroMath profile analyser v4.25</B></FONT><BR>
+<FONT FACE="Arial" COLOR="#0000FF" SIZE="5"><B>BistroMath profile analyser v4.28</B></FONT><BR>
 <BR>
 <FONT FACE="Arial" COLOR="#800000" SIZE="2">
 <MAP NAME="BistroMath">
@@ -267,11 +267,10 @@
 <FONT FACE="Arial" SIZE="2"><B>Institute.ini</B></FONT><BR>
 <FONT FACE="Arial" SIZE="2">When found this file will be taken as only file for all settings. This is intended as </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs14">reliable standard configuation</A></FONT><FONT FACE="Arial" SIZE="2"> for all users in one institute.</FONT><BR>
 <BR>
-<BR>
 <FONT FACE="Arial" SIZE="2"><B>BistroMath.ini</B></FONT><BR>
 <FONT FACE="Arial" SIZE="2">When </FONT><FONT FACE="Courier New" SIZE="2">institute.ini</FONT><FONT FACE="Arial" SIZE="2"> is not found, </FONT><FONT FACE="Courier New" SIZE="2">bistromath.ini</FONT><FONT FACE="Arial" SIZE="2"> will be used. Also this file holds the full set of settings for the program. The difference is that this file has no protection and can be saved or loaded by any user.</FONT><BR>
 <BR>
-<FONT FACE="Arial" SIZE="2"><B>Presets</B></FONT><BR>
+<FONT FACE="Arial" COLOR="#800000" SIZE="2"><B><A NAME="preset"></A></B></FONT><FONT FACE="Arial" SIZE="2"><B>Presets</B></FONT><BR>
 <FONT FACE="Arial" COLOR="#800000" SIZE="2"><IMG SRC="presetsmenu.gif" BORDER="0"></FONT><BR>
 <FONT FACE="Arial" SIZE="2">Preset files contain a limited range of settings, mainly the menu options that can be checked/unchecked. There are a lot of meaningful combinations however that can be related to some "task". As tasks can change, another preset can be loaded. When a preset is loaded as command line parameter, the name is the file name without exclamation and extension (the file name </FONT><FONT FACE="Courier New" SIZE="2">compare!.ini</FONT><FONT FACE="Arial" SIZE="2"> would give "-preset compare").&nbsp;</FONT><BR>
 <BR>
@@ -939,9 +938,11 @@
 <FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp;&nbsp; 2: ApplyDynamicWidth:= True</FONT><BR>
 <FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp; (nothing) or other: value according to Field Types tab</FONT><BR>
 <FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp; ! q&nbsp;&nbsp; </FONT><FONT FACE="Consolas" COLOR="#FF0000" SIZE="2">Slope of sigmoid model (always positive in this implementation)</FONT><BR>
-<FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp;&nbsp; Y[side]:= wSource[Xsource].twSigmoidFitData[side].twNMReport.BestVertex[sigmoid_Slope]/Ynorm&nbsp;&nbsp;&nbsp;</FONT><BR>
+<FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp;&nbsp; with twSigmoidFitData[side].twSigmoidFitData[side].twNMReport do</FONT><BR>
+<FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Y[side]:= 100*abs(2*BestVertex[sigmoid_Slope]/(BestVertex[sigmoid_HighVal]+BestVertex[sigmoid_LowVal]))&nbsp;&nbsp;&nbsp;</FONT><BR>
 <FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp; ! Q&nbsp;&nbsp; </FONT><FONT FACE="Consolas" COLOR="#FF0000" SIZE="2">Sigmoid slope in the inflection point</FONT><BR>
-<FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp;&nbsp; Y[side]:= wSource[Xsource].twSigmoidFitData[side].twFitResult2/Ynorm&nbsp;&nbsp;&nbsp;</FONT><BR>
+<FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp;&nbsp; with wSource[Xsource].twSigmoidFitData[side] do&nbsp;</FONT><BR>
+<FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Y[side]:= 100*abs(twFitTrueInflSlope/twFitTrueInflVal)&nbsp;&nbsp;&nbsp;</FONT><BR>
 <FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp; P [10|20|20/10] </FONT><FONT FACE="Consolas" COLOR="#FF0000" SIZE="2">Percentage depth dose</FONT><BR>
 <FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp;&nbsp;&nbsp;&nbsp; wSource[Xsource].twPDD10,twPDD20,twPDD20/twPDD10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><BR>
 <FONT FACE="Consolas" COLOR="#008000" SIZE="2">&nbsp; ! r [nn]&nbsp; </FONT><FONT FACE="Consolas" COLOR="#FF0000" SIZE="2">Profile value at fraction nn% of border relative to center of field,&nbsp;</FONT><BR>
@@ -1275,12 +1276,24 @@
 <FONT FACE="Arial" SIZE="2">The real inflection point can be found as:</FONT><BR>
 <FONT FACE="Arial" COLOR="#800000" SIZE="2"><IMG SRC="4PL-inflection_point.gif" BORDER="0"></FONT><BR>
 <FONT FACE="Arial" SIZE="2">The inflection point correction is very small as the slope has typically a value in the order of 100.</FONT><BR>
-<FONT FACE="Arial" SIZE="2">The function does not perform well for x=0. Therfore the data are shifted if needed to guarantee that the whole range to fit does not include the origin. As the inflection point is closely related to the </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs144">peak in the first derivative of the data</A></FONT><FONT FACE="Arial" SIZE="2"> this is an excellent initial value of B. Around this point a range of typically 2 cm is chosen. The first and last data point can used to low level (A), high level (D) and slope (C) as initial values for a fitting procedure. Such a procedure needs only a few loops to converge.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">The function does not perform well for x=0. Therefore, the data are shifted if needed to guarantee that the whole range to fit does not include the origin. As the inflection point is closely related to the </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs144">peak in the first derivative of the data</A></FONT><FONT FACE="Arial" SIZE="2"> this is an excellent initial value of B. Around this point a range of typically 2 cm is chosen. The first and last data point can used to low level (A), high level (D) and slope (C) as initial values for a fitting procedure. Such a procedure needs only a few loops to converge.</FONT><BR>
 <FONT FACE="Arial" SIZE="2">The inverse function can be used to calculate the position of other levels around then inflection point:</FONT><BR>
 <FONT FACE="Arial" COLOR="#800000" SIZE="2"><IMG SRC="4PL-inverse_function.gif" BORDER="0"></FONT><BR>
 <BR>
+<BR>
 <FONT FACE="Arial" SIZE="2"><B>Finding the function parameters</B></FONT><BR>
 <FONT FACE="Arial" SIZE="2">The function parameters can easily be accurately initialised. As the inflection point is closely related to the peak in the first derivative of the data this is an excellent initial value of B. Around this point a range of typically 2 cm is chosen. The first and last data point can used to estimate the low level (A), high level (D) and slope (C). Then a </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs400">Nelder-Mead</A></FONT><FONT FACE="Arial" SIZE="2"> procedure is started with the overal difference between data and function as penalty to optimise all parameters with very few cycles.</FONT><BR>
+<BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Small differences with implementation in NCS-33</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">In the NCS-33 pre-publication the same function is used with a slightly different definition of the parameters.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><I>BistroMath NCS-33 pre-publication</I></FONT><BR>
+<FONT FACE="Arial" SIZE="2">A&nbsp; d</FONT><BR>
+<FONT FACE="Arial" SIZE="2">B&nbsp; h</FONT><BR>
+<FONT FACE="Arial" SIZE="2">C&nbsp; c</FONT><BR>
+<FONT FACE="Arial" SIZE="2">D&nbsp; a-d</FONT><BR>
+<BR>
 <BR>
 <FONT FACE="Arial" SIZE="2">See also:</FONT><BR>
 <FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs127">Settings tab</A></FONT><BR>
@@ -1630,6 +1643,38 @@
 <FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs56">Unlock/Lock critical options</A></FONT><FONT FACE="Arial" COLOR="#800000" SIZE="2">,
 </FONT>
 <BR><BR><BR>
+<A NAME="hs52"></A>
+<FONT FACE="Arial" COLOR="#0000FF" SIZE="5"><B>References: creation and application</B></FONT><BR>
+<FONT FACE="Arial" SIZE="1"><I><A HREF="#hs1"><IMG SRC="bm_micro.gif" BORDER="0"></A></I></FONT><FONT FACE="Arial" COLOR="#800000" SIZE="1"><I> general information&nbsp;</I></FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Overview</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">This topic links several parts of the documentation.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Concept of reference measurements as QA method</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">See </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs2">this detailed topic</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Save a Reference (file menu)</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">See this </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#save_reference">link to item</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Activate comparison</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">See <I>Automatic load of Reference</I> in </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#automatic_load_reference">Reference menu</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Result of comparison</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">See <I>Calculation is ...</I> sub menu in </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs135">Reference menu</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Gamma analysis</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">See <I>Calculation is ...</I> sub menu in </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs135">Reference menu</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">See </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs127">Settings tab</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">See topic on </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs136">Gamma analysis</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Using temporary references</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">See topic </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs71">Set as Temporary reference</A></FONT><FONT FACE="Arial" SIZE="2"> in the </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs70">Processing menu</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<BR>
+<BR>
+<FONT FACE="Arial" SIZE="2">See also:</FONT><BR>
+<FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs56">Unlock/Lock critical options</A></FONT><FONT FACE="Arial" COLOR="#800000" SIZE="2">,
+</FONT>
+<BR><BR><BR>
 <A NAME="hs56"></A>
 <FONT FACE="Arial" COLOR="#0000FF" SIZE="5"><B>Unlock/Lock critical options</B></FONT><BR>
 <FONT FACE="Arial" SIZE="1"><I><A HREF="#hs1"><IMG SRC="bm_micro.gif" BORDER="0"></A></I></FONT><FONT FACE="Arial" COLOR="#800000" SIZE="1"><I> file menu, options menu</I></FONT><BR>
@@ -1735,6 +1780,9 @@
 <BR>
 <FONT FACE="Arial" SIZE="2"><B>Reprocess current data</B></FONT><BR>
 <FONT FACE="Arial" SIZE="2">This will restart all processing on the raw data as read from file or editor window. The PDD-fit will be started with the current parameters for the best fit.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B>Send to Focus Position tab</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">This will send the current profile to the Focus Position tab.</FONT><BR>
 <BR>
 <FONT FACE="Arial" SIZE="2"><B>Reset Nelder-Mead fit</B></FONT><BR>
 <FONT FACE="Arial" SIZE="2">A restart as above. The PDD-fit will be started with the initial default parameters.</FONT><BR>
@@ -2992,7 +3040,7 @@
 <BR>
 <FONT FACE="Arial" SIZE="2">See also:</FONT><BR>
 <FONT FACE="Arial" COLOR="#800000" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs128">Center of Field and Normalisation of profiles</A></FONT><BR>
-<FONT FACE="Arial" COLOR="#800000" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs133">Compare with reference</A></FONT><FONT FACE="Arial" SIZE="2">,</FONT><BR>
+<FONT FACE="Arial" COLOR="#800000" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs133">Divide by reference</A></FONT><FONT FACE="Arial" SIZE="2">,</FONT><BR>
 <FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs137">Add reference to measurement</A></FONT><FONT FACE="Arial" SIZE="2">,</FONT><BR>
 <FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs132">Automatic load of reference</A></FONT><FONT FACE="Arial" SIZE="2">,</FONT><BR>
 <FONT FACE="Arial" COLOR="#800000" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs139">Profile matching</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
@@ -3009,7 +3057,7 @@
 <BR>
 <FONT FACE="Arial" SIZE="2">With gamma analysis the differences between a measurement and its reference can be condensed to one number which combines dose errors, typically in the In-Field area and position errors in the penumbra region on a normalised vector base. This vector gives the smallest distance of combined dosimetric error and position error. The unit length is defined as a reference distance in mm (<I>Distance norm</I>) and dose difference in percent (<I>Dose norm</I>). A dose difference can be calculated in two ways: as percentage of the local dose or as percentage of the normalisation value of the profile. In an area around each measurement point the smallest vector is searched. Very fine steps (<I>Search Steps/mm</I>) with interpolation between points of the reference curve are needed to find a meaningful gamma value. Since the calculation is sensitive for noise a median filter is applied afterwards. The analysis of profiles is only done for relative values above a given threshold (<I>Cutoff Percentage</I>) and beyond the buildup region of depth dose curves (<I>Cutoff Depth</I>). Also, the search is stopped when no better point is found within the region limited to the initial distance to agreement mulitiplied by the <I>Search factor</I>. The result can be shown as calculated curve or histogram. The <I>Confidence Limit</I>, defined as the sum of the mean value of the gamma curve and the standard deviation multiplied with 1.5 of the same curve. The <I>Gamma pass rate</I> is defined as the percentage of points with a gamma value less or equal to one.&nbsp;</FONT><BR>
 <FONT FACE="Arial" SIZE="2">The vertical range of the Gamma curve in the graphical display is set with the </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#histogram_range">Histogram range</A></FONT><FONT FACE="Arial" SIZE="2"> in the </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs129">Advanced settings</A></FONT><FONT FACE="Arial" SIZE="2"> tab. Note that changing any settings will make the </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs17">Histogram tab</A></FONT><FONT FACE="Arial" SIZE="2"> temporarily invisible to force recalculation in the Analysis tab.</FONT><BR>
-<FONT FACE="Arial" SIZE="2">Any </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs112">renormalisation</A></FONT><FONT FACE="Arial" SIZE="2"> will change the result markedly.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">Any </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs112">renormalisation</A></FONT><FONT FACE="Arial" SIZE="2"> will change the result markedly. Also a too low number of search steps per mm might lead to high gamma values and even change conclusions on the optimal shift.</FONT><BR>
 <BR>
 <FONT FACE="Arial" COLOR="#800000" SIZE="2"><IMG SRC="gamma_settings.gif" BORDER="0"></FONT><BR>
 <BR>
@@ -3026,8 +3074,8 @@
 <FONT FACE="Arial" SIZE="2"><I>Distance norm</I>&nbsp;</FONT><BR>
 <FONT FACE="Arial" SIZE="2">The equivalent distance to agreement in mm for gamma=1.</FONT><BR>
 <BR>
-<FONT FACE="Arial" SIZE="2"><I>Search steps per mm</I></FONT><BR>
-<FONT FACE="Arial" SIZE="2">The number of steps on each mm from the calculation point at which the reference dose is calculated. As the resolution of most data sets is low a number of at least 5 is advised. Although the result will be derived by interpolation, the outcome is much more realistic.</FONT><BR>
+<FONT FACE="Arial" SIZE="2"><I>Search steps per mm</I></FONT><FONT FACE="Arial" COLOR="#800000" SIZE="2"><I><A NAME="search_steps"></A></I></FONT><BR>
+<FONT FACE="Arial" SIZE="2">The number of steps on each mm from the calculation point at which the reference dose is calculated. <B>As the resolution of most data sets is low a number of at least 5 is advised</B>. Although the result will be derived by interpolation, the outcome is much more realistic. A too low value might lead to wrong conlusions on the optimal shift.</FONT><BR>
 <BR>
 <FONT FACE="Arial" SIZE="2"><I>Cutoff percentage</I></FONT><BR>
 <FONT FACE="Arial" SIZE="2">The lower limit for gamma analysis at which dose points are incorporated in the results.</FONT><BR>
@@ -3346,6 +3394,70 @@
 <FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs127">Settings tab</A></FONT><FONT FACE="Arial" SIZE="2">,</FONT><BR>
 <FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs120">Measurement menu</A></FONT><FONT FACE="Arial" SIZE="2">,</FONT><BR>
 <FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs140">Options menu</A></FONT><FONT FACE="Arial" SIZE="2">.
+</FONT>
+<BR><BR><BR>
+<A NAME="hs225"></A>
+<FONT FACE="Arial" COLOR="#0000FF" SIZE="5"><B>Focus Position tab</B></FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="1"><I><A HREF="#hs1"><IMG SRC="bm_micro.gif" BORDER="0"></A></I></FONT><FONT FACE="Arial" COLOR="#800000" SIZE="1"><I> focus position&nbsp; tab&nbsp;</I></FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="3"><B>Introduction</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">For most linacs the beam position is also dependent of the exact location where the electron beam impinges on the target, the focal point. When this focus position does not coïncide with the rotation axis of the collimator, the position be dependent on the collimator angle because mlc and jaws are not at the same distance from the target. This feature can also be used to determine the focus position by combining scans for all four the cardinal angles. This is described in the paper of </FONT><FONT FACE="Arial" COLOR="#0000FF" SIZE="2"><A HREF="https://aapm.onlinelibrary.wiley.com/doi/full/10.1002/acm2.12344">Chojnowski et al</A></FONT><FONT FACE="Arial" SIZE="2"> (see full title below). Their method is implemented in BistroMath.</FONT><BR>
+<BR>
+<FONT FACE="Arial" COLOR="#800000" SIZE="2"><IMG SRC="FocusPosition-Chojnowski-et_al.gif" BORDER="0"></FONT><BR>
+<BR>
+<BR>
+<FONT FACE="Arial" SIZE="3"><B>Implementation in BistroMath</B></FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2">BistroMath is designed as a tool for general use. Therefore it needs to be configured for a specific treatment head and detector device. In general a 2D-array is the instrument of choice.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">All settings can be saved in a </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#preset">preset</A></FONT><FONT FACE="Arial" SIZE="2"> (or in a configuration file).</FONT><BR>
+<FONT FACE="Arial" SIZE="2">Chojnowski uses a Electronic Portal Imaging Device (EPID). This is not essential when all correct distances are introduced in the calculation. Therefore, in a more generalised presentation with Beam Limiting Devices, <I>d_mlc</I> becomes the <B>Upper BLD level</B>, <I>d_dia</I> is the <B>Lower BLD level</B> of the treatment head and <I>d_epi</I> the <B>Detector ref. level</B>. There are some caveats to this latter definition, explained below.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">The goal is to derive the best possible value for the field centre for all eight scans, using a </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs22">sigmoid fit model on the penumbras</A></FONT><FONT FACE="Arial" SIZE="2">. When the Focus Position tab is selected, all standard operations chosen for the Analysis Tab are ignored, except the axis directions. Also no reference file will be loaded. All standard input paths (file open, file drop, and clipboard) will be directed to the Focus Position tab in this case where after analysis the sigmoid centre results are retrieved.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">BistroMath also can cope with missing collimator angle information. In this case the correct collimator angle must be preselected by the user. This might even work when also no information on the scan direction is missing. In most situations this information <I>is</I> available from the file data and <B>Apply collimator angle from file</B> should be selected.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">As last resort center values can be entered manually.&nbsp;</FONT><BR>
+<FONT FACE="Arial" SIZE="2">Before using this feature in BistroMath, carefully check that all settings are correct for the linac under investigation.</FONT><BR>
+<FONT FACE="Arial" COLOR="#800000" SIZE="2"><IMG SRC="FocusPositionTab.gif" BORDER="0"></FONT><BR>
+<BR>
+<BR>
+<FONT FACE="Arial" SIZE="3"><B>Setup</B></FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B><I>First angle</I></B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">The cardinal angles for the collimator are presented in a cycle of 0°, 90°, 180° and 270°. Just for convenience, the first angle can be selected. This has no influence on the calculation.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B><I>Convention</I></B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">The IEC601 and IEC1217 are both supported. Changing the convention sets also the default value for the upper BLD. As for both conventions the upper BLD's are in the AB-direction at collimator angle 0° this should have no effect on the actual measurements.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B><I>Upper BLD</I></B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">There should be no need to change the default value as it is linked to the IEC convention. Changing this value <I>does</I> influence the calculation as the measurements for upper and lower BLD will be swapped. In the default state the value is shown in a light gray color.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B><I>Upper BLD level and Lower BLD level</I></B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">These are the distance of BLD's measured from the target and are highly dependent of the treatment head design. For the Elekta Agility treatment head the values were taken from the Chojnowski paper.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B><I>Detector ref. level</I></B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">For 2D-arrays on the table the standard setup would be the isoc level. The Epid is much further away. In all these cases the true detector level should be given.</FONT><BR>
+<FONT FACE="Arial" SIZE="2">For 3D scanning devices like water phantoms the distance of the water surface should be specified as the depth of the detector below the surface is integrated in the data. BistroMath will correct for this depth.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B><I>Detector rotates with collimator</I></B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">When a frame is connected to the collimator to hold a detector array, this option should be checked.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="3"><B>Data Input</B></FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B><I>Apply collimator angle from file</I></B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">Mostly the collimator angle is stored with the measurement. This is the most convenient method to link the data to the correct input field. When unchecked the correct angle must be preselected manually.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><B><I>Collimator angle file name prevails / File name angle pattern</I></B></FONT><BR>
+<FONT FACE="Arial" SIZE="2">When the collimator information is unreliable but the file name does contain this value, then it will be retrieved from the file name. Therefore BistroMath needs a part of the file to distinguish between 0, 90, 180 and 270. The number area is noted with "%d". This must be in the pattern text somewhere. When the file names contain 000, 090, 180 and 270 then "%3d" should be used.</FONT><BR>
+<BR>
+<BR>
+<FONT FACE="Arial" SIZE="2">literature:</FONT><BR>
+<FONT FACE="Arial" COLOR="#0000FF" SIZE="2"><A HREF="https://aapm.onlinelibrary.wiley.com/doi/full/10.1002/acm2.12344">J.M. Chojnowski, L.M. Taylor, J.R. Sykes, D.I. Thwaites: Beam focal spot position determination for an Elekta linac with the Agility® head; practical guide with a ready-to-go procedure; Journal of Applied Clinical Medical Physics 19(7), 2018</A></FONT><BR>
+<FONT FACE="Arial" SIZE="2">DOI: 10.1002/acm2.12344</FONT><BR>
+<BR>
+<BR>
+<FONT FACE="Arial" SIZE="2">See also:</FONT><BR>
+<FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs4">Configuration</A></FONT><BR>
+<FONT FACE="Arial" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs22">Sigmoid analysis of penumbra</A></FONT><BR>
+<FONT FACE="Arial" COLOR="#800000" SIZE="2">&nbsp;</FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs129">Advanced Settings</A></FONT><FONT FACE="Arial" COLOR="#800000" SIZE="2">
 </FONT>
 <BR><BR><BR>
 <A NAME="hs230"></A>
@@ -6026,7 +6138,7 @@
 <FONT FACE="Arial" SIZE="2">In all cases the user should check that all settings are as expected.</FONT><BR>
 <BR>
 <FONT FACE="Arial" SIZE="2"><I>Manually rewriting all configuration files</I></FONT><BR>
-<FONT FACE="Arial" SIZE="2">When all configuration files are openend, checked for their result on all settings and rewritten, these files will be free from redundant data. Rewriting the institute defaults file </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs14">must be unlocked</A></FONT><FONT FACE="Arial" SIZE="2">.
+<FONT FACE="Arial" SIZE="2">When all configuration files are openend, checked for their result on all settings and rewritten, these files will be free from redundant data. Before rewriting the institute defaults file it </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs14">must be unlocked</A></FONT><FONT FACE="Arial" SIZE="2">.
 </FONT>
 <BR><BR><BR>
 <A NAME="hs990"></A>
@@ -7489,7 +7601,35 @@
 <FONT FACE="Arial" COLOR="#0000FF" SIZE="5"><B>Recent history</B></FONT><BR>
 <FONT FACE="Arial" SIZE="1"><I><A HREF="#hs1"><IMG SRC="bm_micro.gif" BORDER="0"></A></I></FONT><FONT FACE="Arial" COLOR="#800000" SIZE="1"><I>history</I></FONT><BR>
 <BR>
-<FONT FACE="Arial" SIZE="2"><B>These releases are published as independent developer to keep BistroMath alive as open-source software for the radiotherapy community. Feedback is appreciated.</B></FONT><BR>
+<FONT FACE="Arial" SIZE="2"><B>These releases are published as independent developer to keep BistroMath alive as open-source software for the radiotherapy community. Feedback is highly appreciated.</B></FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><I>version 4.29</I></FONT><BR>
+<FONT FACE="Arial" SIZE="2"><I>build 780, 16/11/2022</I></FONT>
+<LI><FONT FACE="Arial" SIZE="2">Compiled with Lazarus 2.2.4, no changes needed from version 2.2.2.</FONT>
+<LI><FONT FACE="Arial" COLOR="#FF0000" SIZE="2">Minor bug fix</FONT><FONT FACE="Arial" SIZE="2">: changing one of the "Swap GT/AB/LR/UD indicators" in the Advanced settings tab would hang the program if any data were loaded in the Analysis tab.</FONT>
+<LI><FONT FACE="Arial" SIZE="2">Added <I>Calculate PDD fit</I> item to Measurment menu, which is linked to PDD checkbox in Settings tab.</FONT>
+<LI><FONT FACE="Arial" SIZE="2">Introduction of </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs225">Focus Position tab</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT>
+<LI><FONT FACE="Arial" SIZE="2">New ini repair file. Please read these </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs988">explanations</A></FONT><FONT FACE="Arial" SIZE="2">.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><I>version 4.28</I></FONT><BR>
+<FONT FACE="Arial" SIZE="2"><I>build 779, 11/07/2022</I></FONT>
+<LI><FONT FACE="Arial" SIZE="2">After discussions in the NCS-33 subcommittee the displayed value of the sigmoid slope in the </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs18">results panel</A></FONT><FONT FACE="Arial" SIZE="2"> is normalised to the local value.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><I>version 4.27</I></FONT><BR>
+<FONT FACE="Arial" SIZE="2"><I>build 778, 20/06/2022</I></FONT>
+<LI><FONT FACE="Arial" COLOR="#FF0000" SIZE="2">Minor bug fix</FONT><FONT FACE="Arial" SIZE="2">: Due to the limitations of the </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs1090">64 bits floating point arithmatic</A></FONT><FONT FACE="Arial" SIZE="2"> a small series of identical samples might give a non-zero, negative variance in the statistics module. This could be triggered in Gamma analysis.</FONT><BR>
+<BR>
+<FONT FACE="Arial" SIZE="2"><I>version 4.26</I></FONT><BR>
+<FONT FACE="Arial" SIZE="2"><I>build 776, 20/05/2022</I></FONT>
+<LI><FONT FACE="Arial" SIZE="2">Rebuild with Lazarus v2.2.2 / FPC v3.2.2. No changes to code needed.</FONT>
+<LI><FONT FACE="Arial" SIZE="2">The full path of the applied configuration file is given in the messages.</FONT>
+<LI><FONT FACE="Arial" SIZE="2">The FFF-support text clarified in the Advanced Settings: <I>FFF property in file contents and name</I>.</FONT><BR>
+<FONT FACE="Arial" SIZE="2"><I>build 774</I></FONT>
+<LI><FONT FACE="Arial" SIZE="2">In </FONT><FONT FACE="Arial" SIZE="2"><A HREF="#hs97">Conversion Tab</A></FONT><FONT FACE="Arial" SIZE="2"> added support for FFF in file name.</FONT>
+<LI><FONT FACE="Arial" COLOR="#FF0000" SIZE="2">Bug fix</FONT><FONT FACE="Arial" SIZE="2">: For very small fields with the maximum outside the center and extremely small step size, the integration needed for the area ration failed, leading to a division by zero error. Reported by a user.</FONT><BR>
+<FONT FACE="Arial" SIZE="2"><I>build 773, 21/04/2022</I></FONT>
+<LI><FONT FACE="Arial" SIZE="2">Minor bug fix: for generic profiles the first data point was accidently discarded.</FONT>
+<LI><FONT FACE="Arial" COLOR="#FF0000" SIZE="2">Bug fix</FONT><FONT FACE="Arial" SIZE="2">: For very small fields with the maximum outside the center and extremely small step size, the integration needed for the area ration failed, leading to a division by zero error. Reported by a user.</FONT><BR>
 <BR>
 <FONT FACE="Arial" SIZE="2"><I>version 4.25</I></FONT><BR>
 <FONT FACE="Arial" SIZE="2"><I>build 772, 15/04/2022</I></FONT>
