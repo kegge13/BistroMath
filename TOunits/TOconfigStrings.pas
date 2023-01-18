@@ -1,5 +1,5 @@
 {$WARN SYMBOL_PLATFORM	OFF}
-unit TOconfigStrings;   {Lazarus 2.0.8/FPC 3.0.4: 02/07/2020}
+unit TOconfigStrings;   {© Theo van Soest, 29/09/2016-28/11/2022 - Lazarus 2.0.8/FPC 3.0.4: 02/07/2020}
 (*
 =================================================================================
  This library is original work of Theo van Soest.
@@ -8,10 +8,10 @@ unit TOconfigStrings;   {Lazarus 2.0.8/FPC 3.0.4: 02/07/2020}
 =================================================================================
 *)
 
-interface               {06/06/2020}
+interface               {28/11/2022}
 
 uses IniFiles, Classes, Controls, StdCtrls, ComCtrls, ExtCtrls, Forms, Buttons, Graphics, SpinEx,
-     ActnList, EditBtn, Menus;
+     ActnList, EditBtn, Menus, Dialogs;
 
 type
   TConfigStrings = class(TMemIniFile)
@@ -48,6 +48,8 @@ type
     procedure   ShortRead (const ASection       :String;
                            const AEdit          :TEdit            );           overload;
     procedure   ShortRead (const ASection       :String;
+                           const ALabeledEdit   :TLabeledEdit     );           overload;
+    procedure   ShortRead (const ASection       :String;
                            const AButtonEdit    :TCustomEditButton);           overload;
     procedure   ShortRead (const ASection       :String;
                            const ACustomEdit    :TCustomEdit      );           overload;
@@ -75,10 +77,16 @@ type
                            const AAction        :TAction          );           overload;
     procedure   ShortRead (const ASection       :String;
                            const AMenuItem      :TMenuItem        );           overload;
+    procedure   ShortRead (const ASection       :String;
+                           const APanel         :TPanel           );           overload;
+    procedure   ShortRead (const ASection       :String;
+                           const AColorButton   :TColorButton     );           overload;
     procedure   ShortWrite(const ASection       :String;
                            const AEdit          :TDirectoryEdit   );           overload;
     procedure   ShortWrite(const ASection       :String;
                            const AEdit          :TEdit            );           overload;
+    procedure   ShortWrite(const ASection       :String;
+                           const ALabeledEdit   :TLabeledEdit     );           overload;
     procedure   ShortWrite(const ASection       :String;
                            const AButtonEdit    :TCustomEditButton);           overload;
     procedure   ShortWrite(const ASection       :String;
@@ -108,6 +116,10 @@ type
     procedure   ShortWrite(const ASection       :String;
                            const AMenuItem      :TMenuItem;
                            const WriteShortCut  :Boolean=False    );           overload;
+    procedure   ShortWrite(const ASection       :String;
+                           const APanel         :TPanel           );           overload;
+    procedure   ShortWrite(const ASection       :String;
+                           const AColorButton   :TColorButton     );           overload;
     procedure   WriteHex  (const ASection,Ident :string;
                            const Value          :LongInt;
                            const Digits         :Byte             );           virtual;
@@ -264,6 +276,13 @@ with AEdit do Text:= ReadString(ASection,Name,Text);
 end; {~shortread}
 
 
+procedure TConfigStrings.ShortRead(const ASection    :String;
+                                   const ALabeledEdit:TLabeledEdit);
+begin
+with ALabeledEdit do Text:= ReadString(ASection,Name,Text);
+end; {~shortread}
+
+
 procedure TConfigStrings.ShortRead(const ASection   :String;
                                    const AButtonEdit:TCustomEditButton);
 begin
@@ -379,8 +398,22 @@ with AMenuItem do
 end; {~shortread}
 
 
-procedure TConfigStrings.ReadShortCuts(const ASection    :String;
-                                       const AMenuItem   :TMenuItem        );
+procedure TConfigStrings.ShortRead(const ASection:String;
+                                   const APanel  :TPanel);
+begin
+with APanel do Color:= ReadInteger(ASection,Name,Color)
+end; {~shortread}
+
+
+procedure TConfigStrings.ShortRead(const ASection    :String;
+                                   const AColorButton:TColorButton);
+begin
+with AColorButton do ButtonColor:= ReadInteger(ASection,Name,ButtonColor)
+end; {~shortread}
+
+
+procedure TConfigStrings.ReadShortCuts(const ASection :String;
+                                       const AMenuItem:TMenuItem);
 var i: Integer;
 begin
 if AMenuItem.Count>0 then
@@ -391,8 +424,8 @@ with AMenuItem do
 end; {~readshortcuts}
 
 
-procedure TConfigStrings.ReadShortCuts(const ASection    :String;
-                                       const AMenu       :TMainMenu        );
+procedure TConfigStrings.ReadShortCuts(const ASection:String;
+                                       const AMenu   :TMainMenu);
 var i: Integer;
 begin
 if AMenu.Items.Count>0 then
@@ -413,6 +446,13 @@ procedure TConfigStrings.ShortWrite(const ASection:String;
                                     const AEdit   :TEdit);
 begin
 with AEdit do WriteString(ASection,Name,Text);
+end; {~shortwrite}
+
+
+procedure TConfigStrings.ShortWrite(const ASection    :String;
+                                    const ALabeledEdit:TLabeledEdit);
+begin
+with ALabeledEdit do WriteString(ASection,Name,Text);
 end; {~shortwrite}
 
 
@@ -526,6 +566,20 @@ with AMenuItem do
   else
     DeleteKey(ASection,Name+ShortCutKey);
   end;
+end; {~shortwrite}
+
+
+procedure TConfigStrings.ShortWrite(const ASection:String;
+                                    const APanel  :TPanel);
+begin
+with APanel do WriteHex(ASection,Name,Color,8);
+end; {~shortwrite}
+
+
+procedure TConfigStrings.ShortWrite(const ASection    :String;
+                                    const AColorButton:TColorButton);
+begin
+with AColorButton do WriteHex(ASection,Name,ButtonColor,8);
 end; {~shortwrite}
 
 
