@@ -1,5 +1,5 @@
 {$WARN SYMBOL_PLATFORM	OFF}
-unit TOconfigStrings;   {© Theo van Soest, 29/09/2016-28/11/2022 - Lazarus 2.0.8/FPC 3.0.4: 02/07/2020}
+unit TOconfigStrings;   {© Theo van Soest, 29/09/2016-18/01/2023 - Lazarus 2.0.8/FPC 3.0.4: 02/07/2020}
 (*
 =================================================================================
  This library is original work of Theo van Soest.
@@ -20,67 +20,67 @@ type
   public
     constructor Create      (AFileName          :String);                 reintroduce;  overload;
     constructor Create;                                                   reintroduce;  overload;
+    function    ReadWinBounds(const ASection    :string;                                  //--stored value--
+                              var L,T,W,H       :Integer          ): Boolean;  overload;  //integers TopKey,LeftKey,WidthKey,HeightKey, see definitions below
+    function    ReadWinBounds(const ASection    :string;
+                              var ARect         :TRect            ): Boolean;  overload;  //integers TopKey,LeftKey,WidthKey,HeightKey, see definitions below
     function    ReadControl(const AControl      :TControl;
                             ASection            :string ='';
-                            DefaultVisible      :Boolean=True     ): Boolean;  virtual;
-    function    ReadWinBounds(const ASection    :string;
-                              var L,T,W,H       :Integer          ): Boolean;  overload;
-    function    ReadWinBounds(const ASection    :string;
-                              var ARect         :TRect            ): Boolean;  overload;
+                            DefaultVisible      :Boolean=True     ): Boolean;  virtual;   //TControl.BoundsRect and TControl.Visible
     procedure   ReadShortCuts(const ASection    :String;
-                              const AMenuItem   :TMenuItem        );           overload;
+                              const AMenuItem   :TMenuItem        );           overload;  //TMenuItem.ShortCut and TMenuItem.Items[..].ShortCut
     procedure   ReadShortCuts(const ASection    :String;
-                              const AMenu       :TMainMenu        );           overload;
-    procedure   WriteControl(const AControl     :TControl;
-                             ASection           :string=''        );           virtual;
+                              const AMenu       :TMainMenu        );           overload;  //TMenu.ShortCut and TMenu.Items[..].ShortCut
+    procedure   ShortRead (const ASection       :String;
+                           const AEdit          :TDirectoryEdit   );           overload;  //TDirectoryEdit.RootDir
+    procedure   ShortRead (const ASection       :String;
+                           const AEdit          :TEdit            );           overload;  //TEdit.Text
+    procedure   ShortRead (const ASection       :String;
+                           const ALabeledEdit   :TLabeledEdit     );           overload;  //TLabeledEdit.Text
+    procedure   ShortRead (const ASection       :String;
+                           const AButtonEdit    :TCustomEditButton);           overload;  //TCustomEditButton.Text
+    procedure   ShortRead (const ASection       :String;
+                           const ACustomEdit    :TCustomEdit      );           overload;  //TCustomEdit.Text
+    procedure   ShortRead (const ASection       :String;
+                           const ACustomEdit    :TSpinEditEx      );           overload;  //TSpinEditEx.Value
+    procedure   ShortRead (const ASection       :String;
+                           const ACustomEdit    :TFloatSpinEditEx );           overload;  //TFloatSpinEditEx.Value
+    procedure   ShortRead (const ASection       :String;
+                           const ATabSheet      :TTabSheet        );           overload;  //TTabSheet.Enabled
+    procedure   ShortRead (const ASection       :String;
+                           const AUpDown        :TUpDown          );           overload;  //TUpDown.Position
+    procedure   ShortRead (const ASection       :String;
+                           const ASpeedButton   :TSpeedButton     );           overload;  //TSpeedButton.Down
+    procedure   ShortRead (const ASection       :String;
+                           const ACheckBox      :TCheckBox        );           overload;  //TCheckBox.Checked
+    procedure   ShortRead (const ASection       :String;
+                           const ARadioGroup    :TRadioGroup      );           overload;  //TRadioGroup.ItemIndex
+    procedure   ShortRead (const ASection       :String;
+                           const ARadioButton   :TRadioButton     );           overload;  //TRadioButton.Checked
+    procedure   ShortRead (const ASection       :String;
+                           const AListBox       :TListBox         );           overload;  //TListBox.ItemIndex
+    procedure   ShortRead (const ASection       :String;
+                           const AComboBox      :TComboBox        );           overload;  //TComboBox.ItemIndex, stored as text of item
+    procedure   ShortRead (const ASection       :String;
+                           const AAction        :TAction          );           overload;  //TAction.Checked
+    procedure   ShortRead (const ASection       :String;
+                           const AMenuItem      :TMenuItem        );           overload;  //TMenuItem.Checked | optionally also TMenuItem.ShortCut
+    procedure   ShortRead (const ASection       :String;
+                           const APanel         :TPanel           );           overload;  //TPanel.Color, stored as integer
+    procedure   ShortRead (const ASection       :String;
+                           const AColorButton   :TColorButton     );           overload;  //TColorButton.ButtonColor, stored as integer
     procedure   WriteWinBounds(const ASection   :string;
                                const L,T,W,H    :Integer          );           overload;
     procedure   WriteWinBounds(const ASection   :string;
                                const ARect      :TRect            );           overload;
+    procedure   WriteControl(const AControl     :TControl;
+                             ASection           :string=''        );           virtual;
     procedure   WriteSectionValues(const Section:string;
                                    List         :TStrings         );           virtual;
     procedure   WriteShortCuts(const ASection   :String;
                                const AMenu      :TMainMenu        );           overload;
     procedure   WriteShortCuts(const ASection   :String;
                                const AMenuItem  :TMenuItem        );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AEdit          :TDirectoryEdit   );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AEdit          :TEdit            );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ALabeledEdit   :TLabeledEdit     );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AButtonEdit    :TCustomEditButton);           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ACustomEdit    :TCustomEdit      );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ACustomEdit    :TSpinEditEx      );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ACustomEdit    :TFloatSpinEditEx );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ATabSheet      :TTabSheet        );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ASpeedButton   :TSpeedButton     );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AUpDown        :TUpDown          );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ACheckBox      :TCheckBox        );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ARadioGroup    :TRadioGroup      );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const ARadioButton   :TRadioButton     );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AListBox       :TListBox         );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AComboBox      :TComboBox        );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AAction        :TAction          );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AMenuItem      :TMenuItem        );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const APanel         :TPanel           );           overload;
-    procedure   ShortRead (const ASection       :String;
-                           const AColorButton   :TColorButton     );           overload;
     procedure   ShortWrite(const ASection       :String;
                            const AEdit          :TDirectoryEdit   );           overload;
     procedure   ShortWrite(const ASection       :String;
@@ -143,6 +143,11 @@ const
   WidthKey   = 'winW';
   ShortCutKey= '_shortcut';
 
+(*
+MakeWinBounds
+  input : TRect array
+  output: individual values Left,Top,Width,Height
+*)
 procedure MakeWinBounds (const ARect                :TRect;
                          var   Left,Top,Width,Height:Integer);
 begin
@@ -153,6 +158,11 @@ Height:= (ARect.Bottom-Top );
 end; {~makewinbounds}
 
 
+(*
+MakeRect
+input : individual values Left,Top,Width,Height
+  output: TRect array
+*)
 function MakeRect(const Left,Top,Width,Height:Integer): TRect;
 begin
 Result.Left  := Left;
@@ -178,25 +188,6 @@ constructor TConfigStrings.Create;
 begin
 inherited Create('');
 end; {~create}
-
-
-function TConfigStrings.ReadControl(const AControl:TControl;
-                                    ASection      :string ='';
-                                    DefaultVisible:Boolean=True): Boolean;
-var ARect: TRect;
-begin
-with AControl do
-  begin
-  if Length(ASection)=0 then ASection:= Name;
-  ARect := BoundsRect;
-  Result:= SectionExists(ASection) and ReadWinBounds(ASection,ARect);
-  if Result then
-    begin
-    BoundsRect:= ARect;
-    ReadBool(ASection,'visible',DefaultVisible);
-    end;
-  end;
-end; {~readcontrol}
 
 
 function TConfigStrings.ReadWinBounds(const ASection:string;
@@ -225,41 +216,50 @@ ARect := MakeRect(l,t,w,h);
 end; {~readwinbounds}
 {$pop}
 
-procedure TConfigStrings.WriteControl(const AControl:TControl;
-                                      ASection      :string='');
+function TConfigStrings.ReadControl(const AControl:TControl;
+                                    ASection      :string ='';
+                                    DefaultVisible:Boolean=True): Boolean;
+var ARect: TRect;
 begin
 with AControl do
   begin
   if Length(ASection)=0 then ASection:= Name;
-  WriteWinBounds(ASection,Left,Top,Width,Height);
-  WriteBool     (ASection,'visible',Visible);
+  ARect := BoundsRect;
+  Result:= SectionExists(ASection) and ReadWinBounds(ASection,ARect);
+  if Result then
+    begin
+    BoundsRect:= ARect;
+    ReadBool(ASection,'visible',DefaultVisible);
+    end;
   end;
-end; {~writecontrol}
+end; {~readcontrol}
 
 
-procedure TConfigStrings.WriteWinBounds(const ASection:string;
-                                        const L,T,W,H :Integer);
+procedure TConfigStrings.ReadShortCuts(const ASection :String;
+                                       const AMenuItem:TMenuItem);
+var i: Integer;
 begin
-WriteInteger(ASection,LeftKey  ,L);
-WriteInteger(ASection,TopKey   ,T);
-WriteInteger(ASection,WidthKey ,W);
-WriteInteger(ASection,HeightKey,H);
-end; {~writewinbounds}
+if AMenuItem.Count>0 then
+  for i:= 0 to AMenuItem.Count-1 do
+    ReadShortCuts(ASection,AMenuItem.Items[i]);
+with AMenuItem do
+  ShortCut:= ReadInteger(ASection,Name+ShortCutKey,ShortCut);
+end; {~readshortcuts}
 
 
-{$push}{$warn 5057 off:Local variable does not seem to be initialized}
-procedure TConfigStrings.WriteWinBounds(const ASection:string;
-                                        const ARect   :TRect);
-var l,t,w,h: Integer;
+procedure TConfigStrings.ReadShortCuts(const ASection:String;
+                                       const AMenu   :TMainMenu);
+var i: Integer;
 begin
-MakeWinBounds(ARect,l,t,w,h);
-WriteWinBounds(ASection,l,t,w,h);
-end; {~writewinbounds}
-{$pop}
+if AMenu.Items.Count>0 then
+  for i:= 0 to AMenu.Items.Count-1 do
+    with AMenu.Items[i] do
+      ReadShortCuts(ASection,AMenu.Items[i]);
+end; {~readshortcuts}
 
 
-procedure  TConfigStrings.ShortRead (const ASection:String;
-                                     const AEdit   :TDirectoryEdit);
+procedure TConfigStrings.ShortRead (const ASection:String;
+                                    const AEdit   :TDirectoryEdit);
 begin
 with AEdit do
   begin
@@ -412,27 +412,61 @@ with AColorButton do ButtonColor:= ReadInteger(ASection,Name,ButtonColor)
 end; {~shortread}
 
 
-procedure TConfigStrings.ReadShortCuts(const ASection :String;
-                                       const AMenuItem:TMenuItem);
+procedure TConfigStrings.WriteWinBounds(const ASection:string;
+                                        const L,T,W,H :Integer);
+begin
+WriteInteger(ASection,LeftKey  ,L);
+WriteInteger(ASection,TopKey   ,T);
+WriteInteger(ASection,WidthKey ,W);
+WriteInteger(ASection,HeightKey,H);
+end; {~writewinbounds}
+
+
+{$push}{$warn 5057 off:Local variable does not seem to be initialized}
+procedure TConfigStrings.WriteWinBounds(const ASection:string;
+                                        const ARect   :TRect);
+var l,t,w,h: Integer;
+begin
+MakeWinBounds(ARect,l,t,w,h);
+WriteWinBounds(ASection,l,t,w,h);
+end; {~writewinbounds}
+{$pop}
+
+
+procedure TConfigStrings.WriteControl(const AControl:TControl;
+                                      ASection      :string='');
+begin
+with AControl do
+  begin
+  if Length(ASection)=0 then ASection:= Name;
+  WriteWinBounds(ASection,Left,Top,Width,Height);
+  WriteBool     (ASection,'visible',Visible);
+  end;
+end; {~writecontrol}
+
+
+procedure TConfigStrings.WriteShortCuts(const ASection    :String;
+                                        const AMenuItem   :TMenuItem);
 var i: Integer;
 begin
 if AMenuItem.Count>0 then
   for i:= 0 to AMenuItem.Count-1 do
     ReadShortCuts(ASection,AMenuItem.Items[i]);
 with AMenuItem do
-  ShortCut:= ReadInteger(ASection,Name+ShortCutKey,ShortCut);
-end; {~readshortcuts}
+  if ShortCut>0 then
+    WriteHex(ASection,Name+ShortCutKey,ShortCut,4);
+end; {~writeshortcuts}
 
 
-procedure TConfigStrings.ReadShortCuts(const ASection:String;
-                                       const AMenu   :TMainMenu);
+procedure TConfigStrings.WriteShortCuts(const ASection    :String;
+                                        const AMenu       :TMainMenu);
 var i: Integer;
 begin
 if AMenu.Items.Count>0 then
   for i:= 0 to AMenu.Items.Count-1 do
     with AMenu.Items[i] do
-      ReadShortCuts(ASection,AMenu.Items[i]);
-end; {~readshortcuts}
+      WriteShortCuts(ASection,AMenu.Items[i]);
+end; {~writeshortcuts}
 
 
 procedure  TConfigStrings.ShortWrite(const ASection:String;
@@ -597,30 +631,6 @@ procedure TConfigStrings.WriteHex(const ASection,Ident:string;
 begin
 WriteString(ASection,Ident,'0x'+LowerCase(IntToHex(Value,Digits)));
 end; {~writehex}
-
-
-procedure TConfigStrings.WriteShortCuts(const ASection    :String;
-                                        const AMenuItem   :TMenuItem);
-var i: Integer;
-begin
-if AMenuItem.Count>0 then
-  for i:= 0 to AMenuItem.Count-1 do
-    ReadShortCuts(ASection,AMenuItem.Items[i]);
-with AMenuItem do
-  if ShortCut>0 then
-    WriteHex(ASection,Name+ShortCutKey,ShortCut,4);
-end; {~writeshortcuts}
-
-
-procedure TConfigStrings.WriteShortCuts(const ASection    :String;
-                                        const AMenu       :TMainMenu);
-var i: Integer;
-begin
-if AMenu.Items.Count>0 then
-  for i:= 0 to AMenu.Items.Count-1 do
-    with AMenu.Items[i] do
-      WriteShortCuts(ASection,AMenu.Items[i]);
-end; {~writeshortcuts}
 
 
 //--procedures-----------------------------------------------------------

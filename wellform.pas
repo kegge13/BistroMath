@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-10/12/2022 | Lazarus 2.2.4/FPC 3.2.2: 02/10/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-18/01/2023 | Lazarus 2.2.4/FPC 3.2.2: 02/10/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -1530,8 +1530,11 @@ Result:= CallWindowProc(PrevWndProc,Ahwnd,uMsg,WParam,LParam);
 end; {wndcallback}
 {$ENDIF}
 
-
-//initialisations
+(*
+FormCreate
+initialisations
+a signifcant part of the user interface is built at runtime to accommodate for much more efficient coding
+*)
 {21/07/2015 helpfile defined}
 {22/07/2015 set default to mayneordssd2numedit when zero after loadconfig}
 {28/07/2015 autosize of plotdates set to false}

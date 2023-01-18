@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-19/11/2022 | FPC 3.2.2: 20/05/2022}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-18/01/2023 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -3405,6 +3405,11 @@ type
 {$ENDIF}
 
 
+(*
+Fill_FieldDescrArr: fill fieldsize array with square field
+  input : side value in arbitrary units
+  output: side value set for both sides in twcFieldDescrArr
+*)
 function Fill_FieldDescrArr(AValue:twcFloatType): twcFieldDescrArr;
 var i: twcFieldSizeDesc;
 begin
@@ -3413,6 +3418,11 @@ for i:= fInplane to fCrossplane do
 end;
 
 
+(*
+CheckBlackList: test filename for not allowed extensions, defined in twcExtBlackList
+  input : AFileName
+  output: True if not blacklisted
+*)
 function CheckBlackList(const AFilename:String): Boolean;
 var i: Integer;
 begin
@@ -3422,6 +3432,11 @@ else        Result:= True;
 end; {checkblacklist}
 
 
+(*
+GetRelatedPositionType: convert twcDoseLevel to related twcPositionUseType
+  input : twcDoseLevel
+  output: twcPositionUseType
+*)
 function GetRelatedPositionType(ADoseLevel:twcDoseLevel): twcPositionUseType;
 begin
 case ADoseLevel of
