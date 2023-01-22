@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-18/01/2023 | Lazarus 2.2.4/FPC 3.2.2: 02/10/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-22/01/2023 | Lazarus 2.2.4/FPC 3.2.2: 02/10/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -389,6 +389,8 @@ type
     added FocusPositionZeroRotButton,FocusPositionZeroFPButton,FocusPositionZeroClick
   09/12/2022
     added FP_BankFactor
+  21/01/2023
+    added StructuredDataSetsLabel,StructuredDataSetsList,FocusPositionStructuredData
   }
 
   {=========== TAnalyseForm =====================}
@@ -590,6 +592,7 @@ type
     FocusPositionDetectorInIsoc : TRadioButton;
     FocusPositionInputGroupBox  : TGroupBox;
     FocusPositionUseCollimInfo  : TCheckBox;
+    FocusPositionStructuredData : TStaticText;
     FocusPositionCollimFromName : TCheckBox;
     FocusPositionNamePatternEdit: TLabeledEdit;
     FocusPositionResetButton    : TButton;
@@ -747,6 +750,8 @@ type
     OriginMinLevel_perc         : TFloatSpinEditEx;                             //>twcOriginMinNormFraction
     PipsPixelSizeLabel          : TLabel;
     PipsPixelSize_mm            : TFloatSpinEditEx;                             //>wPipsPixelCm
+    StructuredDataSetsLabel     : TLabel;
+    StructuredDataSetsList      : TEdit;                                        //>w2D_ArrayRefList
     //--axis title groupbox
     AxisViewGroupBox            : TGroupBox;
     AxisViewFileTypeCheckBox    : TCheckBox;
@@ -3877,6 +3882,7 @@ end; {~configsave}
 
 {13/01/2017 setconfigname}
 {20/11/2022 preload data from existing file for preset}
+{21/01/2023 savetofile might fail}
 procedure TAnalyseForm.ConfigSave(Sender     : TObject;
                                   AFileName  : String;
                                   PresetsOnly: Boolean=False);
@@ -3896,7 +3902,11 @@ if PresetsOnly then
     S.LoadFromFile(AFileName);                                                  //preload any data into stream for preset
   end;
 ConfigSave(S,AFileName);                                                        //save to stream s
-S.SaveToFile(AFileName);
+try
+  S.SaveToFile(AFileName);
+ except
+  AFileName:= AFileName+' failed';
+end;
 SetMessageBar(Format(WritingMessage,[AFileName]));
 try
   S.Free
@@ -4212,6 +4222,7 @@ end; {~configsave}
 {07/03/2021 DefaultMRlinacSSD_cm}
 {30/03/2021 MeasResampleItem.Checked:= wResampleData}
 {01/06/2021 FFFMinFieldSize_cm}
+{21/01/2023 StructuredDataSetsList -> w2D_ArrayRefList}
 procedure TAnalyseForm.GetWellhoferValues;
 var q: twcEdgeClass;
     f: twcFieldClass;
@@ -4275,6 +4286,8 @@ with Engines[UsedEngine] do
     MeasScale2defaultSSDitem  .Checked:= wScale2DefaultSSD;
     MeasMissingPenumbraItem   .Checked:= AcceptMissingPenumbra;
     MeasZeroStepsItem         .Checked:= AcceptZeroSteps;
+    if Length(w2D_ArrayRefList.CommaText)>0 then
+      StructuredDataSetsList  .Text   := w2D_ArrayRefList.CommaText;
     end;
 if not Engines[UsedEngine].FReeze then
   for q:= fcPrimary to fcFallBack do
@@ -4643,7 +4656,9 @@ end; {~measmenuclick}
 {17/12/2015 DataPlot.xxAxis.Font.Color change removed}
 {05/05/2020 dataplot colors synchronised}
 {28/11/2022 changed to TColorButton}
+{21/01/2023 StructuredDataSetsList -> w2D_ArrayRefList}
 procedure TAnalyseForm.AdvancedSettingsTabExit(Sender:TObject);
+var i: Integer;
 begin
 DataPlot.BottomAxis.Minors[0]       .TickColor:= GridColorPanel.ButtonColor;
 DataPlot.BottomAxis.Grid            .Color    := GridColorPanel.ButtonColor;
@@ -4652,14 +4667,24 @@ DataPlot.LeftAxis  .Grid            .Color    := GridColorPanel.ButtonColor;
 DataPlot                            .BackColor:= PlotColorPanel.ButtonColor;
 DataPlot                            .Color    := PlotColorPanel.ButtonColor;
 DataPlot.BottomAxis.Title.LabelBrush.Color    := PlotColorPanel.ButtonColor;
-AdvancedSettingsPanel               .Color    := UIColorPanel.ButtonColor;
-ResultsPanel                        .Color    := UIColorPanel.ButtonColor;
-PDDFitResultsPanel                  .Color    := UIColorPanel.ButtonColor;
-FileConversionPanel                 .Color    := UIColorPanel.ButtonColor;
-SettingsPanel                       .Color    := UIColorPanel.ButtonColor;
-Statusbar                           .Color    := UIColorPanel.ButtonColor;
+AdvancedSettingsPanel               .Color    := UIColorPanel  .ButtonColor;
+ResultsPanel                        .Color    := UIColorPanel  .ButtonColor;
+PDDFitResultsPanel                  .Color    := UIColorPanel  .ButtonColor;
+FileConversionPanel                 .Color    := UIColorPanel  .ButtonColor;
+SettingsPanel                       .Color    := UIColorPanel  .ButtonColor;
+Statusbar                           .Color    := UIColorPanel  .ButtonColor;
 GlobalNormAdjust_perc               .Value    := ifthen(GlobalNormAdjust_perc.Value>1,GlobalNormAdjust_perc.Value,100);
 SetWellhoferValues(Sender);
+StructuredDataSetsList.Text:= UpperCase(AnsiReplaceStr(AnsiReplaceStr(Trim(StructuredDataSetsList.Text),' ,',','),', ',','));
+if Length(StructuredDataSetsList.Text)>0 then
+  begin
+  i:= Length(Engines);
+  while i>0 do
+    begin
+    Dec(i);
+    Engines[i].w2D_ArrayRefList.CommaText:= StructuredDataSetsList.Text;
+    end;
+  end;
 end; {~advancedsettingstabexit}
 
 
@@ -4861,9 +4886,10 @@ end; {~updatesettings}
 {10/04/2022 ProcessSetFFFItem}
 {23/05/2022 InventoryTab depends on advancedmode}
 {12/10/2022 MeasCalcPDDfitItem}
+{22/01/2023 StructuredDataSetsList}
 procedure TAnalyseForm.UImodeChange(Sender:TObject);
-var a,b,c,s: Boolean;
-    i      : Integer;
+var a,b,c,s,p: Boolean;
+    i        : Integer;
 
   procedure PanelEnable(AControl:TGroupBox);
   begin
@@ -4875,19 +4901,18 @@ a:= AdvancedModeItem.Checked;
 c:= not FileLockCriticalItems.Checked;
 s:= not SimpleModeItem.Checked;
 b:= a or s;
+p:= b and (PageControl.ActivePage=AnalysisTab);
 i:= Length(UseDoseConvTable);
-UseDoseDelButton         .Enabled:= a and (i>1);
-UseDoseAddButton         .Enabled:= a and (i<OD2doseTableMax);
 ControlsEnable(ConfigurationTab    ,a);
 ControlsEnable(SettingsTab         ,a);
 ControlsEnable(FileConversionTab   ,a);
 ControlsEnable(FieldTypesTab       ,a);
 ControlsEnable(InventoryTab        ,s);
-ControlsEnable(AdvancedSettingsTab ,a);
 ControlsEnable(ODconvTab           ,a);
+ControlsEnable(AdvancedSettingsTab ,a);
 EnableMenuSystem(True);                                                         //reset all menus to available and change from here
-EnableMenu(MeasMenu                ,b);
-EnableMenu(ReferenceMenu           ,b);
+EnableMenu(MeasMenu                ,p);
+EnableMenu(ReferenceMenu           ,p);
 EnableMenu(CalculationMenu         ,a);
 EnableMenu(OptionsMenu             ,PageControl.ActivePage=AnalysisTab);
 EnableMenu(ConfigSaveItem          ,a);
@@ -4905,60 +4930,63 @@ EnableMenu(ProcessResetFitItem     ,a and PDDfitCheckBox.Checked);
 EnableMenu(FileSaveAsReferenceItem ,c);
 EnableMenu(MeasPreserveDataItem    ,c);
 EnableMenu(ProcessAutoscalingItem  ,a and c);
-FileLockCriticalItems     .Visible   := FileSaveAsReferenceItem.Enabled or ShowLockItemCheckBox.Checked;
-InventoryTab              .TabVisible:= s;
-FileConversionTab         .TabVisible:= s;
-ODconvTab                 .TabVisible:= s;
-SettingsTab               .TabVisible:= b;
-AdvancedSettingsTab       .TabVisible:= b;
-FieldTypesTab             .TabVisible:= b;
-ConfigurationTab          .TabVisible:= b;
-RawDataTab                .TabVisible:= s;
-MeasOD2DoseConvItem       .Enabled   := a;
-MeasOD2DoseConvItem       .Visible   := b;
-MeasExtSymSubMenu         .Visible   := s;
-MeasGenStrategySubMenu    .Visible   := s;
-MeasAxisSubMenu           .Visible   := s;
-MeasSignalSubMenu         .Visible   := s;
-MeasDivisor4              .Visible   := s;
-MeasSSDsubmenu            .Visible   := s;
-MeasMayneordItem          .Visible   := s;
-MeasUserDoseItem          .Visible   := s;
-MeasLocalPeakItem         .Visible   := s;
-MeasUsePDDfitModelItem    .Visible   := s;
-RefBackgroundCorrItem     .Visible   := s;
-RefAlignTopforFFF         .Visible   := s;
-RefMakeIndexItem          .Visible   := s;
-RefGenericBeamItem        .Visible   := s;
-PresetsMenu               .Visible   := b;
-ViewPointsItem            .Visible   := b;
-ViewIndicatorsItem        .Visible   := b;
-ViewFFFIndicatorsItem     .Visible   := b;
-ViewValuesItem            .Visible   := b;
-ViewBottomAxisAlwaysBlack .Visible   := b;
-ViewDivisor2              .Visible   := a;
-ProcessSigmoid2BufferItem .Visible   := b;
-ProcessResetFitItem       .Visible   := b;
-ProcessMergeItem          .Visible   := s;
-ProcessSetMergeSourceItem .Visible   := s;
-ProcessClearMergeItem     .Visible   := s;
-ProcessMirrorMeasRefItem  .Visible   := s;
-ProcessSyntheticProfile   .Visible   := s;
-FileOpenTempRefItem       .Visible   := s;
-FileSaveMeasurementItem   .Visible   := s;
-FileSaveItem              .Visible   := s;
-FileIgnoreClipboardItem   .Visible   := s;
-FileSaveAsReferenceItem   .Visible   := a;
-ShiftGroupBox             .Visible   := s;
-MayneordGroupBox          .Visible   := s;
-PDDfitGroupBox            .Visible   := s;
-Ft_FFFDetectionGroupBox      .Visible   := s;
-GammaSettingsGroupBox     .Visible   := s;
-ConfigSaveAsItem          .Visible   := s or c;
-ConfigReadItem            .Visible   := s;
-ConfigAutoSaveItem        .Visible   := s;
+UseDoseDelButton         .Enabled   := a and (i>1);
+UseDoseAddButton         .Enabled   := a and (i<OD2doseTableMax);
+StructuredDataSetsList   .Enabled   := a and c;                                 //after ControlsEnable(AdvancedSettingsTab ,a);
+FileLockCriticalItems    .Visible   := FileSaveAsReferenceItem.Enabled or ShowLockItemCheckBox.Checked;
+InventoryTab             .TabVisible:= s;
+FileConversionTab        .TabVisible:= s;
+ODconvTab                .TabVisible:= s;
+SettingsTab              .TabVisible:= b;
+AdvancedSettingsTab      .TabVisible:= b;
+FieldTypesTab            .TabVisible:= b;
+ConfigurationTab         .TabVisible:= b;
+RawDataTab               .TabVisible:= s;
+MeasOD2DoseConvItem      .Enabled   := a;
+MeasOD2DoseConvItem      .Visible   := b;
+MeasExtSymSubMenu        .Visible   := s;
+MeasGenStrategySubMenu   .Visible   := s;
+MeasAxisSubMenu          .Visible   := s;
+MeasSignalSubMenu        .Visible   := s;
+MeasDivisor4             .Visible   := s;
+MeasSSDsubmenu           .Visible   := s;
+MeasMayneordItem         .Visible   := s;
+MeasUserDoseItem         .Visible   := s;
+MeasLocalPeakItem        .Visible   := s;
+MeasUsePDDfitModelItem   .Visible   := s;
+RefBackgroundCorrItem    .Visible   := s;
+RefAlignTopforFFF        .Visible   := s;
+RefMakeIndexItem         .Visible   := s;
+RefGenericBeamItem       .Visible   := s;
+PresetsMenu              .Visible   := b;
+ViewPointsItem           .Visible   := b;
+ViewIndicatorsItem       .Visible   := b;
+ViewFFFIndicatorsItem    .Visible   := b;
+ViewValuesItem           .Visible   := b;
+ViewBottomAxisAlwaysBlack.Visible   := b;
+ViewDivisor2             .Visible   := a;
+ProcessSigmoid2BufferItem.Visible   := b;
+ProcessResetFitItem      .Visible   := b;
+ProcessMergeItem         .Visible   := s;
+ProcessSetMergeSourceItem.Visible   := s;
+ProcessClearMergeItem    .Visible   := s;
+ProcessMirrorMeasRefItem .Visible   := s;
+ProcessSyntheticProfile  .Visible   := s;
+FileOpenTempRefItem      .Visible   := s;
+FileSaveMeasurementItem  .Visible   := s;
+FileSaveItem             .Visible   := s;
+FileIgnoreClipboardItem  .Visible   := s;
+FileSaveAsReferenceItem  .Visible   := a;
+ShiftGroupBox            .Visible   := s;
+MayneordGroupBox         .Visible   := s;
+PDDfitGroupBox           .Visible   := s;
+Ft_FFFDetectionGroupBox  .Visible   := s;
+GammaSettingsGroupBox    .Visible   := s;
+ConfigSaveAsItem         .Visible   := s or c;
+ConfigReadItem           .Visible   := s;
+ConfigAutoSaveItem       .Visible   := s;
 {$IFDEF SelfTest}
-SelfTestItem              .Visible   := a;                                      //verify that it is created when called
+SelfTestItem             .Visible   := a;                                       //verify that it is created when called
 {$ENDIF}
 AdvancedModeOk                       := True;
 for i:= 1 to NumSpecialModes do
@@ -5929,13 +5957,16 @@ end; {~focuspositionradioclick}
 {04/11/2022}
 {17/11/2022 ProcessSendToFPItem, OffAxis_cm}
 {19/11/2022 OffAxisInclusionRange_cm.Value}
+{22/01/2023 message FocusPositionStructuredData}
 procedure TAnalyseForm.FocusPositionProcessFile(Sender: TObject);
 var i: Integer;
     s: set of twcScanTypes;
+    b: Boolean;
 begin
 with Engines[UsedEngine] do
    begin
    i:= ifthen(ArrayScanRefOk,wMultiScanMax,1);
+   b:= False;
    s:= [];
    if Sender=ProcessSendToFPItem then
      ShowMenuItemStatus(Sender);
@@ -5950,14 +5981,20 @@ with Engines[UsedEngine] do
        Inc(wMultiScanNr);
        AdvReadData(RawDataEditor.Lines,
                    UsedDataTopLine,
-                   True,                                  //unfreeze
+                   True,                                                        //unfreeze
                    DetectedFileType,
                    EditorFileName);
        end;
      Dec(i);
      if (snGT in s) and (snAB in s) then
+       begin
        i:= 0;
+       b:= True;
+       end;
    until i=0;
+   with FocusPositionStructuredData.Font do
+     if b then begin Color:= FPreadyColor and $00C000;  Style:= [fsBold]; end
+     else      begin Color:= clSilver;                  Style:= [];       end;
    end;
 end; {~focuspositionprocessfile}
 
@@ -5990,6 +6027,7 @@ end; {~focuspositionaxisvalue}
 
 
 {02/11/2022}
+{22/01/2023 FocusPositionStructuredData}
 procedure TAnalyseForm.FocusPositionResetClick(Sender: TObject);
 var scan : twcScanTypes;
     angle: twcCardinalAngles;
@@ -6004,6 +6042,11 @@ for scan:= snGT to snAB do
       else
         Value:= 0;
       end;
+with FocusPositionStructuredData.Font do
+  begin
+  Color:= clSilver;
+  Style:= [];
+  end;
 end; {~focuspositionresetclick}
 
 
@@ -10505,7 +10548,8 @@ var i,j,k: Integer;
     c    : Char;
     b    : Boolean;
 begin
-b:= (PageControl.ActivePage=ConfigurationTab) or (PageControl.ActivePage=AliasTab);
+b:= (PageControl.ActivePage=ConfigurationTab) or (PageControl.ActivePage=AliasTab) or
+    (PageControl.ActivePage=SettingsTab)      or (PageControl.ActivePage=AdvancedSettingsTab);
 k:= 0;                                                                          //limit autolooping
 {$IFDEF SelfTest}
 if (SelfTestLevel>0) and (Key in [VK_ESCAPE,VK_F5,VK_F6,VK_F7,VK_F8]) then
@@ -10697,7 +10741,7 @@ if (not OnDataReadBusy) and (PageControl.ActivePage=AnalysisTab) then
     end
   else if Key in ['(',')'] then with PlotSeries[pMeasured],Pointer do           //rounded brackets change points size of measured curve
     begin
-    i                     := HorizSize+ifthen(Key=')',1,-1);                     //horizsize must be >0
+    i                     := HorizSize+ifthen(Key=')',1,-1);                    //horizsize must be >0
     ShowPoints            := i>0;
     ViewPointsItem.Checked:= i>0;
     if i>0 then

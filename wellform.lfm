@@ -1,7 +1,7 @@
 object AnalyseForm: TAnalyseForm
-  Left = 256
+  Left = 517
   Height = 565
-  Top = 103
+  Top = 193
   Width = 1000
   AllowDropFiles = True
   AlphaBlendValue = 0
@@ -531,6 +531,17 @@ object AnalyseForm: TAnalyseForm
             Enabled = False
             OnClick = FocusPositionZeroClick
             TabOrder = 5
+          end
+          object FocusPositionStructuredData: TStaticText
+            Left = 243
+            Height = 16
+            Top = -3
+            Width = 202
+            AutoSize = True
+            Caption = 'Structured multiple data set processed'
+            Font.Color = clSilver
+            ParentFont = False
+            TabOrder = 6
           end
         end
         object FocusPositionResultGroupBox: TGroupBox
@@ -2549,7 +2560,7 @@ object AnalyseForm: TAnalyseForm
         object PipsPixelSizeLabel: TLabel
           Left = 18
           Height = 15
-          Top = 356
+          Top = 359
           Width = 108
           HelpContext = 129
           Align = alCustom
@@ -2575,7 +2586,7 @@ object AnalyseForm: TAnalyseForm
           Left = 192
           Height = 24
           Hint = 'Pixel size at isoc level'
-          Top = 354
+          Top = 357
           Width = 50
           HelpContext = 129
           AutoSize = False
@@ -2683,8 +2694,8 @@ object AnalyseForm: TAnalyseForm
           Width = 33
           HelpContext = 97
           AutoSize = False
-          OnExit = FileConvStartCheck
-          OnKeyPress = FileConvNameMaskKeyPress
+          OnEnter = EditEnter
+          OnExit = UImodeChange
           TabOrder = 21
           Text = '.,'
         end
@@ -2784,6 +2795,31 @@ object AnalyseForm: TAnalyseForm
           ParentBidiMode = False
           State = cbChecked
           TabOrder = 20
+        end
+        object StructuredDataSetsLabel: TLabel
+          Left = 18
+          Height = 15
+          Top = 419
+          Width = 144
+          HelpContext = 129
+          Align = alCustom
+          Caption = 'Structured data set devices:'
+          Color = clBtnFace
+          ParentColor = False
+          Transparent = False
+        end
+        object StructuredDataSetsList: TEdit
+          Left = 192
+          Height = 21
+          Top = 417
+          Width = 465
+          HelpContext = 97
+          AutoSize = False
+          OnEditingDone = AdvancedSettingsTabExit
+          OnEnter = EditEnter
+          OnExit = UImodeChange
+          TabOrder = 22
+          Text = 'STARCHECK,STARCHECKMAXI,ICPROFILER,STARCHECKMAXI_MR,STARCHECKMAXIMR'
         end
       end
     end

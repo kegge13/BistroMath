@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-18/01/2023 | FPC 3.2.2: 20/05/2022}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-22/01/2023 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -4659,9 +4659,9 @@ input     : file name
 output    : true if written
 *)
 function TRadthData.WriteData(AFileName:String;
-                              Binary   :Boolean       =True;
-                              ASource  :twcDataSource =dsMeasured;
-                              SetExt   :Boolean       =True): Boolean;
+                              Binary   :Boolean      =True;
+                              ASource  :twcDataSource=dsMeasured;
+                              SetExt   :Boolean      =True): Boolean;
 var T: TStringList;
     S: TFileStream;
 begin
@@ -7807,8 +7807,8 @@ end; {~setdefaults}
 
 {$push}{$warn 5092 off}
 {06/10/2020 fundamentals alternative}
-procedure TWmsData.Stg2char(Stg                           :string;
-		                        var WMS_Char_Array:array of Char);
+procedure TWmsData.Stg2char(Stg               :string;
+		            var WMS_Char_Array:array of Char);
 var A: wmsCharConvRec absolute WMS_Char_Array;       {wms_char_array als string}
 begin
 Stg   := Stg.Trim('"');
