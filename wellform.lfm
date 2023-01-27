@@ -42,10 +42,10 @@ object AnalyseForm: TAnalyseForm
     Top = 0
     Width = 1000
     HelpContext = 1
-    ActivePage = FocusPositionTab
+    ActivePage = AnalysisTab
     Align = alClient
     ParentFont = False
-    TabIndex = 2
+    TabIndex = 0
     TabOrder = 1
     OnChange = PageControlChange
     OnChanging = PageControlRequestChange
@@ -1428,8 +1428,9 @@ object AnalyseForm: TAnalyseForm
             TabOrder = 5
             DecimalPlaces = 1
             Increment = 0.1
-            MaxValue = 50
-            MinValue = 1
+            MaxValue = 20
+            MinValue = 0.1
+            NullValue = 1
             Value = 5
           end
         end

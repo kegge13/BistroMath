@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-22/01/2023 | FPC 3.2.2: 20/05/2022}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-27/01/2023 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -2802,6 +2802,9 @@ type
                              ASide                    :twcSides;
                              var Lpos,Rpos            :Integer;
                              ASource                  :twcDataSource=dsMeasured): Boolean; overload;
+     function  PositionInRange(cm                     :twcFloatType;
+                               LimitToScanRange       :Boolean      =False;
+                               ASource                :twcDataSource=dsMeasured): Boolean;
      function  SigmoidFitErrorResult(var a            :TaFunctionVertex        ): TaVertexDataType;  //costfunction for edge fit
      function  TvSpddFunction(a                       :TaFunctionVertex;
                               cm                      :TaVertexDataType        ): TaVertexDataType;
@@ -2895,7 +2898,7 @@ type
                         BinaryData       :TMemoryStream=nil;
                         BinaryFile       :String       ='';
                         AStatusProc      :toExtMsgProc =nil;
-                        AIdentity        :String       ='bistromath'          );             reintroduce;
+                        AIdentity        :String       ='bistromath'          );               reintroduce;
      procedure AddDebugInfo(AText        :String       =''                    );
      procedure ConfigLoad(Sender                   :TObject                   );
      procedure ConfigSave(Sender                   :TObject                   );
@@ -2904,18 +2907,18 @@ type
                             PassRefOrg             :Boolean       =False      );
      procedure ReadConfig (CF                      :TConfigStrings=nil        );
      procedure WriteConfig(CF                      :TConfigStrings=nil        );
-     procedure SetDefaults;                                                                  override;
+     procedure SetDefaults;                                                                    override;
      function  CheckAlternativeSource(ASource      :twcDataSource;
                                       AssureValid  :Boolean=False             ): twcDataSource;
      procedure CheckSize(var ASource               :twCurveDataRec;
-                         NumPoints                 :Integer=-1);                              overload;
+                         NumPoints                 :Integer=-1);                               overload;
      procedure CheckSize(ASource                   :twcDataSource=dsMeasured;
-                         NumPoints                 :Integer=-1);                              overload;
+                         NumPoints                 :Integer=-1);                               overload;
      procedure InitCurve(var ACurveRec             :twCurveDataRec);
      procedure ClearCurve(var ACurveRec            :twCurveDataRec;
-                          CleanUp                  :Boolean=False             );              overload;
+                          CleanUp                  :Boolean=False             );               overload;
      procedure ClearCurve(ASource                  :twcDataSource;
-                          CleanUp                  :Boolean=False             );              overload;
+                          CleanUp                  :Boolean=False             );               overload;
      procedure ResetAnalysis(ASource               :twcDataSource=dsMeasured  );
      procedure Purge;                                                           //will clear all, except dsMeasured,dsReference and overhead
      procedure ResetMultiScanCounters;
@@ -17770,6 +17773,7 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3298565/
 {02/04/2022 added ReturnPassRate option}
 {12/04/2022 more efficient use of gammaanalysis}
 {24/05/2022 AddDebugInfo}
+{26/01/2023 review of code}
 function TWellhoferData.GammaAnalysis(ASource        :twcDataSource=dsMeasured;
                                       AReference     :twcDataSource=dsReference;
                                       ADestination   :twcDataSource=dsCalculated;
@@ -17779,12 +17783,12 @@ function TWellhoferData.GammaAnalysis(ASource        :twcDataSource=dsMeasured;
                                       SourceScaling  :twcFloatType =1;
                                       PreFilter      :Boolean      =True;
                                       PostFilter     :Boolean      =True): twcFloatType;
-var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
-    fSource,fReference                                      : twcDataSource;
-    i,Lpos,Rpos                                             : Integer;
-    Gamma,StartLimit,Limit,LastGamma,Distance,UniformScaling: twcFloatType;
-    IsPDD                                                   : Boolean;
-    Q                                                       : TQuadFit;
+var tmpSCurve,tmpRCurve : twCurveDataRec;
+    fSource,fReference  : twcDataSource;
+    i,Lpos,Rpos         : Integer;
+    Gamma,UniformScaling: twcFloatType;
+    IsPDD               : Boolean;
+    Q                   : TQuadFit;
 
   {28/04/2020 initcurve}
   //When there is no Autoscaling at least the curves should be uniformly normalised to 100 at some reference point;
@@ -17813,14 +17817,14 @@ var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
   else              Result:= tSource;
   end;
 
-  //calculate normalised vector for x=pos[p]+offsetcm
-  function CalcGamma(p       :integer;
+  //calculate normalised vector for x=pos[p]+offsetcm in reference, offsetcm==DTA
+  function CalcGamma(APoint  :integer;
                      OffsetCm:twcFloatType): twcFloatType;
   var x,y,s,
-      nDistSqr,nDoseSqr: twcFloatType;
-      j,k              : Integer;
+      nDist,nDose: twcFloatType;
+      j,k        : Integer;
   begin
-  x:= wSource[fSource].twPos_cm[p]+OffsetCm;
+  x:= wSource[fSource].twPos_cm[APoint]+OffsetCm;
   j:= NearestPosition(x,fReference);
   y:= 0;
   with Q,wSource[fReference] do
@@ -17829,47 +17833,69 @@ var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
       try
         Initialize;
         y        := twData[j];
-        if Lpos=Rpos then
+        if Lpos=Rpos then                                                       //just one reference point available
           begin
-          s:= x-twPos_cm[j];                                                     //s is DTA for x and nearest point in reference
+          s:= x-twPos_cm[j];                                                    //s is DTA for x and nearest point in reference
           if s<>0 then
             begin                                                               //interpolation
             for k:= Max(twDataRange[ptFirst],Pred(j)) to Min(Succ(j),twDataRange[ptLast]) do
-              if (k=j) or ((twPos_cm[k]-twPos_cm[j])/s>1) then Add_XY(twPos_cm[k],twData[k]);
-            y:= FitLin(x);
+              if (k=j) or ((twPos_cm[k]-twPos_cm[j])/s>1) then
+                Add_XY(twPos_cm[k],twData[k]);                                  //build local first order model of reference
+            y:= FitLin(x);                                                      //fitted value y at position x in reference
             end;
           end {lpos=rpos}
         else
-          begin
+          begin                                                                 //Rpos>Lpos: multiple reference points fount
           for k:= Lpos to Rpos do
-            Add_XY(twPos_cm[k],twData[k]);
-          y:= FitQuad(x,wOutlierFilter);
+            Add_XY(twPos_cm[k],twData[k]);                                      //build local second order model of reference
+          y:= FitQuad(x,wOutlierFilter);                                        //fitted value y at position x in reference
           end;
        except
-         Lastgamma:= -1;
+         Result:= -1;
        end {if,try}
     else
       y:= -1;
-    LastGamma:= y;
+    Result:= y;
     if FitValid and (y>0) then
       begin
-      if twcGammaDistCmBase  <=0    then nDistSqr:= 0
-      else                               nDistSqr:= Sqr(OffsetCm/twcGammaDistCmBase);
-      if twcGammaDosePercBase<=0    then nDoseSqr:= 0
-      else if twcGammaLocalDosePerc then nDoseSqr:=  Sqr(100*(wSource[fSource].twData[p]/y-1)/twcGammaDosePercBase)
-           else                          nDoseSqr:=  Sqr((    wSource[fSource].twData[p]-y  )/twcGammaDosePercBase);
-      LastGamma:= SqRt(nDistSqr+nDoseSqr);
+      if twcGammaDistCmBase  <=0    then nDist:= 0
+      else                               nDist:= OffsetCm/twcGammaDistCmBase;
+      if twcGammaDosePercBase<=0    then nDose:= 0
+      else if twcGammaLocalDosePerc then nDose:= 100*(wSource[fSource].twData[APoint]/y-1)/twcGammaDosePercBase
+           else                          nDose:=     (wSource[fSource].twData[APoint]-y  )/twcGammaDosePercBase;
+      Result:= SqRt(Sqr(nDist)+Sqr(nDose));
       end
     else
-      LastGamma:= -1;
+      Result:= -1;
     end;
-  Result:= LastGamma;
   end; {calcgamma}
+
+  function SearchGamma(APoint                      : Integer;
+                       GammaRefLevel,DistanceStepCm: twcFloatType): twcFloatType;
+  var GammaLimit,DistanceCm,PosCm: twcFloatType;
+      b                          : Boolean;
+  begin
+  DistanceCm:= 0;
+  PosCm     := wSource[fSource].twPos_cm[APoint];
+  repeat                                                                        //loop with small steps while gamma sufficiently small
+    DistanceCm:= DistanceCm+DistanceStepCm;
+    b         := PositionInRange(PosCm+DistanceCm,True,fReference);
+    if b then
+     begin
+      Result:= CalcGamma(APoint,DistanceCm);
+      if InRange(Result,0,GammaRefLevel) then                                   //if smaller set as lowest gamma
+      GammaRefLevel:= Result;
+     end;
+    GammaLimit:= Max(1,GammaRefLevel)*twcGammaSearchMaxFactor;
+  until not (InRange(Result,0,GammaLimit) and b);
+  Result:= GammaRefLevel;
+  end; {searchgamma}
 
   procedure SetStats(AScope:twcGammaScope);
   var t      : TStatssampler;
       i,nPass: Integer;
       Range  : twcRange;
+      v      : twcFloatType;
   begin
   with wSource[ADestination] do
     begin
@@ -17879,10 +17905,10 @@ var tmpSCurve,tmpRCurve                                     : twCurveDataRec;
     else                         Range:= twScanRange;
     for i:= Range[ptFirst] to Range[ptLast] do
       begin
-      Gamma:= twData[i];
-      t.Add_X(Gamma);
-StatusMessage(Format('%0d %0.9f',[i,Gamma]));
-      if Gamma<=1 then
+      v:= twData[i];
+      t.Add_X(v);
+      StatusMessage(Format('%0d %0.9f',[i,v]),False,2);
+      if v<=1 then
         Inc(nPass);
       end;
     twConfidenceLimit[AScope]:= t.ConfidenceLimit;
@@ -17922,38 +17948,15 @@ if wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=
   with wSource[ASource] do
     begin
     for i:= twScanRange[ptFirst] to twScanRange[ptLast] do
-      if (IsPDD       or (twData[i] >twcGammaCutoffPercent )) and
-         ((not IsPDD) or (twPos_cm[i]>twcGammaCutoffDepth_cm)) and
-         (GetQfittedValue(twPos_cm[i],fReference)>0         ) then
-        begin
-        Gamma     := CalcGamma(i,0);                                            //calculate gamma at distance=0
-        Distance  := -twcGammaDistCmStep;
-        StartLimit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
-        Limit     := StartLimit;
-        while InRange(CalcGamma(i,Distance),0,Limit) do                         //loop with small steps to left while (last)gamma sufficiently small
-          begin
-          if InRange(LastGamma,0,Gamma) then                                    //if smaller set as lowest gamma
-            begin
-            Gamma:= LastGamma;
-            Limit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
-            end;
-          Distance:= Distance-twcGammaDistCmStep;
-          end;
-        Distance:= twcGammaDistCmStep;
-        Limit   := StartLimit;
-        while InRange(CalcGamma(i,Distance),0,Limit) do                         //loop with small steps to right
-          begin
-          if InRange(LastGamma,0,Gamma) then                                    //if LastGamma smaller set as lowest gamma
-            begin
-            Gamma:= LastGamma;
-            Limit:= Max(1,Gamma)*twcGammaSearchMaxFactor;
-            end;
-          Distance:= Distance+twcGammaDistCmStep;
-          end;
-        wSource[ADestination].twData[i]:= Gamma;
-        end
+      begin
+      if (IsPDD       or (twData[i] >twcGammaCutoffPercent ))  and
+         ((not IsPDD) or (twPos_cm[i]>twcGammaCutoffDepth_cm)) then
+        Gamma:= Min(SearchGamma(i,CalcGamma(i,0),-twcGammaDistCmStep),          //search gamma in negative direction with reference gamma at DTA=0
+                    SearchGamma(i,CalcGamma(i,0), twcGammaDistCmStep))          //search gamma in positive direction with reference gamma at DTA=0
       else
-        wSource[ADestination].twData[i]:= -1;
+        Gamma:= -1;
+      wSource[ADestination].twData[i]:= Gamma;
+      end;
     try
       FreeAndNil(Q);
      except
@@ -18147,7 +18150,13 @@ else
 end; {~nextpos}
 
 
-//****BistroMath core function****
+(*
+****BistroMath core function****
+FindCalcRange
+input : arbitrary position of point of interest
+output: left and right data point of range as defined by CalcWidth_cm
+        true if ASource.twValid and input within range of data points
+*)
 {02/11/2020 Lpos not intitialised}
 {05/11/2020 Lpos wrong adjustment rule for dec; force at least two points}
 function TWellhoferData.FindCalcRange(CalcPos_cm   :twcFloatType;
@@ -18163,13 +18172,13 @@ with wSource[ASource] do
     c:= CalcWidth_cm/2;
     X:= CalcPos_cm-c;
     try
-      Lpos:= Max(0,Trunc((X-twPos_cm[twDataRange[ptFirst]])/twStepSize_cm))+twDataRange[ptFirst];    //preliminary estimation
+      Lpos:= Max(0,Trunc((X-twPos_cm[twDataRange[ptFirst]])/twStepSize_cm))+twDataRange[ptFirst]; //preliminary estimation
      except
       Lpos:= twDataRange[ptFirst];
      end;
-    while (Lpos>twDataRange[ptFirst]) and (twPos_cm[Lpos]>=X) and (X-twPos_cm[Lpos-1]<c) do //failsave for variable stepsize
+    while (Lpos>twDataRange[ptFirst]) and (twPos_cm[Lpos]>=X) and (X-twPos_cm[Lpos-1]<c) do       //failsave for variable stepsize
       Dec(Lpos);
-    while (Lpos<twDataRange[ptLast]) and (twPos_cm[Lpos+1]<X) do                           //failsave for variable stepsize
+    while (Lpos<twDataRange[ptLast]) and (twPos_cm[Lpos+1]<X) do                                  //failsave for variable stepsize
       Inc(Lpos);
     X   := X+CalcWidth_cm;
     Rpos:= Min(Succ(Lpos),twDataRange[ptLast]);
@@ -18206,6 +18215,19 @@ with wSource[ASource] do
     end;
   end;
 end; {~findcalcrange}
+
+
+{26/01/2023}
+function TWellhoferData.PositionInRange(cm              :twcFloatType;
+                                        LimitToScanRange:Boolean      =False;
+                                        ASource         :twcDataSource=dsMeasured): Boolean;
+begin
+with wSource[ASource] do
+  if LimitToScanRange then
+    Result:= InRange(cm,twScanPos_cm[ptFirst],twScanPos_cm[ptLast])
+  else
+    Result:= InRange(cm,twDataPos_cm[ptFirst],twDataPos_cm[ptLast])
+end; {~positioninrange}
 
 
 //****BistroMath core function****
@@ -18403,8 +18425,8 @@ with wSource[ASource] do
       for k:= i to j do
         Q.Add_XY(twPos_cm[k],twData[k]);
       if InRange(Q.TopX,ifthen(ScanType in twcVertScans,Max(0.001,twDataPos_cm[ptFirst]),twDataPos_cm[ptFirst]),twDataPos_cm[ptLast]) and
-         (Q.TopY>twcMinNormVal) then                                            //calculate maximum
-        begin
+         (Q.TopY>twcMinNormVal) then
+        begin                                                                   //calculate maximum
         twTopModel:= Q.Report;
         with twTopModel do if Valid and (Abs(twMaxPos_cm-Xtop)<1) and InRange(twMaxPos_cm,Xmin,Xmax) then
            begin
@@ -18952,8 +18974,8 @@ with wSource[ASource] do
               {$ENDIF}
               try
                 twValid         := (twAbsNormValue>0) and InRange(GetQFittedValue(twAbsNormPos_cm,ASource)/twAbsNormValue,0.1,10);
-                twOriginPosValid:= (ScanType in twcHoriScans)                   and
-                                   InRange(0,twScanPos_cm[ptFirst],twScanPos_cm[ptLast])  and
+                twOriginPosValid:= (ScanType in twcHoriScans)   and
+                                   PositionInRange(0,True,ASource)      and
                                    (GetQFittedValue(0,ASource)>twcOriginMinNormFraction*twMaxValue);
                except
                 twValid         := False;
@@ -19008,15 +19030,14 @@ with wSource[ASource] do
                       twIsDiagonal:= wDiagonalDetection[twSetFieldType];
                     end; {not relative}
                   end; {twhoriscans}
-                if (not Inrange(twCenterPos_cm,twScanPos_cm[ptFirst],twScanPos_cm[ptLast])) or
-                   (ScanType in twcVertScans)  then
+                if (not PositionInrange(twCenterPos_cm,True,ASource)) or (ScanType in twcVertScans) then
                   begin
                   twCenterArr      := twMaxArr;
                   twCenterPos_cm   := twMaxPos_cm;
                   twCenterPosDefUse:= dUseMax;
                   end;
                 if (wNormalisation[twSetFieldType] in [NormOnCenter,NormOnInFieldArea]) or
-                   (not InRange(0,twScanPos_cm[ptFirst],twScanPos_cm[ptLast]))            or
+                   (not PositionInrange(0,True,ASource))                                or
                    (GetQfittedValue(0,ASource,0)*10<twMaxValue)  then
                   begin
                   twAbsNormPos_cm:= twCenterPos_cm;
@@ -19036,7 +19057,7 @@ with wSource[ASource] do
               if  not (twIsRelative or (CheckAlternativeSource(twAlignedTo)=CheckAlternativeSource(twSelf))) then
                 begin
                 lTmp:= wSource[twAlignedTo].twAbsNormPos_cm;
-                if InRange(lTmp,twDataPos_cm[ptFirst],twDataPos_cm[ptLast]) then
+                if PositionInrange(lTmp,False,ASource) then
                   begin
                   twAbsNormPos_cm:= lTmp;
                   twAbsNormDefUse:= wSource[twAlignedTo].twAbsNormDefUse;
@@ -19150,7 +19171,7 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {24/05/2022 AddDebugInfo}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
-var s: twcDataSource;
+var CoupledSource: twcDataSource;
 
     procedure ProfileNormalisation(AFieldClass:twcFieldClass);
     var lDP: twcDoseLevel;
@@ -19159,7 +19180,7 @@ var s: twcDataSource;
       begin
       if twAbsNormDefUse<>dUseUndefined then
         begin
-        if InRange(0,twScanPos_cm[ptFirst],twScanPos_cm[ptLast]) and
+        if PositionInrange(0,True,ASource)                                   and
            ((twOriginPosValid and (wNormalisation[AFieldClass]=NormOnOrigin)) or (AFieldClass=fcWedge)) then
           begin
           twAbsNormPos_cm:= 0;
@@ -19520,7 +19541,7 @@ var s: twcDataSource;
         twRelNormPos_cm:= EnsureRange(wSource[dsMeasured].twRelNormPos_cm,twDataPos_cm[ptFirst],twDataPos_cm[ptLast]);
         end
       else
-        if (twAbsNormPos_cm>=0) and InRange(twAbsNormPos_cm,twDataPos_cm[ptFirst],twDataPos_cm[ptLast]) then
+        if (twAbsNormPos_cm>=0) and PositionInrange(twAbsNormPos_cm,False,ASource) then
           begin
           twAbsNormValue:= Max(twData[twMaxArr]/10,GetQfittedValue(twAbsNormPos_cm,ASource))*twRefNormFactor;
           if (Abs(twMaxValue/twAbsNormValue-1)>=twcYtopQfitRelDif) and
@@ -19535,7 +19556,7 @@ var s: twcDataSource;
           twAbsNormValue := twMaxValue*twRefNormFactor;
           twAbsNormDefUse:= dUseMax;
           end;
-      if not InRange(twRelNormPos_cm,twDataPos_cm[ptFirst],twDataPos_cm[ptLast]) then      //18/02/2022 condition (twRelNormPosCm>0) removed
+      if not PositionInrange(twRelNormPos_cm,False,ASource) then                //18/02/2022 condition (twRelNormPosCm>0) removed
         begin
         twRelNormPos_cm:= twPos_cm[twMaxArr];
         twRelNormValue := 100;
@@ -19590,10 +19611,10 @@ with wSource[ASource] do
          Multiply(100/twAbsNormValue,ASource,ASource);
        if ASource in twcFilterSources then {assure valid coupling}
          begin
-         s:= twcCoupledSources[ASource];
-         if (not (wSource[s].twValid)) or (wSource[s].twFilterPoints=0) then
-           QuadFilter(-1,ASource,s);
-         Analyse(s,AutoCenterProfile);
+         CoupledSource:= twcCoupledSources[ASource];
+         if (not (wSource[CoupledSource].twValid)) or (wSource[CoupledSource].twFilterPoints=0) then
+           QuadFilter(-1,ASource,CoupledSource);
+         Analyse(CoupledSource,AutoCenterProfile);
          end;
        end; {result}
     twAnalysed:= Result;
