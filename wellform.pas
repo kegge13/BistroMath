@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-26/01/2023 | Lazarus 2.2.4/FPC 3.2.2: 02/10/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-20/02/2023 | Lazarus 2.2.4/FPC 3.2.2: 02/10/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -167,7 +167,7 @@ type
     Ft_EdgeDetectionGroupBox, EdgeSimoidRadius_mm added
    11/12/2015
     static LeffSeries and ReffSeries replaced with dynamic InFieldIndicators
-    added FFFindicators
+    added FFFSlopeLines
    15/12/2015
     added MeasDetectFFFItem
    06/01/2016
@@ -335,7 +335,7 @@ type
   07/03/2021
     added Nominal_IFA_CheckBox, DefaultMRlinacSSD_cm
   15/03/2021
-    added Ft_Default_SSD_Label, Ft_Default_SSD_Edit_cm
+    added Ft_Default_SSD_Label, Ft_Default_SSD_cm
     removed DefaultMRlinacSSD_cm
     added MeasMenuClick(Sender: TObject);
   14/05/2021
@@ -391,6 +391,8 @@ type
     added FP_BankFactor
   21/01/2023
     added StructuredDataSetsLabel,StructuredDataSetsList,FocusPositionStructuredData
+  20/02/2023
+    added GetCpuUsage for StatusBar.Panels[3]
   }
 
   {=========== TAnalyseForm =====================}
@@ -918,6 +920,7 @@ type
     procedure ProcessUpdateDataRead    (Sender         : TObject);
     procedure ProcessMergeSourceClick  (Sender         : TObject);
     procedure ProcessResetFitClick     (Sender         : TObject);
+    procedure ProcessMirrorMeasRefClick(Sender         : TObject);
     procedure MeasCalcPDDfitClick      (Sender         : TObject);
     procedure PresetsMenuEnter         (Sender         : TObject);
     procedure PresetsItemClick         (Sender         : TObject);
@@ -997,7 +1000,7 @@ type
     FileConvGeneralItems                               : ConvItemList;
     FileConvPhotonItems                                : ConvItemList;
     FileConvElectronItems                              : ConvItemList;
-    Engines                                            : array of TWellhoferData; //a series of TWellhoferData-objects
+    Engines                                            : array of TWellhoferData; //a series of TWellhoferData-objects as historylist
     UsedEngine                                         : Integer;                 //engine in foreground
     UsedDataTopLine                                    : Integer;                 //pass datatop for multiple data sets in single profile data format file
     LoadEngine                                         : Integer;                 //last engine to load new data
@@ -1020,7 +1023,7 @@ type
     PlotValues            : array[PlotItems] of TLabel;                         //value at cursor, created at runtime
     PenumbraSigmoids      : array[twcSides ] of TLineSeries;                    //penumbra model, created dynamically
     InFieldIndicators     : array[twcSides ] of TLineSeries;                    //IFA limits, created at runtime
-    FFFIndicators         : array[twcSides ] of TLineSeries;                    //FFF slopes, created at runtime
+    FFFSlopeLines         : array[twcSides ] of TLineSeries;                    //FFF slopes, created at runtime
    {$IFDEF form2pdf}
     FilePrintPageItem     : TMenuItem;                    {Ctrl+P}                      //OnClick = FilePrintFormClick
     FilePrintSelItem      : TMenuItem;                    {Ctrl+Shift+P}                //OnClick = FilePrintFormClick
@@ -1034,8 +1037,8 @@ type
     Ft_EdgeMethodCombo    : array[twcFieldClass,twcEdgeClass            ] of TComboBox;  //SetWellhofervalues/GetWellhofervalues  >wEdgeMethod
     Ft_CenterMethodCombo  : array[twcFieldClass                         ] of TComboBox;  //SyncSetCenterOfField                   >wCenterDefinition
     Ft_NormMethodCombo    : array[twcFieldClass                         ] of TComboBox;  //SyncSetNormalisation                   >wNormalisation
-    Ft_CenterRadiusEdit_cm: array[twcFieldClass                         ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
-    Ft_Default_SSD_Edit_cm: array[twcFieldClass                         ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
+    Ft_CenterRadius_cm    : array[twcFieldClass                         ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
+    Ft_Default_SSD_cm     : array[twcFieldClass                         ] of TFloatSpinEditEx; //SetEnginevalues                  >wTopModelRadiusCm
     FP_RectTop            :                                                  Integer;          //value depends on top and height of FocusPositionInputGroupBox
     FP_BankLevel_Label    : array[twcBanks                              ] of TLabel;           //FocusPosition
     FP_BankLevel_mm       : array[twcBanks                              ] of TFloatSpinEditEx; //FocusPosition
@@ -1125,6 +1128,12 @@ type
     WriteMenuShortCuts    : Boolean;                                            //if true shortcuts of the menu items are written into the configuration file
     ConfigRepairFound     : Boolean;
     LabelPlacingActive    : Boolean;                                            //prevent loops between FormResize and PlaceResultsLabels
+   {$IFDEF JwaWinBase}                                                          //problematic on other platforms
+    FLastIdleTime         : Int64;
+    FLastKernelTime       : Int64;
+    FPerformanceFrequency : Int64;
+    FLastUserTime         : Int64;
+   {$ENDIF}
    {$IFDEF SelfTest}
     SelfTestItem          : TMenuItem;
    {$ENDIF}
@@ -1144,7 +1153,7 @@ type
                            Synchronise     :Boolean=True           ): Integer;
     procedure SetHistoryListSize(NewLength :Word                   );
     function  PassRefOrg(ReceivingEngine   :Integer                ): Boolean;
-    function  DataSource2PlotItem(aSource  :twcDataSource          ): PlotItems;
+    function  LinkPlotItem(aSource         :twcDataSource          ): PlotItems;
     procedure InitCxBlock(NewLineMax       :Integer                );
     procedure ClearAllCx(MakeVisible       :Boolean=False          );           //Clear all captions from values of panel rules related visual objects; fill labels with ID's
     procedure SetConfigName(AName          :String;
@@ -1241,6 +1250,10 @@ type
     procedure InventoryDBChgComplete(Sender:TObject                );
     procedure ChangeZPosition(ASeries      :TBasicChartSeries;                           //graph series z-ordering
                               MoveUp       :Boolean=True           );
+    {$IFDEF JwaWinBase}
+    procedure GetCpuUsage(Display          :Boolean     =True;
+                          MinReset_sec     :twcFloatType=1         );
+    {$ENDIF}
     {$IFDEF Windows}                                                                     //problematic on other platforms
     function  HelpHandler(Command          :Word;
                           Data             :PtrInt;                                      //PtrInt is used in the THelpEvent (forms.pp) and avoids platform dependencies
@@ -1269,7 +1282,10 @@ implementation
 
 uses {$IFDEF Windows}
       Windows,
-     {$ENDIF}
+     {$ENDIF Windows}
+     {$IFDEF JwaWinBase}
+      JwaWinBase,                                                               //GetSystemTimes (see GetCpuUsage)
+     {$ENDIF JwaWinBase}
      {$IFDEF Unix}
       LCLintf,
      {$ENDIF}
@@ -1422,7 +1438,7 @@ resourcestring
       ConvSyntax99      ='example';
 
 {$IFDEF Windows}
-var   PrevWndProc: windows.WNDPROC; //https://wiki.lazarus.freepascal.org/Clipboard | size depends on platform
+var   PrevWndProc: windows.WNDPROC;                                             //https://wiki.lazarus.freepascal.org/Clipboard | size depends on platform
 {$ENDIF}
 
 
@@ -1436,7 +1452,7 @@ else
 end; {dcname}
 
 
-{06/10/2020 fundamentals alternative}
+{06/10/2020 delphi fundamentals alternative}
 {20/10/2020 trim not good enough}
 function CleanUpCaption(ACaption:String): String;
 begin
@@ -1445,7 +1461,7 @@ end; {cleanupcaption}
 
 
 {$IFDEF THREADED}
-//----------THelpThread--------------------------------------------------------
+//----------THelpThread------multithreading-------------------------------------
 
 constructor THelpPlainThread.Create(APlainProc  :htObjectPlainProc;
                                     FreeWhenDone:Boolean=True);
@@ -1535,6 +1551,7 @@ Result:= CallWindowProc(PrevWndProc,Ahwnd,uMsg,WParam,LParam);
 end; {wndcallback}
 {$ENDIF}
 
+
 (*
 FormCreate
 initialisations
@@ -1592,7 +1609,7 @@ a signifcant part of the user interface is built at runtime to accommodate for m
 {17/11/2020 UsedDataTopLine}
 {02/03/2021 FFFfeatures}
 {03/03/2020 added Ft_DetDiagonalCheckbox, removed MeasDetectDiagItem}
-{15/03/2021 added Ft_Default_SSD_Edit_cm}
+{15/03/2021 added Ft_Default_SSD_cm}
 {16/02/2022 specialmode1 support for filepath on other drive}
 {15/10/2022 init FP_Center_button and FP_Center_mm}
 {16/10/2022 fill FocusPosition_IEC_Convention}
@@ -1630,6 +1647,10 @@ var k         : PlotItems;
   Result:= MDprint(MD5file(ParamStr(0),500000));
   end;
 
+  (*
+  InitHelperLine
+  Initial settings for all additional indicators (in-fiels area, topmodel, FFF-slopes, penumbra sigmoids)
+  *)
   procedure InitHelperLine(ASeries      :TLineSeries;
                            AName        :String;
                            APenWidth    :Integer=1;
@@ -1690,13 +1711,14 @@ ClipBoardLock             := True;                                              
 CxUsedLineMax             := 0;                                                 //early initialisation needed
 LabelPlacingActive        := False;                                             //prevent loops between FormResize and PlaceResultsLabels
 SetLength(CxResults,CxUsedLineMax);                                             //initialise cxresults to zero lines
+{$IFDEF JwaWinBase}
+StatusBar.Panels.Add;                                                           //extra panel for cpu usage
+{$ENDIF}
 {$IFDEF Windows}
 //https://wiki.lazarus.freepascal.org/Win32/64_Interface#Processing_non-user_messages_in_your_window
 {$push}{$warn 4055 off: Conversion between ordinals and pointers is not portable and will not compile on 64 bits platform}
-PrevWndProc        := Windows.WNDPROC(SetWindowLongPtr(Self.Handle, GWL_WNDPROC, PtrUInt(@WndCallback)));
+PrevWndProc       := Windows.WNDPROC(SetWindowLongPtr(Self.Handle, GWL_WNDPROC, PtrUInt(@WndCallback)));
 {$pop}
-{$ENDIF}
-{$IFDEF Windows}
 NextClipboardOwner:= SetClipboardViewer(Self.Handle);
 {$ENDIF}
 FileIterator:= TFileIterator.Create(Self);                                      //fileiterator has multiple uses
@@ -1706,15 +1728,15 @@ with FileIterator do
   RelativePath:= False;
   RootFolder  := ExtractFileDrive(ParamStr(0));
   end;
-for side:= twcLeft to twcRight do                    {-----------indicators graph object-------------------------}
+for side:= twcLeft to twcRight do                    {-----------create indicators graph object-------------------------}
   begin
   if side=twcLeft then sidechar:= 'L'
   else                 sidechar:= 'R';
-  InFieldIndicators[side]      := TLineSeries.Create(Self);
-  PenumbraSigmoids[side]       := TLineSeries.Create(Self);
-  FFFIndicators[side]          := TLineSeries.Create(Self);
+  InFieldIndicators[side]      := TLineSeries.Create(Self);                     //in-field indicators
+  FFFSlopeLines[side]          := TLineSeries.Create(Self);                     //slope model for FFF
+  PenumbraSigmoids[side]       := TLineSeries.Create(Self);                     //sigmoid shapes
   InitHelperLine(InFieldIndicators[side],'AnalysisLimit_'+sidechar,1);
-  InitHelperLine(FFFIndicators[side]    ,'FFFslope_'     +sidechar,2);
+  InitHelperLine(FFFSlopeLines[side]    ,'FFFslope_'     +sidechar,2);
   InitHelperLine(PenumbraSigmoids[side] ,'Penumbra_'     +sidechar,3,clSkyBlue);
   end;
 for k:= Low(PlotItems) to High(PlotItems) do         {-----------curve graph objects: labels, dates, plotvalues, plotseries, cursorseries----}
@@ -1840,7 +1862,7 @@ if (Length(aa)<>Ord(High(twcEdgeClass))+1) or (Length(ab)<>Ord(High(twcFieldClas
   FatalError('wrong number of parameters for EdgeTypes, DefCoFDefaults or DefNormDefaults');
 for f:= Low(twcFieldClass) to High(twcFieldClass) do
   begin
-  Ft_TypeLabel[f]:= TLabel.Create(AnalyseForm);                                 //Field types: Ft_Label
+  Ft_TypeLabel[f]:= TLabel.Create(AnalyseForm);                                 //Field types: Ft_TypeLabel
   with Ft_TypeLabel[f] do
     begin
     Parent     := FieldTypesPanel;
@@ -1848,10 +1870,10 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     Top        := 5;
     Width      := i;
     Left       := Ft_EdgePrimaryLabel.Left+Ft_EdgePrimaryLabel.Width+Ord(f)*j;
-    Caption    := twcFieldClassNames[f];
+    Caption    := twcFieldClassNames[f];                                        //twcFieldClassNames:array[twcFieldClass] of String=('Standard','FFF','Small','MRlinac','Wedge','Electrons');
     Name       := 'Ft_Edge_'+Caption;                                           //name is needed for storage in config files
     end;
-  Ft_DetectionCheckbox[f]:= TCheckBox.Create(AnalyseForm);                      //Field types: Ft_Detect
+  Ft_DetectionCheckbox[f]:= TCheckBox.Create(AnalyseForm);                      //Field types: Ft_DetectionCheckbox
   with Ft_DetectionCheckbox[f] do
     begin
     Parent     := FieldTypesPanel;
@@ -1863,7 +1885,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     OnClick    := @SyncSetDetection;
     Caption    := '';
     end;
-  Ft_DetDiagonalCheckbox[f]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_Detect
+  Ft_DetDiagonalCheckbox[f]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_DetDiagonalCheckbox
   with Ft_DetDiagonalCheckbox[f] do
     begin
     Parent     := FieldTypesPanel;
@@ -1877,7 +1899,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     end;
   for s:= dsMeasured to dsReference do
     begin
-    Ft_SymCorrCheckbox[f,s]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_Symmetry
+    Ft_SymCorrCheckbox[f,s]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_SymCorrCheckbox
     with Ft_SymCorrCheckbox[f,s] do
       begin
       Parent     := FieldTypesPanel;
@@ -1888,7 +1910,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
       Caption    := '';
       end;
     end;
-  Ft_DynPenumbraCheckbox[f]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_DynPenumbra
+  Ft_DynPenumbraCheckbox[f]:= TCheckBox.Create(AnalyseForm);                    //Field types: Ft_DynPenumbraCheckbox
   with Ft_DynPenumbraCheckbox[f] do
     begin
     Parent     := FieldTypesPanel;
@@ -1918,7 +1940,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
       ItemIndex    := 8;                                                        //dInflection is most used default, see overides below
       end;
     end;
-  Ft_CenterMethodCombo[f]:= TComboBox.Create(AnalyseForm);                      //Field types: Ft_Center
+  Ft_CenterMethodCombo[f]:= TComboBox.Create(AnalyseForm);                      //Field types: Ft_CenterMethodCombo
   with Ft_CenterMethodCombo[f] do
     begin
     Parent       := FieldTypesPanel;
@@ -1926,7 +1948,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     Top          := Ft_CoFLabel.Top-3;
     Width        := i;
     Left         := Ft_TypeLabel[f].Left;                                       //align with labels
-    Name         := Format('Ft_%s_CoFCombo',[twcFieldClassNames[f]]);
+    Name         := Format('Ft_%s_CoFCombo',[twcFieldClassNames[f]]);           //name is needed for storage in config files
     AutoComplete := True;
     AutoDropDown := True;
     DropDownCount:= Ord(CenterMax)-Ord(CenterPenumbra)+1;
@@ -1946,7 +1968,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     Top          := Ft_NormLabel.Top-3;
     Width        := i;
     Left         := Ft_TypeLabel[f].Left;                                       //align with labels
-    Name         := Format('Ft_%s_NormCombo',[twcFieldClassNames[f]]);
+    Name         := Format('Ft_%s_NormCombo',[twcFieldClassNames[f]]);          //name is needed for storage in config files
     AutoComplete := True;
     AutoDropDown := True;
     DropDownCount:= Ord(NormOnInFieldArea)-Ord(NormOnCenter)+1;
@@ -1958,15 +1980,15 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
       end;
     OnChange     := @SyncSetNormalisation;
     end;
-  Ft_CenterRadiusEdit_cm[f]:= TFloatSpinEditEx.Create(AnalyseForm);             //Field types: Ft_radius
-  with Ft_CenterRadiusEdit_cm[f] do
+  Ft_CenterRadius_cm[f]:= TFloatSpinEditEx.Create(AnalyseForm);                 //Field types: Ft_radius
+  with Ft_CenterRadius_cm[f] do
     begin
     Parent       := FieldTypesPanel;
     HelpContext  := Parent.HelpContext;
     Top          := Ft_CenterModelRadiusLabel.Top-3;
     Width        := i;
     Left         := Ft_TypeLabel[f].Left;                                       //align with labels
-    Name         := Format('Ft_%s_CenterRadiusEdit',[twcFieldClassNames[f]]);
+    Name         := Format('Ft_%s_CenterRadiusEdit',[twcFieldClassNames[f]]);   //name is needed for storage in config files
     MinValue     :=  0;
     MaxValue     := 50;
     Value        :=  2.5;
@@ -1976,15 +1998,15 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     NumbersOnly  := True;
     OnChange     := @SetWellhoferValues;
     end;
-  Ft_Default_SSD_Edit_cm[f]:= TFloatSpinEditEx.Create(AnalyseForm);             //Field types: Ft_default_SSD
-  with Ft_Default_SSD_Edit_cm[f] do
+  Ft_Default_SSD_cm[f]:= TFloatSpinEditEx.Create(AnalyseForm);                  //Field types: Ft_default_SSD
+  with Ft_Default_SSD_cm[f] do
     begin
     Parent       := FieldTypesPanel;
     HelpContext  := Parent.HelpContext;
     Top          := Ft_Default_SSD_Label.Top-3;
     Width        := i;
     Left         := Ft_TypeLabel[f].Left;                                       //align with labels
-    Name         := Format('Ft_%s_Default_SSD_Edit',[twcFieldClassNames[f]]);
+    Name         := Format('Ft_%s_Default_SSD_Edit',[twcFieldClassNames[f]]);   //name is needed for storage in config files
     MinValue     :=  10;
     MaxValue     := 900;
     Value        := twcDefaultSSDcm[f];
@@ -1995,7 +2017,7 @@ for f:= Low(twcFieldClass) to High(twcFieldClass) do
     OnChange     := @SetWellhoferValues;
     end;
   end;
-FP_RectTop:= FocusPositionResultGroupBox.Top+FocusPositionResultGroupBox.Height+30; {-----focus position tab---------}
+FP_RectTop:= FocusPositionResultGroupBox.Top+FocusPositionResultGroupBox.Height+30; {-------------focus position tab---------------}
 for angle:= Rot000 to Rot270 do
   FocusPosition_mapping_Box.AddItem(Format('%u°',[Ord(angle)*90]),nil);         //see also FocusPositionPanelPaint
 FocusPosition_mapping_Box.ItemIndex:= 0;
@@ -2061,7 +2083,7 @@ for scan:= snGT to snAB do
       HelpContext:= Parent.HelpContext;
       Top        := 15+Ord(scan)*30;
       Width      := 104;
-      Left       :=   0;                                                      //settings dependedent; see FocusPositionPanelPaint
+      Left       :=   0;                                                        //settings dependedent; see FocusPositionPanelPaint
       OnClick    := @FocusPositionRadioClick;
       end;
     with FP_Center_mm[scan,angle] do
@@ -2176,7 +2198,7 @@ with FP_Drot_Title do
 aa:= String(DefFFFpSubTexts).Split(',');                                        //FFF peak submenu: texts
 ab:= String(DefFFFpSubKeys ).Split(',');                                        //FFF peak submenu: shortcuts
 ac:= String(DefFFFpSubNames).Split(',');
-for m:= CenterFFFTopModel to CenterFFFSlopes do      {-------------------FFF peak sub menu----------------}
+for m:= CenterFFFTopModel to CenterFFFSlopes do      {---------------------------FFF peak sub menu------------------------}
     begin
     FFFpSubItems[m]:= TMenuItem.Create(MeasPeakFFFSubMenu);
     with FFFpSubItems[m] do
@@ -2193,7 +2215,7 @@ for m:= CenterFFFTopModel to CenterFFFSlopes do      {-------------------FFF pea
 MeasPeakFFFSubMenu.Add(FFFpSubItems);                                           //insert fff peak submenu
 aa:= String(DefExtSymTexts   ).Split(',');                                      //ExtSym submenu: texts
 ac:= String(DefExtSymSubNames).Split(',');                                      //ExtSym submenu: names
-for e:= ExtSymLinacError to ExtSymElevation do       {-------------------extended symmetry sub menu----------------}
+for e:= ExtSymLinacError to ExtSymElevation do       {---------------------------extended symmetry sub menu----------------}
     begin
     ExtSymSubItems[e]:= TMenuItem.Create(MeasExtSymSubMenu);
     with ExtSymSubItems[e] do
@@ -2254,10 +2276,10 @@ for x:= Inplane to Beam do                           {-------------------ShiftGr
     NumbersOnly  := True;
     end;
   end;
-Finalize(aa);
+Finalize(aa);                                                                   //these helpers are not used anymore
 Finalize(ab);
 Finalize(ac);
-DataPlot.LeftAxis         .Range.Max      := 101;
+DataPlot.LeftAxis         .Range.Max      := 101;               {------------------dataplot--------------------}
 DataPlot.LeftAxis         .Range.Min      :=  99;
 DataPlot.LeftAxis         .Range.UseMax   := True;
 DataPlot.LeftAxis         .Range.UseMin   := True;
@@ -2275,12 +2297,12 @@ OnDataReadBusy                            := False;                             
 SelectedSeries                            := nil;
 ModMode                                   := ModMNorm;
 Visible                                   := True;
-InventoryMultiScanList                    := False;
-PrevKey                                   := #0;                                //keyboard handling
 AdvancedModeOk                            := True;
 InventoryListReady                        := True;                              //see Files tab
+InventoryMultiScanList                    := False;
 DoseCLastRow                              :=  -1;
-MinClipBoardBytes                         := 100;
+PrevKey                                   := #0;                                //keyboard handling
+MinClipBoardBytes                         := 100;                               //ignore clipboard when too small
 LogLevelEdit              .Value          := 1;                                 //set logging to standard level
 MeasReMappingString       .Items.CommaText:= twcMeasAxisPermutations;
 MeasReMappingString       .Text           := MeasReMappingString.Items[0];
@@ -2352,10 +2374,10 @@ for i:= 1 to ParamCount do                                                      
     SetConfigName(ParamStr(Succ(i)),True);
   end;
 FileOpenDialog.InitialDir:= CommonAppData;
-if Length(DefAnnotTypeString)<>Ord(High(AnnotationTypes)) then
+if Length(DefAnnotTypeString)<>Ord(High(AnnotationTypes)) then                  //this should not lead to any code
  {$push}{$warn 6018 off:the compiler has determined there is, or might be, unreachable code}
   begin
-  SetMessageBar(DefAnnotTypeString+' has wrong length');                        //this code is only compiled when there is something wrong
+  SetMessageBar(DefAnnotTypeString+' has wrong length');                        //this message is only displayed when there is something wrong
   FormDestroy(Sender);
   end;
  {$pop}
@@ -2457,6 +2479,49 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
 end; {~scaninclusiontest}
 
 
+{$IFDEF JwaWinBase}
+procedure TAnalyseForm.GetCpuUsage(Display     :Boolean=True;
+                                   MinReset_sec:twcFloatType=1);
+{$PUSH}
+{$CODEALIGN LOCALMIN=8}
+var
+  IdleTimeRec  : TFileTime;
+  KernelTimeRec: TFileTime;
+  UserTimeRec  : TFileTime;
+  IdleTime     : Int64 absolute IdleTimeRec;
+  KernelTime   : Int64 absolute KernelTimeRec;
+  UserTime     : Int64 absolute UserTimeRec;
+  IdleDiff     : Int64;
+  KernelDiff   : Int64;
+  UserDiff     : Int64;
+  SysTime      : Int64;
+{$POP}
+begin
+if GetSystemTimes(@IdleTimeRec, @KernelTimeRec, @UserTimeRec) then
+  begin
+  if (FLastKernelTime=0) and (not QueryPerformanceFrequency(LARGE_INTEGER(FPerformanceFrequency))) then
+    FPerformanceFrequency:= 10000000;
+  IdleDiff       := IdleTime  -FLastIdleTime;
+  KernelDiff     := KernelTime-FLastKernelTime;
+  UserDiff       := UserTime  -FLastUserTime;
+  SysTime        := KernelDiff+UserDiff;
+  if SysTime/FPerformanceFrequency>Max(0.001,MinReset_sec) then
+    begin
+    FLastIdleTime  := IdleTime;
+    FLastKernelTime:= KernelTime;
+    FLastUserTime  := UserTime;
+    end;
+  with StatusBar.Panels[3] do
+    begin
+    if Display and (Systime>0) then
+      Text := Format('CPU %.1f%%',[(SysTime-IdleDiff)/SysTime*100])
+    else
+      Text := '';
+    end;
+  end;
+end; {~getcpuusage}
+{$ENDIF}
+
 (* 18/04/2015
 ****BistroMath core function****
 {=> ProcessReprocessItem, ProcessMergeItem,
@@ -2492,7 +2557,7 @@ Fills graph and triggers display of analysis results (PublishResults).
 {21/09/2015 test on negative values of UserBorderDose_perc removed}
 {11/12/2015
   static LeffSeries and ReffSeries replaced with dynamic InFieldIndicators
-  added FFFIndicators}
+  added FFFSlopeLines}
 {12/12/2015 twFFFdetected}
 {15/12/2015 FFFslopeSource, MeasDetectFFFItem}
 {13/02/2016 reviewed presentation relative flatness}
@@ -2520,7 +2585,7 @@ Fills graph and triggers display of analysis results (PublishResults).
 {05/01/2018 CxResults rewritten}
 {16/01/2018 ClearAllCx}
 {24/01/2018 CheckWellhoferReady}
-{30/01/2018 don't change twApliedNormVal in Set_f; it should be set Analyse only}
+{30/01/2018 don't change twApliedNormVal in Set_PlotScaling; it should be set Analyse only}
 {01/02/2018 ViewMillimetersItem}
 {29/05/2018 application GammaLimitFFF, GammaLimitConventional}
 {21/09/2018 units (cm/mm) in bottomaxis.title.caption}
@@ -2549,12 +2614,12 @@ Fills graph and triggers display of analysis results (PublishResults).
 {16/06/2020 check ProcessSigmoid2BufferItem before ApplySigmoidPenumbraFit to buffer}
 {20/07/2020 EdgeSmallFieldWidth_cm}
 {21/07/2020 AxisViewFieldTypeCheckBox}
-{21/07/2020 GetAdjustedFilterWidthCm, fcWedge}
+{21/07/2020 AdjustedFilterWidthCm, fcWedge}
 {28/07/2020 Ft_XXXX[twcFieldClass] elements}
 {18/08/2020 set AppliedFieldClass after formal Analyse statement, in earlier phase it will depend on reference}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {17/09/2020 Freeze}
-{06/10/2020 fundamentals alternative}
+{06/10/2020 fundamentals library alternative}
 {15/10/2020 set FieldType name in axis title as is, without brackect or lowercase}
 {29/10/2020 ReportDifferences added for failing reference}
 {14/01/2020 PriorityMessage shown at the very end}
@@ -2564,27 +2629,28 @@ Fills graph and triggers display of analysis results (PublishResults).
 {01/08/2021 OnDataReadBusy:= True moved to earlier phase}
 {28/03/2022 introduction AppliedGammaScope}
 {10/04/2022 can be triggered through ProcessSetFFFItem}
+{14/02/2023 OnDataReadBusy placed at earliest point}
 procedure TAnalyseForm.OnDataRead(Sender:TObject);
-var i                           : Integer;
-    m                           : twcMeasAxis;
-    Br,Er,Tr                    : String;
-    tmpE,tmpS,F,tMin,tMax,tmpX,x: twcFloatType;
-    b,NMdone                    : Boolean;
-    d                           : twcDoseLevel;
+var i                         : Integer;
+    m                         : twcMeasAxis;
+    Br,Er,Tr                  : String;
+    tmpE,tmpS,tMin,tMax,tmpX,
+    x,PlotScaling             : twcFloatType;
+    b                         : Boolean;
+    d                         : twcDoseLevel;
     {$IFDEF SPEEDTEST}
     {$IF DEFINED(PANEL_SPEEDTEST) OR DEFINED(DIVIDE_SPEEDTEST) OR DEFINED(GAMMA_SPEEDTEST)}
-    k                           : Cardinal;
+    k                         : Cardinal;
     {$ENDIF}
     {$IFDEF ONDATA_SPEEDTEST}
-    o                           : Cardinal;
-    j                           : Word;
+    o                         : Cardinal;
+    j                         : Word;
     {$ENDIF ONDATA_SPEEDTEST}
     {$ENDIF SPEEDTEST}
     {$IFDEF THREAD_PLOT}
-    PlotFillThread              : array[PlotItems] of THelpFillThread;
-    p                           : PlotItems;
+    PlotFillThread            : array[PlotItems] of THelpFillThread;
+    p                         : PlotItems;
     {$ENDIF THREAD_PLOT}
-
 
   {apply dose conversion and background subtraction}
   procedure DoCorrections(ACurve    :twcDataSource;
@@ -2625,10 +2691,7 @@ var i                           : Integer;
     QuadFilter(Fpar[1],dsMeasured);                                             //FPar[1]=filter width in cm, output to dsCalculated
     Analyse(dsMeasured,twcAutoCenter(Min(Max(Ord(Low(twcAutoCenter)),Round(FPar[5])),Ord(High(twcAutoCenter))))); //FPar[5]=twcAutoCenter:(0=AC_default,1=AC_on,2=AC_off)
     if PDDfitCheckBox.Enabled and PDDfitCheckBox.Checked and (ScanType in twcVertScans) then
-      begin
       PddFit(dsMeasured,dsBuffer);
-      NMdone:= True;
-      end;
     Analyse(dsCalculated);
     if Round(FPar[3])<1 then Wsrc:= dsMeasured
     else                     Wsrc:= dsCalculated;
@@ -2662,28 +2725,27 @@ var i                           : Integer;
     end;
   end; {dospecialmode3}
 
-  {a plot scaling factor F is evaluated}
-  procedure Set_F(ASource:twcDataSource=dsMeasured);
+  procedure Set_PlotScaling(ASource:twcDataSource=dsMeasured);
   begin
   with Engines[UsedEngine],wSource[ASource] do
     begin
     try
-      F:= GetQfittedValue(wSource[dsMeasured].twRelNormPos_cm,ASource,100);
+      PlotScaling:= GetQfittedValue(wSource[dsMeasured].twRelNormPos_cm,ASource,100);
       if not ProcessAutoscalingItem.Checked then
-        F:= 1
+        PlotScaling:= 1
       else if ScanType in twcVertScans then
-        F:= Abs(wSource[dsMeasured].twRelNormValue/GetQfittedValue(wSource[dsMeasured].twRelNormPos_cm,ASource,100))
+        PlotScaling:= Abs(wSource[dsMeasured].twRelNormValue/GetQfittedValue(wSource[dsMeasured].twRelNormPos_cm,ASource,100))
       else if twMaxValue=0 then
-        F:= 1
+        PlotScaling:= 1
       else
-        F:= ifthen((ASource in [dsMeasured,dsReference,dsCalculated]) or twIsRelative,GlobalNormAdjust_perc.Value,100)/
-            ifthen(twAppliedNormVal>0,twAppliedNormVal,twMaxValue);  {readdata->prepareprofile->fastscan}
+        PlotScaling:= ifthen((ASource in [dsMeasured,dsReference,dsCalculated]) or twIsRelative,GlobalNormAdjust_perc.Value,100)/
+                      ifthen(twAppliedNormVal>0,twAppliedNormVal,twMaxValue);  {readdata->prepareprofile->fastscan}
      except
-      F:= 1;
+      PlotScaling:= 1;
     end;
-   twPlotScaling:= F;
+   twPlotScaling:= PlotScaling;
    end;
-  end; {set_f}
+  end; {set_plotscaling}
 
   {Direct access of an shared object through a thread should be avoided.
   It will lead to memory leaks because of failing memory disposal of the thread-object.
@@ -2721,15 +2783,19 @@ var i                           : Integer;
 
 begin
 if PollKeyEvent<>0 then
-  FKeyboardReady:= False;                                                                              //there are still keys in buffer
+  FKeyboardReady:= False;                                                                               //there are still keys in buffer
 x:= ifthen(ViewMeasNormAdjustMode.Checked and AdvancedModeItem.Checked,MeasNormAdjustEdit.Value/100,1); //new value for NormAdjustFactor
 b:= not ((Sender=MeasNormAdjustEdit) and (x=MeasNormAdjustFactor));                                     //check if action is needed
 {$IFDEF ONDATA_SPEEDTEST}
 o:= MilliSecondOfTheDay(Now);
 for j:= 1 to 20 do
 {$ENDIF ONDATA_SPEEDTEST}
-if b and CheckWellhoferReady and FKeyboardReady then                            //check with onkeyup event for keys to be processed
+if b and CheckWellhoferReady and FKeyboardReady and (not OnDataReadBusy) then   //check with onkeyup event for keys to be processed
   begin
+  OnDataReadBusy:= True;                                                        //set busy state now
+  {$IFDEF JwaWinBase}
+  GetCpuUsage(False,10);
+  {$ENDIF}
   LogTabMemo.Lines.BeginUpdate;
   {$IFDEF THREAD_PLOT}
   for p:= pMeasured to pBuffer do PlotFillThread[p]:= nil;                      //Unlike Delphi7, a nil value is not guaranteed, but is needed later when not used.
@@ -2738,46 +2804,44 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
   ShowMenuItemStatus(Sender);                                                   //when sender is menuitem its state will be shown on the statusbar
   if RawDataEditor.Modified then                                                //if the raw data are changed, full detection is forced
     DetectedFileType      := twcUnknown;
-  PlotScaleMin            :=  0;
+  PlotScaleMin            :=  0;                                                //reset plot scaling
   PlotScaleMax            :=  0;
-  DoseConvTableNr         := -1;
+  DoseConvTableNr         := -1;                                                //unload dose conversion table
   MeasNormAdjustFactor    := x;                                                 //update actual value of NormAdjustFactor
-  NMdone                  := False;
   SelectedPlot            := pMeasured;
   SelectPlot              := True;
   MeasIon2DoseItem.Checked:= False;                                             //this item does not autocheck, checking it should be a one-time event
-  with Engines[UsedEngine],wCurveInfo do                                        //==== current engine is Engines[UsedEngine] ====
-    if IsValid and (not OnDataReadBusy) then                                    //do nothing if still busy
+  with Engines[UsedEngine],wCurveInfo do  //===================== current engine is Engines[UsedEngine] ==========================
+    if IsValid then                                                             //do nothing if still busy
       begin
       if Sender is TMenuItem then with Sender as TMenuItem do
         begin
         if RadioItem then
           Checked:= True;
-        UpdateSettings(Sender);                                                     //this sets also the normalisation of wellhofer
-        MeasNormAdjustEdit.Visible:= False;
-        if Sender=ProcessSetFFFItem then
+        UpdateSettings(Sender);                                                 //this sets also the normalisation of wellhofer
+        MeasNormAdjustEdit.Visible:= False;                                     //reset visibility of MeasNormAdjustEdit
+        if Sender=ProcessSetFFFItem then                                        //FieldType changed by user
           begin
-          if ProcessSetFFFItem.Checked then
+          if ProcessSetFFFItem.Checked then                                     //when checked new FieldType=fcFFF
             begin
             if wSource[dsMeasured].twSetFieldType=fcStandard then wSource[dsMeasured].twSetFieldType:= fcFFF;
             end
-          else
+          else                                                                  //otherwise FieldType=fcStandard
             if wSource[dsMeasured].twSetFieldType=fcFFF      then wSource[dsMeasured].twSetFieldType:= fcStandard;
           end;
-        ResetAnalysis;
+        ResetAnalysis;                                                          //because FieldType is changed analysis results are invalid
         end;
-      ProcessSetFFFItem.Checked:= wSource[dsMeasured].twSetFieldType=fcFFF;
-      OnDataReadBusy           := True;                                         //set busy state early in process
+      ProcessSetFFFItem.Checked:= wSource[dsMeasured].twSetFieldType=fcFFF;     //reflect current FFF state also in menu
       tmpX                     := GetDisplayedPositionScale;
       Br                       := Format('%s%0.2f',[wSource[dsMeasured].twBeamInfo.twBModality,Energy]);
       MeasMenuClick(Sender);                                                    //update measurement menu
       if not Freeze then                                                        //if current engine is not in frozen state
-        wApplyUserLevel  := MeasUserDoseItem.Checked;                           //keep unchanged otherwise
+        wApplyUserLevel:= MeasUserDoseItem.Checked;                             //keep unchanged otherwise
       if assigned(UseDoseConvTable) then
         i:= Length(UseDoseConvTable)
       else
         i:= 0;
-      while (i>0) and (DoseConvTableNr<0) do
+      while (i>0) and (DoseConvTableNr<0) do                                    //try to find applicable dose conversion table
         begin
         Dec(i);
         with UseDoseConvTable[i] do
@@ -2785,34 +2849,34 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
             DoseConvTableNr:= i;
         end;
       if (not Freeze) and MeasMirrorItem.Checked and (ScanType in twcHoriScans) then
-        Mirror(dsMeasured,dsMeasured,wSource[dsMeasured].twCenterPos_cm);
-      if (ProcessMirrorMeasRefItem.Checked) and (ScanType in twcHoriScans) then
+        Mirror(dsMeasured,dsMeasured,wSource[dsMeasured].twCenterPos_cm);       //execute mirror of measurement when applicable
+      if (ProcessMirrorMeasRefItem.Checked) and (ScanType in twcHoriScans) then //option "Mirrored measurement as Reference"
         begin
         if (not Freeze) then
           begin
-          ProcessSetTempRefItem.Checked:= SetReferenceOrg(dsMeasured,True);
+          SetReferenceOrg(dsMeasured,True);                                     //store measurement as RefOrg
           if not wSource[dsMeasured].twMirrored then
-            Mirror(dsMeasured,dsRefOrg,wSource[dsMeasured].twCenterPos_cm);
+            Mirror(dsMeasured,dsRefOrg,wSource[dsMeasured].twCenterPos_cm);     //execute mirror of measurement to RefOrg
           Analyse;
           end;
         LoadReference;                                                          //is by definition identical and therefore will load
-        end
+        end {mirror}
       else
-        if ProcessMergeItem.Checked and ProcessSetMergeSourceItem.Checked and
+        if ProcessMergeItem.Checked and ProcessSetMergeSourceItem.Checked and   {***********merging**********}
            Merge(dsUnrelated,dsMeasured,
                  ifthen(ScanType in twcVertScans,MergePDDShift_cm.Value,MergeProfShift_cm.Value),
                  MergeMatchCheckBox.Checked,
-                 MergeScaleOverlapCheckBox.Checked) then      {*****merging*****}
+                 MergeScaleOverlapCheckBox.Checked) then
           begin
           if RefAutoLoadItem.Checked then
             LoadReference('',ProcessSetTempRefItem.Checked);                    //smart reload reference
           ProcessMergeItem.Checked:= False;
-          end;
+          end; {merge}
       if not Freeze then
         begin
-        AcceptMissingPenumbra:= MeasMissingPenumbraItem  .Checked;
-        AcceptZeroSteps      := MeasZeroStepsItem        .Checked;
-        wApplySigmoidToBuffer:= ProcessSigmoid2BufferItem.Checked;
+        AcceptMissingPenumbra:= MeasMissingPenumbraItem  .Checked;              //pass setting to engine
+        AcceptZeroSteps      := MeasZeroStepsItem        .Checked;              //pass setting to engine
+        wApplySigmoidToBuffer:= ProcessSigmoid2BufferItem.Checked;              //pass setting to engine
         Analyse; //first time dsMeasured is analysed; all options have been set, therefore nothing needs to be forced, FFF detection is needed to find FFF
         end;
       AppliedFieldClass         := wSource[dsMeasured].twSetFieldType;          //from here you can depend on the correct AppliedFieldClass value
@@ -2822,7 +2886,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         for d:= dLow to dTemp do
           if twcDoseLevelNames[d]=Ft_EdgeMethodCombo[AppliedFieldClass,fcPrimary].Text then
             AppliedEdgeRefNorm:= d;
-      if (ScanType in twcVertScans) or ProcessSyntheticProfile.Checked then
+      if (ScanType in twcVertScans) or ProcessSyntheticProfile.Checked then     //smart zooming rule
         begin
         LastProfileZoomState:= ViewZoomItem.Checked;
         ViewZoomItem.Checked:= not ViewAutoUnzoomPDDitem.Checked;
@@ -2832,49 +2896,49 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         ViewZoomItem.Checked:= LastProfileZoomState and not (FFFfeatures and ViewAutoUnzoomFFFitem.Checked);
         if (not Freeze) and ReferenceValid then
           Analyse(dsReference);
-        end;
+        end; {if (ScanType in twcVertScans) ..}
       try
         Er         := ExtractFileName(MakeCurveName);
        except
         Er         := '?';
        end;
       Br           := Er;
-      if AddDateTimeCheckBox.Checked then
+      if AddDateTimeCheckBox.Checked then                                       //add datetime to curve information
         begin
         DateTimeToString(Tr,'_yyyymmdd_hhnn',wSource[dsMeasured].twMeasDateTime);
         Insert(Tr,Br,Pos('.',Br));
         end;
       FileSaveDialog.FileName:= Br;
       ClearScreen(Sender);
-      DoCorrections(dsMeasured,MeasBackgroundCorrItem.Checked);
-      if MeasMayneordItem.Checked and (ScanType in twcVertScans)                     and
+      DoCorrections(dsMeasured,MeasBackgroundCorrItem.Checked);                 //background correction on measurement when applicable
+      if MeasMayneordItem.Checked and (ScanType in twcVertScans)                     and   //Mayneord transformation
         (not Freeze)                                                                 and
          Mayneord(MayneordSSD1_cm.Value,MayneordSSD2_cm.Value,MayneordDmax_cm.Value) and
          (RefAutoLoadItem.Checked or ProcessSetTempRefItem.Checked)                  then  //test order critical
         LoadReference('',ProcessSetTempRefItem.Checked);
-      ViewReferenceItem.Enabled:= ReferenceValid;
-      if ViewReferenceItem.Enabled then
-        DoCorrections(dsReference,RefBackgroundCorrItem.Checked);
+      ViewReferenceItem.Enabled:= ReferenceValid;                               //set state of ViewReferenceItem
+      if ReferenceValid then
+        DoCorrections(dsReference,RefBackgroundCorrItem.Checked);               //background correction on reference when applicable
       if SpecialMode[3].MenuItem.Checked {$IFDEF SelfTest}and (SelfTestLevel=0){$ENDIF} then
         DoSpecialMode3;
       Analyse;                                                                  //final check if analysis is completed
       if not wSource[dsMeasFiltered].twValid then                               //publishresults relies on filtered version, should be ok
-        QuadFilter(0,dsMeasured,dsMeasFiltered,True);
+        QuadFilter(0,dsMeasured,dsMeasFiltered,True);                           //generate dsMeasFiltered if not available
       if not ViewReferenceItem.Enabled then
-        CopyCurve(dsMeasFiltered,dsCalculated);
-      if Engines[UsedEngine].ScanType=snAngle then                              //This is based on the OmniPro v6 definition of the scanangle and axis directions
-        SwapAxis:= False
+        CopyCurve(dsMeasFiltered,dsCalculated);                                 //start calculated as filtered version of measurement
+      if Engines[UsedEngine].ScanType=snAngle then  //----------------------------- Axis swapping ----------------------------------------
+        SwapAxis:= False                            //applied on nowadays outdated OmniPro v6 definition of scanangle and axis directions
       else
         case ScanLeftSide[1] of
-         'G': SwapAxis:= SwapGTcheckbox.Checked;
-         'A': SwapAxis:= SwapABcheckbox.Checked;
-         'U': SwapAxis:= SwapUDcheckbox.Checked;
+         'G': SwapAxis:= SwapGTcheckbox.Checked;                                //Omnipro v6: G to T, now mostly from T to G, therefore standard is Checked
+         'A': SwapAxis:= SwapABcheckbox.Checked;                                //Omnipro v6: A to B, still standard direction
+         'U': SwapAxis:= SwapUDcheckbox.Checked;                                //Omnipro v6: U to D, still standard direction
          else     SwapAxis:= SwapLRcheckbox.Checked;
          end;
-      with wSource[dsMeasured],twBeamInfo do
+      with wSource[dsMeasured],twBeamInfo do        //----------------------------- Tr: FileName ------------------------------------------
         begin
-        if not DataFromEditor               then Tr:= FileName                  //from wellhofer-object
-        else if EditorFileName<>DefaultName then Tr:= EditorFileName
+        if not DataFromEditor               then Tr:= FileName                  //filename taken from wellhofer-object
+        else if EditorFileName<>DefaultName then Tr:= EditorFileName            //try editor filename
              else
                try
                  Tr:= GetCurveIDString; {created from data}
@@ -2885,11 +2949,11 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
                 except
                  Tr:= '';
                 end;
-        Set_F;                                                                  //set scaling for measured----------------------------------
+        Set_PlotScaling;                                                        //set scaling for measured----------------------------------
         b          := False;
         FFFfeatures:= twFFFdetected;
         with DataPlot do
-          begin                    //------------------bottom axis title handling with string Br--------------------------------------------
+          begin                    //------------------Br: bottom axis title handling --------------------------------------------
           if not ViewBottomAxisAlwaysBlack.Checked then                         //wUserAxisSign is applied in Prepareprofile}
             for m:= Inplane to Beam do b:= b or ((wUserAxisSign[m]<0) and twDesVaryingAxis[m]);
           if (Round(FieldGT_cm)=FieldGT_cm) and (Round(FieldAB_cm)=FieldAB_cm) then i:= 0
@@ -2899,7 +2963,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
                                        ifthen(FieldLength_cm>0,Format(' %0.*fx%0.*f',[i,FieldGT_cm,i,FieldAB_cm]),
                                        '');
           PositionLabel.Caption:= ifthen(ScanType=snPDD,PosLabelDepthText,PosLabelPosText)+':';
-          PlotScaleMax         := twMaxValue*F*DefAxisMaxExtension;
+          PlotScaleMax         := twMaxValue*PlotScaling*DefAxisMaxExtension;
           if LeftAxis.Range.Min>PlotScaleMax then
             LeftAxis.Range.Min:= PlotScaleMax/2;
           if (not (Sender is TMenuItem)) and (CurveString<>GetCurveIDString) then
@@ -2942,25 +3006,26 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
           BottomAxis.Title.LabelFont.Color:= ifthen(SwapAxis and (not ViewBottomAxisAlwaysBlack.Checked),clRed,LeftAxis.AxisPen.Color);
           BottomAxis.Title.Caption        := Format('%-10s %s %10s  [%s]',[ifthen(SwapAxis,ScanRightSide,ScanLeftSide)+'<',Br,'>'+ifthen(SwapAxis,ScanLeftSide,ScanRightSide),GetPositionUnitsStg]);
           CurveString                     := GetCurveIDString;
-          end;
+          end; {bottomaxis--------------------------------------------------------------------------------------------}
         end; {with measured}
       if PDDfitCheckBox.Enabled and PDDfitCheckBox.Checked and
         (not SpecialMode[3].MenuItem.Checked) and (ScanType in twcVertScans) then  //=========pdd fit==============
         begin
-        if not NMdone then
-          PddFit(dsMeasured,dsBuffer);                                             //must be done before publishresults
+        if not wSource[dsBuffer].twFittedData then
+          PddFit(dsMeasured,dsBuffer);                                             //multithreaded, but not in background; must be done before publishresults
         wSource[dsBuffer].twValid:= wSource[dsMeasured].twPddFitData[NM_Primary].twFitValid;
         end;
       SyntheticMade:= (ProcessSyntheticProfile.Checked and
                        SyntheticProfile(dsMeasFiltered,dsRefFiltered,ProcessAutoscalingItem.Checked));
       if GammaInFieldLimits[AppliedFieldClass].Checked then AppliedGammaScope:= gGammaLimited
       else                                                  AppliedGammaScope:= gGammaComplete;
-      if not wSource[dsMeasured].twSymCorrected then with MeasSymCorrectItem do
-        begin
-        Enabled:= ScanType in [snGT,snAB,snAngle];
-        if Enabled and Checked then
-          CorrectSymmetry(dsMeasured);                                          //======symmetry correction of measurement========
-        end;
+      if not wSource[dsMeasured].twSymCorrected then
+        with MeasSymCorrectItem do                                              //set state of MeasSymCorrectItem
+          begin
+          Enabled:= ScanType in [snGT,snAB,snAngle];                            //only enabled for relevant scantypes
+          if Enabled and Checked then
+            CorrectSymmetry(dsMeasured);                                        //======symmetry correction of measurement========
+          end;
       if RefSymCorrectItem.Enabled         and
          RefSymCorrectItem.Checked         and
          wSource[dsReference].twValid      and
@@ -2970,8 +3035,8 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
       if (not Freeze)                                   and
          ((AppliedFieldClass=fcWedge) or
           (wSource[dsBuffer].twValid and (wSource[dsBuffer].twFilename<>wSource[dsMeasured].twFilename))) then
-        Derive(GetAdjustedFilterWidthCm,dsMeasured,dsBuffer,True);              //assure authenticity of buffer to hold derivative
-      FillPlotSeries(pMeasured,dsMeasured,F*MeasNormAdjustFactor);              //====================== plot MEASURED ===========
+        Derive(AdjustedFilterWidthCm,dsMeasured,dsBuffer,True);                 //assure authenticity of buffer to hold derivative
+      FillPlotSeries(pMeasured,dsMeasured,PlotScaling*MeasNormAdjustFactor);    //====================== plot MEASURED ===========
       {$IFDEF PANEL_SPEEDTEST}
           k:= MilliSecondOfTheDay(Now);
           for i:= 1 to 100 do PublishResults;
@@ -2988,19 +3053,19 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         if RefUseDivideByItem.Checked and ReferenceValid then  //========== use reference for division ===========================
           begin
           if (ScanType in twcVertScans) or (not RefNormaliseItem.Checked) then
-            F:= 1
+            PlotScaling:= 1
           else
             try
-              F:= wSource[dsReference].twAppliedNormVal/wSource[dsMeasured].twAppliedNormVal;
+              PlotScaling:= wSource[dsReference].twAppliedNormVal/wSource[dsMeasured].twAppliedNormVal;
              except
-              F:= 1;
+              PlotScaling:= 1;
              end;
          {$IFDEF DIVIDE_SPEEDTEST}
           k:= MilliSecondOfTheDay(Now);
-          for i:= 1 to 100 do Divide(dsMeasFiltered,dsReference,dsCalculated,ProcessAutoscalingItem.Checked,F);
+          for i:= 1 to 100 do Divide(dsMeasFiltered,dsReference,dsCalculated,ProcessAutoscalingItem.Checked,PlotScaling);
           MessageBar:= Num2Stg(MilliSecondOfTheDay(Now)-k,0)+' ms per 100 divides';
          {$ENDIF}
-          if Divide(dsMeasFiltered,dsReference,dsCalculated,ProcessAutoscalingItem.Checked,F) then //division with user dependent scaling
+          if Divide(dsMeasFiltered,dsReference,dsCalculated,ProcessAutoscalingItem.Checked,PlotScaling) then //division with user dependent scaling
             begin
             with wSource[dsCalculated] do
               try
@@ -3015,17 +3080,17 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
           end {ReferenceDivideByItem}
         else if RefUseGammaItem.Checked and wSource[dsReference].twValid then   //== use reference for gamma analysis ============
           begin
-          F:= MeasNormAdjustFactor; //*wSource[dsReference].twAppliedNormVal/wSource[dsMeasured].twAppliedNormVal;
+          PlotScaling:= MeasNormAdjustFactor; //*wSource[dsReference].twAppliedNormVal/wSource[dsMeasured].twAppliedNormVal;
          {$IFDEF GAMMA_SPEEDTEST}
           k:= MilliSecondOfTheDay(Now);
           for i:= 1 to 100 do
             begin
             ResetAnalysis(Calculated);
-            GammaAnalysis(Measured,Reference,Calculated,False,gGammaComplete,ProcessAutoscalingItem.Checked,F);
+            GammaAnalysis(Measured,Reference,Calculated,False,gGammaComplete,ProcessAutoscalingItem.Checked,PlotScaling);
             end;
           MessageBar:= Num2Stg(round((MilliSecondOfTheDay(Now)-k)/100),0)+' ms per calculation';
          {$ENDIF}
-          GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,AppliedGammaScope,ProcessAutoscalingItem.Checked,F,True);
+          GammaAnalysis(dsMeasured,dsReference,dsCalculated,False,AppliedGammaScope,ProcessAutoscalingItem.Checked,PlotScaling,True);
           HistogramTab.TabVisible:= True;
           end {referencegammaitem}
         else if RefUseAddToItem.Checked then                                    //== use reference for addition ==================
@@ -3050,25 +3115,25 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
             begin
             if twIsGamma then
               begin
-              F            := 1;
+              PlotScaling  := 1;
               twPlotScaling:= 1;
               end
             else if twIsRelative then
               begin
-              Set_F(dsCalculated);
-              F:= F*MeasNormAdjustFactor;
+              Set_PlotScaling(dsCalculated);
+              PlotScaling:= PlotScaling*MeasNormAdjustFactor;
               end
             else
               begin
               twPlotScaling:= wSource[dsMeasured].twPlotScaling;
-              F            := twPlotScaling*MeasNormAdjustFactor;
+              PlotScaling  := twPlotScaling*MeasNormAdjustFactor;
               end;
             if CalcPostFilterItem.Checked and (wSource[dsCalculated].twFilterString='') then
               QuadFilter(-1,dsCalculated);
             SetPlotDate(pCalculated,ifthen(Length(wSource[dsCalculated].twFilterString)>0,twFilterString+'(','')+
                                            wSource[dsCalculated].twDataHistoryStg+
                                            ifthen(Length(wSource[dsCalculated].twFilterString)>0,')',''));
-            FillPlotSeries(pCalculated,dsCalculated,F,twIsGamma and GammaInFieldLimits[AppliedFieldClass].Checked);
+            FillPlotSeries(pCalculated,dsCalculated,PlotScaling,twIsGamma and GammaInFieldLimits[AppliedFieldClass].Checked);
             end;
           end
         else
@@ -3077,18 +3142,18 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         begin                                //================= plot REFERENCE ==================================================
         if ProcessSetTempRefItem.Checked then
           SetMessageBar(Format(TempRefText,[twDevice,twMeasTime]));
-        Set_F(dsReference);
-        FillPlotSeries(pReference,dsReference,F);
+        Set_PlotScaling(dsReference);
+        FillPlotSeries(pReference,dsReference,PlotScaling);
         end;
       if MeasMirrorToBufferItem.Checked and (not Freeze) and (ScanType in twcHoriScans) then
         begin
         Mirror(dsMeasured,dsBuffer,wSource[dsMeasured].twCenterPos_cm);
-        Set_F(dsMeasured);
+        Set_PlotScaling(dsMeasured);
         end; {end of plot reference}
       with wSource[dsBuffer] do if twValid {and (wSource[dsMeasured].twIsWedgedProfile or ViewBufferItem.Checked)} then
           begin
-          FastScan(dsBuffer);                //================= plot BUFFER ====================================================
-          Set_F(dsBuffer);
+          FastScan(dsBuffer,False);         //================= plot BUFFER ====================================================
+          Set_PlotScaling(dsBuffer);
           if twFittedData then
             begin
             ViewBufferItem.Checked                := True;
@@ -3118,16 +3183,16 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
           else
             begin
             if BordersValid(dsMeasured,dInflection) and ProcessSigmoid2BufferItem.Checked and ApplySigmoidPenumbraFit(dsMeasured,dsBuffer) then
-              F:= twPlotScaling
+              PlotScaling:= twPlotScaling
             else
               begin
               if not (twIsDerivative and (twRelatedSource in [dsMeasured,dsMeasFiltered]))  then    //speed up things
                 Derive(-1,dsMeasured,dsBuffer);
-              Set_F(dsBuffer);
-              twPlotScaling:= F;
+              Set_PlotScaling(dsBuffer);
+              twPlotScaling:= PlotScaling;
               end;
             end;
-          FillPlotSeries(pBuffer,dsBuffer,F);
+          FillPlotSeries(pBuffer,dsBuffer,PlotScaling);
           end; {end of plot buffer}
       {$IFDEF THREAD_PLOT}
       for p:= pMeasured to pBuffer do                                           //wait for any running threads
@@ -3153,7 +3218,7 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
         end;
       if Length(PriorityMessage)>0 then
         SetMessageBar(PriorityMessage);
-      end; {isvalid, usedengine}
+      end; {isvalid, usedengine ================================================================================}
   if Sender=nil then                                                            //the sender is nilled for calls through clipboard
     begin
     if Enabled then
@@ -3164,21 +3229,25 @@ if b and CheckWellhoferReady and FKeyboardReady then                            
     DataPlot.LogicalExtent:= DataPlot.GetFullExtent;  //reset zooming of chart itself; see https://wiki.freepascal.org/TAChart_documentation#Extents_and_margins
   AutoZoom;                     //====================== set axis and indicators ===============================
   SmartScaleElectronPDD(Sender);
-  DataChanged              := False;
-  OnDataReadBusy           := False;
+  DataChanged:= False;
   {$IFDEF ONDATA_SPEEDTEST}
   MessageBar:= Format('%0.0f ms per run of analysis and presentation (%d)',[(MilliSecondOfTheDay(Now)-o)/j,j]);
   {$ENDIF ONDATA_SPEEDTEST}
+  StatusBar.Panels[1].Text:= twcFieldClassNames[AppliedFieldClass];
   if Engines[UsedEngine].wSource[dsMeasured].twOriginalFormat in twcMultiFiles then
-    StatusBar.Panels[1].Text:= Format(' #%d',[Engines[UsedEngine].wMultiScanNr])
+    StatusBar.Panels[2].Text:= Format(' #%d',[Engines[UsedEngine].wMultiScanNr])
   else
-    StatusBar.Panels[1].Text:= Format(' %dp',[Engines[UsedEngine].GetNumPoints]);
+    StatusBar.Panels[2].Text:= Format(' %dp',[Engines[UsedEngine].GetNumPoints]);
+  {$IFDEF JwaWinBase}
+  GetCpuUsage;
+  {$ENDIF}
+  OnDataReadBusy:= False;
   end; {read}
 end; {~ondataread}
 
 
 //Convert a TWellhoferData twcDataSource to the equivalent graphical element (if available)
-function TAnalyseForm.DataSource2PlotItem(aSource:twcDataSource): PlotItems;
+function TAnalyseForm.LinkPlotItem(aSource:twcDataSource): PlotItems;
 begin
 case aSource of
   dsCalculated: Result:= pCalculated;
@@ -3186,7 +3255,7 @@ case aSource of
   dsBuffer    : Result:= pBuffer;
  else           Result:= pMeasured;
  end
-end; {~datasource2plotitem}
+end; {~linkplotitem}
 
 
 {28/07/2020 Called from FormCreate and SelfTest}
@@ -3264,8 +3333,7 @@ begin
 if Sender=ViewStandardPanelsetup then
   PanelElements.AddMode:= -1;
 if PanelElements.AddMode<1 then
-  PanelElements.Clear;
-//     id,col,row,curve sel,eval.type,multiplier,errorval,"label",               deci,unit,  mod,energy,scan type[,cond:-][,annot:-][,color:-]
+  PanelElements.Clear; //id,col,row,curve sel,eval.type,multiplier,errorval,"label",    deci,unit,  mod,energy,scan type[,cond:-][,annot:-][,color:-]
 AddFormattedElement( 1,0,0,'-1,n,1,0'      ,DefNormValText                             ,'2,'    ,'XEPO,0,A,annot:rcnS');                {norm value}
 AddFormattedElement( 2,0,1,'-1,N,1,9e9'    ,DefNormPosText                             ,'2,'    ,'XEPO,0,A,annot:rcnS');                {norm position}
 AddFormattedElement( 3,0,2,'-1,m,1,-9e9'   ,DefMaximumText                             ,'1,%'   ,'XEPO,0,A,annot:rnS');                 {max value}
@@ -3354,15 +3422,15 @@ procedure TAnalyseForm.InitCxBlock(NewLineMax:Integer);
 var i,j,k: Integer;
     c    : CxComponents;
 begin
-if NewLineMax>=0 then
+if NewLineMax>=0 then                                            {negative values not allowed}
   begin
-  if NewLineMax<CxUsedLineMax then                               {do nothing when there isn't any change, at startup CxUsedLineMax=0}
+  if NewLineMax<CxUsedLineMax then                               {less lines needed}
     if CxUsedLineMax>0 then
-      for i:= NewLineMax to CxUsedLineMax do
-        for j:= 0 to CxMaxCol do
+      for i:= NewLineMax to CxUsedLineMax do                     {for all lines...}
+        for j:= 0 to CxMaxCol do                                 {for all columns...}
           for c:= CxTitle to CxValue do
-            CxResults[i][j][c].Visible:= False;                  {----hide unneeded blocks, freeing shows to be problematic for ununderstood reasons}
-  k:= Max(Length(CxResults),CxUsedLineMax);
+            CxResults[i][j][c].Visible:= False;                  {...hide unneeded blocks, freeing shows to be problematic for ununderstood reasons}
+  k:= Max(Length(CxResults),CxUsedLineMax);                      {k: actual number of created lines might be larger then lines in use}
   if NewLineMax>k then
     begin
     SetLength(CxResults,Succ(NewLineMax));                       {----set new length}
@@ -3384,7 +3452,7 @@ if NewLineMax>=0 then
       end;
   CxUsedLineMax:= NewLineMax;
   PlaceResultsLabels;
-  ClearAllCx(True);
+  ClearAllCx(True);                                              {enumerate all realted rules for each CXblock}
   end;
 end; {~initcxblock}
 
@@ -3401,9 +3469,9 @@ begin
 for i:= 0 to CxUsedLineMax do for j:= 0 to CxMaxCol do
   for c:= CxTitle to CxValue do with CxResults[i][j][c] do
     begin
-    Visible  := MakeVisible;
+    Visible   := MakeVisible;
     Font.Color:= clBlack;
-    Caption  := '';
+    Caption   := '';
     end;
 if MakeVisible and (PanelElements.Count>0) then
   begin
@@ -3430,7 +3498,7 @@ with FileOpenDialog do
   s         := Filter;                                                          //preserve settings of FileOpenDialog
   f         := FileName;
   i         := InitialDir;
-  InitialDir:= CommonAppdata;
+  InitialDir:= CommonAppdata;                                                   //CommonAppdata is configurable and set in FormCreate
   Filter    := 'Ini files (*.ini)|*.ini';
   FileName  := Configname; //'*.ini';
   if Execute then
@@ -3473,41 +3541,41 @@ end; {~setconfigname}
 {26/07/2020 support for multiple sections and removing keys}
 {26/08/2020 ConfigRepairFound}
 function TAnalyseForm.ConfigRepair(CF:TConfigStrings): Boolean;
-var s,t,y  : String;
-    m      : TMemIniFile;
-    v      : TStringList;
-    i,j,k,p: Integer;
+var OldKey,NewKey,TargetSection: String;
+    m                          : TMemIniFile;
+    v                          : TStringList;
+    i,j,k,p                    : Integer;
 begin
 i     := CF.ReadInteger(IniSectionName,Application.Title,0);
 Result:= (not CF.ValueExists(IniSectionName,DefConfigRepairFile)) and (i<DefMinFPCbuild) and ConfigRepairFound;
 if Result then for p:= 0 to 1 do
   begin
-  y:= ifthen(p=0,IniSectionName,twcWellhoferKey);
-  CF.WriteInteger(y,DefConfigRepairFile,1);
-  CF.WriteInteger(y,Application.Title,BMBuildNumber);
+  TargetSection:= ifthen(p=0,IniSectionName,twcWellhoferKey);
+  CF.WriteInteger(TargetSection,DefConfigRepairFile,1);                         //add name of reaparfile tot targetsection
+  CF.WriteInteger(TargetSection,Application.Title,BMBuildNumber);               //add buildnumber to targetsection
   m:= TMemIniFile.Create(DefConfigRepairFile);
   v:= TStringList.Create;
-  m.ReadSectionValues(y,v);                                                     //v receives strings with "key=value" content
+  m.ReadSectionValues(TargetSection,v);                                         //v receives strings with "key=value" content for targetsection in file DefConfigRepairFile
   i:= v.Count;
   k:= 0;
   while i>0 do
     begin
     Dec(i);
-    j:= Pos('=',v.Strings[i]);                                                  //j:= pos of "="
-    s:= Copy(v.Strings[i],1,j-1);
+    j     := Pos('=',v.Strings[i]);                                             //j:= pos of "="
+    OldKey:= Copy(v.Strings[i],1,j-1);
     Inc(k);
-    if CF.ValueExists(y,s) then
+    if CF.ValueExists(TargetSection,OldKey) then                                //OldKey from repairfile exists in config
       begin
-      t:= Copy(v.Strings[i],j+1);                                               //take new key starting at j+1
-      if Length(t)>0 then                                                       //if not empty
-        CF.WriteString(y,t,CF.ReadString(IniSectionName,s,''));                 //copy value part of old key
-      CF.DeleteKey(y,s);                                                        //remove old key
+      NewKey:= Copy(v.Strings[i],j+1);                                          //take new key starting at j+1
+      if Length(NewKey)>0 then                                                  //if not empty copy value part of old key (no new key is legal)
+        CF.WriteString(TargetSection,NewKey,CF.ReadString(IniSectionName,OldKey,''));
+      CF.DeleteKey(TargetSection,OldKey);                                       //remove old key anyway
       end;
     end;
   FreeAndNil(m);
   FreeAndNil(v);
   if p=0 then
-    SetMessageBar(Format('%s applied with build %s on %d elements',[DefConfigRepairFile,CF.ReadString(y,Application.Title,'?'),k]));
+    SetMessageBar(Format('%s applied with build %s on %d elements',[DefConfigRepairFile,CF.ReadString(TargetSection,Application.Title,'?'),k]));
   end;
 end; {~configrepair}
 
@@ -4333,7 +4401,7 @@ var f: twcFieldClass;
 begin
 SetEngineValues(UsedEngine);
 for f:= Low(twcFieldClass) to High(twcFieldClass) do
-  twcDefaultSSDcm[f]:= Ft_Default_SSD_Edit_Cm[f].Value;
+  twcDefaultSSDcm[f]:= Ft_Default_SSD_Cm[f].Value;
 twcNMcycles                   := Round(FitCycles_num           .Value);
 twcNMseconds                  := FitMaxTime_sec                .Value;
 twcNMrestarts                 := Round(FitRestarts_num         .Value);
@@ -4433,10 +4501,10 @@ with Engines[Clip(aEngine,0,Length(Engines)-1)] do
         for p:= dLow to dTemp do                                                //twDoseLevel=(dLow,dHigh,d20,d50,d80,d90,dUser,dDerivative,dInflection,dSigmoid50,dTemp)
           if Ft_EdgeMethodCombo[f,q].Text=twcDoseLevelNames[p] then
             wEdgeMethod[q,f]   := p;
-      wTopModelRadius_cm[f]    := Ft_CenterRadiusEdit_Cm[f]      .Value;
+      wTopModelRadius_cm[f]    := Ft_CenterRadius_Cm[f]          .Value;
       end;
     for x:= Inplane to Beam do
-      wAutoShift_cm[x         ]:= ShiftValues_cm[x]             .Value;
+      wAutoShift_cm[x         ]:= ShiftValues_cm[x]              .Value;
     wLinacSymSign[fInplane   ] := ifthen(LinacErrInvertGTCheckBox.Checked,-1,1);
     wLinacSymSign[fCrossplane] := ifthen(LinacErrInvertABCheckBox.Checked,-1,1);
     wInflectionSigmoidRadius_cm:= EdgeSigmoidRadius_cm           .Value;
@@ -4602,7 +4670,7 @@ if Visible then
     end;
   if not LabelPlacingActive then                                                //prevent loops between FormResize and PlaceResultsLabels
     PlaceResultsLabels;
-  StatusBar.Panels[0].Width:= Width-7*Font.Size;
+  StatusBar.Panels[0].Width:= Width-{$IFDEF JwaWinBase}Round(22.5{$ELSE}(15{$ENDIF}*Font.Size);
   end;
 end; {~formresize}
 
@@ -4720,15 +4788,16 @@ end; {~showmenuitemstatus}
   wMaxAsCenterPos,wCenterProfiles added}
 {11/12/2015:
   static LeffSeries and ReffSeries replaced with InFieldIndicators
-  added FFFindicators}
+  added FFFSlopeLines}
 {20/03/2016 ProcessMirrorMeasRefItem unchecked}
 {26/11/2108 ProcessAutoscalingItem.Enabled}
 {23/06/2020 PDDFitResultsTab.tabvisible}
 {28/07/2020 Ft_XXXX[twcFieldClass] elements}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {26/09/2020 PenumbraSigmoids}
-{02/03/2021 FFFIndicators depend on FFFfeatures}
+{02/03/2021 FFFSlopeLines depend on FFFfeatures}
 {14/05/2021 applied ViewTopModelItem, added PlotIndicators}
+{19/02/2023 call ProcessMirrorMeasRefClick if needed}
 procedure TAnalyseForm.ViewItems(Sender:TObject);
 var b,c,r,f: Boolean;
     side   : twcSides;
@@ -4751,15 +4820,17 @@ var b,c,r,f: Boolean;
   end;
 
 begin
-r:= False;
 UpdateSettings(Sender);
+r                               := ProcessMirrorMeasRefItem.Checked;
+ProcessMirrorMeasRefItem.Checked:= r and (not ProcessSetTempRefItem.Checked);
+if (r<>ProcessMirrorMeasRefItem.Checked) then
+  ProcessMirrorMeasRefClick(Sender);
+r:= False;                                                                      //changed by setactivestatus
 SetActiveStatus(pReference ,ViewReferenceItem .Checked and (RefAutoLoadItem.Checked or ProcessSetTempRefItem.Checked));
 SetActiveStatus(pMeasured  ,ViewMeasuredItem  .Checked or ViewPointsItem.Checked);
 SetActiveStatus(pCalculated,ViewCalculatedItem.Checked);
 SetActiveStatus(pBuffer    ,ViewBufferItem    .Checked);
-PDDFitResultsTab            .TabVisible := PDDfitCheckBox.Checked and (Engines[UsedEngine].ScanType in twcVertScans);
-ProcessMirrorMeasRefItem .Checked    := ProcessMirrorMeasRefItem  .Checked and
-                                        (not ProcessSetTempRefItem.Checked);
+PDDFitResultsTab         .TabVisible := PDDfitCheckBox.Checked and (Engines[UsedEngine].ScanType in twcVertScans);
 RefAutoLoadItem          .Enabled    := not (ProcessSetTempRefItem  .Checked or
                                              ProcessSyntheticProfile.Checked or
                                              MeasMirrorToBufferItem .Checked or
@@ -4771,7 +4842,7 @@ f                                    := ViewFFFIndicatorsItem.Checked and FFFfea
 for side:= twcLeft to twcRight do
   begin
   InFieldIndicators[side].Active     := ViewIndicatorsItem.Checked and IndicatorsOk;
-  FFFIndicators[side]    .Active     := f;
+  FFFSlopeLines[side]    .Active     := f;
   PenumbraSigmoids[side] .Active     := ViewPenumbraItem.Checked   and IndicatorsOk;
   end;
 TopModelSeries           .Active     := (f or ViewTopModelItem.Checked) and Engines[UsedEngine].wSource[FFFdataSource].twTopModel.Valid;
@@ -4989,7 +5060,7 @@ ConfigAutoSaveItem       .Visible   := s;
 {$IFDEF SelfTest}
 SelfTestItem             .Visible   := a;                                       //verify that it is created when called
 {$ENDIF}
-AdvancedModeOk                       := True;
+AdvancedModeOk                      := True;
 for i:= 1 to NumSpecialModes do
   with SpecialMode[i].MenuItem do                                               //verify that it is created when called
     begin
@@ -5003,6 +5074,9 @@ if (Sender=SimpleModeItem) or (Sender=ViewNoDefaultAnnotationItem) then
   ClearAllCx;
   PublishResults;
   end;
+{$IFDEF JwaWinBase}
+GetCpuUsage(True,10);
+{$ENDIF}
 end; {~uimodechange}
 
 
@@ -5038,8 +5112,8 @@ if (DataPlot.BottomAxis.Title.Caption<>'-') then
     begin
     InFieldIndicators[side].Clear;
     PenumbraSigmoids[side] .Clear;
-    FFFIndicators[side]    .Clear;
-    FFFIndicators[Side]    .Active:= False;
+    FFFSlopeLines[side]    .Clear;
+    FFFSlopeLines[Side]    .Active:= False;
     end;
   ErrorSeries              .Clear;
   ErrorSeries              .Active := False;
@@ -5149,6 +5223,9 @@ var b: Boolean;
 begin
 if not OnDataReadBusy then
   begin
+  {$IFDEF JwaWinBase}
+  GetCpuUsage(False,1);
+  {$ENDIF}
   x:= ifthen(Sender=FileLoadDataItem,0,Engines[UsedEngine].wSource[dsMeasured].twShift_cm);
   s:= Engines[UsedEngine].wSource[dsMeasured].twCurveIDString;
   if ProcessAutoscalingItem.Checked then
@@ -5327,14 +5404,17 @@ procedure TAnalyseForm.ReadEditor(Sender       :TObject;
 var b,f  : Boolean;
     i,j: Integer;
 begin
-i:= 50;
-while (OnDataReadBusy and (i>0)) do
+i:= 100;
+while OnDataReadBusy and (i>0) do
   begin
   WaitLoop(100);
   Dec(i);
   end;
 if i>0 then
   begin
+  {$IFDEF JwaWinBase}
+  GetCpuUsage(False,1);
+  {$ENDIF}
   f:= PageControl.ActivePage=FocusPositionTab;
   if not f then
     begin
@@ -6395,13 +6475,21 @@ end; {~presetsitemclick}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 procedure TAnalyseForm.OnMenu(Sender:TObject);
 var Stg: string;
-    l: word;
-    t1: TControl;
-    t2: TWinControl;
-    p: TPoint;
+    l  : word;
+    t1 : TControl;
+    t2 : TWinControl;
+    p  : TPoint;
 begin
 inherited;
-while OnDataReadBusy do WaitLoop(100);
+l:= 100;
+while OnDataReadBusy and (l>0) do
+  begin
+  WaitLoop(100);
+  Dec(l);
+  end;
+{$IFDEF JwaWinBase}
+GetCpuUsage(True,10);
+{$ENDIF}
 if Sender=FileExitItem then
   Close
 else if Sender=AboutItem then
@@ -6533,6 +6621,23 @@ UpdateSettings(Sender);
 ReadEditor(Sender,True);
 ShowMenuItemStatus(Sender);
 end; {processupdatedataread}
+
+
+{18/02/2023}
+procedure TAnalyseForm.ProcessMirrorMeasRefClick(Sender: TObject);
+var i: Integer;
+begin
+UpdateSettings(Sender);
+i:= Length(Engines);
+while i>0 do
+  begin
+  Dec(i);
+  Engines[i].UnSetReferenceOrg;
+  if not ProcessMirrorMeasRefItem.Checked then
+    Engines[i].LoadReference;
+  end;
+Reload(Sender);
+end; {~processmirrormeasrefclick}
 
 
 {14/07/2015}
@@ -6678,7 +6783,7 @@ end; {~configsaveasitemclick}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 procedure TAnalyseForm.Ionisation2DoseClick(Sender:TObject);
 begin
-if Engines[UsedEngine].Ionisation2Dose then
+if Engines[UsedEngine].Ionisation2Dose then                                     //True if data appropriate for operation
   begin
   OnDataRead(Sender);
   MeasIon2DoseItem.Checked:= Engines[UsedEngine].wSource[dsMeasured].tw2DoseConv;
@@ -6738,6 +6843,9 @@ var i: Integer;
   end;
 
 begin
+{$IFDEF JwaWinBase}
+GetCpuUsage(False);
+{$ENDIF}
 ClipBoardLock:= False;
 {$IFDEF PRELOAD}
 PreloadTransfer(Sender);
@@ -8897,7 +9005,7 @@ case ACurve of
  else          Source:= dsUnrelated;
  end;
 if Filtered and (Source in twcFilterSources) then
-  Source:= twcCoupledSources[Source];
+  Source:= twcCoupledFiltered[Source];
 if Engines[UsedEngine].wSource[Source].twValid then
   with FileSaveDialog do
     begin
@@ -9073,14 +9181,19 @@ var side      : twcSides;
   end;
 
   function AssureSigmoidData(const ASource:twcDataSource): Boolean;
+  var i: Integer;
   begin
   with Engines[UsedEngine],wSource[ASource] do
     begin
     if not twSigmoidDone then
       begin
       SigmoidPenumbraFit(ASource);
-      while not EngineReady do
-        WaitLoop(100)
+      i:= 100;
+      while (not EngineReady) and (i>0) do
+        begin
+        WaitLoop(100);
+        Dec(i);
+        end;
       end;
     Result:= BordersValid(ASource,dInflection);
     end;
@@ -9114,7 +9227,7 @@ with Engines[UsedEngine],ARec do                                                
            if MeasUserDoseItem.Checked then YLevel:= dUser
            else                             YLevel:= Engines[UsedEngine].wSource[USource].twAppliedEdgeLevel;
            if (Xedge in [dUseDerivative,dUseInflection,dUseSigmoid50]) and (USource in twcFilteredCopies) then
-             USource:= twcCoupledFiltered[USource];
+             USource:= twcCoupledSources[USource];
            if (Ylevel=dUser) and (Xedge=dUseSigmoid50) then
              Y[side]:= SetLengthUnits(Units_in_numerator)*GetNormalisedRevLogistic(Side,USource,UserBorderDose_perc.Value)
            else
@@ -9192,7 +9305,7 @@ with Engines[UsedEngine],ARec do                                                
            end;
       'i': begin {inflection point based on sigmoid}
            if USource in twcFilteredCopies then
-             USource:= twcCoupledFiltered[USource];
+             USource:= twcCoupledSources[USource];
            Xedge := dUseInflection;
            with wSource[USource] do
              if AssureSigmoidData(USource) then
@@ -9205,7 +9318,7 @@ with Engines[UsedEngine],ARec do                                                
            end;
       'I': begin {position 50% level based on sigmoid}
            if USource in twcFilteredCopies then
-             USource:= twcCoupledFiltered[USource];
+             USource:= twcCoupledSources[USource];
            Xedge:= dUseInflection;
            with wSource[USource] do
             if AssureSigmoidData(USource) then
@@ -9268,7 +9381,7 @@ with Engines[UsedEngine],ARec do                                                
       'q',
       'Q': begin
            if Usource in twcFilteredCopies then
-             Xsource:= twcCoupledFiltered[Usource];                             //use unfiltered
+             Xsource:= twcCoupledSources[Usource];                              //use unfiltered
            with wSource[Xsource] do
              if AssureSigmoidData(Xsource) then
                try
@@ -9326,7 +9439,7 @@ with Engines[UsedEngine],ARec do                                                
              begin
              Xedge:= dUseSigmoid50;
              if Usource in twcFilteredCopies then
-               Usource:= twcCoupledFiltered[Usource];
+               Usource:= twcCoupledSources[Usource];
              if AssureSigmoidData(Usource) then
                Y[side]:= SetLengthUnits(Units_in_numerator)*GetNormalisedRevLogistic(Side,Usource,UserBorderDose_perc.Value)
              else
@@ -9348,7 +9461,7 @@ with Engines[UsedEngine],ARec do                                                
            if MeasUserDoseItem.Checked then YLevel:= dUser
            else                             YLevel:= Engines[UsedEngine].wSource[Usource].twAppliedEdgeLevel;
            if (YLevel=dInflection) and (Usource in twcFilteredCopies) then
-             Usource:= twcCoupledFiltered[Usource];
+             Usource:= twcCoupledSources[Usource];
              Result:= SetLengthUnits(Units_in_numerator)*GetFieldWidth_cm(USource,Ylevel);
            Sidedness:= False;
            end;
@@ -9518,8 +9631,8 @@ in second instance, by the Buffer curve.}
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
 {21/02/2021 avoid potentional log(0) situations}
 procedure TAnalyseForm.AutoZoom(FullAuto:Boolean=True);
-var p,d,ZoomWanted,CalcIsGamma: Boolean;
-    r,x                       : twcFloatType;
+var isProfile,isDepthDose,ZoomWanted,CalcIsGamma: Boolean;
+    r,x                                         : twcFloatType;
 
   procedure MinMaxZoomed(amin,amax,arng:twcFloatType;
                          AxisNumber    :integer);  {see TAChartAxis.pas}
@@ -9612,20 +9725,20 @@ with DataPlot,Engines[UsedEngine] do if IsValid then
     x:= GetDisplayedPositionScale;
     with wSource[dsMeasured] do
       begin
-      p:= (twScanPos_cm[ptLast]-twScanPos_cm[ptFirst])/(twDataPos_cm[ptLast]-twDataPos_cm[ptFirst])>0.5; //local use of p here
+      isProfile:= (twScanPos_cm[ptLast]-twScanPos_cm[ptFirst])/(twDataPos_cm[ptLast]-twDataPos_cm[ptFirst])>0.5; //local use of isProfile here
       try
-        BottomAxis.Range.Min:= Math.Min(ifthen(p,twDataPos_cm[ptFirst],twScanPos_cm[ptFirst])*x,BottomAxis.Range.Max-1);
-        BottomAxis.Range.Max:= Math.Max(BottomAxis.Range.Min+1,ifthen(p,twDataPos_cm[ptLast],twScanPos_cm[ptLast])*x);
+        BottomAxis.Range.Min:= Math.Min(ifthen(isProfile,twDataPos_cm[ptFirst],twScanPos_cm[ptFirst])*x,BottomAxis.Range.Max-1);
+        BottomAxis.Range.Max:= Math.Max(BottomAxis.Range.Min+1,ifthen(isProfile,twDataPos_cm[ptLast],twScanPos_cm[ptLast])*x);
        except
         BottomAxis.Range.Min:= -20*x;
         BottomAxis.Range.Max:=  20*x;
        end;
       end;
     ZoomRange:= Clip(ZoomRange,0.8,10);
-    p:= (ScanType in twcHoriscans) and (wSource[dsMeasured].twSetFieldType<>fcWedge); //p set for
+    isProfile:= (ScanType in twcHoriscans) and (wSource[dsMeasured].twSetFieldType<>fcWedge); //p set for
     with wSource[dsCalculated] do
-      d:= (ScanType=snPDD) and twValid and twIsRelative;                              //depth dose
-    ZoomWanted:= (p or d);
+      isDepthDose:= (ScanType=snPDD) and twValid and twIsRelative;                            //depth dose
+    ZoomWanted:= (isProfile or isDepthDose);
     with LeftAxis do
       begin
       Range.Max   := Math.Max(Range.Min+1,PlotScaleMax);
@@ -9646,9 +9759,9 @@ with DataPlot,Engines[UsedEngine] do if IsValid then
      end;
     with wSource[dsMeasured] do
       if DataPlotZoomed and (not ViewZoomItem.Checked) and
-        (d or
-         (p and ((twLevelPos[d90].Limit[twcLeft ].CalcPos*x<BottomAxis.Range.Min) or
-                 (twLevelPos[d90].Limit[twcRight].CalcPos*x>BottomAxis.Range.Max)    ))) then
+        (isDepthDose or
+         (isProfile and ((twLevelPos[d90].Limit[twcLeft ].CalcPos*x<BottomAxis.Range.Min) or
+                         (twLevelPos[d90].Limit[twcRight].CalcPos*x>BottomAxis.Range.Max)    ))) then
         DataPlotUnZoom;
     ZoomWanted            := DataPlotZoomed;
     ViewUnZoomItem.Enabled:= ZoomWanted;
@@ -9700,8 +9813,9 @@ if Sender is TChart then with Sender as TChart do
   ex:= CurrentExtent;                                                           //see https://forum.lazarus.freepascal.org/index.php/topic,46381.msg330445.html#msg330445
   with LeftAxis do                                                              //with autoscaling ex.b.Y and ex.a.Y are in range [0 .. 1.01]
     Marks.Format:= Format('%%0.%df',[Max(0,2-Round(Log10(ifthen(L_AxisTransform_AutoScale.Enabled,100,1)*Abs(ex.b.Y-ex.a.Y))))]);
+  if LoglevelEdit.Value>2 then
+    with Dataplot.LeftAxis do SetMessageBar(Format('%0.2f, %0.2f, %0.2f',[ex.b.Y, ex.a.Y,Log10(ifthen(L_AxisTransform_AutoScale.Enabled,100,1)*Abs(ex.b.Y-ex.a.Y))]));
   end;
-//with Dataplot.LeftAxis do SetMessageBar(Format('%0.2f, %0.2f, %0.2f',[ex.b.Y, ex.a.Y,Log10(ifthen(L_AxisTransform_AutoScale.Enabled,100,1)*Abs(ex.b.Y-ex.a.Y))]));
 end; {~dataplotextentchanged}
 
 
@@ -9740,7 +9854,7 @@ with Engines[UsedEngine],wSource[FFFdataSource] do
                                         clRed,
                                         clBlack)),
                           DefEstimatedCol);
-    for side:= twcLeft to twcRight do                                           //----plot vertical lines for InField area
+    for side:= twcLeft to twcRight do        //------------------------ plot vertical lines for InField area ------------------------------
       begin
       InFieldIndicators[side].Clear;
       InFieldIndicators[side].Active       := ViewIndicatorsItem.Checked and IndicatorsOk;
@@ -9753,7 +9867,7 @@ with Engines[UsedEngine],wSource[FFFdataSource] do
       if PenumbraSigmoids[side].Active then
          with twSigmoidFitData[side] do
            begin
-           PenumbraSigmoids[side].SeriesColor  := PlotSeries[DataSource2PlotItem(FFFdataSource)].SeriesColor and $8f8f8f;
+           PenumbraSigmoids[side].SeriesColor  := PlotSeries[LinkPlotItem(FFFdataSource)].SeriesColor and $8f8f8f;
            PenumbraSigmoids[side].LinePen.Color:= PenumbraSigmoids[side].SeriesColor;
            PosM:= Math.Min(twStepSize_cm,0.025);
            PosL:= twFitLow_cm;
@@ -9764,16 +9878,16 @@ with Engines[UsedEngine],wSource[FFFdataSource] do
            until PosL>=PosR;
            end;
       end;
-      if FFFfeatures then
+      if FFFfeatures then                    //------------------------ plot FFF slopes ------------------------------
         for side:= twcLeft to twcRight do with twFFFslope[side] do
          if twFFFvalid then
            begin
-           FFFIndicators[side].Clear;
-           FFFIndicators[side].Active:= True;
-           FFFIndicators[side].AddXY(tmpX*twPos_cm[twFFFfirst],(twFFFoffset+twFFFgain*twPos_cm[twFFFfirst])*F);
-           FFFIndicators[side].AddXY(tmpX*twPos_cm[twFFFlast ],(twFFFoffset+twFFFgain*twPos_cm[twFFFlast ])*F);
+           FFFSlopeLines[side].Clear;
+           FFFSlopeLines[side].Active:= True;
+           FFFSlopeLines[side].AddXY(tmpX*twPos_cm[twFFFfirst],(twFFFoffset+twFFFgain*twPos_cm[twFFFfirst])*F);
+           FFFSlopeLines[side].AddXY(tmpX*twPos_cm[twFFFlast ],(twFFFoffset+twFFFgain*twPos_cm[twFFFlast ])*F);
            end;
-      if TopModelSeries.Active then
+      if TopModelSeries.Active then          //------------------------ plot Top model, not strictly limited to FFF---
         with TopModelSeries.DomainExclusions do
           begin
           Clear;
@@ -9787,7 +9901,8 @@ end; {~plotindicators}
 
 
 {14/09/2020 Wellhofer changed to Engines[UsedEngine]}
-procedure TAnalyseForm.TopModelFunction(const AX: Double; out AY: Double);
+procedure TAnalyseForm.TopModelFunction(const AX: Double;
+                                        out   AY: Double);
 var X: Double;
 begin
 with Engines[UsedEngine].wSource[FFFdataSource],twTopModel do
@@ -10554,6 +10669,9 @@ var i,j,k: Integer;
     c    : Char;
     b    : Boolean;
 begin
+{$IFDEF JwaWinBase}
+GetCpuUsage(False);
+{$ENDIF}
 b:= (PageControl.ActivePage=ConfigurationTab) or (PageControl.ActivePage=AliasTab) or
     (PageControl.ActivePage=SettingsTab)      or (PageControl.ActivePage=AdvancedSettingsTab);
 k:= 0;                                                                          //limit autolooping
@@ -11446,7 +11564,7 @@ if LoadSelftestFile('selftest24_ScanAngle135.txt') then
   AddEmptyTest;
   end;
 twcDefaultSSDcm[fcStandard]             := 100;
-Ft_Default_SSD_Edit_Cm[fcStandard].Value:= 100;
+Ft_Default_SSD_Cm[fcStandard].Value:= 100;
 if LoadSelftestFile('selftest29_FFF.mcc') then
   FloatResult(CxResults[2][1],20.00,0.5,'Width');                                                    {117}
 CheckMenuItem(MeasScale2defaultSSDitem,True);
@@ -11492,18 +11610,18 @@ for i:= 0 to Pred(Length(UseDoseConvTable)) do with UseDoseConvTable[i] do
   with DCDoseBox do Checked:= Tag=1;
   end;
 SettingsTabExit(Self);
-twcDeriveMinMax                         := tdmm;
-twcDeriveBinFraction                    := tdbf;
-twcDeriveLookAhead                      := tdla;
-twcGammaCutoffPercent                   := tgcp;
-twcGammaDosePercBase                    := tgdp;
-twcGammaDistCmBase                      := tgdc;
-twcGammaSearchMaxFactor                 := tgsf;
-twcMatchRangeDivider                    := tmrf;
-twcMatchStepsNumber                     := tmsf;
-twcMatchNormDeltaPercent                := tmnp;
-twcDefaultSSDcm[fcStandard]             := tssd;
-Ft_Default_SSD_Edit_Cm[fcStandard].Value:= tssd;
+twcDeriveMinMax                    := tdmm;
+twcDeriveBinFraction               := tdbf;
+twcDeriveLookAhead                 := tdla;
+twcGammaCutoffPercent              := tgcp;
+twcGammaDosePercBase               := tgdp;
+twcGammaDistCmBase                 := tgdc;
+twcGammaSearchMaxFactor            := tgsf;
+twcMatchRangeDivider               := tmrf;
+twcMatchStepsNumber                := tmsf;
+twcMatchNormDeltaPercent           := tmnp;
+twcDefaultSSDcm[fcStandard]        := tssd;
+Ft_Default_SSD_Cm[fcStandard].Value:= tssd;
 GetWellhoferValues;
 AddMessage('See the help file, <F1>, for information.',2);
 {$IFDEF Windows}

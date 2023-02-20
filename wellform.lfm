@@ -1,7 +1,7 @@
 object AnalyseForm: TAnalyseForm
-  Left = 517
+  Left = 319
   Height = 565
-  Top = 193
+  Top = 134
   Width = 1000
   AllowDropFiles = True
   AlphaBlendValue = 0
@@ -32,7 +32,10 @@ object AnalyseForm: TAnalyseForm
         Width = 50
       end    
       item
-        Width = 51
+        Width = 65
+      end    
+      item
+        Width = 40
       end>
     SimplePanel = False
   end
@@ -3588,6 +3591,7 @@ object AnalyseForm: TAnalyseForm
         Caption = 'Mirrored measurement as Reference'
         GroupIndex = 71
         ShortCut = 16472
+        OnClick = ProcessMirrorMeasRefClick
       end
       object ProcessSyntheticProfile: TMenuItem
         AutoCheck = True

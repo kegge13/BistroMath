@@ -14,8 +14,9 @@
       <UseXPManifest Value="True"/>
       <XPManifest>
         <DpiAware Value="True"/>
+        <LongPathAware Value="True"/>
         <TextName Value="BistroMath"/>
-        <TextDesc Value="A RT beam data analysis tool"/>
+        <TextDesc Value="RT beam data analysis tool"/>
       </XPManifest>
       <Icon Value="0"/>
     </General>
@@ -23,10 +24,10 @@
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="4"/>
       <MinorVersionNr Value="30"/>
-      <RevisionNr Value="2"/>
-      <BuildNr Value="786"/>
+      <RevisionNr Value="3"/>
+      <BuildNr Value="787"/>
       <Language Value="0809"/>
-      <StringTable CompanyName="Theo van Soest" ProductName="BistroMath" ProductVersion="4"/>
+      <StringTable CompanyName="Theo van Soest" FileDescription="Radiotherapy scan analysis tool" ProductName="BistroMath" ProductVersion="4"/>
     </VersionInfo>
     <BuildModes Count="3">
       <Item1 Name="Default" Default="True"/>

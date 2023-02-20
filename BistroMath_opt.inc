@@ -84,6 +84,9 @@
   {$DEFINE form2pdfcurrent}
 {$ENDIF}
 
+{$IFDEF Windows}
+{$DEFINE JwaWinBase}
+{$ENDIF}
 
 
 //general debug
