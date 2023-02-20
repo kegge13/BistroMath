@@ -392,7 +392,7 @@ type
   21/01/2023
     added StructuredDataSetsLabel,StructuredDataSetsList,FocusPositionStructuredData
   20/02/2023
-    added GetCpuUsage for StatusBar.Panels[3]
+    added GetCpuUsage for StatusBar.Panels[3] and FIdleTimer
   }
 
   {=========== TAnalyseForm =====================}
@@ -890,6 +890,9 @@ type
     procedure FileOpenClick            (Sender         : TObject);                //uses DataFileOpen
     procedure FileOpenTempRefClick     (Sender         : TObject);                //uses TWellhoferData to open
     procedure FileSaveClick            (Sender         : TObject);
+    {$IFDEF JwaWinBase}
+    procedure OnIdleTimer              (Sender         : TObject);
+    {$ENDIF}
     {$IFDEF form2pdf}
     procedure FilePrintFormClick       (Sender         : TObject);
     {$ENDIF}
@@ -1133,6 +1136,7 @@ type
     FLastKernelTime       : Int64;
     FPerformanceFrequency : Int64;
     FLastUserTime         : Int64;
+    FIdleTimer            : TIdleTimer;
    {$ENDIF}
    {$IFDEF SelfTest}
     SelfTestItem          : TMenuItem;
@@ -2467,7 +2471,13 @@ with SpecialMode[1] do
   else
     SetCaption;
 {$ENDIF}
-ClipBoardLock             := False;                                             //finally unlock clipboard
+ClipBoardLock        := False;                                                  //finally unlock clipboard
+{$IFDEF JwaWinBase}
+FIdleTimer:= TIdleTimer.Create(Self);
+FIdleTimer.Interval   := 10000;
+FIdleTimer.AutoEnabled:= True;
+FIdleTimer.OnTimer    := @OnIdleTimer;
+{$ENDIF}
 end; {~formcreate}
 
 
@@ -4721,6 +4731,15 @@ MeasCalcPDDfitClick(Sender);
 end; {~measmenuclick}
 
 
+{$IFDEF JwaWinBase}
+{20/02/2023}
+procedure TAnalyseForm.OnIdleTimer(Sender: TObject);
+begin
+GetCpuUsage(True,10);
+end; {~onidletimer}
+{$ENDIF}
+
+
 {18/09/2015 loglevel}
 {17/12/2015 DataPlot.xxAxis.Font.Color change removed}
 {05/05/2020 dataplot colors synchronised}
@@ -5074,9 +5093,6 @@ if (Sender=SimpleModeItem) or (Sender=ViewNoDefaultAnnotationItem) then
   ClearAllCx;
   PublishResults;
   end;
-{$IFDEF JwaWinBase}
-GetCpuUsage(True,10);
-{$ENDIF}
 end; {~uimodechange}
 
 
@@ -6487,9 +6503,6 @@ while OnDataReadBusy and (l>0) do
   WaitLoop(100);
   Dec(l);
   end;
-{$IFDEF JwaWinBase}
-GetCpuUsage(True,10);
-{$ENDIF}
 if Sender=FileExitItem then
   Close
 else if Sender=AboutItem then
@@ -6843,9 +6856,6 @@ var i: Integer;
   end;
 
 begin
-{$IFDEF JwaWinBase}
-GetCpuUsage(False);
-{$ENDIF}
 ClipBoardLock:= False;
 {$IFDEF PRELOAD}
 PreloadTransfer(Sender);
@@ -10669,9 +10679,6 @@ var i,j,k: Integer;
     c    : Char;
     b    : Boolean;
 begin
-{$IFDEF JwaWinBase}
-GetCpuUsage(False);
-{$ENDIF}
 b:= (PageControl.ActivePage=ConfigurationTab) or (PageControl.ActivePage=AliasTab) or
     (PageControl.ActivePage=SettingsTab)      or (PageControl.ActivePage=AdvancedSettingsTab);
 k:= 0;                                                                          //limit autolooping

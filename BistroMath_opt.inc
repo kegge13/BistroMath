@@ -85,7 +85,7 @@
 {$ENDIF}
 
 {$IFDEF Windows}
-{$DEFINE JwaWinBase}
+  {$DEFINE JwaWinBase}
 {$ENDIF}
 
 
