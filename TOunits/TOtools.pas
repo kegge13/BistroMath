@@ -1,4 +1,4 @@
-unit TOtools; {© Theo van Soest, Lazarus 2.0.12/FPC 3.2.0: 2019 - 13/04/2021}
+unit TOtools; {© Theo van Soest, Lazarus 3.2.0/FPC 3.2.2: 2019 - 09/05/2024}
 {$mode objfpc}{$h+}
 {$BOOLEVAL OFF,WARN SYMBOL_PLATFORM OFF}
 
@@ -205,16 +205,19 @@ begin
 Result:= '';
 try
   VersionInfo:= TVersionInfo.Create;
-  VersionInfo.Load(HINSTANCE);
-  Result:= IntToStr(VersionInfo.FixedInfo.FileVersion[0]) + '.' +
-     Format('%0.*d',[MinorDigits,VersionInfo.FixedInfo.FileVersion[1]]);
-  if (IncludeAnyRelease or (IncludePosRelease and (VersionInfo.FixedInfo.FileVersion[2]<>0))) then
-     Result:= Result + '.' + IntToStr(VersionInfo.FixedInfo.FileVersion[2]);
-  if IncludeBuildInfo then
-     Result:= Result + '.' + IntToStr(VersionInfo.FixedInfo.FileVersion[3]);
+  try
+    VersionInfo.Load(HINSTANCE);
+    Result:= IntToStr(VersionInfo.FixedInfo.FileVersion[0]) + '.' +
+       Format('%0.*d',[MinorDigits,VersionInfo.FixedInfo.FileVersion[1]]);
+    if (IncludeAnyRelease or (IncludePosRelease and (VersionInfo.FixedInfo.FileVersion[2]<>0))) then
+       Result:= Result + '.' + IntToStr(VersionInfo.FixedInfo.FileVersion[2]);
+    if IncludeBuildInfo then
+       Result:= Result + '.' + IntToStr(VersionInfo.FixedInfo.FileVersion[3]);
+   except
+    Result:= '-';
+   end;
  finally
-   if assigned(VersionInfo) then
-     VersionInfo.Free;
+  VersionInfo.Free;
  end;
 end; {getappversionstring}
 
@@ -504,6 +507,7 @@ end; {enabletaskbar}
 {$ENDIF}
 
 
+{09/05/2024 avoid FreeAndNil}
 function GetNumCPU: Integer;
 var Reg: TRegistry;
 begin
@@ -519,11 +523,12 @@ try
      Result:= Reg.ReadInteger('RegisteredProcessors')
   else Result:= 1;
  finally
-    FreeAndNil(Reg);
+   Reg.Free;
  end;
 end; {getnumcpu}
 
 
+{09/05/2024 avoid FreeAndNil}
 function GetCommonAppdataRoot: String;
 var Reg: TRegistry;
     i,j: Integer;
@@ -536,7 +541,7 @@ try
   if Reg.OpenKey('\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders',False) then
     Result      := Reg.ReadString('Common AppData');
  finally
-    FreeAndNil(Reg);
+   Reg.Free;
  end;
 repeat
   i:= Pos('%',Result);
@@ -557,6 +562,7 @@ end; {getcommonappdataroot}
 
 
 {24/02/2015}
+{09/05/2024 avoid FreeAndNil}
 function CheckDecimalPointSeparator(AutoCorrect:Boolean=True): Boolean;
 var Reg: TRegistry;
 begin
@@ -574,7 +580,7 @@ try
       end;
     end;
  finally
-    FreeAndNil(Reg);
+   Reg.Free;
  end;
 end; {checkdecimalpointseparator}
 

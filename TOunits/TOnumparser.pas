@@ -1,4 +1,8 @@
-unit TOnumparser;  {© Theo van Soest 2015-30/03/2022 | FPC 3.2.2: 20/05/2022}
+unit TOnumparser;   {Â© Theo van Soest 2015-29/05/2024 | FPC 3.2.2: 20/05/2022}
+
+{09/03/2023 delphi mode switched off}
+{.MODE Delphi}
+
 {$I TOnumparser_opt.inc}
 {$R-}
 
@@ -202,7 +206,8 @@ SetNegSignChars;
 SetPosSignChars;
 SetDecPointChars;
 SetExponentChars;
-if StringList<>nil then Assign(StringList);
+if StringList<>nil then
+  Assign(StringList);
 end; {~create}
 
 
@@ -237,7 +242,8 @@ end; {~setdelimter}
 {16/11/2020 FTopLineNr}
 procedure toTNumParser.Clear;
 begin
-if assigned(FStrings) then FStrings.Clear;
+if assigned(FStrings) then
+  FStrings.Clear;
 FLineNr   := 0;
 FTopLineNr:= 0;
 FLineCount:= 0;
@@ -284,6 +290,7 @@ else
   FAliasValues[j].toNum  := AValue;
   end;
 end; {~setaliasvalue}
+
 
 {01/04/2020 addr(FStatusProc) changed to FStatusProc}
 procedure toTNumParser.ParseMessage(const AMessage:String);
@@ -400,6 +407,7 @@ end; {~geterrorstrings}
 
 
 {01/06/2020 initialise stg}
+{27/05/2023 applying compound operator "+="}
 function toTNumParser.CommaText: String;
 var Stg: String;
 begin
@@ -408,7 +416,7 @@ if GetStringsStatus then
   Stg:= Strings.CommaText
 else if GotoTop then
   begin
-  while NextLine do Stg:= Stg+','+FLine;
+  while NextLine do Stg+= ','+FLine;
   GotoTop;
   end;
 Result:= Stg;
@@ -417,13 +425,13 @@ end; {~commatext}
 
 procedure toTNumParser.SetMonths(CommaSepStg:string=toDefMonths);
 var i: Integer;
-    s: array of String;
+    s: TStringArray;
 begin
 s:= CommaSepStg.Split(Delimiter);                                               //zero-based
 i:= Min(Length(s),toDefNumMonths);
 while i>0 do
   begin
-  Months[i]:= s[i-1];                                                           //1-based
+  Months[i]:= Copy(s[i-1],1);                                                   //1-based
   Dec(i);
   end;
 end; {~setmonths}
@@ -1210,9 +1218,12 @@ end; {~delimitercountcheck}
 
 
 destructor toTNumParser.Destroy;
+var i: Integer;
 begin
 SetStatusProcedure(nil);
 Setlength(FAliasValues,0);
+for i:= 1 to toDefNumMonths do
+  Finalize(Months[i]);
 FStrings.Free;
 inherited;
 end; {~destroy}

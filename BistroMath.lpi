@@ -24,8 +24,8 @@
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="4"/>
       <MinorVersionNr Value="30"/>
-      <RevisionNr Value="3"/>
-      <BuildNr Value="787"/>
+      <RevisionNr Value="4"/>
+      <BuildNr Value="788"/>
       <Language Value="0809"/>
       <StringTable CompanyName="Theo van Soest" FileDescription="Radiotherapy scan analysis tool" ProductName="BistroMath" ProductVersion="4"/>
     </VersionInfo>
@@ -59,7 +59,6 @@
             <Optimizations>
               <OptimizationLevel Value="0"/>
             </Optimizations>
-            <SmallerCode Value="True"/>
           </CodeGeneration>
           <Linking>
             <Debugging>
@@ -155,7 +154,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="4">
+    <Units Count="3">
       <Unit0>
         <Filename Value="BistroMath.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -169,18 +168,13 @@
         <UnitName Value="WellForm"/>
       </Unit1>
       <Unit2>
-        <Filename Value="clipboardevent.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="ClipBoardEvent"/>
-      </Unit2>
-      <Unit3>
         <Filename Value="klemlogo.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="AboutBox"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="KlemLogo"/>
-      </Unit3>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

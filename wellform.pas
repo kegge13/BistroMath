@@ -1,4 +1,4 @@
-﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-20/02/2023 | Lazarus 2.2.4/FPC 3.2.2: 02/10/2022}
+﻿unit WellForm;  {© Theo van Soest Delphi: 01/08/2005-29/05/2024 | Lazarus 3.2.0/FPC 3.2.2: 02/10/2022}
 {$mode objfpc}{$h+}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
 {$I BistroMath_opt.inc}
@@ -2985,7 +2985,7 @@ if b and CheckWellhoferReady and FKeyboardReady and (not OnDataReadBusy) then   
             if Energy>1 then  begin  tmpE:= Energy;       Er:= 'M';  end
             else              begin  tmpE:= Energy*1000;  Er:= 'k';  end;
             if AppliedFieldClass=fcElectron then
-              Er:= Er+'e';
+              Er+= 'e';
             Er:= Format(' %0.0f %sV,',[tmpE,Er]);
             end;
           Br:= Format('%s%s %s%s%s%s%s%s%s%s%s',
@@ -3010,7 +3010,7 @@ if b and CheckWellhoferReady and FKeyboardReady and (not OnDataReadBusy) then   
                               Format(', SSD%0.0f'        ,[twSSD_cm*TmpX           ])                         ,'')
                                             ]);
           if tw2DoseConv      then
-            Br:= Br+' ('+Def2Dose+ifthen(Length(twOD2doseFilm)>0,'/'+twOD2doseFilm,'')+')';  //add more text to Br
+            Br+= ' ('+Def2Dose+ifthen(Length(twOD2doseFilm)>0,'/'+twOD2doseFilm,'')+')';  //add more text to Br
           if twBackground<>0  then
             Br:= Format('%s (%s)',[Br,DefSubtracted]);                                       //add more text to Br
           BottomAxis.Title.LabelFont.Color:= ifthen(SwapAxis and (not ViewBottomAxisAlwaysBlack.Checked),clRed,LeftAxis.AxisPen.Color);
@@ -3550,6 +3550,7 @@ end; {~setconfigname}
 {15/06/2020 show the number of changed elements}
 {26/07/2020 support for multiple sections and removing keys}
 {26/08/2020 ConfigRepairFound}
+{09/05/2024 avoid FreeAndNil}
 function TAnalyseForm.ConfigRepair(CF:TConfigStrings): Boolean;
 var OldKey,NewKey,TargetSection: String;
     m                          : TMemIniFile;
@@ -3582,8 +3583,8 @@ if Result then for p:= 0 to 1 do
       CF.DeleteKey(TargetSection,OldKey);                                       //remove old key anyway
       end;
     end;
-  FreeAndNil(m);
-  FreeAndNil(v);
+  m.Free;
+  v.Free;
   if p=0 then
     SetMessageBar(Format('%s applied with build %s on %d elements',[DefConfigRepairFile,CF.ReadString(TargetSection,Application.Title,'?'),k]));
   end;
@@ -3713,6 +3714,7 @@ with CF do
   if SectionExists(AliasText) then
     begin
     ReadSectionValues(AliasText,t);
+    Engines[UsedEngine].AddDefaultAliasList(t);
     with t do if Count>0 then
       begin
       for i:= 0 to Pred(Count) do
@@ -3721,16 +3723,8 @@ with CF do
         if not AliasListEditor.FindRow(key,j) then
           AliasListEditor.InsertRow(key,Values[key],True);
         end;
-      j:= Pred(Count);
-      Engines[UsedEngine].AddDefaultAliasList(t);
-      for i:= j to Pred(Count) do
-        begin
-        key:= Names[i];
-        if not AliasListEditor.FindRow(key,j) then
-          AliasListEditor.InsertRow(key,ReadString(AliasText,key,ValueFromIndex[i]),True);
-        end;
       AliasListEditor.Refresh;
-      Engines[UsedEngine].LoadAliasList(AliasListEditor.Strings);
+//      Engines[UsedEngine].LoadAliasList(AliasListEditor.Strings);
       end;
     end;
   ZoomRange:= Clip(ReadFloat(IniSectionName,ZoomText,DefZoomRange),1.005,DefZoomRange+0.2);
@@ -5617,24 +5611,25 @@ end; {~smartscaleelectronpdd}
 {07/06/2021 check for legal value usedengine}
 {15/06/2021 first unset tempref}
 {02/12/2022 reduce number of engines if necessary}
+{09/05/2024 avoid FreeAndNil}
+{29/05/2024 allow listsize of 0}
 procedure TAnalyseForm.SetHistoryListSize(NewLength:Word);
 var i,j: Integer;
 begin
-NewLength:= Max(1,NewLength);
-j        := Length(Engines);
+j:= Length(Engines);
 if TempRefEngine>=NewLength then
   ProcessUnsetTempRefClick(Self);
 if NewLength<Length(Engines) then
   for i:= j-1 downto 0 do
     if i>=NewLength then
-      FreeAndNil(Engines[i])
+      Engines[i].Free
     else
       Engines[i].Freeze:= HistoryListCheckBox.Checked;
 SetLength(Engines,Min(Length(Engines),NewLength));
 HistoryListSize_num.Value:= NewLength;
-UsedEngine               := Min(UsedEngine,NewLength-1);
-if not (fsFirstShow in FormState) then                                          //is excluded after OnCreate event
-  SetCaption(Engines[UsedEngine].FileName);
+UsedEngine:= Min(UsedEngine,NewLength-1);
+if (NewLength>0) and (not (fsFirstShow in FormState)) then                      //is excluded after OnCreate event
+     SetCaption(Engines[UsedEngine].FileName);
 end; {~sethistorylistsize}
 
 
@@ -10937,6 +10932,7 @@ with AListBox do if Items.Count>0 then
 end; {~fileconvgetfilext}
 
 
+{09/05/2024 avoid FreeAndNil}
 procedure TAnalyseForm.RunAboutBox(Sender:TObject);
 begin
 AboutBox                      := TAboutBox.Create(Self);                        //owner is TAnalyseForm
@@ -10948,7 +10944,7 @@ AboutBox.Constraints.MinHeight:= Height;
 AboutBox.Constraints.MaxWidth := Width;
 AboutBox.Constraints.MinWidth := Width;
 AboutBox.ShowModal;
-FreeAndNil(AboutBox);
+AboutBox.Free;
 end; {~runaboutbox}
 
 
@@ -11686,10 +11682,11 @@ end; {~formclose}
 {25/10/2018 SpecialModeValues}
 {04/05/2020 PRELOADTRANSFER}
 {14/09/2020 EngineCleanUp}
+{09/05/2024 avoid FreeAndNil}
 procedure TAnalyseForm.FormDestroy(Sender:TObject);
 begin
 {$IFDEF PRELOAD}
-FreeAndNil(PreLoadStream);
+PreLoadStream.Free;
 {$ENDIF PRELOAD}
 {$IFDEF THREAD_FILES}
 if assigned(ScanListThread) then
@@ -11701,8 +11698,8 @@ if ConfigAutoSaveItem.Checked then
 ChangeClipboardChain(Handle,NextClipboardOwner);                                //handle to remove, handle of next window in the chain
 {$ENDIF}
 InventoryReaderSetup(False);
-FreeAndNil(SpecialModeValues);
-FreeAndNil(PanelElements);
+SpecialModeValues.Free;
+PanelElements.Free;
 Finalize(FileConvPhotonItems);
 Finalize(FileConvElectronItems);
 Finalize(FileConvGeneralItems);

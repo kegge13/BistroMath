@@ -6,7 +6,7 @@ object AnalyseForm: TAnalyseForm
   AllowDropFiles = True
   AlphaBlendValue = 0
   Caption = 'AnalyseForm'
-  ClientHeight = 545
+  ClientHeight = 565
   ClientWidth = 1000
   Color = clScrollBar
   Constraints.MinHeight = 565
@@ -20,11 +20,11 @@ object AnalyseForm: TAnalyseForm
   OnKeyPress = FormKeyPress
   OnKeyUp = FormKeyUp
   OnResize = FormResize
-  LCLVersion = '2.2.4.0'
+  LCLVersion = '3.2.0.0'
   object StatusBar: TStatusBar
     Left = 0
     Height = 23
-    Top = 522
+    Top = 542
     Width = 1000
     HelpContext = 21
     Panels = <    
@@ -41,7 +41,7 @@ object AnalyseForm: TAnalyseForm
   end
   object PageControl: TPageControl
     Left = 0
-    Height = 522
+    Height = 542
     Top = 0
     Width = 1000
     HelpContext = 1
@@ -58,12 +58,12 @@ object AnalyseForm: TAnalyseForm
       AnchorSideBottom.Side = asrBottom
       HelpContext = 1
       Caption = 'Analysis'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object ResultsPanel: TPanel
         Left = 0
         Height = 93
-        Top = 401
+        Top = 421
         Width = 992
         HelpContext = 11
         Align = alBottom
@@ -72,6 +72,7 @@ object AnalyseForm: TAnalyseForm
         ClientHeight = 93
         ClientWidth = 992
         Color = clBtnFace
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         OnMouseEnter = AdjustHelpContext
@@ -114,7 +115,7 @@ object AnalyseForm: TAnalyseForm
       end
       object DataPlot: TChart
         Left = 0
-        Height = 401
+        Height = 421
         Top = 0
         Width = 992
         HelpContext = 9
@@ -223,11 +224,11 @@ object AnalyseForm: TAnalyseForm
     object HistogramTab: TTabSheet
       HelpContext = 17
       Caption = 'Histogram'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object HistogramPlot: TChart
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 17
@@ -288,18 +289,19 @@ object AnalyseForm: TAnalyseForm
     object FocusPositionTab: TTabSheet
       HelpContext = 225
       Caption = 'Focus Position'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object FocusPositionPanel: TPanel
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 225
         Align = alClient
-        ClientHeight = 494
+        ClientHeight = 514
         ClientWidth = 992
         Color = 15466223
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         UseDockManager = False
@@ -333,10 +335,10 @@ object AnalyseForm: TAnalyseForm
             AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
             AutoDropDown = True
             ItemHeight = 15
-            OnChange = FocusPositionPanelPaint
             ReadOnly = True
             TabOrder = 0
             Text = 'FocusPosition_mapping_Box'
+            OnChange = FocusPositionPanelPaint
           end
           object FocusPositionIECLabel: TLabel
             Left = 212
@@ -356,21 +358,21 @@ object AnalyseForm: TAnalyseForm
             AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
             AutoDropDown = True
             ItemHeight = 15
-            OnChange = FocusPositionPanelPaint
             ReadOnly = True
             TabOrder = 1
             Text = 'FocusPosition_IEC_Convention'
+            OnChange = FocusPositionPanelPaint
           end
           object FocusPositionDetectorRotates: TCheckBox
             Left = 112
             Height = 19
             Hint = 'The detector is attached on the treatment head'
             Top = 85
-            Width = 187
+            Width = 185
             Alignment = taLeftJustify
             Caption = 'Detector rotates with collimator'
-            OnChange = FocusPositionStateUpdate
             TabOrder = 2
+            OnChange = FocusPositionStateUpdate
           end
           object FocusPositionUpperLabel: TLabel
             Left = 218
@@ -390,48 +392,48 @@ object AnalyseForm: TAnalyseForm
             AutoDropDown = True
             AutoSize = False
             ItemHeight = 15
-            OnChange = FocusPositionChange_mm
             ReadOnly = True
             TabOrder = 3
             Text = 'Y'
+            OnChange = FocusPositionChange_mm
           end
           object FocusPositionDetSurfaceIsoc: TRadioButton
             Left = 687
             Height = 19
             Top = 80
-            Width = 157
+            Width = 155
             Caption = 'Surface of detector in Isoc'
-            OnChange = FocusPositionChange_mm
             TabOrder = 5
+            OnChange = FocusPositionChange_mm
           end
           object FocusPositionDetectorInIsoc: TRadioButton
             Left = 687
             Height = 19
             Top = 60
-            Width = 102
+            Width = 100
             Caption = 'Detector in Isoc'
-            OnChange = FocusPositionChange_mm
             TabOrder = 4
+            OnChange = FocusPositionChange_mm
           end
           object FocusPositionDetectorOther: TRadioButton
             Left = 687
             Height = 19
             Top = 20
-            Width = 132
+            Width = 130
             Caption = 'Specify detector level'
             Checked = True
-            OnChange = FocusPositionChange_mm
             TabOrder = 6
             TabStop = True
+            OnChange = FocusPositionChange_mm
           end
           object FocusPositionDetAutoSet: TRadioButton
             Left = 687
             Height = 19
             Top = 40
-            Width = 118
+            Width = 116
             Caption = 'Set level from data'
-            OnChange = FocusPositionChange_mm
             TabOrder = 7
+            OnChange = FocusPositionChange_mm
           end
           object FocusPositionFullScaleLabel: TLabel
             Left = 146
@@ -472,26 +474,27 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Data Input'
           ClientHeight = 60
           ClientWidth = 977
+          ParentBackground = False
           TabOrder = 1
           object FocusPositionCollimFromName: TCheckBox
             Left = 12
             Height = 19
             Top = 25
-            Width = 216
+            Width = 214
             Caption = 'Collimator angle in file name prevails'
-            OnChange = UpdateSettings
             TabOrder = 0
+            OnChange = UpdateSettings
           end
           object FocusPositionUseCollimInfo: TCheckBox
             Left = 12
             Height = 19
             Top = -5
-            Width = 188
+            Width = 186
             Caption = 'Apply collimator angle from file'
             Checked = True
-            OnChange = UpdateSettings
             State = cbChecked
             TabOrder = 1
+            OnChange = UpdateSettings
           end
           object FocusPositionNamePatternEdit: TLabeledEdit
             Left = 372
@@ -513,8 +516,8 @@ object AnalyseForm: TAnalyseForm
             Width = 113
             Caption = 'Zero rotation axis'
             Enabled = False
-            OnClick = FocusPositionZeroClick
             TabOrder = 3
+            OnClick = FocusPositionZeroClick
           end
           object FocusPositionResetButton: TButton
             Left = 632
@@ -522,8 +525,8 @@ object AnalyseForm: TAnalyseForm
             Top = -5
             Width = 113
             Caption = 'Reset data'
-            OnClick = FocusPositionResetClick
             TabOrder = 4
+            OnClick = FocusPositionResetClick
           end
           object FocusPositionZeroFPButton: TButton
             Left = 783
@@ -532,8 +535,8 @@ object AnalyseForm: TAnalyseForm
             Width = 113
             Caption = 'Zero Focal point'
             Enabled = False
-            OnClick = FocusPositionZeroClick
             TabOrder = 5
+            OnClick = FocusPositionZeroClick
           end
           object FocusPositionStructuredData: TStaticText
             Left = 243
@@ -553,6 +556,7 @@ object AnalyseForm: TAnalyseForm
           Top = 222
           Width = 981
           Caption = 'Results'
+          ParentBackground = False
           TabOrder = 2
         end
       end
@@ -560,18 +564,19 @@ object AnalyseForm: TAnalyseForm
     object PDDFitResultsTab: TTabSheet
       HelpContext = 20
       Caption = 'PDD Fit Results'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object PDDFitResultsPanel: TPanel
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 220
         Align = alClient
-        ClientHeight = 494
+        ClientHeight = 514
         ClientWidth = 992
         Color = clBtnFace
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         object PDDFitResultsGrid: TStringGrid
@@ -607,7 +612,7 @@ object AnalyseForm: TAnalyseForm
           Left = 33
           Height = 19
           Top = 355
-          Width = 89
+          Width = 87
           AllowGrayed = True
           Caption = 'Copy all data'
           TabOrder = 1
@@ -616,7 +621,7 @@ object AnalyseForm: TAnalyseForm
           Left = 33
           Height = 19
           Top = 379
-          Width = 98
+          Width = 96
           Caption = 'Include header'
           Checked = True
           State = cbChecked
@@ -626,7 +631,7 @@ object AnalyseForm: TAnalyseForm
           Left = 33
           Height = 19
           Top = 403
-          Width = 92
+          Width = 90
           Caption = 'Include labels'
           TabOrder = 3
         end
@@ -635,12 +640,12 @@ object AnalyseForm: TAnalyseForm
     object AliasTab: TTabSheet
       HelpContext = 20
       Caption = 'Alias'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       OnExit = AliasTabExit
       object AliasListEditor: TValueListEditor
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 20
@@ -664,19 +669,20 @@ object AnalyseForm: TAnalyseForm
     object FieldTypesTab: TTabSheet
       HelpContext = 23
       Caption = 'Field Types'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       OnExit = SetWellhoferValues
       object FieldTypesPanel: TPanel
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 23
         Align = alClient
-        ClientHeight = 494
+        ClientHeight = 514
         ClientWidth = 992
         Color = clBtnFace
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         object Ft_EdgePrimaryLabel: TLabel
@@ -779,19 +785,20 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Edge detection and related parameters'
           ClientHeight = 124
           ClientWidth = 601
+          ParentBackground = False
           TabOrder = 0
           object EdgeDetectionCheckBox: TCheckBox
             Left = 9
             Height = 19
             Hint = 'Use edge detection value when difference too large'
             Top = 5
-            Width = 126
+            Width = 124
             HelpContext = 130
             Caption = 'Edge fallback (mm):'
             Checked = True
-            OnClick = UpdateSettings
             State = cbChecked
             TabOrder = 0
+            OnClick = UpdateSettings
           end
           object EdgeSigmoidRadiusLabel: TLabel
             Left = 383
@@ -929,6 +936,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'FFF detection and analysis'
           ClientHeight = 124
           ClientWidth = 288
+          ParentBackground = False
           TabOrder = 1
           object FFFMinDoseDifLabel: TLabel
             Left = 7
@@ -1098,19 +1106,20 @@ object AnalyseForm: TAnalyseForm
     object SettingsTab: TTabSheet
       HelpContext = 127
       Caption = 'Settings'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       OnExit = SettingsTabExit
       object SettingsPanel: TPanel
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 127
         Align = alClient
-        ClientHeight = 494
+        ClientHeight = 514
         ClientWidth = 992
         Color = clBtnFace
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         TabStop = True
@@ -1125,6 +1134,7 @@ object AnalyseForm: TAnalyseForm
           ClientHeight = 28
           ClientWidth = 694
           Color = clBtnFace
+          ParentBackground = False
           ParentColor = False
           TabOrder = 1
           object ShiftStepLabel: TLabel
@@ -1164,13 +1174,14 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Merge settings'
           ClientHeight = 29
           ClientWidth = 694
+          ParentBackground = False
           TabOrder = 2
           object MergeMatchCheckBox: TCheckBox
             Left = 391
             Height = 19
             Hint = 'Try to match overlap region for profiles'
             Top = 8
-            Width = 130
+            Width = 128
             HelpContext = 127
             Caption = 'Use profile matching'
             Checked = True
@@ -1182,7 +1193,7 @@ object AnalyseForm: TAnalyseForm
             Left = 391
             Height = 19
             Top = -11
-            Width = 114
+            Width = 112
             HelpContext = 127
             Caption = 'Scale overlap area'
             Checked = True
@@ -1247,6 +1258,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Gamma analysis settings'
           ClientHeight = 127
           ClientWidth = 694
+          ParentBackground = False
           TabOrder = 3
           object GammaLimitAreaLabel: TLabel
             Left = 11
@@ -1261,7 +1273,7 @@ object AnalyseForm: TAnalyseForm
             Height = 19
             Hint = 'percentage based on local reference value'
             Top = 2
-            Width = 73
+            Width = 71
             HelpContext = 136
             Caption = 'local dose'
             Checked = True
@@ -1447,6 +1459,7 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Mayneord settings'
           ClientHeight = 29
           ClientWidth = 694
+          ParentBackground = False
           TabOrder = 4
           object MayneordDmaxLabel: TLabel
             Left = 32
@@ -1532,7 +1545,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'Take missing origin value from other line (StarCheck maxi)'
           Top = 310
-          Width = 203
+          Width = 201
           HelpContext = 127
           Alignment = taLeftJustify
           Caption = 'Assign origin to both 2D array axes'
@@ -1808,7 +1821,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'Derive the IFA from given field size if realistic'
           Top = 340
-          Width = 172
+          Width = 170
           HelpContext = 127
           Alignment = taLeftJustify
           Caption = 'Use nominal field size for IFA'
@@ -1829,12 +1842,13 @@ object AnalyseForm: TAnalyseForm
           Caption = 'PDD fit'
           ClientHeight = 120
           ClientWidth = 694
+          ParentBackground = False
           TabOrder = 16
           object PDDfitCheckBox: TCheckBox
             Left = 37
             Height = 19
             Top = 1
-            Width = 108
+            Width = 106
             HelpContext = 129
             Alignment = taLeftJustify
             Caption = 'Fit PDD to buffer'
@@ -1845,7 +1859,7 @@ object AnalyseForm: TAnalyseForm
             Left = 294
             Height = 19
             Top = 29
-            Width = 44
+            Width = 42
             HelpContext = 129
             Alignment = taLeftJustify
             Caption = 'mu3'
@@ -1855,7 +1869,7 @@ object AnalyseForm: TAnalyseForm
             Left = 294
             Height = 19
             Top = 48
-            Width = 44
+            Width = 42
             HelpContext = 129
             Alignment = taLeftJustify
             Caption = 'mu4'
@@ -1865,7 +1879,7 @@ object AnalyseForm: TAnalyseForm
             Left = 296
             Height = 19
             Top = 67
-            Width = 43
+            Width = 41
             HelpContext = 129
             Alignment = taLeftJustify
             Caption = 'mx2'
@@ -1875,18 +1889,18 @@ object AnalyseForm: TAnalyseForm
             Left = 211
             Height = 19
             Top = 57
-            Width = 46
+            Width = 44
             HelpContext = 129
             Alignment = taLeftJustify
             Caption = 'fixed'
-            OnClick = FitMubPowerFixedClick
             TabOrder = 3
+            OnClick = FitMubPowerFixedClick
           end
           object FitENRweigthedCheckBox: TCheckBox
             Left = 215
             Height = 19
             Top = 85
-            Width = 42
+            Width = 40
             HelpContext = 129
             Alignment = taLeftJustify
             Caption = 'ENR'
@@ -2075,19 +2089,20 @@ object AnalyseForm: TAnalyseForm
     object AdvancedSettingsTab: TTabSheet
       HelpContext = 129
       Caption = 'Advanced Settings'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       OnExit = AdvancedSettingsTabExit
       object AdvancedSettingsPanel: TPanel
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 129
         Align = alClient
-        ClientHeight = 494
+        ClientHeight = 514
         ClientWidth = 992
         Color = clBtnFace
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         object AddDateTimeCheckBox: TCheckBox
@@ -2095,7 +2110,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'Add date and time to file name'
           Top = 7
-          Width = 184
+          Width = 182
           HelpContext = 129
           Caption = 'Add date and time to file name'
           Checked = True
@@ -2108,7 +2123,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'show warnings from analysis process'
           Top = 127
-          Width = 177
+          Width = 175
           HelpContext = 129
           Caption = 'Show warnings         Log level:'
           ParentBidiMode = False
@@ -2119,7 +2134,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'When checked, the program will start in Advanced Mode'
           Top = 37
-          Width = 164
+          Width = 162
           HelpContext = 129
           Caption = 'Advanced Mode on startup'
           ParentBidiMode = False
@@ -2130,7 +2145,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'Use matching as primary strategy'
           Top = 209
-          Width = 243
+          Width = 241
           HelpContext = 129
           Caption = 'Use always matching for profile alignment'
           ParentBidiMode = False
@@ -2141,7 +2156,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'use statistical methods to find outliers'
           Top = 269
-          Width = 174
+          Width = 172
           HelpContext = 129
           Caption = 'Filter outlier analysis (points):'
           Checked = True
@@ -2161,6 +2176,7 @@ object AnalyseForm: TAnalyseForm
           Font.Color = clWindowText
           Font.Height = -11
           Font.Name = 'MS Sans Serif'
+          ParentBackground = False
           ParentFont = False
           TabOrder = 5
           object AxisViewDetLengthLabel: TLabel
@@ -2191,20 +2207,20 @@ object AnalyseForm: TAnalyseForm
           end
           object AxisViewFileTypeCheckBox: TCheckBox
             Left = 18
-            Height = 19
+            Height = 17
             Hint = 'Show file tye description'
             Top = 1
-            Width = 113
+            Width = 111
             HelpContext = 129
             Caption = 'File type description'
             TabOrder = 0
           end
           object AxisViewDetNameCheckBox: TCheckBox
             Left = 278
-            Height = 19
+            Height = 17
             Hint = 'Show detector name'
             Top = 1
-            Width = 90
+            Width = 88
             HelpContext = 129
             Caption = 'Detector name'
             Checked = True
@@ -2213,39 +2229,39 @@ object AnalyseForm: TAnalyseForm
           end
           object AxisViewCollAngleCheckBox: TCheckBox
             Left = 18
-            Height = 19
+            Height = 17
             Hint = 'Show collimator angle'
             Top = 26
-            Width = 94
+            Width = 92
             HelpContext = 129
             Caption = 'Collimator angle'
             TabOrder = 2
           end
           object AxisViewCommentsCheckBox: TCheckBox
             Left = 279
-            Height = 19
+            Height = 17
             Top = 26
-            Width = 69
+            Width = 67
             HelpContext = 129
             Caption = 'Comments'
             TabOrder = 4
           end
           object AxisViewSSDCheckBox: TCheckBox
             Left = 19
-            Height = 19
+            Height = 17
             Hint = 'Show SSD'
             Top = 51
-            Width = 65
+            Width = 63
             HelpContext = 129
             Caption = 'SSD (cm)'
             TabOrder = 3
           end
           object AxisViewFieldTypeCheckBox: TCheckBox
             Left = 160
-            Height = 19
+            Height = 17
             Hint = 'Show file tye description'
             Top = 2
-            Width = 65
+            Width = 63
             HelpContext = 129
             Caption = 'Field type'
             TabOrder = 5
@@ -2291,6 +2307,7 @@ object AnalyseForm: TAnalyseForm
           Font.Color = clWindowText
           Font.Height = -11
           Font.Name = 'MS Sans Serif'
+          ParentBackground = False
           ParentFont = False
           TabOrder = 6
           object PlotColorPanel: TColorButton
@@ -2358,6 +2375,7 @@ object AnalyseForm: TAnalyseForm
           Font.Color = clWindowText
           Font.Height = -11
           Font.Name = 'MS Sans Serif'
+          ParentBackground = False
           ParentFont = False
           TabOrder = 7
           object MatchRangeDividerLabel: TLabel
@@ -2479,6 +2497,7 @@ object AnalyseForm: TAnalyseForm
           Font.Color = clWindowText
           Font.Height = -11
           Font.Name = 'MS Sans Serif'
+          ParentBackground = False
           ParentFont = False
           TabOrder = 8
           object MeasReMappingString: TComboBox
@@ -2491,50 +2510,50 @@ object AnalyseForm: TAnalyseForm
             CharCase = ecUppercase
             DropDownCount = 6
             ItemHeight = 13
-            OnChange = MeasReMappingStringChange
             TabOrder = 0
+            OnChange = MeasReMappingStringChange
           end
           object SwapGTcheckbox: TCheckBox
             Left = 196
-            Height = 19
+            Height = 17
             Top = 5
-            Width = 113
+            Width = 111
             HelpContext = 129
             Caption = 'Swap &GT indicators'
             Checked = True
-            OnClick = OnDataRead
             State = cbChecked
             TabOrder = 1
+            OnClick = OnDataRead
           end
           object SwapABcheckbox: TCheckBox
             Left = 196
-            Height = 19
+            Height = 17
             Top = 30
-            Width = 112
+            Width = 110
             HelpContext = 129
             Caption = 'Swap &AB indicators'
-            OnClick = OnDataRead
             TabOrder = 2
+            OnClick = OnDataRead
           end
           object SwapUDcheckbox: TCheckBox
             Left = 374
-            Height = 19
+            Height = 17
             Top = 5
-            Width = 114
+            Width = 112
             HelpContext = 129
             Caption = 'Swap &UD indicators'
-            OnClick = OnDataRead
             TabOrder = 3
+            OnClick = OnDataRead
           end
           object SwapLRcheckbox: TCheckBox
             Left = 374
-            Height = 19
+            Height = 17
             Top = 30
-            Width = 112
+            Width = 110
             HelpContext = 129
             Caption = 'Swap &LR indicators'
-            OnClick = OnDataRead
             TabOrder = 4
+            OnClick = OnDataRead
           end
         end
         object BadPenumbraLabel: TLabel
@@ -2631,12 +2650,12 @@ object AnalyseForm: TAnalyseForm
           Left = 10
           Height = 19
           Top = 157
-          Width = 175
+          Width = 173
           HelpContext = 129
           Caption = 'Use history list              length:'
-          OnClick = HistoryListSizeClick
           ParentBidiMode = False
           TabOrder = 13
+          OnClick = HistoryListSizeClick
         end
         object HistoryListSize_num: TSpinEditEx
           Left = 193
@@ -2674,7 +2693,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'All data will stay untouched'
           Top = 179
-          Width = 180
+          Width = 178
           HelpContext = 129
           Caption = 'Put history data in frozen state'
           ParentBidiMode = False
@@ -2685,7 +2704,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'Use matching as primary strategy'
           Top = 239
-          Width = 182
+          Width = 180
           HelpContext = 129
           Caption = 'Auto set decimal separator for:'
           ParentBidiMode = False
@@ -2698,17 +2717,17 @@ object AnalyseForm: TAnalyseForm
           Width = 33
           HelpContext = 97
           AutoSize = False
-          OnEnter = EditEnter
-          OnExit = UImodeChange
           TabOrder = 21
           Text = '.,'
+          OnEnter = EditEnter
+          OnExit = UImodeChange
         end
         object ShowLockItemCheckBox: TCheckBox
           Left = 10
           Height = 19
           Hint = 'When checked, the File menu item to lock critical actions will be shown'
           Top = 97
-          Width = 227
+          Width = 225
           HelpContext = 129
           Caption = 'Show "Lock Critical Items" in File menu'
           ParentBidiMode = False
@@ -2723,12 +2742,13 @@ object AnalyseForm: TAnalyseForm
           Caption = 'Linac symmetry error'
           ClientHeight = 31
           ClientWidth = 556
+          ParentBackground = False
           TabOrder = 18
           object LinacErrInvertGTCheckBox: TCheckBox
             Left = 29
             Height = 19
             Top = 1
-            Width = 95
+            Width = 93
             HelpContext = 127
             Alignment = taLeftJustify
             Caption = 'Invert sign: GT'
@@ -2739,7 +2759,7 @@ object AnalyseForm: TAnalyseForm
             Left = 131
             Height = 19
             Top = 1
-            Width = 35
+            Width = 33
             HelpContext = 127
             Alignment = taLeftJustify
             Caption = 'AB'
@@ -2792,7 +2812,7 @@ object AnalyseForm: TAnalyseForm
           Height = 19
           Hint = 'FFF property in contents and file name'
           Top = 67
-          Width = 223
+          Width = 221
           HelpContext = 129
           Caption = 'FFF property in file contents and name'
           Checked = True
@@ -2819,34 +2839,35 @@ object AnalyseForm: TAnalyseForm
           Width = 465
           HelpContext = 97
           AutoSize = False
+          TabOrder = 22
+          Text = 'STARCHECK,STARCHECKMAXI,ICPROFILER,STARCHECKMAXI_MR,STARCHECKMAXIMR'
           OnEditingDone = AdvancedSettingsTabExit
           OnEnter = EditEnter
           OnExit = UImodeChange
-          TabOrder = 22
-          Text = 'STARCHECK,STARCHECKMAXI,ICPROFILER,STARCHECKMAXI_MR,STARCHECKMAXIMR'
         end
       end
     end
     object ConfigurationTab: TTabSheet
       HelpContext = 240
       Caption = 'Configuration'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object ConfigurationPanel: TPanel
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 240
         Align = alClient
-        ClientHeight = 494
+        ClientHeight = 514
         ClientWidth = 992
         Color = clBtnFace
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         object ModListGrid: TStringGrid
           Left = 1
-          Height = 492
+          Height = 512
           Top = 1
           Width = 529
           HelpContext = 240
@@ -2870,8 +2891,8 @@ object AnalyseForm: TAnalyseForm
           Width = 50
           HelpContext = 240
           Caption = 'Add'
-          OnClick = ModListAddClick
           TabOrder = 1
+          OnClick = ModListAddClick
         end
         object ModListEditButton: TButton
           Left = 585
@@ -2880,8 +2901,8 @@ object AnalyseForm: TAnalyseForm
           Width = 50
           HelpContext = 240
           Caption = 'Edit'
-          OnClick = ModListEditClick
           TabOrder = 2
+          OnClick = ModListEditClick
         end
         object ModListDelButton: TButton
           Left = 585
@@ -2890,52 +2911,52 @@ object AnalyseForm: TAnalyseForm
           Width = 50
           HelpContext = 240
           Caption = 'Delete'
-          OnClick = ModListDelClick
           TabOrder = 3
+          OnClick = ModListDelClick
         end
         object ModListNormRadioButton: TRadioButton
           Left = 575
           Height = 19
           Top = 184
-          Width = 156
+          Width = 154
           HelpContext = 240
           Caption = 'Depth dose normalisation'
           Checked = True
-          OnClick = ModListRadioButtonClick
           TabOrder = 4
           TabStop = True
+          OnClick = ModListRadioButtonClick
         end
         object ModListFilmRadioButton: TRadioButton
           Left = 575
           Height = 19
           Top = 210
-          Width = 79
+          Width = 77
           HelpContext = 240
           Caption = 'OD to dose'
-          OnClick = ModListRadioButtonClick
           TabOrder = 5
+          OnClick = ModListRadioButtonClick
         end
         object ModListBeamRadioButton: TRadioButton
           Left = 575
           Height = 19
           Top = 237
-          Width = 117
+          Width = 115
           HelpContext = 240
           Caption = 'Generic references'
-          OnClick = ModListRadioButtonClick
           TabOrder = 6
+          OnClick = ModListRadioButtonClick
         end
       end
     end
     object LogTab: TTabSheet
       HelpContext = 300
       Caption = 'Messages'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object LogTabMemo: TMemo
         Tag = 500
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 300
@@ -2949,11 +2970,11 @@ object AnalyseForm: TAnalyseForm
     object RawDataTab: TTabSheet
       HelpContext = 3
       Caption = 'Raw data'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object RawDataEditor: TMemo
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 3
@@ -2962,21 +2983,21 @@ object AnalyseForm: TAnalyseForm
         Lines.Strings = (
           'Editor'
         )
-        OnEnter = EditEnter
         ScrollBars = ssAutoBoth
         TabOrder = 0
         WordWrap = False
+        OnEnter = EditEnter
       end
     end
     object InventoryTab: TTabSheet
       HelpContext = 95
       Caption = 'Files'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object InventoryGrid: TStringGrid
         AnchorSideLeft.Side = asrBottom
         Left = 178
-        Height = 508
+        Height = 528
         Top = -8
         Width = 818
         HelpContext = 95
@@ -3004,39 +3025,39 @@ object AnalyseForm: TAnalyseForm
         Left = 7
         Height = 19
         Top = 4
-        Width = 77
+        Width = 75
         HelpContext = 95
         Caption = 'References'
-        OnClick = InventoryDirBoxChange
         TabOrder = 1
+        OnClick = InventoryDirBoxChange
       end
       object InventoryRadioData: TRadioButton
         Left = 7
         Height = 19
         Top = 25
-        Width = 44
+        Width = 42
         HelpContext = 95
         Caption = 'Data'
         Checked = True
-        OnClick = InventoryDirBoxChange
         TabOrder = 2
         TabStop = True
+        OnClick = InventoryDirBoxChange
       end
       object InventoryRadioSelf: TRadioButton
         Left = 7
         Height = 19
         Top = 46
-        Width = 63
+        Width = 61
         HelpContext = 95
         Caption = 'Selftests'
-        OnClick = InventoryDirBoxChange
         TabOrder = 3
+        OnClick = InventoryDirBoxChange
       end
       object InventoryAltAxisCheckBox: TCheckBox
         Left = 8
         Height = 19
         Top = 69
-        Width = 132
+        Width = 130
         HelpContext = 95
         Caption = 'Alternative axis setup'
         TabOrder = 4
@@ -3049,8 +3070,8 @@ object AnalyseForm: TAnalyseForm
         HelpContext = 95
         Caption = '-> set path'
         Enabled = False
-        OnClick = InventorySetRefDirClick
         TabOrder = 5
+        OnClick = InventorySetRefDirClick
       end
       object InventoryDirBox: TDirectoryEdit
         Left = 8
@@ -3073,19 +3094,20 @@ object AnalyseForm: TAnalyseForm
     object FileConversionTab: TTabSheet
       HelpContext = 97
       Caption = 'Conversion'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object FileConversionPanel: TPanel
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 97
         Align = alClient
         Caption = 'FileConversionPanel'
-        ClientHeight = 494
+        ClientHeight = 514
         ClientWidth = 992
         Color = clBtnFace
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         object FileConvStartButton: TButton
@@ -3095,12 +3117,12 @@ object AnalyseForm: TAnalyseForm
           Width = 75
           HelpContext = 97
           Caption = 'Start'
-          OnClick = FileConvStartClick
           TabOrder = 0
+          OnClick = FileConvStartClick
         end
         object FileConvList: TMemo
           Left = 5
-          Height = 280
+          Height = 300
           Top = 207
           Width = 771
           HelpContext = 97
@@ -3112,7 +3134,7 @@ object AnalyseForm: TAnalyseForm
           Left = 190
           Height = 19
           Top = 172
-          Width = 139
+          Width = 137
           HelpContext = 97
           Caption = 'Overwrite existing files'
           TabOrder = 2
@@ -3121,33 +3143,33 @@ object AnalyseForm: TAnalyseForm
           Left = 190
           Height = 19
           Top = 139
-          Width = 108
+          Width = 106
           HelpContext = 97
           Caption = 'Lowercase name'
+          TabOrder = 3
           OnClick = FileConvStartCheck
           OnExit = FileConvStartCheck
-          TabOrder = 3
         end
         object FileConvSamePath: TCheckBox
           Left = 5
           Height = 19
           Top = 139
-          Width = 129
+          Width = 127
           HelpContext = 97
           Caption = 'Same Path as Source'
+          TabOrder = 4
           OnClick = FileConvStartCheck
           OnExit = FileConvStartCheck
-          TabOrder = 4
         end
         object FileConvMakeFileName: TCheckBox
           Left = 375
           Height = 19
           Top = 139
-          Width = 119
+          Width = 117
           HelpContext = 97
           Caption = 'Generate file name'
-          OnClick = FileConvNameMaskEnter
           TabOrder = 5
+          OnClick = FileConvNameMaskEnter
         end
         object FileConvNameMask: TEdit
           Left = 375
@@ -3156,9 +3178,9 @@ object AnalyseForm: TAnalyseForm
           Width = 155
           HelpContext = 97
           AutoSize = False
+          TabOrder = 6
           OnExit = FileConvStartCheck
           OnKeyPress = FileConvNameMaskKeyPress
-          TabOrder = 6
         end
         object FileConvDestinationListBox: TListBox
           Left = 599
@@ -3167,9 +3189,9 @@ object AnalyseForm: TAnalyseForm
           Width = 177
           HelpContext = 97
           ItemHeight = 0
+          TabOrder = 7
           OnClick = FileConvStartCheck
           OnExit = FileConvStartCheck
-          TabOrder = 7
         end
         object FileConvSourceListBox: TListBox
           Left = 599
@@ -3178,15 +3200,15 @@ object AnalyseForm: TAnalyseForm
           Width = 177
           HelpContext = 97
           ItemHeight = 0
+          TabOrder = 8
           OnClick = FileConvStartCheck
           OnExit = FileConvStartCheck
-          TabOrder = 8
         end
         object FileConvSourceRecursive: TCheckBox
           Left = 5
           Height = 19
           Top = 43
-          Width = 107
+          Width = 105
           HelpContext = 97
           Caption = 'Recursive search'
           TabOrder = 9
@@ -3195,12 +3217,12 @@ object AnalyseForm: TAnalyseForm
           Left = 190
           Height = 19
           Top = 43
-          Width = 250
+          Width = 248
           HelpContext = 97
           Caption = 'Apply Ionisation to Dose conversion to PDD'
+          TabOrder = 10
           OnClick = FileConvStartCheck
           OnExit = FileConvStartCheck
-          TabOrder = 10
         end
         object FileConvSourcePath: TDirectoryEdit
           Left = 5
@@ -3238,7 +3260,6 @@ object AnalyseForm: TAnalyseForm
           Top = 1
           Width = 90
           Caption = 'Source Directory:'
-          Color = clDefault
           ParentColor = False
           Transparent = False
         end
@@ -3248,7 +3269,6 @@ object AnalyseForm: TAnalyseForm
           Top = 1
           Width = 87
           Caption = 'Source File Type:'
-          Color = clDefault
           ParentColor = False
           Transparent = False
         end
@@ -3258,7 +3278,6 @@ object AnalyseForm: TAnalyseForm
           Top = 99
           Width = 89
           Caption = 'Output File Type:'
-          Color = clDefault
           ParentColor = False
           Transparent = False
         end
@@ -3268,7 +3287,6 @@ object AnalyseForm: TAnalyseForm
           Top = 99
           Width = 92
           Caption = 'Output Directory:'
-          Color = clDefault
           ParentColor = False
           Transparent = False
         end
@@ -3277,29 +3295,30 @@ object AnalyseForm: TAnalyseForm
     object ODconvTab: TTabSheet
       HelpContext = 230
       Caption = 'Signal Adapt'
-      ClientHeight = 494
+      ClientHeight = 514
       ClientWidth = 992
       object ODConversionPanel: TPanel
         Left = 0
-        Height = 494
+        Height = 514
         Top = 0
         Width = 992
         HelpContext = 230
         Align = alClient
-        ClientHeight = 494
+        ClientHeight = 514
         ClientWidth = 992
         Color = clCream
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
         object UseBackGroundBox: TGroupBox
           Left = 3
-          Height = 478
+          Height = 498
           Top = 0
           Width = 462
           HelpContext = 230
           Anchors = [akTop, akLeft, akBottom]
           Caption = 'Dose conversion and Background'
-          ClientHeight = 460
+          ClientHeight = 480
           ClientWidth = 458
           Color = clWhite
           Font.Color = clWindowText
@@ -3316,7 +3335,6 @@ object AnalyseForm: TAnalyseForm
             Width = 80
             Align = alCustom
             Caption = 'Dose conversion'
-            Color = clDefault
             ParentColor = False
             Transparent = False
           end
@@ -3327,7 +3345,6 @@ object AnalyseForm: TAnalyseForm
             Width = 39
             Align = alCustom
             Caption = 'Modality'
-            Color = clDefault
             ParentColor = False
             Transparent = False
           end
@@ -3338,7 +3355,6 @@ object AnalyseForm: TAnalyseForm
             Width = 38
             Align = alCustom
             Caption = 'Filmtype'
-            Color = clDefault
             ParentColor = False
             Transparent = False
           end
@@ -3350,7 +3366,6 @@ object AnalyseForm: TAnalyseForm
             Align = alCustom
             Alignment = taRightJustify
             Caption = 'Background'
-            Color = clDefault
             ParentColor = False
             Transparent = False
           end
@@ -3361,7 +3376,6 @@ object AnalyseForm: TAnalyseForm
             Width = 69
             Align = alCustom
             Caption = 'absolute value'
-            Color = clDefault
             ParentColor = False
             Transparent = False
           end
@@ -3373,8 +3387,8 @@ object AnalyseForm: TAnalyseForm
           Width = 50
           HelpContext = 230
           Caption = 'Delete'
-          OnClick = UseDoseDelButtonClick
           TabOrder = 1
+          OnClick = UseDoseDelButtonClick
         end
         object UseDoseAddButton: TButton
           Left = 486
@@ -3383,8 +3397,8 @@ object AnalyseForm: TAnalyseForm
           Width = 50
           HelpContext = 230
           Caption = 'Add'
-          OnClick = UseDoseAddButtonClick
           TabOrder = 2
+          OnClick = UseDoseAddButtonClick
         end
       end
     end
