@@ -1,4 +1,4 @@
-unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-19/02/2023 | FPC 3.2.2: 20/05/2022}
+unit Wellhofer;  {© Theo van Soest Delphi: 01/08/2005-29/05/2024 | FPC 3.2.2: 20/05/2022}
 {$mode objfpc}{$h+}
 {$I BistroMath_opt.inc}
 
@@ -3150,7 +3150,7 @@ type
      function  OD2doseConversion(PreferedModality  :String        ='';
                                  PreferedFilmType  :String        ='';
                                  ASource           :twcDataSource =dsMeasured ): Boolean;
-     procedure LoadAliasList(AliasConfigList       :TStrings                  );
+     procedure LoadAliasList(AliasConfigList       :TStringList               );
      function  ApplyAliasList(AKey                 :string                    ): string;
      function  AliasListKeyApplied(AKey            :string                    ): Boolean;
      procedure ResetAliasList;
@@ -3203,8 +3203,8 @@ type
      procedure PddFit(ASource                      :twcDataSource =dsMeasured;
                       ADestination                 :twcDataSource =dsCalculated);
      function  FindEdge(ASource                    :twcDataSource =dsMeasured ): Boolean;     //BistroMath core function
-     procedure FastScan(ASource                    :twcDataSource =dsMeasured;
-                        ClearAnalysis              :Boolean       =True       );              //BistroMath core function
+     function  FastScan(ASource                    :twcDataSource =dsMeasured;
+                        ClearAnalysis              :Boolean       =True       ): Boolean;     //BistroMath core function
      function  Analyse(ASource                     :twcDataSource =dsMeasured;                //BistroMath core function
                        AutoCenterProfile           :twcAutoCenter =AC_default ): Boolean;
      function  AdjustedFilterWidthCm(ASource       :twcDataSource =dsMeasured ): twcFloatType;
@@ -3213,7 +3213,7 @@ type
      procedure SetCalcWidth(cm                     :twcFloatType              );
      procedure SetNoPenumbraOk(ANoPenumbraOk       :Boolean                   );
      procedure SetZeroStepsOk(AZeroStepsOk         :Boolean                   );
-     procedure AddDefaultAliasList(AliasConfigList :TStrings                  );
+     function  AddDefaultAliasList(AliasConfigList :TStringList               ): String;
      procedure SetArrayScanRefOk(ASource           :twcDataSource =dsMeasured );
      procedure SetArrayScanRefUse(AState           :Boolean                   );
      procedure SetAutoLoadRef(AState               :Boolean                   );
@@ -3529,6 +3529,7 @@ end; {~getmoddatacount}
 
 
 {01/04/2022 new implementation supports modality+info}
+{09/05/2024 avoid FreeAndNil}
 function TModalityList.AddModData(ACommaText:String;
                                   ASeparator:Char=','): Integer;
 var p  : toTNumParser;
@@ -3542,7 +3543,7 @@ i            := p.NextString(ASeparator);
 Result       := Length(FDataObj);
 b            := False;
 try
-  FreeAndNil(p);
+  p.Free;
  except
   ExceptMessage('TModNormList.AddModData!');
  end;
@@ -3555,7 +3556,7 @@ while (b=False) and (Result>0) do {check for record with same modality}
   end;
 if b then
   try
-    FreeAndNil(FDataObj[Result]);
+    FDataObj[Result].Free;
   except
     ExceptMessage('TModalityList.AddModData!');
   end
@@ -3563,12 +3564,14 @@ else
   begin
   Result:= Length(FDataObj);
   SetLength(FDataObj,Succ(Result));                                             //the dataobj itself is not created here; only space is created
+  FDataObj[Result]:= nil;
   end;
 end; {~addmoddata}
 
 
 {07/11/2016}
 {19/01/2017 free last element (j) of FData, not FData[Index]}
+{09/05/2024 avoid FreeAndNil}
 function TModalityList.DelModData(Index:Integer): Boolean;
 var j: Integer;
 begin
@@ -3582,7 +3585,7 @@ if Result then
     Inc(Index);
     end;
   try
-    FreeAndNil(FDataObj[j]);
+    FDataObj[j].Free;
    except
     ExceptMessage('TModalityList.DelModData!');
    end;
@@ -3677,6 +3680,7 @@ Result:= s;
 end; {~getmodalitylist}
 
 
+{09/05/2024 avoid FreeAndNil}
 procedure TModalityList.ClearModData;
 var i: Integer;
 begin
@@ -3685,7 +3689,7 @@ while i>0 do
   begin
   Dec(i);
   try
-    FreeAndNil(FDataObj[i]);
+    FDataObj[i].Free;
    except
     ExceptMessage('TModalityList.ClearModData!');
    end;
@@ -3786,6 +3790,8 @@ end; {~getmoddepth}
 {29/03/2022 extended implementation of TModalityNorm}
 {01/04/2022 needs different ordering: first analyse, then add to list}
 {02/04/2022 chopping off additional prefixes}
+{27/05/2023 applying compound operator "+="}
+{09/05/2024 avoid FreeAndNil}
 function TModNormList.AddModData(ACommaText:String;
                                  ASeparator:Char=','): Integer;
 var p  : toTNumParser;
@@ -3819,20 +3825,20 @@ if p.ConversionResult then
      if Length(s)>0 then
        for f:= fcStandard to fcElectron do if Pos(LowerCase(twcFieldClassNames[f]),s)>0 then
          begin
-         FT_list:= FT_list+[f];
-         Info   := Info+twcFieldClassNames[f];
+         FT_list+= [f];
+         Info   += twcFieldClassNames[f];
          end;
      Linac_list:= p.NextString(ASeparator);
      Modality  := m;
      Info      := LowerCase(Info+Linac_list);
-     m         := m+ASeparator+Info;
+     m         += ASeparator+Info;
      end;
   Result          := inherited AddModData(m,ASeparator);
   FDataObj[Result]:= r;
   end
 else Result:= -1;
 try
-  FreeAndNil(p);
+  p.Free;
  except
   ExceptMessage('TModNormList.AddModData!');
  end;
@@ -3890,6 +3896,7 @@ end; {~findmoddata}
 
 {29/03/2022 extended implementation of TModalityNorm}
 {02/04/2022 strip last '-' in class names string}
+{27/05/2023 applying compound operator "+="}
 function TModNormList.GetCommaText(Index:Integer):String;
 var a: Boolean;
     s: String;
@@ -3903,7 +3910,7 @@ if Index<DataCount then with DataObj[Index] as TModalityNorm do
        s:= Format('%s,%0.3f,%0.3f',[s,Depth[a],Value[a]]);
     s:= Format('%s%s,',[Modality,s]);
     for f:= fcStandard to fcElectron do if f in FT_list then
-      s:= s+twcFieldClassNames[f]+'-';
+      s+= twcFieldClassNames[f]+'-';
     s:= s.TrimRight('-')+','+StringReplace(Linac_list,',','-',[rfIgnoreCase]);
     end;
 Result:= s;
@@ -3959,12 +3966,13 @@ while i>0 do
   Dec(i);
   with DataObj[i] as TModalityFilm do
     if length(s)=0                    then s:= FilmRec.FilmType
-    else if Pos(FilmRec.FilmType,s)=0 then s:= s+','+FilmRec.FilmType;
+    else if Pos(FilmRec.FilmType,s)=0 then s+= ','+FilmRec.FilmType;
   end;
 Result:= s;
 end; {~getfilmtypelist}
 
 
+{09/05/2024 avoid FreeAndNil}
 function TModFilmList.AddModData(ACommaText:String;
                                  ASeparator:Char=','): Integer;
 var p: toTNumParser;
@@ -4001,7 +4009,7 @@ if p.ConversionResult then
   end
 else Result:= -1;
 try
-  FreeAndNil(p);
+  p.Free;
  except
   ExceptMessage('TModFilmList.AddModData!');
  end;
@@ -4109,6 +4117,7 @@ end; {~getmodvalue}
 
 
 {24/05/2017}
+{09/05/2024 avoid FreeAndNil}
 function TModTextList.AddModData(ACommaText:String;
                                  ASeparator:Char=','): Integer;
 var p: toTNumParser;
@@ -4132,7 +4141,7 @@ if p.ConversionResult then
 else
   Result:= -1;
 try
-  FreeAndNil(p);
+  p.Free;
  except
   ExceptMessage('TModTextList.AddModData!');
  end;
@@ -4265,12 +4274,13 @@ end; {getdistance}
 
 
 //shift any 3D point with 3D vector
+{27/05/2023 applying compound operator "+="}
 procedure TRadthData.ShiftPoint(var p       :twcCoordinate;
                                 const AShift:twcCoordinate);
 var m: twcMeasAxis;
 begin
 for m:= Inplane to Beam do
-  p.m[m]:= p.m[m]+AShift.m[m];
+  p.m[m]+= AShift.m[m];
 end; {shiftpoint}
 
 
@@ -4432,10 +4442,11 @@ end; {~statusmessage}
 {$pop}
 
 
+{27/05/2023 applying compound operator "+="}
 procedure TRadthData.AddWarning(AWarning:String);
 begin
 if AWarning=''                                     then FWarning:= ''
-else if ShowWarning and (Pos(AWarning,FWarning)=0) then FWarning:= FWarning+#32+AWarning;
+else if ShowWarning and (Pos(AWarning,FWarning)=0) then FWarning+= #32+AWarning;
 end; {~addwarning}
 
 
@@ -4675,6 +4686,7 @@ input     : file name
 	    force default extension for file name
 output    : true if written
 *)
+{09/05/2024 avoid FreeAndNil}
 function TRadthData.WriteData(AFileName:String;
                               Binary   :Boolean      =True;
                               ASource  :twcDataSource=dsMeasured;
@@ -4698,14 +4710,14 @@ else
       T.SaveToStream(S);
      finally
       try
-        FreeAndNil(S);
+        S.Free;
        except
         ExceptMessage('TRadthData.WriteData(S)!');
        end;
      end; {try}
     end;
   try
-    FreeAndNil(T);
+    T.Free;
    except
     ExceptMessage('TRadthData.WriteData(T)!');
    end;
@@ -4761,17 +4773,18 @@ end; {~readresults}
 
 
 {14/08/2016 binstream}
+{09/05/2024 avoid FreeAndNil}
 destructor TRadthData.Destroy;
 begin
 try
-  FreeAndNil(BinStream);
+  BinStream.Free;
  except
   ExceptMessage('TRadthData.Destroy:BinStream!');
  end;
 Finalize(FExtraText);
 if FLocalParser then
   try
-    FreeAndNil(FParser);
+    FParser.Free;
    except
       ExceptMessage('TRadthData.Destroy:FParser!');
    end;
@@ -5757,6 +5770,7 @@ end; {~getfiletype}
 
 
 {19/11/2020 w2ID is specified to be in first 255 bytes, not first line}
+{27/05/2023 applying compound operator "+="}
 function Tw2CAD_data.CheckData(AStringList:TStrings=nil): Boolean;
 var i: Integer;
 begin
@@ -5772,7 +5786,7 @@ if Result then
         NextLine;
         IdentificationStg:= CurrentLine;
         Result           := (IdentificationStg=w2ID);
-        i                := i+IdentificationStg.Length;
+        i                += IdentificationStg.Length;
       until Result or (i>255);
       end;
     if Result then
@@ -6985,6 +6999,7 @@ var i  : Integer;
   end;
 
   {21/02/2020 initialize s}
+  {27/05/2023 applying compound operator "+="}
   procedure WriteMccString(AIndentLevel:Integer;
                            ALabel      :String;
                            AValueList  :twcFloatArray;
@@ -6994,7 +7009,7 @@ var i  : Integer;
   begin
   s:= '';
   for i:= 0 to Pred(Length(AValueList)) do
-    s:= s+Num2Stg(AValueList[i],0,Decimals)+';';
+    s+= Num2Stg(AValueList[i],0,Decimals)+';';
   WriteMccString(AIndentLevel,ALabel,s);
   end;
 
@@ -7213,6 +7228,7 @@ end; {~checkdata}
 {01/06/2021 twcGenericPos_mm}
 {21/04/2022 lost first point for generic profile}
 {17/06/2022 twForPosInMm}
+{27/05/2023 applying compound operator "+="}
 function THdfProfileData.ParseData(CheckFileTypeOnly:Boolean=False): Boolean;
 var v,r  : twcFloatType;
     c    : twcCoordinate;
@@ -7294,7 +7310,7 @@ if (Result and (not CheckFileTypeOnly) and (FileFormat in [twcHdfProfile,twcGene
     ScanStop:= ScanStart;
     while GetNextLine(c.t,3,True,100) do
       begin
-      v       := v+GetDistance(ScanStop,c);
+      v       += GetDistance(ScanStop,c);
       ScanStop:= c;
       end;
     FParseOk:= v>0;
@@ -7475,8 +7491,8 @@ if (Result and (not CheckFileTypeOnly) and (FileFormat=twcCmsProfile)) then with
         for pm:= 0 to n do
           FHDFdata[pm].X:= -FHDFdata[pm].X;
       ScanStop          := ScanStart;
-      ScanStart.t[tAxis]:= ScanStart.t[tAxis]+FHDFdata[0].X;
-      ScanStop .t[tAxis]:= ScanStop .t[tAxis]+FHDFdata[n].X;
+      ScanStart.t[tAxis]+= FHDFdata[0].X;
+      ScanStop .t[tAxis]+= FHDFdata[n].X;
       FScanLength       := GetDistance(ScanStart,ScanStop);
       FStepSize         := FScanLength/Max(1,n);
       end;
@@ -8035,6 +8051,7 @@ var Stg: String;
   Result:= FParseOk;
   end;
 
+  {27/05/2023 applying compound operator "+="}
   function GetNextLine(var wmsCharStg:array of Char;
                        UseCurrentLine:Boolean=False;
                        DetectCR      :Boolean=False): Boolean;  overload;
@@ -8052,7 +8069,7 @@ var Stg: String;
         begin
         FParseOk:= NextLine;
         if Length(CurrentLine)>0 then
-          Stg:= Stg+', '+CurrentLine;
+          Stg+= ', '+CurrentLine;
         end;
       end
     else
@@ -8656,13 +8673,14 @@ end; {~create}
 
 {24/05/2022}
 {01/02/2023 more efficient execution}
+{27/05/2023 applying compound operator "+="}
 procedure TWellhoferData.AddDebugInfo(AText:String='');
 begin
 if LogLevel>3 then
   begin
   if FActiveCnt=0      then wDebugInfo   := ''
   else
-    if LogLevel>1      then wDebugInfo:= wDebugInfo+';'+AText
+    if LogLevel>1      then wDebugInfo+= ';'+AText
     else if LogLevel=1 then wDebugInfo:= AText;
   StatusMessage(AText,False);
   end;
@@ -8673,6 +8691,8 @@ end; {~adddebuginfo}
 {29/03/2016}
 {30/03/2016 AddTypes to avoid double entries}
 {27/11/2020 dot should be included in string}
+{27/05/2023 applying compound operator "+="}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.GetRegisteredFileTypes: String;
 var T: TRadthData;
 
@@ -8686,14 +8706,14 @@ var T: TRadthData;
     begin
     Dec(i);
     if Pos(s[i],FRegisteredFiles)=0 then
-      FRegisteredFiles:= FRegisteredFiles+'.'+s[i];
+      FRegisteredFiles+= '.'+s[i];
     end;
   end;
 
   procedure FreeT(AMess:String);
   begin
   try
-   FreeAndNil(T);
+   T.Free;
    except
     ExceptMessage('GetRegisteredFileTypes:'+AMess+'!');
    end;
@@ -9162,6 +9182,7 @@ end; {~configsave}
 {08/03/2021 twcDefaultSSD_MRcm}
 {01/06/2021 wFFFMinFieldSizeCm}
 {24/05/2022 AddDebugInfo}
+{09/05/2024 avoid FreeAndNil}
 procedure TWellhoferData.ReadConfig(CF:TConfigStrings=nil);
 var IsLocal: Boolean;
     S      : TStringList;
@@ -9272,7 +9293,7 @@ with CF do
      end;
   end;
 try
-  FreeAndNil(S);
+  S.Free;
  except
   ExceptMessage('WH.ReadConfig:S!');
  end;
@@ -9493,6 +9514,7 @@ end;
 {01/05/2020 transfer BinStream}
 {19/08/2020 speed improvement with BinaryOnly}
 {22/10/2020 speed improvement by not ignoring result Inherited GetFileType}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.GetFileType(AFileName :String ='';
                                     BinaryOnly:Boolean=False): twcFileType;
 var Wms     : TWmsData;
@@ -9523,7 +9545,7 @@ if FLastFileType=twcUnknown then
     Wms          := TWmsData.Create(FParser,FFileName,BinStream,BinStreamFile);
     FLastFileType:= Wms.GetFileType(AFileName);
     try
-      FreeAndNil(Wms);
+      Wms.Free;
      except
       ExceptMessage('WH.GetFileType:Wms!');
      end;
@@ -9532,13 +9554,13 @@ if FLastFileType=twcUnknown then
     begin
     Pips         := TPipsProfileData.Create(wPipsPixel_cm,FParser,FFileName,BinStream,BinStreamFile);
     FLastFileType:= Pips.GetFileType(AFileName);
-    FreeAndNil(Pips);
+    Pips.Free;
     if FLastFileType=twcUnknown then
       begin
       Schuster     := TSchusterProfileData.Create(FParser,FFileName,BinStream,BinStreamFile);
       FLastFileType:= Schuster.GetFileType(AFileName);
       try
-        FreeAndNil(Schuster);
+        Schuster.Free;
        except
         ExceptMessage('WH.GetFileType:Schuster!');
        end;
@@ -9923,6 +9945,7 @@ end; {~setautoloadref}
 {05/10/2020 copy also to dsReference}
 {14/12/2020 include if MultiRefIndex then...  for MultiscanList}
 {16/07/2021 set size of FRefOrgSrc to zero before savetostream}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.SetReferenceOrg(ASource        :twcDataSource =dsMeasured;
                                         KeepAsReference:Boolean       =False;
                                         AWellhofer     :TWellhoferData=nil): Boolean;
@@ -9944,7 +9967,7 @@ if Result then
     if not (FRefOrgSrc is TMemoryStream) then
       begin
       try
-        FreeAndNil(FRefOrgSrc);
+        FRefOrgSrc.Free;
        except
         ExceptMessage('WH.SetReferenceOrg:FRefOrgSrc1!');
        end;
@@ -9960,7 +9983,7 @@ if Result then
     if not (FRefOrgSrc is TStringStream) then
       begin
       try
-        FreeAndNil(FRefOrgSrc);
+        FRefOrgSrc.Free;
        except
         ExceptMessage('WH.SetReferenceOrg:FRefOrgSrc2!');
        end;
@@ -10082,6 +10105,7 @@ wMultiScanNr is set for the first matching scan
 {29/09/2020 call to PassSettings changed}
 {01/10/2020 progress monitor}
 {24/05/2022 AddDebugInfo}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.IndexMultiScan(AFileName     :String='';
                                        ACurveIDString:String=''): Boolean;
 var i,o         : Integer;
@@ -10163,7 +10187,7 @@ if WExt then
   begin
   FMultiScanList:= W.FMultiScanList;
   try
-     FreeAndNil(W);
+     W.Free;
    except
     ExceptMessage('WH.IndexMultiScan!');
    end;
@@ -10181,6 +10205,7 @@ end; {indexmultiscan}
 {21/07/2020 fcWedge}
 {07/03/2021 FDefaultSSDcm}
 {11/04/2022 implement FFF}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.MakeCurveName(CreateMultiName :Boolean     =False;
                                       ApplyDeviceAlias:Boolean     =False;
                                       IgnoredParams   :twcIgnoreSet=[];
@@ -10202,9 +10227,9 @@ with wCurveInfo,wSource[ASource],twBeamInfo do
     else                tEnergy:= twBEnergy*1000;
     Stg:= '';
     if not (twiLinac in IgnoredParams) then
-      Stg:= Stg+ifthen(ApplyDeviceAlias,ApplyAliasList(ApplyModBeamList(Linac)),Linac);
+      Stg+= ifthen(ApplyDeviceAlias,ApplyAliasList(ApplyModBeamList(Linac)),Linac);
     if not (twiModality in IgnoredParams) then
-      Stg:= Stg+twBModality;
+      Stg+= twBModality;
     i  := Length(Stg);
     while i>0 do
       if Stg[i]=#32 then
@@ -10212,11 +10237,11 @@ with wCurveInfo,wSource[ASource],twBeamInfo do
       else
        Dec(i);
     if not (twiEnergy in IgnoredParams) then
-      Stg:= Stg+Num2Stg(Round(tEnergy));
+      Stg+= Num2Stg(Round(tEnergy));
     if wFFFinFile and IsFFF(ASource) then
-      Stg:= Stg+'FFF';
+      Stg+= 'FFF';
     if CreateMultiName then
-      Stg:= Stg+Format('_%s_',[ApplyAliasList(wMeasDeviceInfo.twDeviceName)])
+      Stg+= Format('_%s_',[ApplyAliasList(wMeasDeviceInfo.twDeviceName)])
     else if not (twiScanClass in IgnoredParams) then
       begin
       if (twiScanDirection in IgnoredParams)then
@@ -10226,23 +10251,23 @@ with wCurveInfo,wSource[ASource],twBeamInfo do
         end
       else
         c:= twScanTypeString[1];
-      Stg:= Stg+c;
+      Stg+= c;
       if (ScanType=snAngle) and (not (twiAngle in IgnoredParams)) then
-        Stg:= Stg+Num2Stg(ScanAngle,3,0,'0')+'_';
+        Stg+= Num2Stg(ScanAngle,3,0,'0')+'_';
       end;
     if not (twiFieldSize in IgnoredParams) then
-      Stg:= Stg+ifthen(FieldGT_cm<>FieldAB_cm,Num2Stg(FieldGT_cm,2,0,'0')+Num2Stg(FieldAB_cm,2,0,'0'),Num2Stg(FieldLength_cm,2,0,'0'));
+      Stg+= ifthen(FieldGT_cm<>FieldAB_cm,Num2Stg(FieldGT_cm,2,0,'0')+Num2Stg(FieldAB_cm,2,0,'0'),Num2Stg(FieldLength_cm,2,0,'0'));
     if (not (twiDiagonal in IgnoredParams)) and (not CreateMultiName) and twIsDiagonal then
-      Stg:= Stg+'d';
+      Stg+= 'd';
     if not (twiSSD in IgnoredParams) then
-      Stg:= Stg+Format('_ssd%s',[Num2Stg(Round(ifthen(wRefAtDefaultSSD,FDefaultSSD_cm,wSource[ASource].twSSD_cm)),3,'0')]);
+      Stg+= Format('_ssd%s',[Num2Stg(Round(ifthen(wRefAtDefaultSSD,FDefaultSSD_cm,wSource[ASource].twSSD_cm)),3,'0')]);
     if  not (((FieldDepth_cm=0) and IgnoreZeroValue) or (twiDepth in IgnoredParams) ) then
-      Stg:= Stg+Format('_d%sm',[Num2Stg(Round(10*FieldDepth_cm),3,'0')]);
+      Stg+= Format('_d%sm',[Num2Stg(Round(10*FieldDepth_cm),3,'0')]);
     if  ((WedgeAngle>0) or (twSetFieldType=fcWedge)) and (not (twiWedge in IgnoredParams)) then
-      Stg:= Stg+'w';
+      Stg+= 'w';
     for t:= Inplane to CrossPlane do
       if (not twDesVaryingAxis[t]) and (Abs(twVector_ICD_cm[ptFirst].m[t])>1) then
-        Stg:= Stg+'_'+ic[t]+Num2Stg(wUserAxisSign[t]*twVector_ICD_cm[ptFirst].m[t],2,0);
+        Stg+= '_'+ic[t]+Num2Stg(wUserAxisSign[t]*twVector_ICD_cm[ptFirst].m[t],2,0);
     end
   else
     Stg:= 'default';
@@ -11290,6 +11315,7 @@ reference is loaded
 {28/03/2022 twConfidenceLimit expanded}
 {24/05/2022 AddDebugInfo}
 {17/11/2022 twOffAxisValue}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.PrepareProfile: Boolean;
 var i,j        : Integer;
     mAxis      : twcMeasAxis;
@@ -11355,7 +11381,7 @@ with wCurveInfo do
   for mAxis:= Inplane to Beam do
     MeasAxisID[mAxis]:= twcTankAxisStandard[Pos(TankMapping[Succ(Ord(mAxis))],twcMeasAxisStandard)];
   if ScanAngle<0 then
-    ScanAngle:= ScanAngle+180;
+    ScanAngle+= 180;
   wSource[dsCalculated].twValid:= False;
   with wSource[dsMeasured] do
     begin
@@ -11410,7 +11436,7 @@ with wCurveInfo do
           twCoordinates[i].m[mAxis]:= -twCoordinates[i].m[mAxis];
       if wAutoShift_cm[mAxis]<>0 then
         for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
-          twCoordinates[i].m[mAxis]:= twCoordinates[i].m[mAxis]+wAutoShift_cm[mAxis];
+          twCoordinates[i].m[mAxis]+= wAutoShift_cm[mAxis];
       end;
     twVector_ICD_cm[ptFirst]:= twCoordinates[twDataRange[ptFirst]];
     twVector_ICD_cm[ptLast ]:= twCoordinates[twDataRange[ptLast ]];
@@ -11478,7 +11504,7 @@ with wCurveInfo do
            ScanAngle:= 0;
           end;
        if ScanAngle<0 then
-         ScanAngle:= ScanAngle+180;
+         ScanAngle+= 180;
        i:= Round(ScanAngle);
        if i=45       then twDesTypeString:= 'Diagonal TA'
        else if i=135 then twDesTypeString:= 'Diagonal GA';
@@ -11706,6 +11732,7 @@ Thanks to Bert van der Leije for the major parts of this reconstruction. Additio
 {02/10/2020 set BinStreamType}
 {06/10/2020 fundamentals alternative}
 {24/05/2022 AddDebugInfo}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.ReadRfb(AStream:TStream): Boolean; {works also for tmemorystream}
 {$IFDEF READRFB_TEST}
 var StreamPos: Integer;
@@ -12160,7 +12187,7 @@ var StreamPos: Integer;
              else Stg:= 'freescan';
              end;
             if ScanHex<4 then
-              Stg:= Stg+Format(' d=%0.1f cm',[ICD_offset.m[Beam]]);
+              Stg+= Format(' d=%0.1f cm',[ICD_offset.m[Beam]]);
             SetNumPoints(dsMeasured,to_int);
             FParseOk:= (twPoints>0);
             if FParseOk then
@@ -12295,6 +12322,8 @@ combined with a specific import procedure within the twellhoferdata object.
 {30/03/2021 formatok replaced with parseok}
 {16/06/2021 change of 30/03/2021 lets looping fail, do not test anymore on ..or (not xxx.ParseOk) or .. for multiscan files}
 {24/05/2022 AddDebugInfo}
+{27/05/2023 applying compound operator "+="}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.DualReadData(AStringList :TStrings;
                                      AStream     :TStream;
                                      AFileName   :String;
@@ -12366,7 +12395,7 @@ if FParseOk then
       end;
     Wms.TransferLastMessage(FLastMessage);
     try
-      FreeAndNil(Wms);
+      Wms.Free;
      except
       ExceptMessage('WH.DualReadData:Wms!');
      end;
@@ -12388,7 +12417,7 @@ if FParseOk then
       FParseOk:= Rfa.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportRfaProfile(Rfa);
       if (not FParseOk) and wMultiScanLooping then
         begin
-        Rfa.ScanNr:= Rfa.ScanNr+wMultiScanStep;
+        Rfa.ScanNr+= wMultiScanStep;
         if Rfa.ScanMax>1 then
           Rfa.ScanNr:= Succ((Rfa.ScanNr+Rfa.ScanMax-1) mod Rfa.ScanMax);
         if i=-1 then i:= Rfa.ScanMax
@@ -12405,7 +12434,7 @@ if FParseOk then
       end;
     Rfa.TransferLastMessage(FLastMessage);
     try
-      FreeAndNil(Rfa);
+      Rfa.Free;
      except
       ExceptMessage('WH.DualReadData:Rfa!');
      end;
@@ -12422,7 +12451,7 @@ if FParseOk then
       FParseOk:= FMcc.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportMccProfile(FMcc);
       if (not FParseOk) and wMultiScanLooping then
         begin
-        FMcc.ScanNr:= FMcc.ScanNr+wMultiScanStep;
+        FMcc.ScanNr+= wMultiScanStep;
         if FMcc.ScanMax>1 then
           FMcc.ScanNr:= Succ((FMcc.ScanNr+FMcc.ScanMax-1) mod FMcc.ScanMax);
         if i=-1 then i:= FMcc.ScanMax
@@ -12450,7 +12479,7 @@ if FParseOk then
       FParseOk:= SNA.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportSNAProfile(SNA);
       if (not FParseOk) and wMultiScanLooping then
         begin
-        SNA.ScanNr:= SNA.ScanNr+wMultiScanStep;
+        SNA.ScanNr+= wMultiScanStep;
         if SNA.ScanMax>1 then
           SNA.ScanNr:= Succ((SNA.ScanNr+SNA.ScanMax-1) mod SNA.ScanMax);
         if i=-1 then i:= SNA.ScanMax
@@ -12467,7 +12496,7 @@ if FParseOk then
       end;
     SNA.TransferLastMessage(FLastMessage);
     try
-      FreeAndNil(SNA);
+      SNA.Free;
      except
       ExceptMessage('WH.DualReadData:SNA!');
      end;
@@ -12481,7 +12510,7 @@ if FParseOk then
       AFileFormat:= Cms.FileFormat;
     Cms.TransferLastMessage(FLastMessage);
     try
-      FreeAndNil(Cms);
+      Cms.Free;
      except
       ExceptMessage('WH.DualReadData:Cms!');
      end;
@@ -12502,7 +12531,7 @@ if FParseOk then
     repeat
       FParseOk:= w2CAD.DualReadData(AStringList,AStream,AFileName,ADataTopLine,AFileFormat) and ImportW2CADProfile(w2CAD);
       if not FParseOk then
-        w2CAD.ScanNr:= w2CAD.ScanNr+wMultiScanStep;
+        w2CAD.ScanNr+= wMultiScanStep;
     until FParseOk or (w2CAD.ScanNr<1) or (w2CAD.ScanNr>w2CAD.ScanMax);
     if w2CAD.ParseOk then
       begin
@@ -12514,7 +12543,7 @@ if FParseOk then
       end;
     w2CAD.TransferLastMessage(FLastMessage);
     try
-      FreeAndNil(w2CAD);
+      w2CAD.Free;
      except
       ExceptMessage('WH.DualReadData:Varian!');
      end;
@@ -12527,7 +12556,7 @@ if FParseOk then
     if Hdf.ParseOk then
       AFileFormat:= Hdf.FileFormat;
     try
-      FreeAndNil(Hdf);
+      Hdf.Free;
      except
       ExceptMessage('WH.DualReadData:Hdf!');
      end;
@@ -12540,7 +12569,7 @@ if FParseOk then
     if Eclipse.ParseOk then
       AFileFormat:= Eclipse.FileFormat;
     try
-      FreeAndNil(Eclipse);
+      Eclipse.Free;
      except
       ExceptMessage('WH.DualReadData:Eclipse!');
      end;
@@ -12554,7 +12583,7 @@ if FParseOk then
       AFileFormat:= Pips.FileFormat;
     Pips.TransferLastMessage(FLastMessage);
     try
-      FreeAndNil(Pips);
+      Pips.Free;
      except
       ExceptMessage('WH.DualReadData:Pips!');
      end;
@@ -12569,7 +12598,7 @@ if FParseOk then
       AFileFormat:= Schuster.FileFormat;
     Schuster.TransferLastMessage(FLastMessage);
     try
-      FreeAndNil(Schuster);
+      Schuster.Free;
      except
       ExceptMessage('WH.DualReadData:Schuster!');
      end;
@@ -13044,7 +13073,7 @@ with wGeneralInfo,wSource[dsMeasured],twBeamInfo,wCurveInfo,
   while i>0 do
     begin
     Dec(i);
-    twDeviceSpeed_mm_s:= twDeviceSpeed_mm_s+tmScanSpeeds[i]/n;
+    twDeviceSpeed_mm_s+= tmScanSpeeds[i]/n;
     end;
   Self.SetNumPoints(dsMeasured,Mcc.GetNumPoints);
   n                := Pred(Mcc.GetNumPoints);
@@ -13337,6 +13366,7 @@ end; {~importhdfprofile}
 
 
 {16/05/2020 applied FMultiScanCapable}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.ImportWmsProfile(Wms:TWmsData): Boolean;
 var com     : wmsComments;
     mAxis   : twcMeasAxis;
@@ -13383,7 +13413,7 @@ if Wms<>nil then with Wms.wmsFileHeader.wmsRec06 do
       twDesOperator        := '';
       twDesMeasComment     := '';
       for com:= wmhG1 to wmhU4 do if Length(Wms.Char2Stg(wmhComs[com],SizeOf(wmhComs[com])))>0 then
-        twDesMeasComment   := twDesMeasComment+ApplyAliasList(Wms.Char2Stg(wmhComs[com],SizeOf(wmhComs[com])))+#32#32;
+        twDesMeasComment   += ApplyAliasList(Wms.Char2Stg(wmhComs[com],SizeOf(wmhComs[com])))+#32#32;
       if twcWMSdetInfo in [0..Ord(wmhU4)] then
         twDetName          := Wms.Char2Stg(wmhComs[wmsComments(twcWMSdetInfo)],SizeOf(wmhComs[wmsComments(twcWMSdetInfo)]));
       twDesSetupComment    := '';
@@ -13400,7 +13430,7 @@ if Wms<>nil then with Wms.wmsFileHeader.wmsRec06 do
         if yy<100         then Inc(yy,2000);
         if yy>CurrentYear then Dec(yy,100);
         if TryEncodeDate(yy,mm,dd,twDesModDateTime) then
-          twDesModDateTime:= twDesModDateTime+(NextInteger+NextInteger/60)/24;
+          twDesModDateTime+= (NextInteger+NextInteger/60)/24;
         end;
       Self.SetNumPoints(dsMeasured,Wms.GetNumPoints);
       twSSD_cm:= wmhSSD_cm;
@@ -14038,6 +14068,7 @@ This complex procedure tries all in-memory options first and then searches on di
 {16/07/2021 s:= ReferenceDirectory+ifthen(MULTIREFINDEX AND FArrayScanRefOk,wSource[dsMeasured].twFileIDString,MeasCurveIDstg)}
 {13/07/2021 LoadReference needs reliable FileType detection. This is only completed after full analysis.}
 {24/05/2022 AddDebugInfo}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.LoadReference(AFileName            :String ='';
                                       SetCurrentAsRefSource:Boolean=False): Boolean;
 var r                                              : TWellhoferData;
@@ -14272,7 +14303,7 @@ if Result then                                                                  
        {do nothing}
      end;
     try
-      FreeAndNil(r);
+      r.Free;
      except
       ExceptMessage('WH.LoadReference!');
      end;
@@ -14295,6 +14326,7 @@ end; {~loadreference}
 {03/06/2016 corrected wAxisPreserveOnExport}
 {09/04/2022 write " (FFF)" on energy line if applicable}
 {10/04/2022 wFFFinFile}
+{27/05/2023 applying compound operator "+="}
 function  TWellhoferData.WriteData(AFileName  :String;
                                    AStringList:TStrings;
                                    ASource    :twcDataSource=dsMeasured;
@@ -14311,7 +14343,7 @@ var Stg    : string;
                           Stg:String='');    overload;
   var i: integer;
   begin
-  Stg:= Stg+chSpace;
+  Stg+= chSpace;
   for i:= 0 to Pred(Length(a)) do
     Stg:= Format('%s %d',[Stg,a[i]]);
   AStringList.Append(Stg);
@@ -14322,7 +14354,7 @@ var Stg    : string;
                         AxisFlipExport:Boolean=False);
   var i: integer;
   begin
-  Stg:= Stg+':'+chSpace;
+  Stg+= ':'+chSpace;
   AxisFlipExport:= AxisFlipExport and (Length(a)=3);
   for i:= 0 to Pred(Length(a)) do
     Stg:= Format('%s %f',[Stg,ifthen(AxisFlipExport,wUserAxisSign[twcMeasAxis(i)],1)*a[i]]);
@@ -14393,7 +14425,7 @@ with wGeneralInfo,wSource[ASource],twBeamInfo,wCurveInfo,wMeterInfo,
     else Stg:= 'Undefined';
    end;
   if wFFFinFile and (twSetFieldType in [fcFFF,fcMRlinac]) then
-    Stg:= Stg+' (FFF)';
+    Stg+= ' (FFF)';
   if Round(twBEnergy)=twBEnergy then i:= 0
   else                               i:= 1;
   Append(Format('Energy%s%0.*f %s'      ,[chTab,i,twBEnergy,Stg]));
@@ -14500,6 +14532,7 @@ end; {~writedata}
 
 
 {13/07/2018 statusmessage}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.WriteData(AFileName :String;
                                   OutPutType:twcFileType;
                                   ASource   :twcDataSource=dsMeasured;
@@ -14525,7 +14558,7 @@ case OutPutType of
     Result   := r.WriteData(AFileName,OutPutType,ASource,SetExt);
     FFileName:= r.FileName;
     try
-      FreeAndNil(r);
+      r.Free;
      except
       ExceptMessage('WH.WriteData:r!');
      end;
@@ -14537,7 +14570,7 @@ case OutPutType of
     Result   := w.WriteData(AFileName,OutPutType,ASource,SetExt);
     FFileName:= w.FileName;
     try
-      FreeAndNil(w);
+      w.Free;
      except
       ExceptMessage('WH.WriteData:w!');
      end;
@@ -14563,6 +14596,7 @@ end; {~writedata}
 {27/08/2020 twMaxPosCm}
 {17/09/2020 introduction of FFrozen}
 {01/10/2020 shift all position elements in sigmoiddata}
+{27/05/2023 applying compound operator "+="}
 procedure TWellhoferData.Shift(cm       :twcFloatType=0;
                                ShiftType:twcShiftType=RelShift;
                                ASource  :twcDataSource=dsMeasured);
@@ -14585,35 +14619,35 @@ with wSource[ASource] do if twValid and (not FFrozen) then
       mBool[mAxis]   := mShift.m[mAxis]<>0; {for efficiency purposes only}
       end;
     for s:= twcLeft to twcRight do with twFFFslope[s] do
-      twFFFoffset:= twFFFoffset+cm*twFFFgain;
-    twFFFslopesTop:= twFFFslopesTop+cm;
+      twFFFoffset+= cm*twFFFgain;
+    twFFFslopesTop+= cm;
     with twTopModel do
       begin
-      Xtop:= Xtop+cm;
-      Xmin:= Xmin+cm;
-      Xmax:= Xmax+cm;
-      Xavg:= Xavg+cm;
-      Qofs:= Qofs+(Qquad*cm-Qlin)*cm;
-      Qlin:= Qlin-2*Qquad*cm;
+      Xtop+= cm;
+      Xmin+= cm;
+      Xmax+= cm;
+      Xavg+= cm;
+      Qofs+= (Qquad*cm-Qlin)*cm;
+      Qlin+= -2*Qquad*cm;
       end;
-    twCenterPos_cm       := twCenterPos_cm      +cm;
-    twMaxPos_cm          := twMaxPos_cm         +cm;
-    twDataPos_cm[ptFirst]:= twDataPos_cm[ptFirst]+cm;
-    twScanPos_cm[ptFirst]:= twScanPos_cm[ptFirst]+cm;
-    twDataPos_cm[ptLast ]:= twDataPos_cm[ptLast ]+cm;
-    twScanPos_cm[ptLast ]:= twScanPos_cm[ptLast ]+cm;
+    twCenterPos_cm       += cm;
+    twMaxPos_cm          += cm;
+    twDataPos_cm[ptFirst]+= cm;
+    twScanPos_cm[ptFirst]+= cm;
+    twDataPos_cm[ptLast ]+= cm;
+    twScanPos_cm[ptLast ]+= cm;
     for i:= 0 to Pred(twPoints) do
       begin
-      twPos_cm[i]:= twPos_cm[i]+cm;
+      twPos_cm[i]+= cm;
       for mAxis:= Inplane to Beam do
         if mBool[mAxis] then
-          twCoordinates[i].m[mAxis]:= twCoordinates[i].m[mAxis]+mShift.m[mAxis];
+          twCoordinates[i].m[mAxis]+= mShift.m[mAxis];
       end;
     twVector_ICD_cm[ptFirst]:= twCoordinates[twDataRange[ptFirst]];
     twVector_ICD_cm[ptLast ]:= twCoordinates[twDataRange[ptLast ]];
-    twPDD10                 := twPDD10   +cm;
-    twPDD20                 := twPDD20   +cm;
-    twShift_cm              := twShift_cm+cm;
+    twPDD10                 += cm;
+    twPDD20                 += cm;
+    twShift_cm              += cm;
     if not (ScanType in twcVertScans) then
       begin
       if twAbsNormDefUse=dUseOrigin then
@@ -14624,8 +14658,8 @@ with wSource[ASource] do if twValid and (not FFrozen) then
         end
       else
         begin
-        twRelNormPos_cm:= twRelNormPos_cm+cm;
-        twAbsNormPos_cm:= twAbsNormPos_cm+cm;
+        twRelNormPos_cm+= cm;
+        twAbsNormPos_cm+= cm;
         end;
       end;
     for s:= twcLeft to twcRight do
@@ -14634,16 +14668,16 @@ with wSource[ASource] do if twValid and (not FFrozen) then
       for p:= dLow to dTemp do
         with twLevelPos[p].Limit[s] do
         if Valid then
-          CalcPos:= CalcPos+cm;
+          CalcPos+= cm;
       with twSigmoidFitData[s] do
         if twFitValid then
           begin
-          twFitLow_cm                                   := twFitLow_cm         +cm;
-          twFitHigh_cm                                  := twFitHigh_cm        +cm;
-          twFitScalingPoint_cm                          := twFitScalingPoint_cm+Cm;
-          twFitOffset_cm                                := twFitOffset_cm      +cm;
-          twFitTrueInfl_cm                              := twFitTrueInfl_cm    +cm;
-          twNMReport.BestVertex[sigmoid_InflectionMajor]:= twNMReport.BestVertex[sigmoid_InflectionMajor]+cm;
+          twFitLow_cm                                   += cm;
+          twFitHigh_cm                                  += cm;
+          twFitScalingPoint_cm                          += Cm;
+          twFitOffset_cm                                += cm;
+          twFitTrueInfl_cm                              += cm;
+          twNMReport.BestVertex[sigmoid_InflectionMajor]+= cm;
           end;
       end; {for sides}
     if ASource in twcFilterSources then
@@ -14964,6 +14998,7 @@ end; {~add}
 {20/11/2018 until (Abs(s)<=twcMaxRelMatchDif) or (twScanRange[ptLast]-j-twScanFirst-i<30)}
 {17/09/2020 introduction of FFrozen}
 {24/05/2022 AddDebugInfo}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.Match(ASource    :twcDataSource=dsReference;
                               AReference :twcDataSource=dsMeasured;
                               ResultType :twcShiftType=AbsShift;
@@ -15019,8 +15054,8 @@ var s,ShiftCostFunctionStep,
          except
           v1:= 0;
          end;
-        if Signed then Dif:= Dif+v1
-        else           Dif:= Dif+abs(v1);
+        if Signed then Dif+= v1
+        else           Dif+= abs(v1);
         l:= l+ShiftCostFunctionStep;
         end;
       p:= p+ShiftCostFunctionStep;
@@ -15123,7 +15158,7 @@ if not FFrozen then
         minError := ShiftError;
         Result   := s;
         end;
-      s:= s+ShiftStep;
+      s+= ShiftStep;
     until (s>Result+ShiftRange) or (not MatchOk);
     MatchMessage(Result,MinError);
   until (ShiftStep<ShiftCostFunctionStep) or (not MatchOk);
@@ -15272,6 +15307,7 @@ end; {~syntheticprofile}
 {29/07/2020 MedianFilter called with wrong source}
 {11/04/2022 twAnalysisRange}
 {24/05/2022 AddDebugInfo}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.Divide(ASource     :twcDataSource=dsMeasured;
                                ADivisor    :twcDataSource=dsReference;
                                ADestination:twcDataSource=dsCalculated;
@@ -15381,7 +15417,7 @@ if not Result then
               WaitFor;
         for i:= 0 to High(MathThreadList) do
           try
-            FreeAndNil(MathThreadList[i]);
+            MathThreadList[i].Free;
            except
             ExceptMessage('WH.Divide!');
            end;
@@ -15683,9 +15719,9 @@ else
       m:= cm/100;
       case Length(a) of
         pddfitEdim  : begin
-                      d:= cm-a[pddfit_d0];
-                      e:= (-a[pddfit_mu1]+(a[pddfit_mu2]+(a[pddfit_mu3]+a[pddfit_mu4]*d)*d)*d)*d;
-                      f:= (-a[pddfit_mx1]+a[pddfit_mx2]*m)*m;
+                      d     := cm-a[pddfit_d0];
+                      e     := (-a[pddfit_mu1]+(a[pddfit_mu2]+(a[pddfit_mu3]+a[pddfit_mu4]*d)*d)*d)*d;
+                      f     := (-a[pddfit_mx1]+a[pddfit_mx2]*m)*m;
                       Result:= a[pddfit_I0]/( 1 + a[pddfit_I1]*Exp(e) + a[pddfit_Ib]*Exp(-a[pddfit_mub]*cm) ) + a[pddfit_Ix]*Exp(f);
                       end;
         pddfitOdim  : begin
@@ -15722,6 +15758,7 @@ end; {~tvspddfunction}
 {12/01/2016 version including ENR}
 {27/07/2017 subtle speed improvements through efficiency}
 {11/04/2022 twAnalysisRange}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.TvSpddFitErrorResult(var a:TaFunctionVertex): TaVertexDataType;
 var i,j,k,l: Integer;
     e      : TaVertexDataType;
@@ -15762,7 +15799,7 @@ with wSource[FNMPddSource] do if assigned(a) then
   else
     begin {ifthen(Length(a)=pddfitOdim,(FNMPddLast-i)/Succ(FNMPddLast),1)*}
     for i:= twAnalysisRange[ptFirst] to twAnalysisRange[ptLast] do
-      Result:= Result+Sqr(model[i]-twData[i])/powered_z(twPos_cm[i]); {point weighted error}
+      Result+= Sqr(model[i]-twData[i])/powered_z(twPos_cm[i]); {point weighted error}
     if twcPddFitCostENRWeighted then
       begin
       k:= Max(2,Succ(twAnalysisRange[ptLast]-twAnalysisRange[ptFirst]) div (2*twcDefENRblocks));
@@ -15771,8 +15808,8 @@ with wSource[FNMPddSource] do if assigned(a) then
       repeat
         e:= 0;
         for i:= j to j+l do
-          e:= e+(model[i]-twData[i])/powered_z(twPos_cm[i]); {ENR weighted error}
-        Result:= Result+Sqr(e)/l;
+          e+= (model[i]-twData[i])/powered_z(twPos_cm[i]); {ENR weighted error}
+        Result+= Sqr(e)/l;
         Inc(j);
       until j>=twAnalysisRange[ptLast]-l;
       end; {enrweighted}
@@ -15835,6 +15872,7 @@ end; {~nmpddmodelresult}
 
 
 {09/02/2021 added amoebeid}
+{27/05/2023 applying compound operator "+="}
 procedure TWellhoferData.LoopReport(var AReport:NMReportRecord);
 var s: String;
     i: Integer;
@@ -15843,7 +15881,7 @@ with AReport do
   begin
   s:= '';
   for i:= 0 to Pred(Length(BestVertex)) do
-    s:= s+FloatFormat(BestVertex[i],twcNMdigits)+', ';
+    s+= FloatFormat(BestVertex[i],twcNMdigits)+', ';
   StatusMessage(Format('amoebe#%d: %d cycles %0.2f s, %s',[AmoebeID,Cycles,Seconds,s+FloatFormat(BestScore,twcNMdigits)]));
   end;
 end; {~loopreport}
@@ -15879,6 +15917,7 @@ end; {~timereport}
 {21/02/2021 avoid division by zero for twFitNormalisation altogether insteed of relying on try..except}
 {11/04/2022 twAnalysisRange}
 {24/05/2022 AddDebugInfo}
+{27/05/2023 applying compound operator "+="}
 procedure TWellhoferData.PddFit(ASource     :twcDataSource=dsMeasured;
                                 ADestination:twcDataSource=dsCalculated);
 const Photonvertex   : array[0..pddfit_mubpower ] of TaVertexDataType=(110,  4,  -7,  15,   -10, 60,    260,  0.1 ); {I1, mu1..4, Ib, mub,mubpower}
@@ -16044,8 +16083,8 @@ var i       : Integer;                                              { I1 mu1  mu
                   begin
                   e:= 0;
                   for j:= i-k to i+k do
-                    e:= e+(model[j]-wSource[ASource].twData[j]);                //here a local block is taken for every point
-                  e_sum:= e_sum+Sqr(e)/(2*k+1);                                 //in TvSpddFitErrorResult only overlapping blocks are observed, much faster
+                    e+= (model[j]-wSource[ASource].twData[j]);                  //here a local block is taken for every point
+                  e_sum+= Sqr(e)/(2*k+1);                                       //in TvSpddFitErrorResult only overlapping blocks are observed, much faster
                   end;
                 try
                   e_sum:= SqRT(e_sum/(twAnalysisRange[ptLast]-twAnalysisRange[ptFirst]-2*k+1))/(twMaxValue*twSNR);
@@ -16071,7 +16110,7 @@ var i       : Integer;                                              { I1 mu1  mu
       end; {fitvalid}
     end; {with}
   try
-    FreeAndNil(FPDDfit_simplex);
+    FPDDfit_simplex.Free;
    except
     ExceptMessage('WH.PddFit!');
    end;
@@ -16202,6 +16241,7 @@ end; {~pddfit}
 {09/08/2017 only apply if new differs from org, update twCurveIDString}
 {27/08/2020 twMaxPosCm}
 {17/09/2020 introduction of FFrozen}
+{27/05/2023 applying compound operator "*="}
 function TWellhoferData.Mayneord(SSD_org_cm,SSD_new_cm:twcFloatType;
                                  Dmax_org_cm          :twcFloatType=0;
                                  ASource              :twcDataSource=dsMeasured): Boolean;
@@ -16221,7 +16261,7 @@ with wSource[ASource],twBeamInfo do
       Dmax_org_cm:= twMaxPos_cm;
     MaxTerm:= Sqr((SSD_new_cm+Dmax_org_cm)/(SSD_org_cm+Dmax_org_cm));
     for i:= twDataRange[ptFirst] to twDataRange[ptLast] do
-      twData[i]:= twData[i]*MaxTerm*Sqr((SSD_org_cm+twPos_cm[i])/(SSD_new_cm+twPos_cm[i]));
+      twData[i]*= MaxTerm*Sqr((SSD_org_cm+twPos_cm[i])/(SSD_new_cm+twPos_cm[i]));
     twSSD_cm         := SSD_new_cm;
     twMayneordApplied:= True;
     twDataHistoryStg := 'Mayneord('+twDataHistoryStg+')';
@@ -16284,6 +16324,8 @@ end; {~pddmaxnmfit}
 {21/07/2020 AdjustedFilterWidthCm}
 {03/09/2020 preserve fitted results}
 {17/09/2020 introduction of FFrozen}
+{27/05/2023 applying compound operator "+="}
+{09/05/2024 avoid FreeAndNil}
 procedure TWellhoferData.QuadFilter(cm                    :twcFloatType =twcDefaultValue;
                                     ASource               :twcDataSource=dsMeasured;
                                     ADestination          :twcDataSource=dsCalculated;
@@ -16400,13 +16442,13 @@ if (not FFrozen) and wSource[ASource].twValid then
               begin
               twData[Pc]:= Q.FitQuad(twPos_cm[Pc],Check);
               Inc(n);
-              twSNR:= twSNR+Sqr(wSource[ASource].twData[pc]-twData[pc]);
+              twSNR+= Sqr(wSource[ASource].twData[pc]-twData[pc]);
               end;
            except
             twData[Pc]:= 100;
            end;
         try
-          FreeAndNil(Q);
+          Q.Free;
          except
           ExceptMessage('WH.QuadFit!');
          end;
@@ -16794,6 +16836,7 @@ end; {~sigmoidfiterrorresult}
 {05/03/2021: added twFitResult1,2 for optional model results}
 {11/06/2021 implemented CalcRangeFirst and CalcRangeLast}
 {24/05/2022 AddDebugInfo}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.SigmoidPenumbraFit(ASource     :twcDataSource=dsMeasured;
                                            ApplyModel  :Boolean      =False;
                                            ADestination:twcDataSource=dsMeasured): Boolean;
@@ -16909,8 +16952,8 @@ var s : twcSides;
                {$ENDIF}
                for n:= NMreflection to NMshrinkage do
                  Inc(NMsteps[n],CrawlReport.NMsteps[n]);
-               Restarts  := Restarts+CrawlReport.Restarts;                      //repeat loop introduces by definition 1 extra restart
-               Seconds   := Seconds +CrawlReport.Seconds;
+               Restarts  += CrawlReport.Restarts;                      //repeat loop introduces by definition 1 extra restart
+               Seconds   += CrawlReport.Seconds;
                BestScore := CrawlReport.BestScore;
                twFitValid:= assigned(BestVertex);
                Inc(Cycles,CrawlReport.Cycles);
@@ -17047,6 +17090,7 @@ end; {~applysigmoidpenumbrafit}
 {25/11/2017 resampling implemented}
 {17/09/2020 introduction of FFrozen}
 {21/04/2022 protection against too small steps}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.Integrate(FirstPos_cm,LastPos_cm:twcFloatType;
                                   ASource               :twcDataSource=dsMeasured;
                                   UseResampling         :Boolean      =False
@@ -17069,7 +17113,7 @@ with wSource[ASource] do
         Step_cm:= (LastPos_cm-FirstPos_cm)/k;
       until (Step_cm>=Limit) or (k=1);                                          //k should not be 0
       for i:= 0 to k do
-        Result:= Result+GetQfittedValue(FirstPos_cm+i*Step_cm,ASource)*Step_cm{$IFDEF POSINTEGRAL}*ifthen(PositionWeighted,Step_cm,1){$ENDIF};
+        Result+= GetQfittedValue(FirstPos_cm+i*Step_cm,ASource)*Step_cm{$IFDEF POSINTEGRAL}*ifthen(PositionWeighted,Step_cm,1){$ENDIF};
      {$IFDEF POSINTEGRAL}
       if PositionWeighted then
         Result:= Result/(LastPosCm-FirstPosCm);
@@ -17083,14 +17127,14 @@ with wSource[ASource] do
       if (j<k) or ((j=k) and (not PositionWeighted)) then
         begin
         for i:= j to k do
-          Result:= Result+(twPos_cm[Min(Succ(i),twScanRange[ptLast])]-twPos_cm[Max(twScanRange[ptFirst],Pred(i))])*twData[i]*ifthen(PositionWeighted,twPos_cm[i],1)/2;
+          Result+= (twPos_cm[Min(Succ(i),twScanRange[ptLast])]-twPos_cm[Max(twScanRange[ptFirst],Pred(i))])*twData[i]*ifthen(PositionWeighted,twPos_cm[i],1)/2;
         if PositionWeighted then
-          Result:= Result/(LastPosCm-FirstPosCm);
+          Result/= (LastPosCm-FirstPosCm);
         end;
       {$ELSE}
       if j<=k then
         for i:= j to k do
-          Result:= Result+(twPos_cm[Min(Succ(i),twScanRange[ptLast])]-twPos_cm[Max(twScanRange[ptFirst],Pred(i))])*twData[i]/2;
+          Result+= (twPos_cm[Min(Succ(i),twScanRange[ptLast])]-twPos_cm[Max(twScanRange[ptFirst],Pred(i))])*twData[i]/2;
       {$ENDIF}
       end;
     end;
@@ -17151,6 +17195,7 @@ The peak in the derivative is modelled with a 2nd order polynomal to find the be
 {09/02/2023 efficiency improvement: skip if already fully available}
 {10/02/2023 allow asymmetrical peakwidth}
 {18/02/2023 WedgedData replaced by twWedgeDetected}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.Derive(cm          :twcFloatType =twcDefaultValue;
                                ASource     :twcDataSource=dsMeasured;
                                ADestination:twcDataSource=dsCalculated;
@@ -17339,7 +17384,7 @@ else if (not FFrozen) and wSource[ASource].twValid then
        except
         twData[Pc]:= 0;
        end;
-    FreeAndNil(L);
+    L.Free;
     {$IFDEF WELLHOFER_DUMPDATA}
     DumpData('Raw derivative',ADestination,ASource);
     {$ENDIF}
@@ -17569,8 +17614,8 @@ else if (not FFrozen) and wSource[ASource].twValid then
         if LogLevel>2 then
           StatusMessage(Format('->Derivative[%s]: %s / %s',[twcDataSourceNames[ASource],GetPenumbraString(ADestination,dDerivative,twcLeft),GetPenumbraString(ADestination,dDerivative,twcRight)]));
         end; {dEdge}
-      FreeAndNil(Q);
-      FreeAndNil(Sampler);
+      Q.Free;
+      Sampler.Free;
       end; {twEdgeDerivative, inner level}
     if fSource=ADestination then
       Finalize(tmpData);                                                        //local tmpData not needed anymore and must be freed
@@ -17666,6 +17711,7 @@ end; {~mirror}
 {27/08/2020 twMaxPosCm, twMaxValue}
 {17/09/2020 introduction of FFrozen}
 {24/05/2022 AddDebugInfo}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.Merge(ASource       :twcDataSource=dsUnrelated;
                               ADestination  :twcDataSource=dsMeasured;
                               ShiftSource_cm:twcFloatType =0;
@@ -17709,8 +17755,8 @@ var SumSource,SumDest: twcFloatType;
         begin
         if Preparation then
           begin {sumsource and sumdest are by defintion based on same number of points}
-          SumSource:= SumSource+GetInterpolatedValue(VerifiedPos,ASource     );
-          SumDest  := SumDest  +GetInterpolatedValue(VerifiedPos,ADestination);
+          SumSource+= GetInterpolatedValue(VerifiedPos,ASource     );
+          SumDest  += GetInterpolatedValue(VerifiedPos,ADestination);
           end
         else {merge overlap}
           wSource[ADestination].twData[i]:= (wSource[ADestination].twData[i]+c*GetInterpolatedValue(VerifiedPos,ASource))/2;
@@ -17770,7 +17816,7 @@ if Result then
     begin
     Shift(ShiftSource_cm,RelShift,ASource);
     if DoMatch then
-      ShiftSource_cm:= ShiftSource_cm+Match(ASource,ADestination);              //match asource on adestination
+      ShiftSource_cm+= Match(ASource,ADestination);                             //match asource on adestination
     end;
   SumSource:= 0;
   SumDest  := 0;
@@ -17827,6 +17873,8 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3298565/
 {12/04/2022 more efficient use of gammaanalysis}
 {24/05/2022 AddDebugInfo}
 {26/01/2023 review of code}
+{27/05/2023 applying compound operator "+="}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.GammaAnalysis(ASource        :twcDataSource=dsMeasured;
                                       AReference     :twcDataSource=dsReference;
                                       ADestination   :twcDataSource=dsCalculated;
@@ -17931,7 +17979,7 @@ var tmpSCurve,tmpRCurve : twCurveDataRec;
   DistanceCm:= 0;
   PosCm     := wSource[fSource].twPos_cm[APoint];
   repeat                                                                        //loop with small steps while gamma sufficiently small
-    DistanceCm:= DistanceCm+DistanceStepCm;
+    DistanceCm+= DistanceStepCm;
     b         := PositionInRange(PosCm+DistanceCm,True,fReference);
     if b then
      begin
@@ -17944,6 +17992,7 @@ var tmpSCurve,tmpRCurve : twCurveDataRec;
   Result:= GammaRefLevel;
   end; {searchgamma}
 
+  {09/05/2024 avoid FreeAndNil}
   procedure SetStats(AScope:twcGammaScope);
   var t      : TStatssampler;
       i,nPass: Integer;
@@ -17967,7 +18016,7 @@ var tmpSCurve,tmpRCurve : twCurveDataRec;
     twConfidenceLimit[AScope]:= t.ConfidenceLimit;
     twGammaPassRate[AScope]  := ifthen(nPass>0,100*nPass/t.Samples,0);
     end;
-  FreeAndNil(t);
+  t.Free;
   end; {setstats}
 
   function GetResultValue: twcFloatType;
@@ -18011,7 +18060,7 @@ if wSource[ASource].twValid and wSource[AReference].twValid and (GetResultValue=
       wSource[ADestination].twData[i]:= Gamma;
       end;
     try
-      FreeAndNil(Q);
+      Q.Free;
      except
       ExceptMessage('WH.GammaAnalysis:t,Q!');
      end;
@@ -18212,6 +18261,7 @@ output: left and right data point of range as defined by CalcWidth_cm
 *)
 {02/11/2020 Lpos not intitialised}
 {05/11/2020 Lpos wrong adjustment rule for dec; force at least two points}
+{27/05/2023 applying compound operator "+="}
 function TWellhoferData.FindCalcRange(CalcPos_cm   :twcFloatType;
                                       var Lpos,Rpos:Integer;
                                       ASource      :twcDataSource=dsMeasured): Boolean;
@@ -18233,7 +18283,7 @@ with wSource[ASource] do
       Dec(Lpos);
     while (Lpos<twDataRange[ptLast]) and (twPos_cm[Lpos+1]<X) do                                  //failsave for variable stepsize
       Inc(Lpos);
-    X   := X+CalcWidth_cm;
+    X   += CalcWidth_cm;
     Rpos:= Min(Succ(Lpos),twDataRange[ptLast]);
     while (Rpos<twDataRange[ptLast]) and (twPos_cm[Rpos]<=X) and (twPos_cm[Rpos+1]-X<c) do
       Inc(Rpos);
@@ -18287,6 +18337,7 @@ end; {~positioninrange}
 //this version performs well for inverted data with vertical slopes
 {26/10/2018 force use of linear fit for less than three points}
 {05/11/2020 did not accept two points, this is now handled by tquadfit anyway}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.CalcValue(Lpos,Rpos  :Integer;
                                   X          :twcFloatType;
                                   ASource    :twcDataSource=dsMeasured;
@@ -18345,7 +18396,7 @@ with wSource[ASource] do
         Result:= Yarr[CentralPos];
        end;
       try
-        FreeAndNil(Q);
+        Q.Free;
        except
         ExceptMessage('WH.CalcValue!');
        end;
@@ -18444,6 +18495,7 @@ found twMaxPosCm and within the fit range then twMaxPosCM//twMaxValue to Xtop/Yt
 {01/09/2020 RangeCm=0 -> no fit}
 {14/05/2021 use maximum only for topmodel when it is a true FFF}
 {26/04/2022 IsFFF}
+{09/05/2024 avoid FreeAndNil}
 procedure TWellhoferData.QfitMaxPos(ASource       :twcDataSource=dsMeasured;
                                     ForceFitCenter:Boolean      =False      );
 var Q                    : TQuadFit;
@@ -18490,7 +18542,7 @@ with wSource[ASource] do
       else
         twTopModel.Valid:= False;
       try
-        FreeAndNil(Q);
+        Q.Free;
        except
         ExceptMessage('WH.QfitMaxPos!');
        end;
@@ -18893,8 +18945,8 @@ The major output results are mostly preliminary and include:
 {24/05/2022 AddDebugInfo}
 {17/06/2022 twForPosInMm}
 {18/02/2023 apply twWedgeDetected, set by Derive}
-procedure TWellhoferData.FastScan(ASource      :twcDataSource=dsMeasured;
-                                  ClearAnalysis:Boolean      =True       );
+function TWellhoferData.FastScan(ASource      :twcDataSource=dsMeasured;
+                                 ClearAnalysis:Boolean      =True       ): Boolean;
 var i,j                : Integer;
     lMin,lTmp,vmin,vmax: twcFloatType;
     p                  : twcDoseLevel;
@@ -18908,6 +18960,7 @@ with wSource[ASource] do
 if ClearAnalysis then
   ResetAnalysis(ASource);
 with wSource[ASource] do
+  begin
   if twValid and (not (twFastScan or FFrozen)) then
     try
       AddDebugInfo('FastScan-'+twcDataSourceNames[ASource]);
@@ -19156,6 +19209,8 @@ with wSource[ASource] do
      except
       twValid:= False;
      end; {try, no fastscan}
+  Result:= twFastScan and twValid;
+  end; {with wSource}
 {$IFDEF COMPILED_DEBUG}
 if not wSource[ASource].twValid then
   StatusMessage(Format('FastScan %s failed at %s',[twcDataSourceNames[ASource],FailInfo]),False,1);
@@ -19233,7 +19288,9 @@ this is no fixed strategy if the field edge also depends on the normalisation po
 {29/03/2022 extended use of GetModDepth}
 {09/04/2022 handle exception ltmp1+ltmp2=0 in horizontalscans}
 {24/05/2022 AddDebugInfo}
-{19/02/2023 fixed value of 10 replaced with wFFFMinFieldSize_cm}
+{19/02/2023 fixed value of 10 in FFF detection replaced with wFFFMinFieldSize_cm}
+{27/05/2023 applying compound operator "+="}
+{09/05/2024 avoid FreeAndNil}
 function TWellhoferData.Analyse(ASource          :twcDataSource=dsMeasured;
                                 AutoCenterProfile:twcAutoCenter=AC_default): Boolean;
 var CoupledFiltered: twcDataSource;
@@ -19483,7 +19540,7 @@ var CoupledFiltered: twcDataSource;
               twFlatness:= 0;
             end;
           try
-            FreeAndNil(LinFit);
+            LinFit.Free;
            except
             ExceptMessage('WH.Analyze:LinFit!');
            end;
@@ -19536,8 +19593,8 @@ var CoupledFiltered: twcDataSource;
                   lMin:= 2*twCenterPos_cm-twPos_cm[i];
                   if NearestPosition(lMin,ASource)>j then
                     begin
-                    lTmp1:= lTmp1+GetQfittedValue(lMin,ASource);
-                    lTmp2:= lTmp2+GetQfittedValue(twPos_cm[i],ASource,twData[i]);
+                    lTmp1+= GetQfittedValue(lMin,ASource);
+                    lTmp2+= GetQfittedValue(twPos_cm[i],ASource,twData[i]);
                     end;
                   end; {for}
                 if (lTmp1+lTmp2)>0 then
@@ -19631,7 +19688,7 @@ var CoupledFiltered: twcDataSource;
         twPDD10:= GetQfittedValue(10,ASource)/twAbsNormValue;
         twPDD20:= GetQfittedValue(20,ASource)/twAbsNormValue;
         end;
-      if twFilterPoints>1 then twAvgNormValue:= twAbsNormValue     {certify that twAvgNormval does some averaging}
+      if twFilterPoints>1 then twAvgNormValue:= twAbsNormValue                  //certify that twAvgNormval does some averaging
       else                     twAvgNormValue:= GetQfittedValue(twAbsNormPos_cm,ASource);
       twRelAvgInField  := twAvgNormValue;
       twCenterPos_cm   := 0;
@@ -19643,14 +19700,13 @@ var CoupledFiltered: twcDataSource;
 begin
 with wSource[ASource] do
   begin
-  Result    := twValid;
+  Result:= twValid;
   if (not FFrozen) and Result and ((not (twFastScan and twAnalysed)) or (AutoCenterProfile=AC_on)) then
     begin
     Inc(FActiveCnt);
     AddDebugInfo('Analyse-'+twcDataSourceNames[ASource]);
-    twFastScan:= False;
-    FastScan(ASource);                                                          //might change twValid
-    Result:= twValid;
+    twFastScan:= False;                                                         //force fastscan
+    Result:= FastScan(ASource);                                                 //might change twValid
     if Result then
       begin
       twFlatness     := 0;
@@ -19691,13 +19747,15 @@ with wSource[ASource] do
 end; {~analyse}
 
 
-procedure TWellhoferData.AddDefaultAliasList(AliasConfigList:TStrings);
+{26/05/2024: work with local list}
+function TWellhoferData.AddDefaultAliasList(AliasConfigList:TStringList): String;
+var LocalList: TStringList;
 
   procedure AddDirectionText(AText,Vtext:String);
   var found: Boolean;
       i    : Integer;
   begin
-  with AliasConfigList do
+  with LocalList do
     begin
     found:= False;
     i:= Count;
@@ -19712,43 +19770,49 @@ procedure TWellhoferData.AddDefaultAliasList(AliasConfigList:TStrings);
   end;
 
 begin
+LocalList:= TStringList.Create;
+LocalList.NameValueSeparator:= '=';
+LocalList.Text              := AliasConfigList.Text;
 with AliasConfigList do
   begin
   AddDirectionText('Inline'   ,'Inplane'   );
   AddDirectionText('Crossline','Crossplane');
   AddDirectionText('PDD'      ,'Depth'     );
   end;
+Result:= LocalList.Text;
+LocalList.Free;
 end; {adddefaultaliaslist}
 
 
 {01/09/2020 unset twApplied; trim}
-procedure TWellhoferData.LoadAliasList(AliasConfigList:TStrings);
-var i: integer;
-    b: Boolean;
+{09/05/2024 avoid FreeAndNil}
+{13/05/2024 do not change external list}
+procedure TWellhoferData.LoadAliasList(AliasConfigList:TStringList);
+var i        : integer;
+    LocalList: TStringList;
 begin
-b:= not Assigned(AliasConfigList);
-if b then
-  AliasConfigList:= TStringList.Create;
-AliasConfigList.NameValueSeparator:= '=';
-AddDefaultAliasList(AliasConfigList);
-i:= AliasConfigList.Count;
+LocalList:= TStringList.Create;
+LocalList.NameValueSeparator:= '=';
+if assigned(AliasConfigList) then
+  LocalList.Text:= AliasConfigList.Text;
+LocalList.Text:= AddDefaultAliasList(LocalList);
+i:= LocalList.Count;
 SetLength(FAliasList,i);
 while i>0 do
   begin
   Dec(i);
   with FAliasList[i] do
     begin
-    twKey    := Trim(LowerCase(AliasConfigList.Names[i]));
-    twValue  := Trim(AliasConfigList.Values[twKey]);
+    twKey    := Trim(LowerCase(LocalList.Names[i]));
+    twValue  := Trim(LocalList.Values[twKey]);
     twApplied:= False;
     end;
   end;
-if b then
-  try
-    FreeAndNil(AliasConfigList);
-   except
-    ExceptMessage('WH.!LoadAliasList');
-   end;
+try
+  LocalList.Free;
+ except
+  ExceptMessage('WH.!LoadAliasList');
+ end;
 if assigned(FMultiScanList) then
   IndexMultiScan(FMultiScanList[0]);
 end; {~loadaliaslist}
@@ -19869,20 +19933,21 @@ end; {~dumpdata}
 {18/07/2016 wMultiScanReferences}
 {20/07/2016 BinStream}
 {11/05/2020 use FModNormLocal,FModFilmLocal,FModBeamLocal}
+{09/05/2024 avoid FreeAndNil}
 destructor TWellhoferData.Destroy;
 var k: twcDataSource;
 begin
 try
   if FModNormLocal then
-    FreeAndNil(FModNormList  );
+    FModNormList.Free;
   if FModFilmLocal then
-    FreeAndNil(FModFilmList  );
+    FModFilmList.Free;
   if FModBeamLocal then
-    FreeAndNil(FModBeamList  );
-  FreeAndNil(w2D_ArrayRefList);
-  FreeAndNil(FRefOrgSrc      );
+    FModBeamList.Free;
+  w2D_ArrayRefList.Free;
+  FRefOrgSrc.Free;
   if assigned(Fmcc) then
-    FreeAndNil(Fmcc);
+    Fmcc.Free;
  except
    ExceptMessage('WH.Destroy!');
  end;
@@ -20076,11 +20141,12 @@ if FCalculation=twCalcQuadFit then
 end; {~quadfitwork}
 
 
+{09/05/2024 avoid FreeAndNil}
 destructor TMathThread.Destroy;
 begin
 if assigned(FFit) then
   try
-    FreeAndNil(FFit);
+    FFit.Free;
    except
     FWellhofer.ExceptMessage('TMathThread.Destroy!');
    end;
@@ -20096,6 +20162,4 @@ initialization
 AppVersionString:= GetAppVersionString(False,2,True);                           //TOtools
 twNumCPU        := GetNumCPU;                                                   //TOtools
 end.
-
-
 

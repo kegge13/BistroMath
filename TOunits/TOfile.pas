@@ -1,5 +1,8 @@
+unit TOfile; {Â© Theo van Soest 2000 - 18/01/2019 | FPC3.2.0: 19/08/2020}
 {$WARN SYMBOL_PLATFORM	OFF}
-unit TOfile;   {© Theo van Soest 2000 - 18/01/2019 | FPC3.2.0: 19/08/2020}
+
+{09/03/2023 delphi mode switched off}
+{.MODE Delphi}
 
 interface      {11/06/2020}
 {11/06/2020 executefile removed}
@@ -34,7 +37,7 @@ Typed files and untyped files occupy 332 bytes:  | Text files occupy 460 bytes:
                                                  |    Buffer   : TTextBuf;
     end;                                         |  end;
 
-Handle contains the file’s handle (when the file is open).
+Handle contains the fileâ€™s handle (when the file is open).
 The Mode field can assume one of the values
 
 const

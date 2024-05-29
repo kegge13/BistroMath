@@ -1,4 +1,4 @@
-unit TOmath;   {© Theo van Soest, 20/12/2015-20/06/2022  FPC 3.2.0: 09/02/2021}
+unit TOmath;   {© Theo van Soest, 20/12/2015-27/05/2023  FPC 3.2.2: 20/05/2022}
 {$MODE DELPHI}
 {$I TOmath_opt.inc}
 interface      {09/02/2021}
@@ -321,6 +321,7 @@ Setlength(FSXbuffer,0);
 end; {~initialize}
 
 
+{27/05/2023 applying compound operator "+="}
 procedure TStatsSampler.Add_X(X:StatsDataType);
 var Term: StatsDataType;
     i,j : Integer;
@@ -348,8 +349,8 @@ try
   Inc(FSNx);
   for i:= 1 to 2 do
     begin
-    Term   := Term*X;
-    FS_x[i]:= FS_x[i]+Term;
+    Term   *= X;
+    FS_x[i]+= Term;
     end;
   if FSNx=1 then
     begin
@@ -723,6 +724,7 @@ end; {~initialize}
 
 
 {21/05/2020 internal data support uTExtendedX87}
+{27/05/2023 applying compound operator "+=" and "*="}
 procedure TQuadFit.Add_XY(X,Y:Extended);
 var Term: MathExt;
     i,j : word;
@@ -762,28 +764,28 @@ try
   _Y:= SmartRound(Y);
   for i:= 1 to 4 do
     begin
-    Term   := Term*_X;
-    FS_x[i]:= FS_x[i]+Term;
+    Term   *= _X;
+    FS_x[i]+= Term;
     end;
   Term    := _Y;
   FS_xy[0]:= FS_xy[0]+Term;
   for i:= 1 to 2 do
     begin
-    Term    := Term*_X;
-    FS_xy[i]:= FS_xy[i]+Term;
+    Term    *= _X;
+    FS_xy[i]+= Term;
     end;
  {$ELSE}
   for i:= 1 to 4 do
     begin
-    Term   := Term*X;
-    FS_x[i]:= FS_x[i]+Term;
+    Term   *= X;
+    FS_x[i]+= Term;
     end;
   Term    := Y;
-  FS_xy[0]:= FS_xy[0]+Term;
+  FS_xy[0]+= Term;
   for i:= 1 to 2 do
     begin
-    Term    := Term*X;
-    FS_xy[i]:= FS_xy[i]+Term;
+    Term    *= X;
+    FS_xy[i]+= Term;
     end;
  {$ENDIF}
  except
@@ -1130,6 +1132,7 @@ end; {~initialize}
 
 
 {21/05/2020 internal data support uTExtendedX87}
+{27/05/2023 applying compound operator "+="}
 procedure TLinFit.Add_XY(X,Y:Extended);
 var tx: MathExt;
     i : Integer;
@@ -1137,11 +1140,11 @@ begin
 tx:= 1;
 for i:= 1 to 2 do
   begin
-  tx     := tx*X;
-  FS_x[i]:= FS_x[i]+tx;
+  tx     *= X;
+  FS_x[i]+= tx;
   end;
-FS_y := FS_y +Y;
-FS_xy:= FS_xy+X*Y;
+FS_y += Y;
+FS_xy+= X*Y;
 FCalc:= False;
 Inc(FNx);
 end; {~add_xy}
@@ -1422,7 +1425,7 @@ end; {}
 {02/08/95}
 procedure QuadFit(var XYset;                   {zero based counting}
                   XYtype      :NumericType;
-             		  var Z,L,Q   :Extended;       {y=Z+L.x+Q.x.x}
+       		  var Z,L,Q   :Extended;       {y=Z+L.x+Q.x.x}
                   Num_El      :LongWord;
                   C1          :Extended=0;     {1-dim: x:= c1+c2*0..numel-1}
                   C2          :Extended=1;     {2-dim: x-c1, y-c2 }
